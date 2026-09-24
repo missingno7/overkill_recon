@@ -26,12 +26,12 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:0679 | WaitByteCS066B | 0 | 9 | ASM_COUPLED | True | 0 |
 | 1534:0045 | sub_1534_0045 | 0 | 9 | HARDWARE | True | 0 |
 | 0000:C9D3 | XorCopy16BytesAA | 0 | 10 | C_READY_WITH_ENV | True | 0 |
-| 0000:A5DB | DecBP2Unless20 | 0 | 11 | C_READY_WITH_ENV | True | 0 |
-| 0000:A5FC | DecBP4UnlessZero | 0 | 11 | C_READY_WITH_ENV | True | 0 |
+| 0000:A5DB | DecRecordYUnlessAtMin | 0 | 11 | C_READY_WITH_ENV | True | 0 |
+| 0000:A5FC | DecRecordXUnlessZero | 0 | 11 | C_READY_WITH_ENV | True | 0 |
 | 0000:EDDA | sub_0000_EDDA | 0 | 11 | UNKNOWN | True | 0 |
 | 0000:A294 | sub_0000_A294 | 0 | 12 | UNKNOWN | True | 0 |
-| 0000:A5ED | IncBP2UnlessC0 | 0 | 12 | C_READY_WITH_ENV | True | 0 |
-| 0000:A60A | IncBP4BelowB0 | 0 | 12 | C_READY_WITH_ENV | True | 0 |
+| 0000:A5ED | IncRecordYUnlessAtMax | 0 | 12 | C_READY_WITH_ENV | True | 0 |
+| 0000:A60A | IncRecordXBelowMax | 0 | 12 | C_READY_WITH_ENV | True | 0 |
 | 0000:0E91 | sub_0000_0E91 | 0 | 13 | HARDWARE | True | 0 |
 | 0000:C7FE | UppercaseAsciiAL | 0 | 13 | C_READY | True | 0 |
 | 0000:C9DD | sub_0000_C9DD | 0 | 13 | HARDWARE | True | 0 |
@@ -52,7 +52,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:4251 | sub_0000_4251 | 0 | 19 | UNKNOWN | True | 0 |
 | 0000:45CE | sub_0000_45CE | 0 | 19 | UNKNOWN | True | 0 |
 | 0000:4EBF | sub_0000_4EBF | 0 | 19 | HARDWARE | True | 0 |
-| 0000:A571 | CopyWords2And4Plus10 | 0 | 19 | C_READY_WITH_ENV | True | 0 |
+| 0000:A571 | CopyRecordPositionPlus10 | 0 | 19 | C_READY_WITH_ENV | True | 0 |
 | 0000:B5A9 | sub_0000_B5A9 | 0 | 19 | UNKNOWN | True | 0 |
 | 0000:0E27 | sub_0000_0E27 | 0 | 20 | HARDWARE | True | 0 |
 | 0000:4F8C | sub_0000_4F8C | 0 | 20 | HARDWARE | True | 0 |
@@ -100,7 +100,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:44B0 | sub_0000_44B0 | 0 | 38 | UNKNOWN | True | 0 |
 | 0000:511F | sub_0000_511F | 0 | 38 | UNKNOWN | True | 0 |
 | 0000:06BC | sub_0000_06BC | 0 | 39 | HARDWARE | True | 0 |
-| 0000:A648 | sub_0000_A648 | 0 | 39 | UNKNOWN | True | 0 |
+| 0000:A648 | UpdatePlacementXGroupA | 0 | 39 | C_READY_WITH_ENV | True | 0 |
 | 0000:306F | CopyPackedRowsToTandyBanks | 0 | 40 | C_READY_WITH_ENV | True | 0 |
 | 0000:00E8 | sub_0000_00E8 | 0 | 41 | HARDWARE | True | 0 |
 | 0000:5CB7 | sub_0000_5CB7 | 0 | 43 | HARDWARE | True | 0 |
@@ -201,7 +201,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:5497 | sub_0000_5497 | 1 | 41 | HARDWARE | False | 0 |
 | 0000:C85B | sub_0000_C85B | 1 | 46 | HARDWARE | False | 0 |
 | 0000:C80B | AdvanceABColonPrefix | 1 | 49 | C_READY_WITH_ENV | False | 0 |
-| 0000:A616 | sub_0000_A616 | 1 | 50 | UNKNOWN | False | 0 |
+| 0000:A616 | UpdatePlacementXOffsetsAtRecordEdges | 1 | 50 | C_READY_WITH_ENV | False | 0 |
 | 0000:A90C | sub_0000_A90C | 1 | 52 | UNKNOWN | False | 0 |
 | 0000:4F57 | sub_0000_4F57 | 1 | 53 | HARDWARE | False | 0 |
 | 0000:A3CA | sub_0000_A3CA | 1 | 53 | UNKNOWN | False | 0 |
@@ -242,7 +242,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:C8AD | sub_0000_C8AD | 2 | 16 | STRUCTURAL | False | 0 |
 | 0000:6296 | sub_0000_6296 | 2 | 20 | STRUCTURAL | False | 0 |
 | 0000:D367 | sub_0000_D367 | 2 | 23 | UNKNOWN | False | 0 |
-| 0000:9BE2 | sub_0000_9BE2 | 2 | 25 | UNKNOWN | False | 0 |
+| 0000:9BE2 | StoreApplyHistoryAndConditionalPlacement | 2 | 25 | ASM_COUPLED | False | 0 |
 | 0000:852B | sub_0000_852B | 2 | 27 | UNKNOWN | False | 0 |
 | 0000:553D | sub_0000_553D | 2 | 28 | UNKNOWN | False | 0 |
 | 0000:6120 | sub_0000_6120 | 2 | 30 | UNKNOWN | False | 0 |

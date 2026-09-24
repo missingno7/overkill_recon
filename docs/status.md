@@ -10,16 +10,16 @@ This is an exact, incomplete ASM bootstrap. Byte coverage and semantic understan
 | reconstructed_data_bytes | 66 |
 | opaque_raw_fallback_bytes | 106419 |
 | identified_functions | 371 |
-| named_functions | 39 |
-| anonymous_functions | 332 |
+| named_functions | 42 |
+| anonymous_functions | 329 |
 | leaf_functions | 143 |
 | C_READY | 2 |
-| C_READY_WITH_ENV | 26 |
-| ASM_COUPLED | 21 |
+| C_READY_WITH_ENV | 28 |
+| ASM_COUPLED | 22 |
 | HARDWARE | 62 |
 | STRUCTURAL | 92 |
-| UNKNOWN | 168 |
-| semantically_supported_unique_instruction_bytes | 1361 |
+| UNKNOWN | 165 |
+| semantically_supported_unique_instruction_bytes | 1475 |
 | unresolved_indirect_sites | 44 |
 | decode_conflicts | 0 |
 
@@ -53,8 +53,8 @@ Active queues: metadata/runtime/bottom-up-queue.json and metadata/drivers/*-bott
 
 ## Reviewed semantics
 
-Main: 39 reviewed contracts/boundaries, 38 boundaries STRONG/PROVEN; 1361 unique instruction bytes with reviewed contracts and names. Optional drivers: 6 reviewed contracts.
+Main: 42 reviewed contracts/boundaries, 41 boundaries STRONG/PROVEN; 1475 unique instruction bytes with reviewed contracts and names. Optional drivers: 6 reviewed contracts.
 
-Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 14, 'UNKNOWN': 7, 'GAME_LOGIC': 18}.
+Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 14, 'UNKNOWN': 7, 'GAME_LOGIC': 21}.
 
 Main reviewed data: 66 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.

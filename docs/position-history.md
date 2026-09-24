@@ -109,3 +109,82 @@ Highest-value questions are the offset-index domain on actual callers, the fourt
 history cursor, record lifetimes and unchecked pool-A search results at C450/D1AE.
 BD17 clears status first but then branches by+16/+18, calls C054, and can tail to
 AC19. Its BD0D wrapper must not yet be advertised as a pure free-record operation.
+
+## Semantic source consolidation
+
+`include/MOVEMENT.INC` now carries the shared coordinate, movement, history and
+placement symbols used by R04/R05 and the R06 displacement initializers. This is
+modern reconstruction vocabulary; it asserts no historical include or module.
+The include is audited as literal EQU definitions only and hashed with the source.
+
+The newly reviewed `StoreApplyHistoryAndConditionalPlacement` entry at9BE2 is
+called by978C, CFF0 and D171, and reached by fallthrough after9BDF. Those source
+references now use its name. It composes the store, delayed-record copies and
+optional four-record placement through their existing named calls. The condition
+is **BDAC != 0 OR unsigned2350 > B6h**. The JNE at9BED goes to the placement call,
+not to the return. These two state words remain anonymous: this local gate does
+not establish their broader meaning.
+
+`CLAMP_X_LOW_SEEN` / `CLAMP_X_HIGH_SEEN` name the exact-1 feedback sentinels.
+Skipping placement preserves them and the shared X scratch. The code atA000 in
+R05 is the continuation of9FEA from R04, not an independent clamp routine or a
+second producer. Physical chunks must not be mistaken for semantic boundaries.
+`X_ADJUST_PATH_TAKEN` records an attempted adjustment path: the movement limit
+can prevent an actual coordinate change. It too can survive when9C01 is skipped.
+These lifetimes forbid treating either signal as necessarily fresh each frame.
+
+Five helper names now expose reviewed coordinate semantics, including
+`DecRecordYUnlessAtMin`, `IncRecordYUnlessAtMax`, `DecRecordXUnlessZero`,
+`IncRecordXBelowMax` and `CopyRecordPositionPlus10`. The count-dispatch tails now
+refer to the named X helpers directly. The Y sentinels are equality guards, not
+saturation. `PLACEMENT_X_SIGNED_MAX` remains distinct from the unsigned movement
+bound. Group displacement symbols also reach their movement consumers and reset
+sites, connecting placement dataflow beyond the individual leaves.
+
+The field at2384 is explicitly assigned3 at9EB0 and9EFC; C559 initializes it to0.
+D183 increments it without a local bound, then D199 setsBP=237C and D19C jumps to
+placement. An incoming2 there would select index3 across an adjacent pair-group
+boundary. Actual reachability of that incoming value, and placement following
+those assignment sites, remain unproved. A global field0..2 invariant is false;
+three literal pairs per group cannot supply the missing caller proof.
+
+The new isolated caller test covers12 gate combinations (includingB6/B7 andFFFF),
+complete DS/ES memory effects with absent selected records, scratch outputs,
+preserved registers/segments and the normal stack return. Existing leaf tests
+cover present slots, aliasing, wraparound and clamp behavior. The newly reviewed
+caller contributes25 bytes /8 instructions; its closed callee set occupies226
+unique instruction bytes (caller, store, delayed-copy and placement/shared tail).
+No additional bytes were decoded or reclassified as data in this pass.
+
+The nine-entry count dispatch remains resolved. The separate mode dispatch at
+9A06 is still unresolved: five apparent words at9A0C are not a proof of a bounded
+A47C. Its unknown producer/target code needs recovery before closing that edge.
+Unchecked pool-A capacity atC450/D1AE remains unproved as well.
+
+## Displacement producers joined to their consumers
+
+The second review names `UpdatePlacementXOffsetsAtRecordEdges` (A616) and
+`UpdatePlacementXGroupA` (A648). This closed producer region is89 bytes /
+30 instructions. The parent calls the group-A leaf before updating group B;
+9BC7 now uses the parent's semantic name. It runs only for unsigned movement
+mode<=1 and unsigned2350>B6. Those gates are different from the later placement
+gate, so placement does not imply these words were freshly updated.
+
+At X=0 with negative-X input, group A decrements unless exactly-8; otherwise
+it increments unless0. At X=B0 with positive-X input, group B increments unless
+exactly8; otherwise it decrements unless0. From zero initialization, these updates
+preserve the intervals-8..0 and0..8 under the ordinary nonaliasing state model.
+No all-path invariant is claimed. Values outside those intervals follow modular
+INC/DEC, rather than being repaired. A648's flags are killed byA622; A616's flags
+are killed by9BCA. Both preserve all general and segment registers.
+
+A local6336-case test independently checks the leaf and its parent, both gate
+sides, input bits, X edges, accumulator endpoints, out-of-range values and wrap.
+It compares complete DS contents, source X, preserved registers/segments, IF/DF
+and stack return. The reviewed link is now explicit in source:
+
+`initialization -> edge/input offset updates -> four-record placement -> clamp
+feedback -> count/input adjustment -> history advancement/store/application`
+
+The enclosing9B2E caller remains MIXED and partly unresolved; this dataflow chain
+is not a claim that its entire subsystem or all record lifetimes are understood.

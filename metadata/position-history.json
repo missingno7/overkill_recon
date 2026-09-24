@@ -26,6 +26,8 @@
     "confidence": "PROVEN local instruction order; no enemy/player/weapon names assigned",
     "consumer": "9C01 requests positive/negative primary-record X steps respectively, conditional on input bits",
     "latency": "9C01 precedes optional9FAF on9B2E/9BE2 path; consumes previous saved clamp state",
+    "lifetime": "9C01 consumes exact-1 clamp bytes before optional9FAF; skipping9FAF leaves them intact. A360 likewise survives a skipped9C01. Neither is a fresh-per-frame guarantee.",
+    "physical_chunk_caveat": "A000..A030 inR05 is the continuation of9FEA fromR04, not a separate producer.",
     "producers": "9FAF clears A39E/A39F;9FEA sets them for lower/upper signed X clamp",
     "scratch": "A398 overwritten first from A39A then A39C; group roles beyond offset unknown",
     "slot_order": [
@@ -119,6 +121,13 @@
     ],
     "sha256": "cbdfc17301f08f3cc53bd19d38ba953e2481c86e0125e2f98c18f088fb91b025",
     "source": "src/R15.ASM",
+    "writer_evidence": {
+      "9EB0": "field2384=3",
+      "9EFC": "field2384=3",
+      "C559": "field2384=0",
+      "D183": "increment without local bound; D199 setsBP237C and D19C jumps9FAF",
+      "limit": "A global field0..2 invariant is disproved; actual placement index3 reachability remains unresolved. Incoming2 toD183 would select3."
+    },
     "x": "signed clamp of wrapped16-bit sum to0..192; AX retains raw value"
   },
   "oracle": "Oracle A, independently extracted original main image",
@@ -228,6 +237,21 @@
     }
   ],
   "schema": 1,
+  "shared_continuation": {
+    "callers": [
+      "0000:978C",
+      "0000:CFF0",
+      "0000:D171"
+    ],
+    "direct_bytes": 25,
+    "direct_instructions": 8,
+    "entry": "0000:9BE2",
+    "fallthrough": "9BDF after advance, internal path from9B2E",
+    "internal_ABI": "callee contracts retained; outer live-out proof incomplete",
+    "name": "StoreApplyHistoryAndConditionalPlacement",
+    "placement_predicate": "DS:BDAC != 0 OR unsigned DS:2350 > 0xB6",
+    "tests": "tests/test_history.py::test_shared_history_continuation_gate_and_feedback_lifetime"
+  },
   "unresolved": [
     "All-path bounds on primary record field+8 used by offset tables",
     "Fourth history cursor consumer, including unknown executable regions",

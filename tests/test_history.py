@@ -34,6 +34,40 @@ class PositionHistoryTests(unittest.TestCase):
         self.assertEqual(u.reg_read(UC_X86_REG_IP), 0xf800)
         self.assertEqual(u.reg_read(UC_X86_REG_SP), 0xff02)
 
+    def test_shared_history_continuation_gate_and_feedback_lifetime(self):
+        # Exercise the caller itself: no advance; absent slots isolate gate effects.
+        for gate in (0, 1, 0xffff):
+            for cursor_state in (0, 0xb6, 0xb7, 0xffff):
+                u = self.machine()
+                self.put(u, 0x4a33a, 0xa27a)
+                self.put(u, 0x50102, 0xfffc)
+                self.put(u, 0x50104, 0xffff)
+                for slot in (0xa962, 0xa964, 0xa966, 0xa968, 0xa96a, 0xa96c):
+                    self.put(u, 0x40000+slot, 0xffff)
+                self.put(u, 0x4a398, 0x9abc)
+                self.put(u, 0x4a39a, 0x1234)
+                self.put(u, 0x4a39c, 0x5678)
+                u.mem_write(0x4a39e, bytes([7, 8]))
+                self.put(u, 0x4bdac, gate)
+                self.put(u, 0x42350, cursor_state)
+                expected_ds = bytearray(u.mem_read(0x40000, 65536))
+                expected_es = bytearray(u.mem_read(0x60000, 65536))
+                expected_es[0xa27a:0xa27e] = struct.pack('<HH', 4, 7)
+                place = gate != 0 or cursor_state > 0xb6
+                if place:
+                    expected_ds[0xa398:0xa39a] = struct.pack('<H', 0x5678)
+                    expected_ds[0xa39e:0xa3a0] = bytes(2)
+                self.call(u, 0x9be2)
+                self.assertEqual(bytes(u.mem_read(0x40000, 65536)), bytes(expected_ds))
+                self.assertEqual(bytes(u.mem_read(0x60000, 65536)), bytes(expected_es))
+                for r, value in dict(BP=0x100, CX=0x9abc, DX=0xdef0,
+                                     DS=0x4000, SS=0x5000, ES=0x6000,
+                                     DI=0xa27e, AX=0x5678 if place else 7,
+                                     BX=0xffff if place else 0x5678,
+                                     SI=0xa368 if place else 0x200).items():
+                    self.assertEqual(u.reg_read(globals()['UC_X86_REG_'+r]), value)
+                self.assertEqual(bytes(u.mem_read(0x50102, 4)), struct.pack('<HH', 0xfffc, 0xffff))
+
     def test_initial_history_bias_and_segment_ownership(self):
         for y, x in [(0, 0), (192, 88), (0xffff, 0xfff8)]:
             u = self.machine()

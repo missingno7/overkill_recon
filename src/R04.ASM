@@ -1,58 +1,22 @@
 ; Modern physical chunk, NOT an inferred original object boundary.
 include ENCODING.INC
+include MOVEMENT.INC
 part04 segment byte public 'CODE'
 assume cs:part04,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
 ; Offset-placement use of field+8 does not define its role in other record types.
-OFFSET_PAIR_INDEX_08 equ 08h
-OFFSET_TABLE_A368 equ 0A368h
-OFFSET_TABLE_A374 equ 0A374h
-OFFSET_TABLE_A380 equ 0A380h
-OFFSET_TABLE_A38C equ 0A38Ch
-OFFSET_X_GROUP_A equ 0A39Ah
-OFFSET_X_GROUP_B equ 0A39Ch
-OFFSET_X_WORK equ 0A398h
 ; Modern position-history symbols; see metadata/position-history.json.
-HISTORY_BEGIN equ 0A27Ah
-HISTORY_CURSOR_47 equ 0A340h
-HISTORY_END equ 0A33Ah
-HISTORY_INITIAL_CURSOR_47 equ 0A27Eh
-HISTORY_INITIAL_READ_15 equ 0A2FEh
-HISTORY_INITIAL_READ_31 equ 0A2BEh
-HISTORY_PAIR_BYTES equ 04h
-HISTORY_PAIR_COUNT equ 030h
-HISTORY_READ_CURSOR_15 equ 0A33Ch
-HISTORY_READ_CURSOR_31 equ 0A33Eh
-HISTORY_WRITE_CURSOR equ 0A33Ah
-MAIN_DATA_SEGMENT equ 09596h
-PRIMARY_RECORD equ 0237Ch
-REC_X equ 04h
-REC_Y equ 02h
 CountXReturn equ 044AFh
 CountXIncIfGate equ 09C82h
 CountXInc equ 09C93h
 CountXDecIfGate equ 09C9Ch
 CountXDec equ 09CADh
 ; Modern record/state symbols; evidence in metadata/record-movement.json.
-AUTO_XMINUS_A39F equ 0A39Fh
-AUTO_XPLUS_A39E equ 0A39Eh
-COUNT_GATE_2324 equ 02324h
 COUNT_X_TABLE equ 09C70h
-INPUT_BITS equ 098BEh
-IN_XMINUS equ 02h
-IN_XPLUS equ 01h
-IN_YMINUS equ 08h
-IN_YPLUS equ 04h
-MINUS_SLOT_A968 equ 0A968h
-MINUS_SLOT_A96C equ 0A96Ch
-MOVE_MODE_A47C equ 0A47Ch
-PLUS_SLOT_A966 equ 0A966h
-PLUS_SLOT_A96A equ 0A96Ah
-X_ADJUST_TAKEN equ 0A360h
 loc_09C8A equ 01C8Ah
 loc_09CA4 equ 01CA4h
-loc_0A5FC equ 025FCh
-loc_0A60A equ 0260Ah
+DecRecordXUnlessZero_0A5FC equ 025FCh
+IncRecordXBelowMax_0A60A equ 0260Ah
 loc_08D6D equ 0D6Dh
 loc_0BFC7 equ 03FC7h
 loc_074FE equ 0F4FEh
@@ -203,7 +167,7 @@ loc_09BA9 equ 01BA9h
 loc_09BC0 equ 01BC0h
 loc_09BCA equ 01BCAh
 loc_09BDF equ 01BDFh
-loc_09BE2 equ 01BE2h
+StoreApplyHistoryAndConditionalPlacement_09BE2 equ 01BE2h
 loc_09BF7 equ 01BF7h
 loc_09BFA equ 01BFAh
 loc_09BFB equ 01BFBh
@@ -261,7 +225,7 @@ DecRecordYByMode_0A5D1 equ 025D1h
 IncRecordYTwice_0A5EA equ 025EAh
 DecRecordXTwice_0A5F9 equ 025F9h
 IncRecordXTwice_0A607 equ 02607h
-loc_0A616 equ 02616h
+UpdatePlacementXOffsetsAtRecordEdges_0A616 equ 02616h
 loc_0A66F equ 0266Fh
 loc_0A846 equ 02846h
 loc_0A90C equ 0290Ch
@@ -1633,7 +1597,7 @@ loc_0D390 equ 05390h
 ; @09789 0000:9789 original=bd7c23
     mov bp, 0237Ch
 ; @0978C 0000:978C original=e85304
-    CALL_NEAR loc_09BE2
+    CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2
 ; @0978F 0000:978F original=e8ae11
     CALL_NEAR loc_0A940
 ; @09792 0000:9792 original=c706a620a820
@@ -2011,7 +1975,7 @@ loc_0D390 equ 05390h
 ; @099F6 0000:99F6 original=83268023fe
     and word ptr ds:[02380h], 0FFFEh
 ; @099FB 0000:99FB original=c606be9800
-    mov byte ptr ds:[098BEh], 0
+    mov byte ptr ds:[INPUT_BITS], 0
 ; @09A00 0000:9A00 original=8b1e7ca4
     mov bx, word ptr ds:[0A47Ch]
 ; @09A04 0000:9A04 original=d1e3
@@ -2168,7 +2132,7 @@ loc_0D390 equ 05390h
 ; @09BC5 0000:9BC5 original=7703
     JA_SHORT loc_09BCA
 ; @09BC7 0000:9BC7 original=e84c0a
-    CALL_NEAR loc_0A616
+    CALL_NEAR UpdatePlacementXOffsetsAtRecordEdges_0A616
 ; @09BCA 0000:9BCA original=833e7ca400
     cmp word ptr ds:[MOVE_MODE_A47C], 0
 ; @09BCF 0000:9BCF original=750e
@@ -2184,10 +2148,20 @@ loc_0D390 equ 05390h
 ; @09BDF 0000:9BDF original=e80f01
     CALL_NEAR AdvancePositionHistoryIfRequested_09CF1
 ; sub_0000_9BE2
+; StoreApplyHistoryAndConditionalPlacement (modern reconstruction name)
+; Near entry9BE2 and fallthrough from9BDF. StorePositionHistory, then ApplyPositionHistoryToRecords, then
+; PlaceFourRecordsFromOffsetTables iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor
+; advance at this entry. Requires reviewed callee memory/segment/DF preconditions, including valid source record
+; and selected table/index pairs. Preserve BP,CX,DX,DS,SS; ES becomes CS:9596 and DI follows the history store.
+; AX,BX,SI and flags are path-dependent as documented in callees; not declared dead. Skipping placement
+; preserves old clamp feedback and A398. No external hardware effects; shared state makes reentrancy unproved.
+; Evidence: metadata/symbols.json
 ; @09BE2 0000:9BE2 original=e8f400
     CALL_NEAR StorePositionHistory_09CD9
 ; @09BE5 0000:9BE5 original=e84904
     CALL_NEAR ApplyPositionHistoryToRecords_0A031
+; Placement runs if BDAC != 0 OR unsigned [2350] > B6h. Otherwise the
+; previous clamp feedback survives; history writes do not clear it.
 ; @09BE8 0000:9BE8 original=833eacbd00
     cmp word ptr ds:[0BDACh], 0
 ; @09BED 0000:9BED original=7508
@@ -2222,31 +2196,31 @@ loc_0D390 equ 05390h
 ; corruption.
 ; Evidence: metadata/symbols.json
 ; @09C01 0000:9C01 original=c70660a30000
-    mov word ptr ds:[X_ADJUST_TAKEN], 0
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 0
 ; @09C07 0000:9C07 original=f606be9802
     test byte ptr ds:[INPUT_BITS], IN_XMINUS
 ; @09C0C 0000:9C0C original=7510
     JNE_SHORT loc_09C1E
 ; @09C0E 0000:9C0E original=803e9ea301
-    cmp byte ptr ds:[AUTO_XPLUS_A39E], 1
+    cmp byte ptr ds:[CLAMP_X_LOW_SEEN], 1
 ; @09C13 0000:9C13 original=7509
     JNE_SHORT loc_09C1E
 ; @09C15 0000:9C15 original=e8ef09
     CALL_NEAR IncRecordXTwice_0A607
 ; @09C18 0000:9C18 original=c70660a30100
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09C1E 0000:9C1E original=f606be9801
     test byte ptr ds:[INPUT_BITS], IN_XPLUS
 ; @09C23 0000:9C23 original=7510
     JNE_SHORT loc_09C35
 ; @09C25 0000:9C25 original=803e9fa301
-    cmp byte ptr ds:[AUTO_XMINUS_A39F], 1
+    cmp byte ptr ds:[CLAMP_X_HIGH_SEEN], 1
 ; @09C2A 0000:9C2A original=7509
     JNE_SHORT loc_09C35
 ; @09C2C 0000:9C2C original=e8ca09
     CALL_NEAR DecRecordXTwice_0A5F9
 ; @09C2F 0000:9C2F original=c70660a30100
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09C35 0000:9C35 original=33c0
     xor ax, ax
 ; @09C37 0000:9C37 original=833e66a9ff
@@ -2313,13 +2287,13 @@ loc_0D390 equ 05390h
 ; @09C89 0000:9C89 original=c3 runtime CFG evidence
     ret
 ; @09C8A 0000:9C8A original=c70660a30100 runtime CFG evidence
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09C90 0000:9C90 original=e97709 runtime CFG evidence
-    JMP_NEAR loc_0A60A
+    JMP_NEAR IncRecordXBelowMax_0A60A
 ; @09C93 0000:9C93 original=c70660a30100 runtime CFG evidence
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09C99 0000:9C99 original=e96e09 runtime CFG evidence
-    JMP_NEAR loc_0A60A
+    JMP_NEAR IncRecordXBelowMax_0A60A
 ; @09C9C 0000:9C9C original=833e242301 runtime CFG evidence
     cmp word ptr ds:[COUNT_GATE_2324], 1
 ; @09CA1 0000:9CA1 original=7501 runtime CFG evidence
@@ -2327,13 +2301,13 @@ loc_0D390 equ 05390h
 ; @09CA3 0000:9CA3 original=c3 runtime CFG evidence
     ret
 ; @09CA4 0000:9CA4 original=c70660a30100 runtime CFG evidence
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09CAA 0000:9CAA original=e94f09 runtime CFG evidence
-    JMP_NEAR loc_0A5FC
+    JMP_NEAR DecRecordXUnlessZero_0A5FC
 ; @09CAD 0000:9CAD original=c70660a30100 runtime CFG evidence
-    mov word ptr ds:[X_ADJUST_TAKEN], 1
+    mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1
 ; @09CB3 0000:9CB3 original=e94609 runtime CFG evidence
-    JMP_NEAR loc_0A5FC
+    JMP_NEAR DecRecordXUnlessZero_0A5FC
 ; sub_0000_9CB6
 ; @09CB6 0000:9CB6 original=e840b3
     CALL_NEAR loc_04FF9
@@ -2397,12 +2371,14 @@ loc_0D390 equ 05390h
 ; caller9BDF falls through9BE2, whose9CD9 ADD kills them before use. Trigger means requested input/adjustment,
 ; not proof that a coordinate changed.
 ; Evidence: metadata/symbols.json
+; Movement input or a prior adjustment path triggers advancement, not a
+; comparison of old/new coordinates. A360 can survive a skipped 9C01 call.
 ; @09CF1 0000:9CF1 original=f606be980f
-    test byte ptr ds:[098BEh], 0Fh
+    test byte ptr ds:[INPUT_BITS], INPUT_MOVEMENT_MASK
 ; @09CF6 0000:9CF6 original=7508
     JNE_SHORT loc_09D00
 ; @09CF8 0000:9CF8 original=833e60a300
-    cmp word ptr ds:[0A360h], 0
+    cmp word ptr ds:[X_ADJUST_PATH_TAKEN], 0
 ; @09CFD 0000:9CFD original=7501
     JNE_SHORT loc_09D00
 ; @09CFF 0000:9CFF original=c3
@@ -2741,9 +2717,9 @@ loc_0D390 equ 05390h
 ; record valid. Shared global A398 means non-reentrant without external protection.
 ; Evidence: metadata/symbols.json
 ; @09FAF 0000:9FAF original=c6069ea300
-    mov byte ptr ds:[AUTO_XPLUS_A39E], 0
+    mov byte ptr ds:[CLAMP_X_LOW_SEEN], 0
 ; @09FB4 0000:9FB4 original=c6069fa300
-    mov byte ptr ds:[AUTO_XMINUS_A39F], 0
+    mov byte ptr ds:[CLAMP_X_HIGH_SEEN], 0
 ; @09FB9 0000:9FB9 original=a19aa3
     mov ax, word ptr ds:[OFFSET_X_GROUP_A]
 ; @09FBC 0000:9FBC original=a398a3
@@ -2790,6 +2766,9 @@ loc_0D390 equ 05390h
     JNE_SHORT loc_09FF0
 ; @09FEF 0000:9FEF original=c3
     ret
+; Full word index, no bound check. Primary field 2384 can be assigned 3
+; (9EB0/9EFC); D183 increments then D19C jumps to9FAF. Three pairs per
+; adjacent group do NOT prove a 0..2 caller bound.
 ; @09FF0 0000:9FF0 original=8b4608
     mov ax, word ptr ss:[bp + OFFSET_PAIR_INDEX_08]
 ; @09FF3 0000:9FF3 original=d1e0

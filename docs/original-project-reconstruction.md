@@ -272,3 +272,12 @@ leaves at different measured addresses in two builds. This is a modern semantic
 representation under explicit preconditions, not evidence of original C or structs.
 The exact ASM remains independent; prefix/trampoline labs are retained as research.
 No original main image or historical ABI bridge participates in the clean runtime.
+
+## Shared semantic vocabulary, not historical topology
+
+`include/MOVEMENT.INC` consolidates reviewed record-coordinate, history and
+placement constants across modern physical chunks. It emits no bytes. This is a
+modern source-maintenance choice, not evidence of an original include or module.
+The9FEA placement tail crosses R04/R05 atA000: one semantic body spans two modern
+containers. The exact verifier audits the include as literal EQU definitions and
+records its hash; segment topology and ordered relocations remain unchanged.

@@ -81,8 +81,13 @@ A second [history-transfer cluster](docs/history-transfer-swap.md) now composes 
 the first in four opt-in ASM/C research packages. Its larger ABI cost is measured;
 production remains unchanged. See [reproduction](research/history_transfer/README.md).
 
-The current architecture separates the exact ASM oracle from an experimental
+A preserved prior experiment separates the exact ASM oracle from an experimental
 [clean C world](docs/clean-c-reconstruction-experiment.md). Four history leaves
 compose into two reverified C clusters without historical ABI adapters. Its native
 DOS demonstration is source-only; it is not yet a reconstructed whole game.
 The earlier swap labs remain verification research, not the target runtime.
+
+Current work is **semantic exact-ASM reconstruction**. All C/conversion/port research
+is paused. Improve the maintained assembly's names, fields, tables, contracts and
+caller/dataflow relationships while keeping the normalized main and both audio
+modules byte-exact. Prior research remains evidence, not the active work queue.

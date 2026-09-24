@@ -9,7 +9,8 @@ import shutil
 
 def assemble():
     manifest=read_json(ROOT/'metadata/source-map.json'); output=bytearray(); build=ROOT/'build'/'asm'; build.mkdir(parents=True,exist_ok=True)
-    shutil.copyfile(ROOT/'include/ENCODING.INC',build/'ENCODING.INC')
+    for include in ('ENCODING.INC','MOVEMENT.INC'):
+        shutil.copyfile(ROOT/'include'/include,build/include)
     for part in manifest['chunks']:
         path=ROOT/part['path']; name=path.name; shutil.copyfile(path,build/name)
         obj=build/(path.stem+'.OBJ');obj.unlink(missing_ok=True)

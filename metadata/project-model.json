@@ -5,6 +5,7 @@
     "SEMANTICALLY_SUPPORTED",
     "HISTORICALLY_PROVEN"
   ],
+  "current_phase": "Semantic exact ASM; all conversion/port research paused and retained as evidence.",
   "data_structures": [
     {
       "confidence": "SEMANTICALLY_SUPPORTED_FIELDS_ONLY",
@@ -29,6 +30,13 @@
   ],
   "historical_filenames": [],
   "modern_layout": "18 physical source chunks of approximately 8192 bytes (cuts avoid instructions) chosen to bound DOS assembler memory. Not original modules.",
+  "modern_semantic_includes": [
+    {
+      "historical_claim": false,
+      "path": "include/MOVEMENT.INC",
+      "purpose": "Reviewed shared movement/history/placement constants; literal EQU only"
+    }
+  ],
   "observed_code_frames": [
     {
       "linear_base": 0,

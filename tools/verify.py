@@ -21,6 +21,11 @@ def audit_source():
     mapping=read_json(ROOT/'metadata/source-map.json');cursor=0;counts={};instructions=[]
     from bootstrap_source import macros
     if (ROOT/'include/ENCODING.INC').read_text()!=macros():raise ValueError('Encoding macros changed; review their semantics and update the audited definition.')
+    # Shared semantic vocabulary may define constants only, never emit code.
+    for line in (ROOT/'include/MOVEMENT.INC').read_text().splitlines():
+        value=line.split(';',1)[0].strip()
+        if value and not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]* equ 0[0-9A-F]+h',value):
+            raise ValueError('Non-constant directive in MOVEMENT.INC')
     for chunk in mapping['chunks']:
         if chunk['start']!=cursor:raise ValueError('Source chunk gap')
         p=ROOT/chunk['path'];text=p.read_text(); lower=text.lower()
@@ -67,7 +72,7 @@ def verify(rebuild=True):
         criterion='All normalized pre-startup program-image bytes, length, entry and ordered 123 relocation sites. Packed whole-file identity NOT claimed.',
         original_image_bytes=len(expected),assembled_bytes=len(actual),expected_sha256=sha(expected),actual_sha256=sha(actual),
         mismatching_ranges=differences,source_bytes=counts,whole_original_file_match='NOT_BUILT',
-        source_sha256={p.relative_to(ROOT).as_posix():sha(p.read_bytes()) for p in sorted((ROOT/'src').glob('*.ASM'))})
+        source_sha256={p.relative_to(ROOT).as_posix():sha(p.read_bytes()) for p in sorted(list((ROOT/'src').glob('*.ASM'))+list((ROOT/'include').glob('*.INC')))})
     write_json(ROOT/'build/verification.json',receipt)
     if differences:raise AssertionError('Binary mismatch; see build/verification.json: '+str(differences[:3]))
     print('PASS: exact normalized image;',len(actual),'bytes;',counts)

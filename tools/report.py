@@ -91,8 +91,14 @@ def generate():
         toolchain=dict(assembler_candidate='TASM 1.0',linker_candidate='TLINK 2.0',candidate_compatibility='MEASURED',historical_assembler='UNKNOWN',historical_linker='UNKNOWN',object_format_candidate='OMF; not preserved in packed asset',cpu='Decoded/assembled subset accepted by .8086; full game CPU requirement still unproven',memory_model='Observed multiple real-mode code frames and mixed near/far calls; no standard C memory-model claim'),
         observed_code_frames=frames,relocation_segment_words=[dict(value=k,count=v) for k,v in sorted(reloc_targets.items())],
         original_object_boundaries=[],historical_filenames=[],modern_layout='18 physical source chunks of approximately 8192 bytes (cuts avoid instructions) chosen to bound DOS assembler memory. Not original modules.',
+        modern_semantic_includes=[dict(path='include/MOVEMENT.INC',purpose='Reviewed shared movement/history/placement constants; literal EQU only',historical_claim=False)],
         patterns=patterns,data_structures=[dict(name='word_fields_2_and_4',facts=['SS:[BP+2] and SS:[BP+4] independently updated at A5DB..A615','A571 reads those fields and writes DS:[BX+2/4] plus10','The two bases need not have the same segment','Record size, signed coordinate meaning and entity role UNKNOWN'],confidence='SEMANTICALLY_SUPPORTED_FIELDS_ONLY'),dict(name='buffer_state_0610',facts=['DS:0410..060F is a 512-byte input buffer','DS:0610 cursor; DS:0612 BX scratch; DS:0614 byte scratch','DOS file handle at DS:0240','Error path restores SP from CS:0242'],confidence='SEMANTICALLY_SUPPORTED')],
         unresolved=['Original assembler/linker versions, flags and names','Original object ordering and module boundaries','Original pre-packing MZ header and relocation order','BSS ownership and maximum memory requirements','Remaining indirect call/jump tables and runtime-written code','Overlay directory and optional driver extraction'])
+    # Retain prior research evidence when refreshing the exact-ASM model.
+    previous_model=read_json(ROOT/'metadata/project-model.json')
+    if 'reconstruction_worlds' in previous_model:
+        model['reconstruction_worlds']=previous_model['reconstruction_worlds']
+    model['current_phase']='Semantic exact ASM; all conversion/port research paused and retained as evidence.'
     write_json(ROOT/'metadata/project-model.json',model)
     write_json(ROOT/'metadata/file-map.json',dict(files=[dict(path='assets/'+name,regions=[dict(start=0,end=h['header_bytes'],kind='MZ_HEADER'),dict(start=h['header_bytes'],end=h['executable_bytes'],kind='NESTED_PACKED_LOAD_MODULE'),dict(start=h['executable_bytes'],end=h['executable_bytes']+h['appended_bytes'],kind='APPENDED_DATA_UNKNOWN_INTERNAL_LAYOUT')]) for name,h in [('OVERKILL',m['mz']),('OVERKILL.EXE',read_json(ROOT/'metadata/launcher-extraction.json')['mz'])]]))
     # Searchable offline browser. All text goes through textContent, no HTML from assets.

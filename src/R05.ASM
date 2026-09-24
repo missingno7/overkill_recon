@@ -1,26 +1,14 @@
 ; Modern physical chunk, NOT an inferred original object boundary.
 include ENCODING.INC
+include MOVEMENT.INC
 part05 segment byte public 'CODE'
 assume cs:part05,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+UpdatePlacementXOffsetsAtRecordEdges_0A616 equ 0616h
 ; Offset-placement use of field+8 does not define its role in other record types.
-AUTO_XMINUS_A39F equ 0A39Fh
-AUTO_XPLUS_A39E equ 0A39Eh
-OFFSET_RECORD_X_MAX equ 0C0h
-OFFSET_X_WORK equ 0A398h
 ApplyPositionHistoryToRecords_0A031 equ 031h
 ; Modern position-history symbols; see metadata/position-history.json.
-HISTORY_READ_CURSOR_15 equ 0A33Ch
-HISTORY_READ_CURSOR_31 equ 0A33Eh
-HISTORY_RECORD_SLOT_15 equ 0A962h
-HISTORY_RECORD_SLOT_31 equ 0A964h
 ; Modern record/state symbols; evidence in metadata/record-movement.json.
-MOVE_MODE_A47C equ 0A47Ch
-RECORD_X_MAX equ 0B0h
-RECORD_Y_MAX equ 0C0h
-RECORD_Y_MIN equ 020h
-REC_X equ 04h
-REC_Y equ 02h
 DecRecordYByMode_0A5D1 equ 05D1h
 IncRecordYTwice_0A5EA equ 05EAh
 DecRecordXTwice_0A5F9 equ 05F9h
@@ -191,11 +179,11 @@ loc_0BFA8 equ 01FA8h
 loc_0BFB2 equ 01FB2h
 loc_0BFB9 equ 01FB9h
 loc_0BFC7 equ 01FC7h
-CopyWords2And4Plus10_0A571 equ 0571h
-DecBP2Unless20_0A5DB equ 05DBh
-DecBP4UnlessZero_0A5FC equ 05FCh
-IncBP2UnlessC0_0A5ED equ 05EDh
-IncBP4BelowB0_0A60A equ 060Ah
+CopyRecordPositionPlus10_0A571 equ 0571h
+DecRecordYUnlessAtMin_0A5DB equ 05DBh
+DecRecordXUnlessZero_0A5FC equ 05FCh
+IncRecordYUnlessAtMax_0A5ED equ 05EDh
+IncRecordXBelowMax_0A60A equ 060Ah
 loc_04A65 equ 0AA65h
 loc_04CED equ 0ACEDh
 loc_04D64 equ 0AD64h
@@ -276,7 +264,7 @@ loc_0A61F equ 061Fh
 loc_0A63B equ 063Bh
 loc_0A63C equ 063Ch
 loc_0A647 equ 0647h
-loc_0A648 equ 0648h
+UpdatePlacementXGroupA_0A648 equ 0648h
 loc_0A65D equ 065Dh
 loc_0A662 equ 0662h
 loc_0A66A equ 066Ah
@@ -370,6 +358,8 @@ loc_0C054 equ 02054h
 loc_0C591 equ 02591h
 loc_0CB1C equ 02B1Ch
 loc_0F797 equ 05797h
+; Continuation of PlaceRecordFromOffsetPair_09FEA across the physical
+; chunk boundary: same routine, not a separate clamp/feedback producer.
 ; @0A000 0000:A000 original=ad
     lodsw
 ; @0A001 0000:A001 original=034604
@@ -387,15 +377,15 @@ loc_0F797 equ 05797h
 ; @0A015 0000:A015 original=c747040000
     mov word ptr ds:[bx + REC_X], 0
 ; @0A01A 0000:A01A original=c6069ea301
-    mov byte ptr ds:[AUTO_XPLUS_A39E], 1
+    mov byte ptr ds:[CLAMP_X_LOW_SEEN], 1
 ; @0A01F 0000:A01F original=817f04c000
-    cmp word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX
+    cmp word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
 ; @0A024 0000:A024 original=7e0a
     JLE_SHORT loc_0A030
 ; @0A026 0000:A026 original=c74704c000
-    mov word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX
+    mov word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
 ; @0A02B 0000:A02B original=c6069fa301
-    mov byte ptr ds:[AUTO_XMINUS_A39F], 1
+    mov byte ptr ds:[CLAMP_X_HIGH_SEEN], 1
 ; @0A030 0000:A030 original=c3
     ret
 ; sub_0000_A031
@@ -1036,7 +1026,7 @@ loc_0F797 equ 05797h
 ; @0A525 0000:A525 original=e81fd0
     CALL_NEAR loc_07547
 ; @0A528 0000:A528 original=e84600
-    CALL_NEAR CopyWords2And4Plus10_0A571
+    CALL_NEAR CopyRecordPositionPlus10_0A571
 ; @0A52B 0000:A52B original=55
     push bp
 ; @0A52C 0000:A52C original=8beb
@@ -1081,7 +1071,7 @@ loc_0F797 equ 05797h
     dec word ptr ds:[0A960h]
 ; @0A570 0000:A570 original=c3
     ret
-; CopyWords2And4Plus10
+; CopyRecordPositionPlus10
 ; First DS:[BX+4] = SS:[BP+4]+10 modulo 65536; then DS:[BX+2] = SS:[BP+2]+10. AX holds the
 ; latter result. Order matters if memory aliases. Flags are from the second ADD.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
@@ -1123,7 +1113,7 @@ loc_0F797 equ 05797h
 ; @0A5A4 0000:A5A4 original=e843ff
     CALL_NEAR loc_0A4EA
 ; @0A5A7 0000:A5A7 original=e8c7ff
-    CALL_NEAR CopyWords2And4Plus10_0A571
+    CALL_NEAR CopyRecordPositionPlus10_0A571
 ; @0A5AA 0000:A5AA original=836704fc
     and word ptr ds:[bx + REC_X], 0FFFCh
 ; @0A5AE 0000:A5AE original=c747080800
@@ -1135,7 +1125,7 @@ loc_0F797 equ 05797h
 ; @0A5BC 0000:A5BC original=e82bff
     CALL_NEAR loc_0A4EA
 ; @0A5BF 0000:A5BF original=e8afff
-    CALL_NEAR CopyWords2And4Plus10_0A571
+    CALL_NEAR CopyRecordPositionPlus10_0A571
 ; @0A5C2 0000:A5C2 original=836704fc
     and word ptr ds:[bx + REC_X], 0FFFCh
 ; @0A5C6 0000:A5C6 original=c747080800
@@ -1146,7 +1136,7 @@ loc_0F797 equ 05797h
     ret
 ; sub_0000_A5D1
 ; DecRecordYByMode (modern reconstruction name)
-; DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise
+; DS:A47C==0: apply DecRecordYUnlessAtMin twice via CALL into next instruction then fallthrough re-entry. Otherwise
 ; decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags
 ; changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
 ; Evidence: metadata/symbols.json
@@ -1155,8 +1145,8 @@ loc_0F797 equ 05797h
 ; @0A5D6 0000:A5D6 original=750e
     JNE_SHORT loc_0A5E6
 ; @0A5D8 0000:A5D8 original=e80000
-    CALL_NEAR DecBP2Unless20_0A5DB
-; DecBP2Unless20
+    CALL_NEAR DecRecordYUnlessAtMin_0A5DB
+; DecRecordYUnlessAtMin
 ; Decrement word SS:[BP+2] modulo 65536 unless it equals 0020h. This is NOT a saturating
 ; lower-bound clamp: values below 20h also decrement. CMP always overwrites CF; DEC
 ; preserves that CF.
@@ -1177,13 +1167,13 @@ loc_0F797 equ 05797h
     ret
 ; sub_0000_A5EA
 ; IncRecordYTwice (modern reconstruction name)
-; Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh
+; Call IncRecordYUnlessAtMax, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh
 ; becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF
 ; preserved; normal outer near return.
 ; Evidence: metadata/symbols.json
 ; @0A5EA 0000:A5EA original=e80000
-    CALL_NEAR IncBP2UnlessC0_0A5ED
-; IncBP2UnlessC0
+    CALL_NEAR IncRecordYUnlessAtMax_0A5ED
+; IncRecordYUnlessAtMax
 ; Increment word SS:[BP+2] modulo 65536 unless it equals 00C0h; values above C0h also
 ; increment.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
@@ -1199,13 +1189,13 @@ loc_0F797 equ 05797h
     ret
 ; sub_0000_A5F9
 ; DecRecordXTwice (modern reconstruction name)
-; Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word.
+; Call DecRecordXUnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word.
 ; Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain
 ; in ASM.
 ; Evidence: metadata/symbols.json
 ; @0A5F9 0000:A5F9 original=e80000
-    CALL_NEAR DecBP4UnlessZero_0A5FC
-; DecBP4UnlessZero
+    CALL_NEAR DecRecordXUnlessZero_0A5FC
+; DecRecordXUnlessZero
 ; Decrement unsigned word SS:[BP+4] unless zero; register state preserved, flags changed by
 ; CMP/DEC.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
@@ -1221,13 +1211,13 @@ loc_0F797 equ 05797h
     ret
 ; sub_0000_A607
 ; IncRecordXTwice (modern reconstruction name)
-; Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below
+; Call IncRecordXBelowMax then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below
 ; it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near
 ; return.
 ; Evidence: metadata/symbols.json
 ; @0A607 0000:A607 original=e80000
-    CALL_NEAR IncBP4BelowB0_0A60A
-; IncBP4BelowB0
+    CALL_NEAR IncRecordXBelowMax_0A60A
+; IncRecordXBelowMax
 ; Increment unsigned word SS:[BP+4] iff below 00B0h; values at or above B0h remain
 ; unchanged.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
@@ -1242,6 +1232,14 @@ loc_0F797 equ 05797h
 ; @0A615 0000:A615 original=c3
     ret
 ; sub_0000_A616
+; UpdatePlacementXOffsetsAtRecordEdges (modern reconstruction name)
+; Near entry. If unsigned DS:2350<=B6 return. Otherwise call UpdatePlacementXGroupA, then re-read SS:[BP+REC_X].
+; If X==B0 and IN_XPLUS set, increment DS:OFFSET_X_GROUP_B unless exactly8; otherwise decrement it unless
+; exactly0. Group A is updated first, preserving sequential alias effects of the original loads. Word operations
+; wrap at16 bits; guards are equality-only, not saturation. Preserve all general/segment registers and IF/DF;
+; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from
+; call stack. Requires valid callee state; normal caller record/state do not overlap.
+; Evidence: metadata/symbols.json
 ; @0A616 0000:A616 original=813e5023b600
     cmp word ptr ds:[02350h], 0B6h
 ; @0A61C 0000:A61C original=7701
@@ -1249,58 +1247,65 @@ loc_0F797 equ 05797h
 ; @0A61E 0000:A61E original=c3
     ret
 ; @0A61F 0000:A61F original=e82600
-    CALL_NEAR loc_0A648
+    CALL_NEAR UpdatePlacementXGroupA_0A648
 ; @0A622 0000:A622 original=817e04b000
-    cmp word ptr ss:[bp + 4], 0B0h
+    cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
 ; @0A627 0000:A627 original=7513
     JNE_SHORT loc_0A63C
 ; @0A629 0000:A629 original=f606be9801
-    test byte ptr ds:[098BEh], 1
+    test byte ptr ds:[INPUT_BITS], IN_XPLUS
 ; @0A62E 0000:A62E original=740c
     JE_SHORT loc_0A63C
 ; @0A630 0000:A630 original=833e9ca308
-    cmp word ptr ds:[0A39Ch], 8
+    cmp word ptr ds:[OFFSET_X_GROUP_B], 8
 ; @0A635 0000:A635 original=7404
     JE_SHORT loc_0A63B
 ; @0A637 0000:A637 original=ff069ca3
-    inc word ptr ds:[0A39Ch]
+    inc word ptr ds:[OFFSET_X_GROUP_B]
 ; @0A63B 0000:A63B original=c3
     ret
 ; @0A63C 0000:A63C original=833e9ca300
-    cmp word ptr ds:[0A39Ch], 0
+    cmp word ptr ds:[OFFSET_X_GROUP_B], 0
 ; @0A641 0000:A641 original=7404
     JE_SHORT loc_0A647
 ; @0A643 0000:A643 original=ff0e9ca3
-    dec word ptr ds:[0A39Ch]
+    dec word ptr ds:[OFFSET_X_GROUP_B]
 ; @0A647 0000:A647 original=c3
     ret
 ; sub_0000_A648
+; UpdatePlacementXGroupA (modern reconstruction name)
+; Near leaf. Read SS:[BP+REC_X] and DS:INPUT_BITS. If X==0 and IN_XMINUS set, decrement DS:OFFSET_X_GROUP_A
+; unless exactlyFFF8h; otherwise increment it unless exactly0. All arithmetic wraps at16 bits. Equality
+; sentinels do not validate or clamp arbitrary accumulator values. Preserve all general and segment registers,
+; IF/DF; arithmetic flags path-dependent. Normal near return; only group-A word may be written. Requires valid
+; record/state storage; no hardware effects.
+; Evidence: metadata/symbols.json
 ; @0A648 0000:A648 original=837e0400
-    cmp word ptr ss:[bp + 4], 0
+    cmp word ptr ss:[bp + REC_X], 0
 ; @0A64C 0000:A64C original=7514
     JNE_SHORT loc_0A662
 ; @0A64E 0000:A64E original=f606be9802
-    test byte ptr ds:[098BEh], 2
+    test byte ptr ds:[INPUT_BITS], IN_XMINUS
 ; @0A653 0000:A653 original=740d
     JE_SHORT loc_0A662
 ; @0A655 0000:A655 original=833e9aa3f8
-    cmp word ptr ds:[0A39Ah], -8
+    cmp word ptr ds:[OFFSET_X_GROUP_A], -8
 ; @0A65A 0000:A65A original=7501
     JNE_SHORT loc_0A65D
 ; @0A65C 0000:A65C original=c3
     ret
 ; @0A65D 0000:A65D original=ff0e9aa3
-    dec word ptr ds:[0A39Ah]
+    dec word ptr ds:[OFFSET_X_GROUP_A]
 ; @0A661 0000:A661 original=c3
     ret
 ; @0A662 0000:A662 original=833e9aa300
-    cmp word ptr ds:[0A39Ah], 0
+    cmp word ptr ds:[OFFSET_X_GROUP_A], 0
 ; @0A667 0000:A667 original=7501
     JNE_SHORT loc_0A66A
 ; @0A669 0000:A669 original=c3
     ret
 ; @0A66A 0000:A66A original=ff069aa3
-    inc word ptr ds:[0A39Ah]
+    inc word ptr ds:[OFFSET_X_GROUP_A]
 ; @0A66E 0000:A66E original=c3
     ret
 ; sub_0000_A66F

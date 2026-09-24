@@ -21,6 +21,33 @@ class RecordMovementTests(unittest.TestCase):
         self.assertEqual(u.reg_read(UC_X86_REG_IP),0xf800);self.assertEqual(u.reg_read(UC_X86_REG_SP),0xff02)
     def word(self,u,p):return int.from_bytes(u.mem_read(p,2),'little')
     def put(self,u,p,v):u.mem_write(p,struct.pack('<H',v&65535))
+    def test_placement_offset_leaf_and_parent(self):
+        # Normal caller record and globals are disjoint. Include invalid-range
+        # accumulator values to distinguish equality sentinels from saturation.
+        u=self.machine()
+        offsets=(0,1,7,8,9,0x7fff,0x8000,0xfff7,0xfff8,0xfff9,0xffff)
+        cases=itertools.product((0xa648,0xa616),(0,0xb6,0xb7,0xffff),
+                                (0,1,0xaf,0xb0,0xb1,0xffff),(0,1,2,3,0xf0,0xff),offsets)
+        for ip,gate,x,bits,a in cases:
+            for b in (a,(~a)&65535):
+                self.reset(u);self.put(u,0x42350,gate);self.put(u,0x50104,x)
+                u.mem_write(0x498be,bytes([bits]));self.put(u,0x4a39a,a);self.put(u,0x4a39c,b)
+                expected=bytearray(u.mem_read(0x40000,65536));aa=a;bb=b
+                if ip==0xa648 or gate>0xb6:
+                    if x==0 and bits&2: aa=a if a==0xfff8 else (a-1)&65535
+                    else: aa=a if a==0 else (a+1)&65535
+                    if ip==0xa616:
+                        if x==0xb0 and bits&1: bb=b if b==8 else (b+1)&65535
+                        else: bb=b if b==0 else (b-1)&65535
+                struct.pack_into('<HH',expected,0xa39a,aa,bb)
+                self.run_at(u,ip)
+                self.assertEqual(bytes(u.mem_read(0x40000,65536)),bytes(expected))
+                self.assertEqual(self.word(u,0x50104),x)
+                for r,v in dict(AX=0x1234,BX=0x5678,CX=0x9abc,DX=0xdef0,
+                                BP=0x100,SI=0x200,DI=0x300,DS=0x4000,SS=0x5000,ES=0x6000).items():
+                    self.assertEqual(u.reg_read(globals()['UC_X86_REG_'+r]),v)
+                self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&0x600,0x600)
+
     def test_record_searches_every_start_and_free_position(self):
         for ip,base,count,cursor in [(0x7524,0x23b4,35,0x95d8),(0x7573,0x2b5c,34,0x95da)]:
             u=self.machine();busy=bytearray([0xa5]*(count*56))

@@ -157,6 +157,27 @@
       "0000:A607"
     ]
   },
+  "placement_offset_updates": {
+    "closed_region": {
+      "bytes": 89,
+      "end_exclusive": "0000:A66F",
+      "start": "0000:A616"
+    },
+    "dataflow": [
+      "C4A1/C4A7 initialize groupA/B to0",
+      "9BC7 callsA616 when unsignedA47C<=1",
+      "A616 requires unsigned2350>B6; callsA648 before updatingB",
+      "9FAF uses twiceA/B as displacement throughA398",
+      "9FEA records signed-clamp sentinels consumed by9C01"
+    ],
+    "entries": {
+      "0000:A616": "UpdatePlacementXOffsetsAtRecordEdges",
+      "0000:A648": "UpdatePlacementXGroupA"
+    },
+    "flags": "A648 output killed atA622;A616 output killed at9BCA. Other flags remain documented in contracts.",
+    "range_claim": "No all-path invariant proved. Equality-only updates preserve -8..0 and0..8 if initially in those intervals and ordinary nonaliasing holds; arbitrary states wrap instead of saturating.",
+    "tests": "tests/test_records.py::test_placement_offset_leaf_and_parent"
+  },
   "pool_semantics": {
     "confidence": "PROVEN under stated cursor preconditions",
     "evidence": [
@@ -196,5 +217,30 @@
     }
   ],
   "schema": 1,
-  "scope": "Static record search and coordinate-adjustment cluster; no entity type or player identity asserted"
+  "scope": "Static record search and coordinate-adjustment cluster; no entity type or player identity asserted",
+  "semantic_source_pass": {
+    "limits": "Equality-guarded Y steps are not clamps; signed placement bound192 differs from unsigned X movement bound176. Accumulator all-path domains unproved.",
+    "mode_dispatch": "9A06 unresolved; no proven0..4 index invariant. Recover unknown increments and targets before claiming closure.",
+    "pool_capacity": "C450 andD1AE unchecked Pool A results remain UNKNOWN; setup adjacency is not a capacity proof.",
+    "refined_helpers": [
+      "0000:A571",
+      "0000:A5DB",
+      "0000:A5ED",
+      "0000:A5FC",
+      "0000:A60A"
+    ],
+    "shared_include": "include/MOVEMENT.INC",
+    "tail_callers": [
+      "0000:9C90",
+      "0000:9C99",
+      "0000:9CAA",
+      "0000:9CB3"
+    ],
+    "x_displacement_sites": [
+      "0000:A616",
+      "0000:A648",
+      "0000:C4A1",
+      "0000:C4A7"
+    ]
+  }
 }

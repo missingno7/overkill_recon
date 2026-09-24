@@ -4656,7 +4656,7 @@
     {
       "address": "0000:9BE2",
       "depth": 2,
-      "name": "sub_0000_9BE2"
+      "name": "StoreApplyHistoryAndConditionalPlacement"
     },
     {
       "address": "0000:9BFB",
@@ -4806,7 +4806,7 @@
     {
       "address": "0000:A571",
       "depth": 0,
-      "name": "CopyWords2And4Plus10"
+      "name": "CopyRecordPositionPlus10"
     },
     {
       "address": "0000:A584",
@@ -4821,7 +4821,7 @@
     {
       "address": "0000:A5DB",
       "depth": 0,
-      "name": "DecBP2Unless20"
+      "name": "DecRecordYUnlessAtMin"
     },
     {
       "address": "0000:A5EA",
@@ -4831,7 +4831,7 @@
     {
       "address": "0000:A5ED",
       "depth": 0,
-      "name": "IncBP2UnlessC0"
+      "name": "IncRecordYUnlessAtMax"
     },
     {
       "address": "0000:A5F9",
@@ -4841,7 +4841,7 @@
     {
       "address": "0000:A5FC",
       "depth": 0,
-      "name": "DecBP4UnlessZero"
+      "name": "DecRecordXUnlessZero"
     },
     {
       "address": "0000:A607",
@@ -4851,17 +4851,17 @@
     {
       "address": "0000:A60A",
       "depth": 0,
-      "name": "IncBP4BelowB0"
+      "name": "IncRecordXBelowMax"
     },
     {
       "address": "0000:A616",
       "depth": 1,
-      "name": "sub_0000_A616"
+      "name": "UpdatePlacementXOffsetsAtRecordEdges"
     },
     {
       "address": "0000:A648",
       "depth": 0,
-      "name": "sub_0000_A648"
+      "name": "UpdatePlacementXGroupA"
     },
     {
       "address": "0000:A66F",

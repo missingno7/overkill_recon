@@ -78,7 +78,7 @@
         "Boundary and wraparound tests use SS distinct from DS."
       ],
       "kind": "function",
-      "name": "DecBP2Unless20"
+      "name": "DecRecordYUnlessAtMin"
     },
     {
       "address": "0000:A5ED",
@@ -104,7 +104,7 @@
         "Boundary and wraparound tests."
       ],
       "kind": "function",
-      "name": "IncBP2UnlessC0"
+      "name": "IncRecordYUnlessAtMax"
     },
     {
       "address": "0000:A5FC",
@@ -130,7 +130,7 @@
         "Boundary and wraparound tests."
       ],
       "kind": "function",
-      "name": "DecBP4UnlessZero"
+      "name": "DecRecordXUnlessZero"
     },
     {
       "address": "0000:A60A",
@@ -156,7 +156,7 @@
         "Boundary tests include 7FFFh, 8000h and FFFFh."
       ],
       "kind": "function",
-      "name": "IncBP4BelowB0"
+      "name": "IncRecordXBelowMax"
     },
     {
       "address": "0000:A571",
@@ -183,7 +183,7 @@
         "No coordinate, object-type or record-size claim yet."
       ],
       "kind": "function",
-      "name": "CopyWords2And4Plus10"
+      "name": "CopyRecordPositionPlus10"
     },
     {
       "address": "0000:066C",
@@ -753,7 +753,7 @@
         "operation": "PROVEN",
         "semantic_name": "STRONG"
       },
-      "contract": "DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.",
+      "contract": "DS:A47C==0: apply DecRecordYUnlessAtMin twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.",
       "evidence": [
         "9B76 calls after input bit8; BP=237C from9B5B.",
         "Tests cover guard crossing, wrap, separate DS/SS and nonzero mode bypass."
@@ -779,7 +779,7 @@
         "operation": "PROVEN",
         "semantic_name": "STRONG"
       },
-      "contract": "Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.",
+      "contract": "Call IncRecordYUnlessAtMax, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.",
       "evidence": [
         "A5EA CALL has displacement0: callee starts at the pushed return IP.",
         "9B80 caller overwrites flags with next input TEST.",
@@ -806,7 +806,7 @@
         "operation": "PROVEN",
         "semantic_name": "STRONG"
       },
-      "contract": "Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.",
+      "contract": "Call DecRecordXUnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.",
       "evidence": [
         "A5F9 CALL displacement0;9B94 and9C2C call sites.",
         "Caller9C2C writes A360 then XOR AX overwrites flags.",
@@ -833,7 +833,7 @@
         "operation": "PROVEN",
         "semantic_name": "STRONG"
       },
-      "contract": "Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.",
+      "contract": "Call IncRecordXBelowMax then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.",
       "evidence": [
         "A607 CALL displacement0;9B8A and9C15 callers.",
         "Tests distinguish AFh->B0h from unguarded+2."
@@ -1029,6 +1029,88 @@
       ],
       "kind": "function",
       "name": "PlaceFourRecordsFromOffsetTables"
+    },
+    {
+      "address": "0000:9BE2",
+      "category": "ASM_COUPLED",
+      "claim_axes": {
+        "BYTE_EXACT": "verified by full-image build",
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "concern": "GAME_LOGIC",
+      "concern_evidence": "Composes reviewed coordinate-history and record-placement operations; no hardware effects in this closed callee set.",
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Near entry9BE2 and fallthrough from9BDF. StorePositionHistory, then ApplyPositionHistoryToRecords, then PlaceFourRecordsFromOffsetTables iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor advance at this entry. Requires reviewed callee memory/segment/DF preconditions, including valid source record and selected table/index pairs. Preserve BP,CX,DX,DS,SS; ES becomes CS:9596 and DI follows the history store. AX,BX,SI and flags are path-dependent as documented in callees; not declared dead. Skipping placement preserves old clamp feedback and A398. No external hardware effects; shared state makes reentrancy unproved.",
+      "evidence": [
+        "Calls at978C,CFF0,D171 setBP=237C;9B2E flows through9BDF after optional adjustment and cursor advance.",
+        "9BED bytes7508 target9BF7 (placement call), not9BFA. BDAC nonzero enables placement.",
+        "tests/test_history.py checks all gate branches, complete DS/ES effects with absent slots, preserved state and normal stack return. Leaf tests separately cover present/aliased slots."
+      ],
+      "kind": "function",
+      "name": "StoreApplyHistoryAndConditionalPlacement"
+    },
+    {
+      "address": "0000:A648",
+      "category": "C_READY_WITH_ENV",
+      "claim_axes": {
+        "BYTE_EXACT": "verified by full-image build",
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "concern": "GAME_LOGIC",
+      "concern_evidence": "Updates placement displacement words consumed by9FAF, from record X and movement input; no hardware access.",
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Near leaf. Read SS:[BP+REC_X] and DS:INPUT_BITS. If X==0 and IN_XMINUS set, decrement DS:OFFSET_X_GROUP_A unless exactlyFFF8h; otherwise increment it unless exactly0. All arithmetic wraps at16 bits. Equality sentinels do not validate or clamp arbitrary accumulator values. Preserve all general and segment registers, IF/DF; arithmetic flags path-dependent. Normal near return; only group-A word may be written. Requires valid record/state storage; no hardware effects.",
+      "evidence": [
+        "Only known direct caller A61F; A616 gates invocation by unsigned2350>B6.",
+        "A39A is initialized0 atC4A1 and later copied to placement scratchA398 by9FAF.",
+        "tests/test_records.py covers entry independently, edge/input branches, out-of-range and wrap values, memory footprint and preserved state."
+      ],
+      "kind": "function",
+      "name": "UpdatePlacementXGroupA"
+    },
+    {
+      "address": "0000:A616",
+      "category": "C_READY_WITH_ENV",
+      "claim_axes": {
+        "BYTE_EXACT": "verified by full-image build",
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "concern": "GAME_LOGIC",
+      "concern_evidence": "Updates placement displacement words consumed by9FAF, from record X and movement input; no hardware access.",
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Near entry. If unsigned DS:2350<=B6 return. Otherwise call UpdatePlacementXGroupA, then re-read SS:[BP+REC_X]. If X==B0 and IN_XPLUS set, increment DS:OFFSET_X_GROUP_B unless exactly8; otherwise decrement it unless exactly0. Group A is updated first, preserving sequential alias effects of the original loads. Word operations wrap at16 bits; guards are equality-only, not saturation. Preserve all general/segment registers and IF/DF; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from call stack. Requires valid callee state; normal caller record/state do not overlap.",
+      "evidence": [
+        "Only known direct caller9BC7 runs when unsignedMOVE_MODE_A47C<=1; BP=237C in enclosing9B2E.",
+        "Returned flags are overwritten immediately by9BCA CMP; A648 flags are overwritten byA622 CMP.",
+        "A39C initialized0 atC4A7;9FAF copies groupA then groupB into its placement scratch.",
+        "tests/test_records.py reverifies the combined A616+A648 region, not just the leaf."
+      ],
+      "kind": "function",
+      "name": "UpdatePlacementXOffsetsAtRecordEdges"
     }
   ]
 }

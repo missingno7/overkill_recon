@@ -79,7 +79,7 @@ These rules apply only inside overkill_recon.
 - Revisit generic record/game behavior regularly; avoid indefinite driver work.
 - No broad C work, mixed C/ASM game, port APIs or new analysis framework in this phase.
 
-## Two-world experimental reconstruction (latest user direction)
+## Previous two-world experimental reconstruction (paused)
 
 - World A remains the independent byte-exact ASM oracle with unchanged acceptance.
 - World B under research/clean_reconstruction may reconstruct reviewed game-logic
@@ -89,3 +89,16 @@ These rules apply only inside overkill_recon.
 - Existing swap labs remain verifier/conversion research, not the clean architecture.
 - Record typed-state proof domains and unresolved parent dependencies explicitly.
   Do not claim original ABI outputs dead merely because C no longer exposes them.
+
+## Current phase: semantic exact ASM
+
+- All C, swap-unit, matching-diff, mixed-build and port research is paused, including
+  earlier research-local exceptions. Preserve the research as evidence; do not expand it.
+- Prioritize meaningful routine/local/state/field/table symbols in maintained ASM,
+  with exact bytes and relocation order unchanged. Semantic relationships must spread
+  into callers and shared-state consumers, not remain only in external notes.
+- Use many Luna workers for narrow independent static investigations when requested;
+  workers gather evidence and do not mass-edit. The supervisor reconciles claims,
+  edits the smallest supported source batch and runs exact verification.
+- Do not infer entity roles, global index bounds or historical module ownership from
+  attractive names or adjacent table data. Keep remaining uncertainty explicit.

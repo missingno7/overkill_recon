@@ -1,5 +1,6 @@
 ; Modern physical chunk, NOT an inferred original object boundary.
 include ENCODING.INC
+include MOVEMENT.INC
 part06 segment byte public 'CODE'
 assume cs:part06,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
@@ -61,7 +62,7 @@ FindFreeRecordPoolA_07524 equ 0B524h
 loc_08517 equ 0C517h
 loc_0859E equ 0C59Eh
 InitPositionHistory_099BF equ 0D9BFh
-loc_09BE2 equ 0DBE2h
+StoreApplyHistoryAndConditionalPlacement_09BE2 equ 0DBE2h
 loc_09DB9 equ 0DDB9h
 loc_0A067 equ 0E067h
 loc_0A212 equ 0E212h
@@ -849,9 +850,9 @@ loc_0ECC9 equ 02CC9h
 ; @0C49B 0000:C49B original=c7067ea90000
     mov word ptr ds:[0A97Eh], 0
 ; @0C4A1 0000:C4A1 original=c7069aa30000
-    mov word ptr ds:[0A39Ah], 0
+    mov word ptr ds:[OFFSET_X_GROUP_A], 0
 ; @0C4A7 0000:C4A7 original=c7069ca30000
-    mov word ptr ds:[0A39Ch], 0
+    mov word ptr ds:[OFFSET_X_GROUP_B], 0
 ; @0C4AD 0000:C4AD original=c7068897ffff
     mov word ptr ds:[09788h], 0FFFFh
 ; @0C4B3 0000:C4B3 original=e803d9
@@ -2958,7 +2959,7 @@ loc_0ECC9 equ 02CC9h
 ; @0CFED 0000:CFED original=bd7c23
     mov bp, 0237Ch
 ; @0CFF0 0000:CFF0 original=e8efcb
-    CALL_NEAR loc_09BE2
+    CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2
 ; @0CFF3 0000:CFF3 original=e84ad9
     CALL_NEAR loc_0A940
 ; @0CFF6 0000:CFF6 original=c70606be0000
@@ -3153,7 +3154,7 @@ loc_0ECC9 equ 02CC9h
 ; @0D16E 0000:D16E original=bd7c23
     mov bp, 0237Ch
 ; @0D171 0000:D171 original=e86eca
-    CALL_NEAR loc_09BE2
+    CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2
 ; @0D174 0000:D174 original=833e7e2360
     cmp word ptr ds:[0237Eh], 060h
 ; @0D179 0000:D179 original=7401

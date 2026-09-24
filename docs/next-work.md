@@ -144,7 +144,7 @@ original cluster. Before another C unit, establish caller-visible progress-regis
 liveness after9BE8 and the9FAF field+8 bounds. A larger closed boundary may reduce
 ABI surface; do not assume every helper should become a separate C function.
 
-## Clean-world priority supersedes adapter growth
+## Previous clean-world pass (paused)
 
 [The clean C experiment](clean-c-reconstruction-experiment.md) verifies four history
 leaves and two C-to-C clusters under a typed initialized-state relation. Next review
@@ -152,3 +152,21 @@ leaves and two C-to-C clusters under a typed initialized-state relation. Next re
 parent-visible values. Grow semantic closure; do not add historical register or
 continuation adapters. Keep original malformed-state behavior in the exact oracle
 and do not overstate the clean proof domain. The standalone C demo is not the game.
+
+## Active exact-ASM priority
+
+All C, swap/matching, mixed-build and port research above is paused and preserved.
+Continue the named history/movement/placement cluster in maintained ASM:
+
+- Recover the predecessor constraints atD183 and whether assigned index3 at9EB0/
+  9EFC reaches placement. The primary field is not globally limited to0..2.
+- Recover A47C producer/target islands around9A16..9AFD before declaring9A06's
+  apparent five-entry dispatch closed. Preserve possible overlapping entries.
+- Trace selected-record lifetimes and pool-A capacity before stronger entity names.
+- Prove parent-visible scratch/flags at978C, CFF0 andD171;9BE2 now has a reviewed
+  composition contract, but no blanket dead-register claim.
+- A616/A648 now have reviewed contracts and a reverified producer cluster. Follow
+  their surrounding9B2E paths (9CB6 and mode dispatch) without inferring global
+  accumulator or mode bounds solely from equality guards.
+
+See position-history.md for the exact gate, feedback lifetimes and source changes.

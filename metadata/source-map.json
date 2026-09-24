@@ -28643,7 +28643,7 @@
           "end": 18019,
           "kind": "instruction",
           "start": 18017,
-          "text": "db 02Eh ; decoded segment override\n    xlat"
+          "text": "db 02Eh\nxlat"
         },
         {
           "address": "0000:4663",
@@ -28699,7 +28699,7 @@
           "end": 18035,
           "kind": "instruction",
           "start": 18033,
-          "text": "db 02Eh ; decoded segment override\n    xlat"
+          "text": "db 02Eh\nxlat"
         },
         {
           "address": "0000:4673",
@@ -65282,7 +65282,7 @@
           "end": 38799,
           "kind": "instruction",
           "start": 38796,
-          "text": "CALL_NEAR loc_09BE2"
+          "text": "CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2"
         },
         {
           "address": "0000:978F",
@@ -66563,7 +66563,7 @@
           "end": 39424,
           "kind": "instruction",
           "start": 39419,
-          "text": "mov byte ptr ds:[098BEh], 0"
+          "text": "mov byte ptr ds:[INPUT_BITS], 0"
         },
         {
           "address": "0000:9A00",
@@ -67077,7 +67077,7 @@
           "end": 39882,
           "kind": "instruction",
           "start": 39879,
-          "text": "CALL_NEAR loc_0A616"
+          "text": "CALL_NEAR UpdatePlacementXOffsetsAtRecordEdges_0A616"
         },
         {
           "address": "0000:9BCA",
@@ -67217,7 +67217,7 @@
           "end": 39943,
           "kind": "instruction",
           "start": 39937,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 0"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 0"
         },
         {
           "address": "0000:9C07",
@@ -67238,7 +67238,7 @@
           "end": 39955,
           "kind": "instruction",
           "start": 39950,
-          "text": "cmp byte ptr ds:[AUTO_XPLUS_A39E], 1"
+          "text": "cmp byte ptr ds:[CLAMP_X_LOW_SEEN], 1"
         },
         {
           "address": "0000:9C13",
@@ -67259,7 +67259,7 @@
           "end": 39966,
           "kind": "instruction",
           "start": 39960,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9C1E",
@@ -67280,7 +67280,7 @@
           "end": 39978,
           "kind": "instruction",
           "start": 39973,
-          "text": "cmp byte ptr ds:[AUTO_XMINUS_A39F], 1"
+          "text": "cmp byte ptr ds:[CLAMP_X_HIGH_SEEN], 1"
         },
         {
           "address": "0000:9C2A",
@@ -67301,7 +67301,7 @@
           "end": 39989,
           "kind": "instruction",
           "start": 39983,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9C35",
@@ -67536,7 +67536,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40074,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9C90",
@@ -67544,7 +67544,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40080,
-          "text": "JMP_NEAR loc_0A60A"
+          "text": "JMP_NEAR IncRecordXBelowMax_0A60A"
         },
         {
           "address": "0000:9C93",
@@ -67552,7 +67552,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40083,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9C99",
@@ -67560,7 +67560,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40089,
-          "text": "JMP_NEAR loc_0A60A"
+          "text": "JMP_NEAR IncRecordXBelowMax_0A60A"
         },
         {
           "address": "0000:9C9C",
@@ -67592,7 +67592,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40100,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9CAA",
@@ -67600,7 +67600,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40106,
-          "text": "JMP_NEAR loc_0A5FC"
+          "text": "JMP_NEAR DecRecordXUnlessZero_0A5FC"
         },
         {
           "address": "0000:9CAD",
@@ -67608,7 +67608,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40109,
-          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+          "text": "mov word ptr ds:[X_ADJUST_PATH_TAKEN], 1"
         },
         {
           "address": "0000:9CB3",
@@ -67616,7 +67616,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40115,
-          "text": "JMP_NEAR loc_0A5FC"
+          "text": "JMP_NEAR DecRecordXUnlessZero_0A5FC"
         },
         {
           "address": "0000:9CB6",
@@ -67784,7 +67784,7 @@
           "end": 40182,
           "kind": "instruction",
           "start": 40177,
-          "text": "test byte ptr ds:[098BEh], 0Fh"
+          "text": "test byte ptr ds:[INPUT_BITS], INPUT_MOVEMENT_MASK"
         },
         {
           "address": "0000:9CF6",
@@ -67798,7 +67798,7 @@
           "end": 40189,
           "kind": "instruction",
           "start": 40184,
-          "text": "cmp word ptr ds:[0A360h], 0"
+          "text": "cmp word ptr ds:[X_ADJUST_PATH_TAKEN], 0"
         },
         {
           "address": "0000:9CFD",
@@ -68950,14 +68950,14 @@
           "end": 40884,
           "kind": "instruction",
           "start": 40879,
-          "text": "mov byte ptr ds:[AUTO_XPLUS_A39E], 0"
+          "text": "mov byte ptr ds:[CLAMP_X_LOW_SEEN], 0"
         },
         {
           "address": "0000:9FB4",
           "end": 40889,
           "kind": "instruction",
           "start": 40884,
-          "text": "mov byte ptr ds:[AUTO_XMINUS_A39F], 0"
+          "text": "mov byte ptr ds:[CLAMP_X_HIGH_SEEN], 0"
         },
         {
           "address": "0000:9FB9",
@@ -69202,14 +69202,14 @@
           "end": 40991,
           "kind": "instruction",
           "start": 40986,
-          "text": "mov byte ptr ds:[AUTO_XPLUS_A39E], 1"
+          "text": "mov byte ptr ds:[CLAMP_X_LOW_SEEN], 1"
         },
         {
           "address": "0000:A01F",
           "end": 40996,
           "kind": "instruction",
           "start": 40991,
-          "text": "cmp word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX"
+          "text": "cmp word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX"
         },
         {
           "address": "0000:A024",
@@ -69223,14 +69223,14 @@
           "end": 41003,
           "kind": "instruction",
           "start": 40998,
-          "text": "mov word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX"
+          "text": "mov word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX"
         },
         {
           "address": "0000:A02B",
           "end": 41008,
           "kind": "instruction",
           "start": 41003,
-          "text": "mov byte ptr ds:[AUTO_XMINUS_A39F], 1"
+          "text": "mov byte ptr ds:[CLAMP_X_HIGH_SEEN], 1"
         },
         {
           "address": "0000:A030",
@@ -71338,7 +71338,7 @@
           "end": 42283,
           "kind": "instruction",
           "start": 42280,
-          "text": "CALL_NEAR CopyWords2And4Plus10_0A571"
+          "text": "CALL_NEAR CopyRecordPositionPlus10_0A571"
         },
         {
           "address": "0000:A52B",
@@ -71625,7 +71625,7 @@
           "end": 42410,
           "kind": "instruction",
           "start": 42407,
-          "text": "CALL_NEAR CopyWords2And4Plus10_0A571"
+          "text": "CALL_NEAR CopyRecordPositionPlus10_0A571"
         },
         {
           "address": "0000:A5AA",
@@ -71667,7 +71667,7 @@
           "end": 42434,
           "kind": "instruction",
           "start": 42431,
-          "text": "CALL_NEAR CopyWords2And4Plus10_0A571"
+          "text": "CALL_NEAR CopyRecordPositionPlus10_0A571"
         },
         {
           "address": "0000:A5C2",
@@ -71716,7 +71716,7 @@
           "end": 42459,
           "kind": "instruction",
           "start": 42456,
-          "text": "CALL_NEAR DecBP2Unless20_0A5DB"
+          "text": "CALL_NEAR DecRecordYUnlessAtMin_0A5DB"
         },
         {
           "address": "0000:A5DB",
@@ -71772,7 +71772,7 @@
           "end": 42477,
           "kind": "instruction",
           "start": 42474,
-          "text": "CALL_NEAR IncBP2UnlessC0_0A5ED"
+          "text": "CALL_NEAR IncRecordYUnlessAtMax_0A5ED"
         },
         {
           "address": "0000:A5ED",
@@ -71814,7 +71814,7 @@
           "end": 42492,
           "kind": "instruction",
           "start": 42489,
-          "text": "CALL_NEAR DecBP4UnlessZero_0A5FC"
+          "text": "CALL_NEAR DecRecordXUnlessZero_0A5FC"
         },
         {
           "address": "0000:A5FC",
@@ -71856,7 +71856,7 @@
           "end": 42506,
           "kind": "instruction",
           "start": 42503,
-          "text": "CALL_NEAR IncBP4BelowB0_0A60A"
+          "text": "CALL_NEAR IncRecordXBelowMax_0A60A"
         },
         {
           "address": "0000:A60A",
@@ -71919,14 +71919,14 @@
           "end": 42530,
           "kind": "instruction",
           "start": 42527,
-          "text": "CALL_NEAR loc_0A648"
+          "text": "CALL_NEAR UpdatePlacementXGroupA_0A648"
         },
         {
           "address": "0000:A622",
           "end": 42535,
           "kind": "instruction",
           "start": 42530,
-          "text": "cmp word ptr ss:[bp + 4], 0B0h"
+          "text": "cmp word ptr ss:[bp + REC_X], RECORD_X_MAX"
         },
         {
           "address": "0000:A627",
@@ -71940,7 +71940,7 @@
           "end": 42542,
           "kind": "instruction",
           "start": 42537,
-          "text": "test byte ptr ds:[098BEh], 1"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XPLUS"
         },
         {
           "address": "0000:A62E",
@@ -71954,7 +71954,7 @@
           "end": 42549,
           "kind": "instruction",
           "start": 42544,
-          "text": "cmp word ptr ds:[0A39Ch], 8"
+          "text": "cmp word ptr ds:[OFFSET_X_GROUP_B], 8"
         },
         {
           "address": "0000:A635",
@@ -71968,7 +71968,7 @@
           "end": 42555,
           "kind": "instruction",
           "start": 42551,
-          "text": "inc word ptr ds:[0A39Ch]"
+          "text": "inc word ptr ds:[OFFSET_X_GROUP_B]"
         },
         {
           "address": "0000:A63B",
@@ -71982,7 +71982,7 @@
           "end": 42561,
           "kind": "instruction",
           "start": 42556,
-          "text": "cmp word ptr ds:[0A39Ch], 0"
+          "text": "cmp word ptr ds:[OFFSET_X_GROUP_B], 0"
         },
         {
           "address": "0000:A641",
@@ -71996,7 +71996,7 @@
           "end": 42567,
           "kind": "instruction",
           "start": 42563,
-          "text": "dec word ptr ds:[0A39Ch]"
+          "text": "dec word ptr ds:[OFFSET_X_GROUP_B]"
         },
         {
           "address": "0000:A647",
@@ -72010,7 +72010,7 @@
           "end": 42572,
           "kind": "instruction",
           "start": 42568,
-          "text": "cmp word ptr ss:[bp + 4], 0"
+          "text": "cmp word ptr ss:[bp + REC_X], 0"
         },
         {
           "address": "0000:A64C",
@@ -72024,7 +72024,7 @@
           "end": 42579,
           "kind": "instruction",
           "start": 42574,
-          "text": "test byte ptr ds:[098BEh], 2"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XMINUS"
         },
         {
           "address": "0000:A653",
@@ -72038,7 +72038,7 @@
           "end": 42586,
           "kind": "instruction",
           "start": 42581,
-          "text": "cmp word ptr ds:[0A39Ah], -8"
+          "text": "cmp word ptr ds:[OFFSET_X_GROUP_A], -8"
         },
         {
           "address": "0000:A65A",
@@ -72059,7 +72059,7 @@
           "end": 42593,
           "kind": "instruction",
           "start": 42589,
-          "text": "dec word ptr ds:[0A39Ah]"
+          "text": "dec word ptr ds:[OFFSET_X_GROUP_A]"
         },
         {
           "address": "0000:A661",
@@ -72073,7 +72073,7 @@
           "end": 42599,
           "kind": "instruction",
           "start": 42594,
-          "text": "cmp word ptr ds:[0A39Ah], 0"
+          "text": "cmp word ptr ds:[OFFSET_X_GROUP_A], 0"
         },
         {
           "address": "0000:A667",
@@ -72094,7 +72094,7 @@
           "end": 42606,
           "kind": "instruction",
           "start": 42602,
-          "text": "inc word ptr ds:[0A39Ah]"
+          "text": "inc word ptr ds:[OFFSET_X_GROUP_A]"
         },
         {
           "address": "0000:A66E",
@@ -85038,14 +85038,14 @@
           "end": 50343,
           "kind": "instruction",
           "start": 50337,
-          "text": "mov word ptr ds:[0A39Ah], 0"
+          "text": "mov word ptr ds:[OFFSET_X_GROUP_A], 0"
         },
         {
           "address": "0000:C4A7",
           "end": 50349,
           "kind": "instruction",
           "start": 50343,
-          "text": "mov word ptr ds:[0A39Ch], 0"
+          "text": "mov word ptr ds:[OFFSET_X_GROUP_B], 0"
         },
         {
           "address": "0000:C4AD",
@@ -92188,7 +92188,7 @@
           "end": 53235,
           "kind": "instruction",
           "start": 53232,
-          "text": "CALL_NEAR loc_09BE2"
+          "text": "CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2"
         },
         {
           "address": "0000:CFF3",
@@ -92857,7 +92857,7 @@
           "end": 53620,
           "kind": "instruction",
           "start": 53617,
-          "text": "CALL_NEAR loc_09BE2"
+          "text": "CALL_NEAR StoreApplyHistoryAndConditionalPlacement_09BE2"
         },
         {
           "address": "0000:D174",

@@ -286,6 +286,21 @@ Evidence:
 - Startup95D3 clears DF;95D5/95DA set DS/SS from CS9596. These are local preconditions, not an all-path segment/DF proof.
 - tests/test_history.py checks whole buffers, distinct segments, word wrap and cursor initialization.
 
+## StoreApplyHistoryAndConditionalPlacement (0000:9BE2)
+
+Near entry9BE2 and fallthrough from9BDF. StorePositionHistory, then ApplyPositionHistoryToRecords, then PlaceFourRecordsFromOffsetTables iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor advance at this entry. Requires reviewed callee memory/segment/DF preconditions, including valid source record and selected table/index pairs. Preserve BP,CX,DX,DS,SS; ES becomes CS:9596 and DI follows the history store. AX,BX,SI and flags are path-dependent as documented in callees; not declared dead. Skipping placement preserves old clamp feedback and A398. No external hardware effects; shared state makes reentrancy unproved.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:95C9, 0000:9B2E, 0000:CF2E, 0000:D04D.
+Callees: 0000:9CD9, 0000:9FAF, 0000:A031.
+Register access inventory (decoder-derived, not a proven ABI): read eip, esp, flags, sp; write esp, flags, sp.
+
+Evidence:
+- Calls at978C,CFF0,D171 setBP=237C;9B2E flows through9BDF after optional adjustment and cursor advance.
+- 9BED bytes7508 target9BF7 (placement call), not9BFA. BDAC nonzero enables placement.
+- tests/test_history.py checks all gate branches, complete DS/ES effects with absent slots, preserved state and normal stack return. Leaf tests separately cover present/aliased slots.
+
 ## AdjustRecordXFromCounts (0000:9C01)
 
 Near entry; DS holds input/state, SS:BP the record. Clear DS:A360. If bit2 of DS:98BE absent and byte A39E==1, apply IncRecordXTwice and set A360=1. Then if bit1 absent and A39F==1, apply DecRecordXTwice and set A360=1. AH counts words A966/A96A notFFFF; AL counts A968/A96C notFFFF. If counts equal, return via shared44AF RET. Otherwise, if count difference magnitude2 or DS:2324!=1, set A360=1 and tail to one-step X increment for AH>AL, decrement otherwise. FlagA360 records taking an adjustment path even if bound prevents movement. Return AX=(AHcount<<8)|ALcount,BX=2*(ALcount+3*AHcount); CX,DX,SI,DI,BP and segments preserved. Flags are path-dependent; caller9BDF ignores them before overwrite in9CF1. Assumes normal entry and no asynchronous register corruption.
@@ -376,7 +391,7 @@ Evidence:
 - tests/test_history.py checks absent/present slots, coincident destinations, sequential aliasing and whole data-segment footprint.
 - Record entity roles and fourth-cursor consumer remain unknown.
 
-## CopyWords2And4Plus10 (0000:A571)
+## CopyRecordPositionPlus10 (0000:A571)
 
 First DS:[BX+4] = SS:[BP+4]+10 modulo 65536; then DS:[BX+2] = SS:[BP+2]+10. AX holds the latter result. Order matters if memory aliases. Flags are from the second ADD.
 
@@ -393,7 +408,7 @@ Evidence:
 
 ## DecRecordYByMode (0000:A5D1)
 
-DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
+DS:A47C==0: apply DecRecordYUnlessAtMin twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
 
 Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
@@ -405,7 +420,7 @@ Evidence:
 - 9B76 calls after input bit8; BP=237C from9B5B.
 - Tests cover guard crossing, wrap, separate DS/SS and nonzero mode bypass.
 
-## DecBP2Unless20 (0000:A5DB)
+## DecRecordYUnlessAtMin (0000:A5DB)
 
 Decrement word SS:[BP+2] modulo 65536 unless it equals 0020h. This is NOT a saturating lower-bound clamp: values below 20h also decrement. CMP always overwrites CF; DEC preserves that CF.
 
@@ -421,7 +436,7 @@ Evidence:
 
 ## IncRecordYTwice (0000:A5EA)
 
-Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.
+Call IncRecordYUnlessAtMax, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.
 
 Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
@@ -434,7 +449,7 @@ Evidence:
 - 9B80 caller overwrites flags with next input TEST.
 - tests/test_records.py proves two-step boundary/wrap behavior.
 
-## IncBP2UnlessC0 (0000:A5ED)
+## IncRecordYUnlessAtMax (0000:A5ED)
 
 Increment word SS:[BP+2] modulo 65536 unless it equals 00C0h; values above C0h also increment.
 
@@ -450,7 +465,7 @@ Evidence:
 
 ## DecRecordXTwice (0000:A5F9)
 
-Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.
+Call DecRecordXUnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.
 
 Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
@@ -463,7 +478,7 @@ Evidence:
 - Caller9C2C writes A360 then XOR AX overwrites flags.
 - Isolated tests include0,1,2 andFFFF.
 
-## DecBP4UnlessZero (0000:A5FC)
+## DecRecordXUnlessZero (0000:A5FC)
 
 Decrement unsigned word SS:[BP+4] unless zero; register state preserved, flags changed by CMP/DEC.
 
@@ -479,7 +494,7 @@ Evidence:
 
 ## IncRecordXTwice (0000:A607)
 
-Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.
+Call IncRecordXBelowMax then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.
 
 Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
@@ -491,7 +506,7 @@ Evidence:
 - A607 CALL displacement0;9B8A and9C15 callers.
 - Tests distinguish AFh->B0h from unguarded+2.
 
-## IncBP4BelowB0 (0000:A60A)
+## IncRecordXBelowMax (0000:A60A)
 
 Increment unsigned word SS:[BP+4] iff below 00B0h; values at or above B0h remain unchanged.
 
@@ -504,6 +519,37 @@ Register access inventory (decoder-derived, not a proven ABI): read bp, flags, s
 Evidence:
 - JB at A60F proves unsigned comparison.
 - Boundary tests include 7FFFh, 8000h and FFFFh.
+
+## UpdatePlacementXOffsetsAtRecordEdges (0000:A616)
+
+Near entry. If unsigned DS:2350<=B6 return. Otherwise call UpdatePlacementXGroupA, then re-read SS:[BP+REC_X]. If X==B0 and IN_XPLUS set, increment DS:OFFSET_X_GROUP_B unless exactly8; otherwise decrement it unless exactly0. Group A is updated first, preserving sequential alias effects of the original loads. Word operations wrap at16 bits; guards are equality-only, not saturation. Preserve all general/segment registers and IF/DF; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from call stack. Requires valid callee state; normal caller record/state do not overlap.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E.
+Callees: 0000:A648.
+Register access inventory (decoder-derived, not a proven ABI): read bp, eip, esp, flags, sp; write esp, flags, sp.
+
+Evidence:
+- Only known direct caller9BC7 runs when unsignedMOVE_MODE_A47C<=1; BP=237C in enclosing9B2E.
+- Returned flags are overwritten immediately by9BCA CMP; A648 flags are overwritten byA622 CMP.
+- A39C initialized0 atC4A7;9FAF copies groupA then groupB into its placement scratch.
+- tests/test_records.py reverifies the combined A616+A648 region, not just the leaf.
+
+## UpdatePlacementXGroupA (0000:A648)
+
+Near leaf. Read SS:[BP+REC_X] and DS:INPUT_BITS. If X==0 and IN_XMINUS set, decrement DS:OFFSET_X_GROUP_A unless exactlyFFF8h; otherwise increment it unless exactly0. All arithmetic wraps at16 bits. Equality sentinels do not validate or clamp arbitrary accumulator values. Preserve all general and segment registers, IF/DF; arithmetic flags path-dependent. Normal near return; only group-A word may be written. Requires valid record/state storage; no hardware effects.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:A616.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read bp, flags, sp; write flags, sp.
+
+Evidence:
+- Only known direct caller A61F; A616 gates invocation by unsigned2350>B6.
+- A39A is initialized0 atC4A1 and later copied to placement scratchA398 by9FAF.
+- tests/test_records.py covers entry independently, edge/input branches, out-of-range and wrap values, memory footprint and preserved state.
 
 ## UppercaseAsciiAL (0000:C7FE)
 
