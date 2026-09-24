@@ -255,3 +255,9 @@ static table data. Evidence and addresses: `metadata/record-movement.json`.
 This batch adds source vocabulary and static relationships, not new tested
 function contracts or graph boundaries. Next tests should cover both entries,
 all counter gates, modular underflow, the two-probe branch and sentinel wrapping.
+
+Local verification now covers 90 independent AC56 states and 120 AC3C composed
+states using the original helper bodies. It compares the full mapped memory,
+including near-call stack writes, register/segment effects, carry, IF/DF and SP.
+The synthetic domain uses disjoint record, scratch, stack and source memory.
+This proves the enumerated local cases, not a global caller-domain invariant.

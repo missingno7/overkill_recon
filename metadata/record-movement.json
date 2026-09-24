@@ -177,7 +177,25 @@
       "+24": "response word: 5 on entry; 0 on countdown transition to zero"
     },
     "region": "0000:AC3C..AC80",
-    "shared_exit": "AC54 CLC/RET"
+    "shared_exit": "AC54 CLC/RET",
+    "verification": {
+      "checks": [
+        "full 1 MiB mapped memory including return-address stack writes",
+        "SP and return IP",
+        "register and segment effects",
+        "carry and IF/DF"
+      ],
+      "closure": "AC3C..AC80 plus original 505B/5073 dependencies; AC56 independently entered; no helper stubs",
+      "domain": "Separate valid DS/SS/source segments; record fields disjoint from grid scratch and stack. Boundary enumeration, not exhaustive game-state proof.",
+      "states": {
+        "composed_probe": 120,
+        "response_entry": 90
+      },
+      "tests": [
+        "tests/test_grid_vectors.py::test_shared_response_entry_gates_wrap_and_complete_memory",
+        "tests/test_grid_vectors.py::test_grid_response_composed_region"
+      ]
+    }
   },
   "liveness": [
     {

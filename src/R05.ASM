@@ -2320,6 +2320,7 @@ loc_0F797 equ 05797h
     JNE_SHORT ProbeGridForRecordResponse_0AC3C
 ; @0AC39 0000:AC39 original=e908fe runtime CFG evidence
     JMP_NEAR loc_0AA44
+; Local original-code tests: tests/test_grid_vectors.py; both entries and composed callees.
 ; ProbeGridForRecordResponse: internal entry after AC28 gates, not a separate proven function.
 ; Probe base+13, then base+14 only if first attribute is zero and X low nibble !=0.
 ; Negative-Y FFFF sentinel is NOT checked here: +13 wraps to 000C.

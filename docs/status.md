@@ -59,10 +59,6 @@ Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigne
 
 Main reviewed data: 72 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.
 
-
-Semantic source follow-up: AC3C/AC56 now expose the shared grid/scan response
-path, scoped record counter/response fields and caller-specific sentinel handling.
-This is a static source-vocabulary batch, not additional reviewed-contract or
-instruction-byte coverage. Exact main and both optional-module comparisons PASS;
-known mismatches remain zero. Dynamic attribute-table extent is 256 bytes;
-resource identity and stronger gameplay role remain unknown.
+Grid/response local verification: 90 AC56 cases and 120 composed AC3C cases PASS.
+Full verifier PASS (44 tests, exact main/ordered relocations, both audio modules,
+and bounded original startup at 9690). No additional decoded-byte coverage claimed.

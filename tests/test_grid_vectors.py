@@ -59,6 +59,67 @@ class GridVectorTests(unittest.TestCase):
             for r,v in dict(BX=0x200,CX=0x9abc,DX=0xdef0,BP=0x100,DI=0x400,DS=0x4000,SS=0x5000,ES=0x6000).items():
                 self.assertEqual(u.reg_read(globals()['UC_X86_REG_'+r]),v)
             self.assertEqual(bytes(u.mem_read(0x40000,65536)),before)
+    def test_shared_response_entry_gates_wrap_and_complete_memory(self):
+        u=self.machine()
+        cases=itertools.product((0,1,0xffff),(0,1,2),(0,1),(0,1,2,0x8000,0xffff))
+        for gate,count_gate,optional,counter in cases:
+            self.reset(u)
+            self.put(u,0x4bedc,gate);self.put(u,0x42324,count_gate)
+            u.mem_write(0x498c0,bytes([optional]));u.mem_write(0x4beff,b'\x73')
+            self.put(u,0x50120,counter);self.put(u,0x50124,0xabcd)
+            expected=bytearray(u.mem_read(0,0x100000))
+            enabled=gate!=0 or count_gate==1
+            result=(counter-1)&65535 if enabled else counter
+            carry=enabled and result==0
+            if optional:expected[0x4beff]=14
+            struct.pack_into('<H',expected,0x50120,result)
+            struct.pack_into('<H',expected,0x50124,0 if carry else 5)
+            regs={r:u.reg_read(r) for r in (UC_X86_REG_AX,UC_X86_REG_BX,
+                UC_X86_REG_CX,UC_X86_REG_DX,UC_X86_REG_SI,UC_X86_REG_DI,
+                UC_X86_REG_BP,UC_X86_REG_DS,UC_X86_REG_ES,UC_X86_REG_SS)}
+            self.call(u,0xac56)
+            self.assertEqual(bytes(u.mem_read(0,0x100000)),bytes(expected))
+            self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&1,int(carry))
+            self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&0x600,0x600)
+            for r,value in regs.items():self.assertEqual(u.reg_read(r),value)
+
+    def test_grid_response_composed_region(self):
+        u=self.machine();self.put(u,0x19592,0x6000)
+        # Both attributes are independent bytes; include nonboolean values.
+        cases=itertools.product((0,1,15,16,0xffff),(0,0xffff),
+                                ((0,0),(0,1),(1,0),(255,2)),(0,1,2))
+        for x,y,attrs,counter in cases:
+            self.reset(u);self.put(u,0x50102,y);self.put(u,0x50104,x)
+            self.put(u,0x4234e,0);self.put(u,0x42350,0xfff2)
+            self.put(u,0x4bedc,1);self.put(u,0x42324,0)
+            self.put(u,0x50120,counter);self.put(u,0x50124,0xabcd)
+            u.mem_write(0x498c0,b'\x01');u.mem_write(0x4beff,b'\x73')
+            grid=0xffff if y&0x8000 else (0xfff2-13*(y>>4)+(x>>4))&65535
+            first=(grid+13)&65535;second=(first+1)&65535
+            u.mem_write(0x60000+first,b'\x11');u.mem_write(0x60000+second,b'\x22')
+            u.mem_write(0x4c3bb,bytes([attrs[0]]));u.mem_write(0x4c3cc,bytes([attrs[1]]))
+            second_read=attrs[0]==0 and (x&15)!=0
+            value=attrs[1] if second_read else attrs[0]
+            expected=bytearray(u.mem_read(0,0x100000))
+            struct.pack_into('<H',expected,0x4215a,y)
+            # The two near CALLs reuse this one stack word; last return is observable memory.
+            struct.pack_into('<H',expected,0x5fefe,0xac52 if second_read else 0xac45)
+            result=(counter-1)&65535;carry=value!=0 and result==0
+            if value:
+                expected[0x4beff]=14
+                struct.pack_into('<H',expected,0x50120,result)
+                struct.pack_into('<H',expected,0x50124,0 if carry else 5)
+            self.call(u,0xac3c)
+            self.assertEqual(bytes(u.mem_read(0,0x100000)),bytes(expected))
+            for r,v in dict(AX=value,BX=second if second_read else first,
+                    SI=0xc3cc if second_read else 0xc3bb,ES=0x6000,
+                    CX=0x9abc if y&0x8000 else 4*(y>>4),
+                    DX=0xdef0 if y&0x8000 else y>>4,
+                    BP=0x100,DI=0x400,DS=0x4000,SS=0x5000).items():
+                self.assertEqual(u.reg_read(globals()['UC_X86_REG_'+r]),v)
+            self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&1,int(carry))
+            self.assertEqual(u.reg_read(UC_X86_REG_EFLAGS)&0x600,0x600)
+
     def test_far_to_near_bridges_preserve_callee_effects_and_stack(self):
         u=self.machine()
         for bridge,target,reg in ((0x8d8b,0xa60a,UC_X86_REG_AX),(0x8d8e,0xc7fe,UC_X86_REG_BP)):

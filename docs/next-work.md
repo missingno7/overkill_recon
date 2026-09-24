@@ -193,9 +193,9 @@ See position-history.md for the exact gate, feedback lifetimes and source change
 
 ## Next discriminating local checks
 
-- Test AC3C internal probe and independently entered AC56 together, including
-  counter underflow and wrapped negative-Y sentinel. Keep AC54 shared; do not
-  force this into a single-entry historical function. Source names are now present.
+- AC3C/AC56 local tests now pass (210 cases), including counter underflow and
+  wrapped negative-Y sentinel. Next derive wider domains from callers. Keep AC54
+  shared; do not force this into a single-entry historical function.
 - Trace record +20/+24 initializers and the BEDC/98C0/BEFF gates before assigning
   stronger gameplay names. Recover the attribute patch streams selected at 0B9F.
 - Add a byte-guarded constructed-IRET edge from 1534:003B to 004E and a synthetic
