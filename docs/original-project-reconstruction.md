@@ -262,3 +262,13 @@ two independent ASM/C choices in a common1KiB prefix; only explicit entry gates
 change the normalized main. Production objects and exact bytes are unchanged.
 The101-byte ABI bridge for77 original bytes is evidence against assuming that
 small original helpers automatically yield cheap independent C boundaries.
+
+## Separate clean source world
+
+The latest [clean-world experiment](clean-c-reconstruction-experiment.md) treats
+historical functions as verification regions, not a required runtime decomposition.
+History uses typed position objects and ring indices. Normal C callers link to C
+leaves at different measured addresses in two builds. This is a modern semantic
+representation under explicit preconditions, not evidence of original C or structs.
+The exact ASM remains independent; prefix/trampoline labs are retained as research.
+No original main image or historical ABI bridge participates in the clean runtime.

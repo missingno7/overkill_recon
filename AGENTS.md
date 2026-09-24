@@ -78,3 +78,14 @@ These rules apply only inside overkill_recon.
 - Distinguish modified registers/flags from values actually consumed by callers.
 - Revisit generic record/game behavior regularly; avoid indefinite driver work.
 - No broad C work, mixed C/ASM game, port APIs or new analysis framework in this phase.
+
+## Two-world experimental reconstruction (latest user direction)
+
+- World A remains the independent byte-exact ASM oracle with unchanged acceptance.
+- World B under research/clean_reconstruction may reconstruct reviewed game-logic
+  leaves and callers as ordinary C, verified against World A. No runtime historical
+  ABI adapters, frozen-image substrate, matching DSL or calls back to unrecovered
+  gameplay ASM. This bounded exception does not authorize broad game conversion.
+- Existing swap labs remain verifier/conversion research, not the clean architecture.
+- Record typed-state proof domains and unresolved parent dependencies explicitly.
+  Do not claim original ABI outputs dead merely because C no longer exposes them.

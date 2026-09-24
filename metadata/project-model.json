@@ -342,6 +342,25 @@
       ]
     }
   },
+  "reconstruction_worlds": {
+    "clean_experiment": {
+      "acceptance": "explicit typed-state semantic equivalence; ordinary C dependencies",
+      "evidence": "research/clean_reconstruction/results/regions.json",
+      "historical_claim": false,
+      "largest_original_region_bytes": 172,
+      "original_image_runtime_dependency": false,
+      "path": "research/clean_reconstruction",
+      "runtime_historical_abi_adapters": 0,
+      "verified_clusters": 2,
+      "verified_leaves": 4,
+      "whole_game": false
+    },
+    "exact_oracle": {
+      "acceptance": "byte-exact normalized ASM and separate audio modules",
+      "unchanged": true
+    },
+    "swap_labs": "Preserved conversion/verification laboratories, not target runtime architecture"
+  },
   "relocation_segment_words": [
     {
       "count": 51,
@@ -376,18 +395,6 @@
       "value": 8943
     }
   ],
-  "research_history_transfer_swap": {
-    "abi_bridge_bytes": 101,
-    "boundary": "known-graph closed9BE2 +9CD9 +A031, continuation9BE8",
-    "c_bytes": 210,
-    "evidence": "research/history_transfer/results/boundary.json",
-    "historical_claim": false,
-    "next_question": "caller-visible progress-register liveness; potentially larger closed boundary",
-    "original_bytes": 77,
-    "outcome": "SWAP_VERIFIED_C under stated preconditions",
-    "production_changed": false,
-    "scope": "research/history_transfer only"
-  },
   "research_policy": {
     "execution_cap": "0000:97B2 first gameplay entry",
     "exhaustive_game_state_coverage_required": false,

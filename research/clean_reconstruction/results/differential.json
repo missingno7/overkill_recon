@@ -1,0 +1,67 @@
+{
+  "comparison": "Typed positions, normalized cursors, ordered semantic writes, complete non-object memory guards and per-world normal return/stack; two linked C layouts independently compared with original ASM",
+  "counts": {
+    "advance": 36864,
+    "apply": 2176,
+    "init": 7,
+    "store": 2176,
+    "store_apply": 2176,
+    "update": 2176
+  },
+  "coverage": {
+    "advance": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 92,
+      "original_instructions": 22
+    },
+    "apply": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 47,
+      "original_instructions": 17
+    },
+    "init": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 55,
+      "original_instructions": 16
+    },
+    "store": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 24,
+      "original_instructions": 9
+    },
+    "store_apply": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 77,
+      "original_instructions": 28
+    },
+    "update": {
+      "all_instruction_sites_exercised": true,
+      "original_bytes": 172,
+      "original_instructions": 51
+    }
+  },
+  "deepest_stack_bytes": {
+    "base": 24,
+    "moved": 24,
+    "oracle": 2
+  },
+  "individual_test_states": 45575,
+  "largest_region": {
+    "bytes": 172,
+    "instructions": 51
+  },
+  "negative_controls": [
+    "Changed leaf ADD8 to9 rejected by whole update-cluster test",
+    "Reversed store/apply calls, correct callee arguments and unchanged leaves, rejected by whole update-cluster test"
+  ],
+  "not_claimed": [
+    "Historical register/flag ABI equivalence",
+    "Uninitialized or malformed offset-domain equivalence",
+    "Pointer/control-cell corruption equivalence",
+    "Arbitrary concurrent mutation",
+    "Whole game or original startup integration"
+  ],
+  "proof_domain": "Initialized valid ring indices; typed whole Position aliases permitted; metadata/pointer arrays disjoint; original DF0; no async mutation",
+  "sequence_updates": 120,
+  "status": "PASS"
+}

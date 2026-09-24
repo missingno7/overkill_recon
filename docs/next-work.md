@@ -143,3 +143,12 @@ in four combinations with the first unit. Its101-byte bridge exceeds the77-byte
 original cluster. Before another C unit, establish caller-visible progress-register
 liveness after9BE8 and the9FAF field+8 bounds. A larger closed boundary may reduce
 ABI surface; do not assume every helper should become a separate C function.
+
+## Clean-world priority supersedes adapter growth
+
+[The clean C experiment](clean-c-reconstruction-experiment.md) verifies four history
+leaves and two C-to-C clusters under a typed initialized-state relation. Next review
+9BE8..9BFA and the9FAF/9FEA dependencies: field+8 bounds, record lifetime and actual
+parent-visible values. Grow semantic closure; do not add historical register or
+continuation adapters. Keep original malformed-state behavior in the exact oracle
+and do not overstate the clean proof domain. The standalone C demo is not the game.

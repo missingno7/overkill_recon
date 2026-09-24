@@ -80,3 +80,9 @@ advance in an opt-in research executable; the production exact ASM build is unch
 A second [history-transfer cluster](docs/history-transfer-swap.md) now composes with
 the first in four opt-in ASM/C research packages. Its larger ABI cost is measured;
 production remains unchanged. See [reproduction](research/history_transfer/README.md).
+
+The current architecture separates the exact ASM oracle from an experimental
+[clean C world](docs/clean-c-reconstruction-experiment.md). Four history leaves
+compose into two reverified C clusters without historical ABI adapters. Its native
+DOS demonstration is source-only; it is not yet a reconstructed whole game.
+The earlier swap labs remain verification research, not the target runtime.

@@ -1,0 +1,295 @@
+{
+  "domain": [
+    "Initializer requires source outside history; initialized history thereafter has indices0..47",
+    "Position objects may coincide wholly; source and selected positions may be ring samples",
+    "Pointer-array and cursor metadata storage disjoint from positions",
+    "Original DS=SS=CS9596 and DF0 as established by startup; no async mutation"
+  ],
+  "excluded": [
+    "Malformed/off-ring cursor equivalence",
+    "Partial-word overlaps and corruption of selectors/cursors via position stores",
+    "Historical GP/flag ABI outputs: retained in oracle, not silently claimed dead",
+    "Whole game or original9690 startup integration"
+  ],
+  "hidden_coupling": [
+    "Initialization uses X+9 while later stores use X+8",
+    "No request still overwrites current history entry",
+    "Selected objects can alias each other/source/ring; order matters",
+    "Second cluster entry9BE2 maps to normal history_store_apply; update9BDF also advances first"
+  ],
+  "interpretation": "Two-world bottom-up composition works for this explicit semantic domain. This is not a global register-deadness proof or a complete reconstructed game.",
+  "metrics": {
+    "dos_process_entry_exit_asm_modules": 1,
+    "historical_abi_adapters": 0,
+    "historical_address_dependencies": 0,
+    "largest_verified_region_bytes": 172,
+    "largest_verified_region_instructions": 51,
+    "platform_asm_game_boundaries": 0,
+    "remaining_gameplay_asm_dependencies": 0,
+    "verified_c_clusters": 2,
+    "verified_c_leaves": 4
+  },
+  "next_parent": "9BE8..9BFA optional9FAF/9FEA offset placement: first establish field+8 table bounds, slot lifetime and parent-visible semantics. 9B2E also has unreviewed input/movement dependencies.",
+  "oracle_sha256": "65a549e2202a467da966d4821bd937ba50cc61ce541836135898bb779e398714",
+  "regions": {
+    "advance": {
+      "c_calls": [],
+      "c_function": "history_advance",
+      "c_instructions": 31,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 92,
+        "original_instructions": 22
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:9BDF",
+          "target": "0000:9CF1"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 40269,
+          "sha256": "36ae000084d54f5f54c64df9790828fe78a18df4dc6c9fa60fe7306d1e2082be",
+          "start": 40177
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "Input low nibble OR adjustment triggers four cursor advances; mapping address steps4 to index steps1 is valid only in initialized ring domain.",
+      "status": "LEAF_C_VERIFIED",
+      "tests": 36864
+    },
+    "apply": {
+      "c_calls": [],
+      "c_function": "history_apply",
+      "c_instructions": 35,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 47,
+        "original_instructions": 17
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:9BE5",
+          "target": "0000:A031"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 41056,
+          "sha256": "1ca4fb624bf19affcb51e0873bc07311eb158d4534b60991760bd2ca9c671f03",
+          "start": 41009
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "First selected copy then second; NULL replaces absent FFFF under pointer relation. Reads remain between stores for whole-position aliases.",
+      "status": "LEAF_C_VERIFIED",
+      "tests": 2176
+    },
+    "init": {
+      "c_calls": [],
+      "c_function": "history_init",
+      "c_instructions": 35,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 55,
+        "original_instructions": 16
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:9783",
+          "target": "0000:99BF"
+        },
+        {
+          "kind": "calls",
+          "source": "0000:CFD8",
+          "target": "0000:99BF"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 39414,
+          "sha256": "4fdf62bb525466c260615f5f81c1067c70737564cff565539ff2c069f354ae2b",
+          "start": 39359
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "Repeated (Y+8,X+9) fill, then initial cursor indices; source loads stay inside loop.",
+      "status": "LEAF_C_VERIFIED",
+      "tests": 7
+    },
+    "store": {
+      "c_calls": [],
+      "c_function": "history_store",
+      "c_instructions": 18,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 24,
+        "original_instructions": 9
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:9BE2",
+          "target": "0000:9CD9"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 40177,
+          "sha256": "58fa36e929f3ad34580d5b9128d69cf7f68ce5579c44b613884b6de247dcfb56",
+          "start": 40153
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "Y+8 then X+8, explicit unsigned16 wrap; second source load after first store.",
+      "status": "LEAF_C_VERIFIED",
+      "tests": 2176
+    },
+    "store_apply": {
+      "c_calls": [
+        "history_store",
+        "history_apply"
+      ],
+      "c_function": "history_store_apply",
+      "c_instructions": 12,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 77,
+        "original_instructions": 28
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:978C",
+          "target": "0000:9BE2"
+        },
+        {
+          "kind": "successors",
+          "source": "0000:9BDF",
+          "target": "0000:9BE2"
+        },
+        {
+          "kind": "calls",
+          "source": "0000:CFF0",
+          "target": "0000:9BE2"
+        },
+        {
+          "kind": "calls",
+          "source": "0000:D171",
+          "target": "0000:9BE2"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 39912,
+          "sha256": "035267ba2fd80ffb51634a5374250e6c7ba13546f0015f0c15e7e3d7682ebd55",
+          "start": 39906
+        },
+        {
+          "end_exclusive": 40177,
+          "sha256": "58fa36e929f3ad34580d5b9128d69cf7f68ce5579c44b613884b6de247dcfb56",
+          "start": 40153
+        },
+        {
+          "end_exclusive": 41056,
+          "sha256": "1ca4fb624bf19affcb51e0873bc07311eb158d4534b60991760bd2ca9c671f03",
+          "start": 41009
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "Ordinary C store then apply; no progress-register compatibility result.",
+      "status": "C_CLUSTER_VERIFIED",
+      "tests": 2176
+    },
+    "update": {
+      "c_calls": [
+        "history_advance",
+        "history_store_apply"
+      ],
+      "c_function": "history_update",
+      "c_instructions": 14,
+      "coverage": {
+        "all_instruction_sites_exercised": true,
+        "original_bytes": 172,
+        "original_instructions": 51
+      },
+      "incoming_known_edges": [
+        {
+          "kind": "calls",
+          "source": "0000:978C",
+          "target": "0000:9BE2"
+        },
+        {
+          "kind": "successors",
+          "source": "0000:9BCF",
+          "target": "0000:9BDF"
+        },
+        {
+          "kind": "successors",
+          "source": "0000:9BDA",
+          "target": "0000:9BDF"
+        },
+        {
+          "kind": "successors",
+          "source": "0000:9BDC",
+          "target": "0000:9BDF"
+        },
+        {
+          "kind": "calls",
+          "source": "0000:CFF0",
+          "target": "0000:9BE2"
+        },
+        {
+          "kind": "calls",
+          "source": "0000:D171",
+          "target": "0000:9BE2"
+        }
+      ],
+      "proof_scope": "Typed-state memory-effects refinement, not drop-in historical machine ABI",
+      "ranges": [
+        {
+          "end_exclusive": 39912,
+          "sha256": "5462c8f8b160a2ecfd66512fe51ea154c634306049ccf86a15e2e260ec20f81d",
+          "start": 39903
+        },
+        {
+          "end_exclusive": 40269,
+          "sha256": "36ae000084d54f5f54c64df9790828fe78a18df4dc6c9fa60fe7306d1e2082be",
+          "start": 40177
+        },
+        {
+          "end_exclusive": 40177,
+          "sha256": "58fa36e929f3ad34580d5b9128d69cf7f68ce5579c44b613884b6de247dcfb56",
+          "start": 40153
+        },
+        {
+          "end_exclusive": 41056,
+          "sha256": "1ca4fb624bf19affcb51e0873bc07311eb158d4534b60991760bd2ca9c671f03",
+          "start": 41009
+        }
+      ],
+      "residual_class": "REPRESENTATION_AND_MACHINE_DIFFERENCES_WITH_NO_KNOWN_SEMANTIC_MISMATCH_IN_DOMAIN",
+      "semantics": "Ordinary C advance then store/apply; leaf ABI disappears internally.",
+      "status": "C_CLUSTER_VERIFIED",
+      "tests": 2176
+    }
+  },
+  "residual_taxonomy": {
+    "ABI": "Normal near cdecl only in C world. Test runner initializes each world through its own interface; no runtime marshalling between worlds.",
+    "CODEGEN": "Compiler frame, temporary allocation, indexed MOV and loop induction differ; not reproduced.",
+    "CONTROL_FLOW_SHAPE": "C loop replaces unrolled cursor updates; higher C functions call reconstructed C directly.",
+    "PLATFORM": "Only minimal independent DOS process entry/exit, no game hardware boundary introduced.",
+    "SEMANTIC": "Address-to-index and sentinel-to-pointer relations are explicit. Ordered writes and final state agree within that relation; no C correction needed.",
+    "UNKNOWN": "Global precondition validity and outer caller observable-register use remain integration obligations."
+  },
+  "status": "PASS"
+}
