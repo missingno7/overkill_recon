@@ -1,0 +1,79 @@
+{
+  "checks": {
+    "delta/advance_history": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/copy_position": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/dec_x": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/dec_y": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/inc_x": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/inc_y": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/lower_ascii": {
+      "cases": 1024,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "delta/upper_ascii": {
+      "cases": 1024,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "firewall/copy_position": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "firewall/dec_x": {
+      "cases": 60,
+      "exact": true,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "firewall_alternate/copy_position": {
+      "cases": 60,
+      "exact": false,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    },
+    "firewall_alternate/dec_x": {
+      "cases": 60,
+      "exact": false,
+      "full_local_abi": "PASS",
+      "no_original_code_fallback": true
+    }
+  },
+  "deletion": "verify_clean.py compiles/runs canonical C without importing delta or firewall; check_shims.py uses ordinary C, no matching layer. Standalone generated bodies contain no original code bytes as fallback.",
+  "limits": "Isolated states, flags, segments and ordinary data effects. Private stack scratch excluded; no whole-game/timing equivalence claim.",
+  "status": "PASS"
+}

@@ -1,0 +1,205 @@
+{
+  "generator_reads_oracle": false,
+  "results": {
+    "advance_history": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "base_address": 41786,
+            "segment": "ds"
+          }
+        },
+        "values": {
+          "10": "word ptr ds:[41824]",
+          "8": "byte ptr ds:[39102]"
+        }
+      },
+      "abi_binding_constraints": 3,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 1,
+      "bytes": "f606be980f7508833e60a3007501c383063aa304813e3aa33aa37506c7063aa37aa283063ca304813e3ca33aa37506c7063ca37aa283063ea304813e3ea33aa37506c7063ea37aa2830640a304813e40a33aa37506c70640a37aa2c3",
+      "compiler_instructions": 28,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ntest byte ptr ds:[39102],15\njne compiler_label_27\ncmp word ptr ds:[41824],0\njne delta_continue_0\nret\ndelta_continue_0:\ncompiler_label_27:\nadd word ptr ds:[41786],4\ncmp word ptr ds:[41786],-23750\njne compiler_label_28\nmov word ptr ds:[41786],-23942\ncompiler_label_28:\nadd word ptr ds:[41788],4\ncmp word ptr ds:[41788],-23750\njne compiler_label_29\nmov word ptr ds:[41788],-23942\ncompiler_label_29:\nadd word ptr ds:[41790],4\ncmp word ptr ds:[41790],-23750\njne compiler_label_30\nmov word ptr ds:[41790],-23942\ncompiler_label_30:\nadd word ptr ds:[41792],4\ncmp word ptr ds:[41792],-23750\njne compiler_label_26\nmov word ptr ds:[41792],-23942\ncompiler_label_26:\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 1,
+      "match_constraints": 1,
+      "operand_rebound_instructions": 14,
+      "output_instructions": 22,
+      "recipe": {
+        "split_return_edges": 1
+      },
+      "removed_instructions": 7,
+      "semantic_constants_from_recipe": 0
+    },
+    "copy_position": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "register": "bx",
+            "segment": "ds"
+          },
+          "8": {
+            "register": "bp",
+            "segment": "ss"
+          }
+        }
+      },
+      "abi_binding_constraints": 2,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 0,
+      "bytes": "8b4604050a008947048b4602050a00894702c3",
+      "compiler_instructions": 14,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\nmov ax,word ptr [bp+4]\nadd ax,10\nmov word ptr [bx+4],ax\nmov ax,word ptr [bp+2]\nadd ax,10\nmov word ptr [bx+2],ax\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 0,
+      "match_constraints": 0,
+      "operand_rebound_instructions": 4,
+      "output_instructions": 7,
+      "recipe": {},
+      "removed_instructions": 7,
+      "semantic_constants_from_recipe": 0
+    },
+    "dec_x": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "register": "bp",
+            "segment": "ss"
+          }
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 1,
+      "bytes": "837e04007501c3ff4e04c3",
+      "compiler_instructions": 8,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp word ptr [bp+4],0\njne delta_continue_0\nret\ndelta_continue_0:\ndec word ptr [bp+4]\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 1,
+      "match_constraints": 1,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 5,
+      "recipe": {
+        "split_return_edges": 1
+      },
+      "removed_instructions": 4,
+      "semantic_constants_from_recipe": 0
+    },
+    "dec_y": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "register": "bp",
+            "segment": "ss"
+          }
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 1,
+      "bytes": "837e02207501c3ff4e02c3",
+      "compiler_instructions": 8,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp word ptr [bp+2],32\njne delta_continue_0\nret\ndelta_continue_0:\ndec word ptr [bp+2]\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 1,
+      "match_constraints": 1,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 5,
+      "recipe": {
+        "split_return_edges": 1
+      },
+      "removed_instructions": 4,
+      "semantic_constants_from_recipe": 0
+    },
+    "inc_x": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "register": "bp",
+            "segment": "ss"
+          }
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 1,
+      "bytes": "817e04b0007201c3ff4604c3",
+      "compiler_instructions": 8,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp word ptr [bp+4],176\njb delta_continue_0\nret\ndelta_continue_0:\ninc word ptr [bp+4]\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 1,
+      "match_constraints": 1,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 5,
+      "recipe": {
+        "split_return_edges": 1
+      },
+      "removed_instructions": 4,
+      "semantic_constants_from_recipe": 0
+    },
+    "inc_y": {
+      "abi_binding": {
+        "pointers": {
+          "4": {
+            "register": "bp",
+            "segment": "ss"
+          }
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 1,
+      "bytes": "817e02c0007501c3ff4602c3",
+      "compiler_instructions": 8,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp word ptr [bp+2],192\njne delta_continue_0\nret\ndelta_continue_0:\ninc word ptr [bp+2]\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 1,
+      "match_constraints": 1,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 5,
+      "recipe": {
+        "split_return_edges": 1
+      },
+      "removed_instructions": 4,
+      "semantic_constants_from_recipe": 0
+    },
+    "lower_ascii": {
+      "abi_binding": {
+        "values": {
+          "4": "al"
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 2,
+      "bytes": "3c417301c33c5a7601c30c20c3",
+      "compiler_instructions": 12,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp al,65\njae delta_continue_0\nret\ndelta_continue_0:\ncmp al,90\njbe delta_continue_1\nret\ndelta_continue_1:\nor al,32\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 2,
+      "match_constraints": 2,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 8,
+      "recipe": {
+        "split_return_edges": 2
+      },
+      "removed_instructions": 6,
+      "semantic_constants_from_recipe": 0
+    },
+    "upper_ascii": {
+      "abi_binding": {
+        "values": {
+          "4": "al"
+        }
+      },
+      "abi_binding_constraints": 1,
+      "abi_frame_elimination": true,
+      "branch_relayout_sites": 2,
+      "bytes": "3c617301c33c7a7601c324dfc3",
+      "compiler_instructions": 12,
+      "generated_asm": "matchcode segment byte public 'CODE'\nassume cs:matchcode,ds:nothing,ss:nothing\ncmp al,97\njae delta_continue_0\nret\ndelta_continue_0:\ncmp al,122\njbe delta_continue_1\nret\ndelta_continue_1:\nand al,223\nret\nmatchcode ends\nend\n",
+      "inserted_ret_instructions": 2,
+      "match_constraints": 2,
+      "operand_rebound_instructions": 2,
+      "output_instructions": 8,
+      "recipe": {
+        "split_return_edges": 2
+      },
+      "removed_instructions": 6,
+      "semantic_constants_from_recipe": 0
+    }
+  }
+}

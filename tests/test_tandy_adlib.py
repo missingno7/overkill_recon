@@ -125,7 +125,7 @@ class TandyAdlibTests(unittest.TestCase):
         payload,_=driver('adlib')
         for ip,ax in [(0x579,0x1234),(0x557,0xa52b),(0x557,0x0004),(0x557,0xff02)]:
             u=self.machine(payload);u.reg_write(UC_X86_REG_DS,0x1000);u.reg_write(UC_X86_REG_AX,ax);u.reg_write(UC_X86_REG_BX,0x1fec)
-            counters=iter([0x1fff,0x1fec]*(2 if ip==0x557 else 1));half=[];events=[]
+            counters=iter([0x1ffe,0x1fec]*(2 if ip==0x557 else 1));half=[];events=[]
             def inp(uc,port,size,data):
                 if port==0x61:value=0xa4
                 elif port==0x42:
@@ -139,7 +139,7 @@ class TandyAdlibTests(unittest.TestCase):
             self.run_at(u,ip)
             def delay():
                 e=[('out',0x43,0xb6),('in',0x61,0xa4),('out',0x61,0xa7)]
-                for lo in (0xff,0xec):e += [('out',0x42,0xff),('out',0x42,0x1f),('out',0x43,0x86),('out',0x43,0xb6),('in',0x42,lo),('in',0x42,0x1f)]
+                for lo,written in ((0xfe,0xff),(0xec,0xfe)):e += [('out',0x42,written),('out',0x42,0x1f),('out',0x43,0x86),('out',0x43,0xb6),('in',0x42,lo),('in',0x42,0x1f)]
                 return e+[('in',0x61,0xa4),('out',0x61,0xa4)]
             expected=delay() if ip==0x579 else [('out',0x388,ax&255)]+delay()+[('out',0x389,ax>>8)]+delay()
             self.assertEqual(events,expected)

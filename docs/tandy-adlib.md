@@ -171,3 +171,11 @@ not the full32KiB buffer. Both require DF clear.
 The new tests execute original routines and their actual callees with explicit
 port-input fixtures. No gameplay run is used. The normal full verifier performs
 its existing bounded startup-oracle check separately.
+
+## Corrected PIT repeat contract
+
+The isolated C-matching counterexample exposed an earlier overly strong description
+of0579:0584 initializes AX=1FFFh only once. The059F backedge targets0587, so the
+next port42 reload uses the counter word just read. The regression now returns
+1FFEh before repeating and expects1FFEh on that reload. Original ASM bytes are
+unchanged. See the [research report](c-match-diff-language.md).

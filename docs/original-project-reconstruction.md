@@ -232,3 +232,12 @@ groups are48 bytes of maintained word data, with the caller index domain still
 open. See [position-history.md](position-history.md) and its machine-readable
 metadata. These facts improve future translation boundaries without assuming
 historical STRUCT syntax, filenames or compiler behavior.
+
+## Bounded C code-generation evidence
+
+The separate ten-routine [matching study](c-match-diff-language.md) tested Turbo C2.0
+and Microsoft C5.10. Neither produced natural exact matches under its normal ABI
+for this sample. This is not evidence identifying or excluding OVERKILL's historical
+compiler globally. ABI specialization explains much of the small-body mismatch;
+return-layout choices explain a few more bytes. No new original module or compiler
+claim, production C dependency or reconstruction architecture is adopted.

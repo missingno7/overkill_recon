@@ -117,3 +117,11 @@ Six more entries now have source names and contracts; see [position-history.md](
   successful allocation merely because most other callers check BX againstFFFF.
 - Investigate A340 only through concrete xrefs or recovered code; no broad replay
   is needed. Preserve the unresolved fourth-cursor role.
+
+## Bounded C/matching research completed
+
+The ten-routine primary study is in [c-match-diff-language.md](c-match-diff-language.md).
+Do not generalize it into a compiler or production conversion: two GOOD and two
+BORDERLINE small exact demonstrations do not settle the remaining game. Return to
+the record/index/lifetime questions above. The research also corrected the AdLib0579
+contract: repeats reload the previous counter reading, not the initial1FFFh.

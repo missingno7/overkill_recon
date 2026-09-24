@@ -1133,10 +1133,11 @@ loc_00587 equ 0587h
     ret
 ; DelayViaPit2Counter (modern reconstruction name)
 ; Preserve AX and all general/segment registers. BX is a signed comparison threshold; configure port43=B6, set
-; port61 bits0/1, repeatedly write1FFFh to port42, issue43=86 thenB6, read two bytes from42 and repeat while
-; signed AX>BX. Finally read61 and clear bit0. Changes flags; does not restore PIT configuration or original
-; port61 state. Termination depends on hardware responses; no exact-duration claim.
-; Evidence: metadata/drivers/symbols.json; tests/test_tandy_adlib.py
+; port61 bits0/1, write1FFFh to port42 on the first iteration and the previous read counter word on each repeat,
+; issue43=86 thenB6, read two bytes from42 and repeat while signed AX>BX. Finally read61 and clear bit0. Changes
+; flags; does not restore PIT configuration or original port61 state. Termination depends on hardware responses;
+; no exact-duration claim.
+; Evidence: metadata/drivers/symbols.json
 ; @00579 module:0579 original=50
     push ax
 ; @0057A module:057A original=b0b6

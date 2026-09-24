@@ -58,7 +58,8 @@ reviewed bootstrap expansion and then inspect/reverify the resulting batch.
 Original assets are private local inputs. The local historical tool binaries were
 copied for this task; the project does not claim redistribution rights for them.
 `overkill_forged`, `legacy/overkill_port`, and `D:/prog/empires_reconstruction` were
-used read-only. No C reconstruction has been started.
+used read-only. Production remains exact ASM. A bounded, non-production C/matching research sample is documented in
+[the match-diff study](docs/c-match-diff-language.md); it is not a game conversion.
 
 Runtime investigation: [docs/runtime-materialization.md](docs/runtime-materialization.md).
 `python tools/materialize_runtime.py --video tandy --sound adlib --input keyboard`
