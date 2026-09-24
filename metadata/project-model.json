@@ -376,6 +376,18 @@
       "value": 8943
     }
   ],
+  "research_history_transfer_swap": {
+    "abi_bridge_bytes": 101,
+    "boundary": "known-graph closed9BE2 +9CD9 +A031, continuation9BE8",
+    "c_bytes": 210,
+    "evidence": "research/history_transfer/results/boundary.json",
+    "historical_claim": false,
+    "next_question": "caller-visible progress-register liveness; potentially larger closed boundary",
+    "original_bytes": 77,
+    "outcome": "SWAP_VERIFIED_C under stated preconditions",
+    "production_changed": false,
+    "scope": "research/history_transfer only"
+  },
   "research_policy": {
     "execution_cap": "0000:97B2 first gameplay entry",
     "exhaustive_game_state_coverage_required": false,

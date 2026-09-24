@@ -135,3 +135,11 @@ unknown call edges, all interrupt schedules, or unlimited stack capacity. Next
 consider the9CD9/A031 history store/application boundary: preserve sequential alias
 effects and review scratch outputs before deciding whether to combine the routines.
 The main exact-ASM queues and acceptance criteria above remain in force.
+
+## Second bounded swap cluster
+
+The [history-transfer experiment](history-transfer-swap.md) verifies9BE2/9CD9/A031
+in four combinations with the first unit. Its101-byte bridge exceeds the77-byte
+original cluster. Before another C unit, establish caller-visible progress-register
+liveness after9BE8 and the9FAF field+8 bounds. A larger closed boundary may reduce
+ABI surface; do not assume every helper should become a separate C function.

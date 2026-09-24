@@ -68,15 +68,19 @@ def container_checksum(data):
         value=(value&255)|((((value>>8)+(value&255))&255)<<8)
     return value
 
-def package(mode,main,piece,pubs,manifest):
-    image=bytearray(piece.ljust(PREFIX,b'\0')+main);reloc=[pubs['main_segment']]
+def package(mode,main,piece,pubs,manifest,*,prefix_bytes=PREFIX,folder=None,gates=None):
+    # Two research units reuse only MZ packaging; gates are explicit ABI entry routes.
+    prefix=prefix_bytes
+    image=bytearray(piece.ljust(prefix,b'\0')+main);reloc=[pubs['main_segment']]
     for site in manifest['relocations']:
-        p=PREFIX+site;struct.pack_into('<H',image,p,(struct.unpack_from('<H',image,p)[0]+PREFIX//16)&65535);reloc.append(p)
-    if mode=='C':
-        image[PREFIX+ENTRY:PREFIX+ENTRY+6]=b'\x9a'+struct.pack('<HH',pubs['bridge'],0)+b'\xc3'
-        reloc.append(PREFIX+ENTRY+3)
+        p=prefix+site;struct.pack_into('<H',image,p,(struct.unpack_from('<H',image,p)[0]+prefix//16)&65535);reloc.append(p)
+    if gates is None:gates=[(ENTRY,pubs['bridge'],'near_return')] if mode=='C' else []
+    for entry,bridge,exit_kind in gates:
+        assert exit_kind in ('near_return','fallthrough')
+        image[prefix+entry:prefix+entry+6]=b'\x9a'+struct.pack('<HH',bridge,0)+(b'\xc3' if exit_kind=='near_return' else b'\x90')
+        reloc.append(prefix+entry+3)
     header=bytearray(0x220);size=len(header)+len(image);assert len(reloc)*4+28<=len(header)
-    vals=[0x5a4d,size%512,(size+511)//512,len(reloc),len(header)//16,0,0xffff,PREFIX//16+0x15bc,0xa278,0,0,0,28,0]
+    vals=[0x5a4d,size%512,(size+511)//512,len(reloc),len(header)//16,0,0xffff,prefix//16+0x15bc,0xa278,0,0,0,28,0]
     struct.pack_into('<14H',header,0,*vals)
     for i,p in enumerate(reloc):struct.pack_into('<HH',header,28+4*i,p%16,p//16)
     original=(ROOT/'assets/OVERKILL').read_bytes()
@@ -86,14 +90,16 @@ def package(mode,main,piece,pubs,manifest):
     assert max(r['offset']+r['size'] for r in rows)<=len(original)-2
     overlay=mz(original)[3];payload=bytes(header+image)+overlay[:-2]
     checksum=container_checksum(payload);raw=payload+struct.pack('<H',checksum)
-    folder=OUT/mode.lower();folder.mkdir(parents=True,exist_ok=True)
+    folder=folder or OUT/mode.lower();folder.mkdir(parents=True,exist_ok=True)
     (folder/'OVERKILL').write_bytes(raw);(folder/'PLAY.EXE').write_bytes(raw)
     shutil.copyfile(ROOT/'assets/OVERKILL.EXE',folder/'OVERKILL.EXE')
-    normalized=bytearray(image[PREFIX:])
-    for site in manifest['relocations']:struct.pack_into('<H',normalized,site,(struct.unpack_from('<H',normalized,site)[0]-PREFIX//16)&65535)
+    normalized=bytearray(image[prefix:])
+    for site in manifest['relocations']:struct.pack_into('<H',normalized,site,(struct.unpack_from('<H',normalized,site)[0]-prefix//16)&65535)
     changes=[i for i,(a,b) in enumerate(zip(normalized,main)) if a!=b]
-    assert not changes if mode=='ASM' else all(ENTRY<=i<ENTRY+6 for i in changes)
-    desc=dict(mode=mode,path=str((folder/'PLAY.EXE').relative_to(ROOT)),sha256=sha(raw),image_bytes=len(image),mz_relocations=len(reloc),main_cs_relative=PREFIX//16,main_normalized_changed_offsets=changes,prefix_sha256=sha(image[:PREFIX]),original_overlay_sha256=sha(overlay),resource_payload_sha256=sha(overlay[:-2]),container_checksum=checksum,checksum_rule='C8D5,C916..C91F,C938..C94C; recomputed final two bytes outside every resource',
+    allowed={i for entry,_,_ in gates for i in range(entry,entry+6)}
+    assert set(changes)<=allowed
+    assert len(image)==prefix+len(main)
+    desc=dict(mode=mode,path=str((folder/'PLAY.EXE').relative_to(ROOT)),sha256=sha(raw),image_bytes=len(image),mz_relocations=len(reloc),main_cs_relative=prefix//16,main_normalized_changed_offsets=changes,prefix_sha256=sha(image[:prefix]),original_overlay_sha256=sha(overlay),resource_payload_sha256=sha(overlay[:-2]),container_checksum=checksum,checksum_rule='C8D5,C916..C91F,C938..C94C; recomputed final two bytes outside every resource',
         launcher_companion='Pinned original OVERKILL.EXE is read by startup integrity code; PLAY.EXE executes rebuilt main, never packed game code.')
     write_json(folder/'manifest.json',desc);return desc
 

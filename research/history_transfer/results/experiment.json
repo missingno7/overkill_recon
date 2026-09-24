@@ -1,0 +1,15 @@
+{
+  "classification": "SWAP_VERIFIED_C",
+  "integration": "four native packages reach9690; unit itself exercised synthetically through actual callers",
+  "shared_packager_sha256": "d186e6858160633c622bb32f7acd58b0189c6e05fd50da09776fcb969d13d895",
+  "source_sha256": {
+    "research\\history_transfer\\TRANSFER.ASM": "6d6367ac71a6aa01385a99f5981dc2667038a669bdc8971ce2f1253947bcafe5",
+    "research\\history_transfer\\TRANSFER.C": "fd18cc8d651ce3658a3342e490cd29bc0db7ba10fee9a2a82c202a14b681e602",
+    "research\\history_transfer\\build_transfer.py": "21c1b5b20e04de7b6e9ca344e63cb00bcdfc6eb79d51e3edecdfd94dbb6ddb02",
+    "research\\history_transfer\\integration.py": "e558a461b984486f083bd5576b03d2d91f6f5077773a426431010ace0e05eab3",
+    "research\\history_transfer\\run.py": "9387a8dca4200d544b8e4f568f19af4b19b82cc12dc3ad54f538c1a622198490",
+    "research\\history_transfer\\verify_transfer.py": "21129ba0b41ef63c7cbd17f57165b8a9219f644346b389fac7c565ce67e33c36"
+  },
+  "status": "PASS",
+  "synthetic_cases": 3647
+}

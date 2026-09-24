@@ -1,0 +1,60 @@
+{
+  "alias_topologies": [
+    "first_copy_changes_second_cursor",
+    "first_copy_changes_second_selection",
+    "first_copy_changes_second_source",
+    "first_store_overwrites_next_sample_x",
+    "same_record_twice",
+    "writer_changes_read_cursors",
+    "writer_changes_selections",
+    "writer_overwrites_source_x"
+  ],
+  "cases": 3647,
+  "comparison": "Actual four packaged MZ images; all registers, segments, SP, exit, control flags, ordered non-stack writes and complete DS/SS/output windows excluding64 private stack bytes. All flags after next original CMP.",
+  "counts": {
+    "four_edges_ring_phases_selections_segments": 3072,
+    "offset_wrap_boundaries": 7,
+    "ordered_alias_cases": 56,
+    "random_positions_and_overlapping_records": 512
+  },
+  "deepest_stack_bytes": {
+    "aa": 4,
+    "ac": 64,
+    "ca": 38,
+    "cc": 64
+  },
+  "excluded": "Arithmetic flags dead at9BE8; private below-SP scratch; arbitrary async interrupt interleavings; DF1 outside documented domain",
+  "matching_layer": false,
+  "negative_control": "PASS changed generated ADD8 toADD9 rejected",
+  "original_instruction_sites_hit": [
+    "0x9be2",
+    "0x9be5",
+    "0x9cd9",
+    "0x9cde",
+    "0x9ce2",
+    "0x9ce5",
+    "0x9ce8",
+    "0x9ce9",
+    "0x9cec",
+    "0x9cef",
+    "0x9cf0",
+    "0xa031",
+    "0xa036",
+    "0xa038",
+    "0xa03c",
+    "0xa040",
+    "0xa041",
+    "0xa044",
+    "0xa045",
+    "0xa048",
+    "0xa04d",
+    "0xa04f",
+    "0xa053",
+    "0xa057",
+    "0xa058",
+    "0xa05b",
+    "0xa05c",
+    "0xa05f"
+  ],
+  "status": "PASS"
+}

@@ -76,3 +76,7 @@ but exhaustive gameplay coverage is not an acceptance requirement.
 One native DOS swap-unit experiment is now available: [report](docs/swap-unit-experiment.md),
 [reproduction](research/swap_unit/README.md). It replaces only the reviewed position-history
 advance in an opt-in research executable; the production exact ASM build is unchanged.
+
+A second [history-transfer cluster](docs/history-transfer-swap.md) now composes with
+the first in four opt-in ASM/C research packages. Its larger ABI cost is measured;
+production remains unchanged. See [reproduction](research/history_transfer/README.md).

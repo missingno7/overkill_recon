@@ -1,0 +1,220 @@
+{
+  "bytes": 77,
+  "closure": "Known decoded graph, not all unknown bytes or unresolved indirect targets",
+  "continuation": "0000:9BE8",
+  "entry": "0000:9BE2",
+  "flags": "Arithmetic flags killed by next CMP at9BE8; control flags preserved",
+  "incoming": [
+    [
+      "0000:978C",
+      "0000:9BE2",
+      "calls"
+    ],
+    [
+      "0000:9BDF",
+      "0000:9BE2",
+      "successors"
+    ],
+    [
+      "0000:CFF0",
+      "0000:9BE2",
+      "calls"
+    ],
+    [
+      "0000:D171",
+      "0000:9BE2",
+      "calls"
+    ]
+  ],
+  "instructions": 28,
+  "live_inputs": [
+    "SS:BP source record",
+    "DS cursors A33A/A33C/A33E and selections A962/A964",
+    "CS:9596 write segment",
+    "BX/SI incoming values when no delayed transfer"
+  ],
+  "name": "StoreAndApplyPositionHistory",
+  "outputs": [
+    "ordered biased position store, then zero/one/two ordered delayed copies",
+    "AX last loaded X; DI initial write cursor+4; ES fromCS:9596",
+    "BX/SI last delayed record and read end, or preserved if none",
+    "CX/DX/BP/DS/SS/SP preserved at fallthrough boundary"
+  ],
+  "outside_edges": [
+    [
+      "0000:9BE5",
+      "0000:9BE8",
+      "successors"
+    ]
+  ],
+  "preconditions": [
+    "DF=0 from original startup95D3; backwards traversal is NOT represented by this semantic unit",
+    "valid source/destination/selected pointers; synthetic alias cases retain sequential reads and writes",
+    "private call stack and transfer-progress object do not alias game data",
+    "no asynchronous mutation of state cells during transfer"
+  ],
+  "ranges": [
+    {
+      "end": 39912,
+      "listing": [
+        {
+          "address": 39906,
+          "hex": "e8f400",
+          "instruction": "call 0x9cd9"
+        },
+        {
+          "address": 39909,
+          "hex": "e84904",
+          "instruction": "call 0xa031"
+        }
+      ],
+      "sha256": "035267ba2fd80ffb51634a5374250e6c7ba13546f0015f0c15e7e3d7682ebd55",
+      "start": 39906
+    },
+    {
+      "end": 40177,
+      "listing": [
+        {
+          "address": 40153,
+          "hex": "2e8e069695",
+          "instruction": "mov es, word ptr cs:[0x9596]"
+        },
+        {
+          "address": 40158,
+          "hex": "8b3e3aa3",
+          "instruction": "mov di, word ptr [0xa33a]"
+        },
+        {
+          "address": 40162,
+          "hex": "8b4602",
+          "instruction": "mov ax, word ptr [bp + 2]"
+        },
+        {
+          "address": 40165,
+          "hex": "050800",
+          "instruction": "add ax, 8"
+        },
+        {
+          "address": 40168,
+          "hex": "ab",
+          "instruction": "stosw word ptr es:[di], ax"
+        },
+        {
+          "address": 40169,
+          "hex": "8b4604",
+          "instruction": "mov ax, word ptr [bp + 4]"
+        },
+        {
+          "address": 40172,
+          "hex": "050800",
+          "instruction": "add ax, 8"
+        },
+        {
+          "address": 40175,
+          "hex": "ab",
+          "instruction": "stosw word ptr es:[di], ax"
+        },
+        {
+          "address": 40176,
+          "hex": "c3",
+          "instruction": "ret "
+        }
+      ],
+      "sha256": "58fa36e929f3ad34580d5b9128d69cf7f68ce5579c44b613884b6de247dcfb56",
+      "start": 40153
+    },
+    {
+      "end": 41056,
+      "listing": [
+        {
+          "address": 41009,
+          "hex": "833e62a9ff",
+          "instruction": "cmp word ptr [0xa962], -1"
+        },
+        {
+          "address": 41014,
+          "hex": "7410",
+          "instruction": "je 0xa048"
+        },
+        {
+          "address": 41016,
+          "hex": "8b1e62a9",
+          "instruction": "mov bx, word ptr [0xa962]"
+        },
+        {
+          "address": 41020,
+          "hex": "8b363ca3",
+          "instruction": "mov si, word ptr [0xa33c]"
+        },
+        {
+          "address": 41024,
+          "hex": "ad",
+          "instruction": "lodsw ax, word ptr [si]"
+        },
+        {
+          "address": 41025,
+          "hex": "894702",
+          "instruction": "mov word ptr [bx + 2], ax"
+        },
+        {
+          "address": 41028,
+          "hex": "ad",
+          "instruction": "lodsw ax, word ptr [si]"
+        },
+        {
+          "address": 41029,
+          "hex": "894704",
+          "instruction": "mov word ptr [bx + 4], ax"
+        },
+        {
+          "address": 41032,
+          "hex": "833e64a9ff",
+          "instruction": "cmp word ptr [0xa964], -1"
+        },
+        {
+          "address": 41037,
+          "hex": "7410",
+          "instruction": "je 0xa05f"
+        },
+        {
+          "address": 41039,
+          "hex": "8b1e64a9",
+          "instruction": "mov bx, word ptr [0xa964]"
+        },
+        {
+          "address": 41043,
+          "hex": "8b363ea3",
+          "instruction": "mov si, word ptr [0xa33e]"
+        },
+        {
+          "address": 41047,
+          "hex": "ad",
+          "instruction": "lodsw ax, word ptr [si]"
+        },
+        {
+          "address": 41048,
+          "hex": "894702",
+          "instruction": "mov word ptr [bx + 2], ax"
+        },
+        {
+          "address": 41051,
+          "hex": "ad",
+          "instruction": "lodsw ax, word ptr [si]"
+        },
+        {
+          "address": 41052,
+          "hex": "894704",
+          "instruction": "mov word ptr [bx + 4], ax"
+        },
+        {
+          "address": 41055,
+          "hex": "c3",
+          "instruction": "ret "
+        }
+      ],
+      "sha256": "1ca4fb624bf19affcb51e0873bc07311eb158d4534b60991760bd2ca9c671f03",
+      "start": 41009
+    }
+  ],
+  "scope": "one added research unit; no production changes"
+}

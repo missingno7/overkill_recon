@@ -252,3 +252,13 @@ The original file integrity routine also independently establishes a final two-b
 checksum outside the last resource. Its rule reproduces both pinned file trailers;
 research packages regenerate it rather than bypassing the original check.
 Machine-readable build/boundary evidence is in research/swap_unit/results.
+
+## Second research-only source boundary
+
+[History transfer](history-transfer-swap.md) groups9BE2,9CD9 andA031 because the
+known graph has one common external entry and no other helper callers. This is a
+modern swap boundary, not a historical module claim. Four native packages combine
+two independent ASM/C choices in a common1KiB prefix; only explicit entry gates
+change the normalized main. Production objects and exact bytes are unchanged.
+The101-byte ABI bridge for77 original bytes is evidence against assuming that
+small original helpers automatically yield cheap independent C boundaries.

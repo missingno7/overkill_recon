@@ -1,0 +1,45 @@
+{
+  "bridge_bytes": 101,
+  "bridge_instructions": 51,
+  "c_bytes": 210,
+  "c_instructions": 73,
+  "delete_diff": "No matching layer exists. TRANSFER.C compiles independently with normal TC2.0. The bridge only adapts the original boundary; clean C owns arithmetic, conditions, ordered writes and transfer progress.",
+  "differences": [
+    {
+      "category": "SEMANTIC",
+      "finding": "Sequential biased store followed by conditional delayed copies; earlier stores may change later source words, selector or cursor. Volatile native C preserves these accesses; synthetic alias tests agree."
+    },
+    {
+      "category": "ABI",
+      "finding": "Explicit far source/output pointers, near DS cursor/selection views and far private progress result. Result fields preserve historical AX/DI/ES and conditional BX/SI outputs without putting copying or selection semantics into the shim."
+    },
+    {
+      "category": "CODEGEN",
+      "finding": "TC2.0 replaces LODS/STOS with indexed MOV, uses SI for the transferred word, a BP frame and two local slots. Four-byte pointer marshalling and progress stores dominate expansion."
+    },
+    {
+      "category": "CONTROL_FLOW_SHAPE",
+      "finding": "Two original calls with RETs become one C function with two optional transfer blocks and a shared epilogue. Six-byte far-call/NOP gate preserves continuation9BE8."
+    },
+    {
+      "category": "CODEGEN",
+      "finding": "Original arithmetic flags at9BE8 are dead at the next CMP; all control flags preserved and all flags compared after that original instruction."
+    },
+    {
+      "category": "PLATFORM",
+      "finding": "No platform operations in body. DOS near/far addressing and stack model remain explicit; no portable ISO C claim."
+    },
+    {
+      "category": "UNKNOWN",
+      "finding": "Known decoded inbound graph only; no proof against unresolved indirect entry. Arbitrary asynchronous mutation and timing not covered. Extra64-byte stack reservation is a precondition, not globally proven capacity."
+    }
+  ],
+  "matching_recipe": null,
+  "original_bytes": 77,
+  "original_instructions": 28,
+  "outcome": "SWAP_VERIFIED_C",
+  "recommendation": "Verified C is preferable to prescribing the original register/string-op choreography. The101-byte bridge exceeds the77-byte original cluster. A larger boundary or proven dead outputs may reduce adaptation cost; do not generalize a matching DSL.",
+  "residual_class": "MACHINE_ONLY_UNDER_STATED_PRECONDITIONS",
+  "semantic_corrections": [],
+  "status": "PASS"
+}
