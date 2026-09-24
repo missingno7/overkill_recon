@@ -222,3 +222,36 @@ attribute reads in their surrounding R05 record-update paths. Their source calls
 now use the same names. This is broader reuse than the initial-entry graph alone
 shows; it strengthens a shared coordinate-to-grid/attribute concept without proving
 one historical module. AC3C is a useful next caller to close from these leaves.
+
+
+## Grid probe and shared record response (static source pass)
+
+`AC3C` is an internal entry after the gates at `AC28`, not a newly proved
+historical function. It calls `ComputeRecordGridOffset`, adds 13, and probes
+`ReadIndexedByteAttribute`; a second adjacent probe occurs only when the first
+attribute is zero and the record X low nibble is nonzero. A nonzero attribute
+enters `SetResponseAndStepRecordCounter` at `AC56`. The scan at `AC81` independently
+calls that same entry at `ACF1`; both paths share the clear-carry return at `AC54`.
+
+The response path writes record +24 to 5. It decrements word +20 only when
+`BEDC != 0` or `COUNT_GATE_2324 == 1`. Only a decrement producing zero clears
++24 and returns carry set. All other paths return carry clear. A zero initial
+counter wraps to FFFF, rather than saturating. The optional BEFF=0E write depends
+on byte 98C0. These are mechanical names scoped to this record context, not
+claims about health, enemies or a timer frequency. AB84 consumes the returned
+carry; other flags remain path-dependent.
+
+The sibling at `ADB6` distinguishes attribute value 1 from other nonzero values.
+The sibling at `B00D` rejects the grid helper's FFFF sentinel. AC3C and ADB6 do
+not: adding 13 wraps it to 000C. Do not invent a common clipping precondition.
+All three overwrite the grid helper's flags before using them.
+
+The attribute table C3AA..C4A9 has a supported 256-byte dynamic extent: startup
+fills it with 1, applies a selected index/value stream ending at index FF, and a
+reset path clears 256 bytes before calling 007EF. Its source resource, actual
+population and gameplay meaning remain unresolved. No bytes were promoted to
+static table data. Evidence and addresses: `metadata/record-movement.json`.
+
+This batch adds source vocabulary and static relationships, not new tested
+function contracts or graph boundaries. Next tests should cover both entries,
+all counter gates, modular underflow, the two-probe branch and sentinel wrapping.

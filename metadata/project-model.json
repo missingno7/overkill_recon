@@ -682,6 +682,24 @@
       "historical_source_objects": "UNKNOWN",
       "slot": "relative1022:0000"
     },
+    "response_and_critical_followup": {
+      "confidence": "SEMANTICALLY_SUPPORTED; source-file topology UNKNOWN",
+      "critical_continuation": {
+        "address": "1534:004E",
+        "bytes": "9c50b419cd21589d2eff2e0000",
+        "length": 13,
+        "padding_claim": "UNKNOWN",
+        "status": "independently extracted; source promotion and whole-handler synthetic contract pending",
+        "trailing_zero_bytes": 5
+      },
+      "falsification_limit": "shared behavior/state and contiguous layout do not distinguish one source file from multiple byte-aligned contributions",
+      "response_edges": [
+        "AC3C branches to AC56",
+        "ACF1 calls AC56",
+        "AC54 is shared clear return"
+      ],
+      "shared_state": "record +20/+24; dynamic 256-byte attribute table C3AA"
+    },
     "schema": 1,
     "scope": "Current decoded instruction graph only; unknown bytes may change ownership/edge counts. Cold1022 is excluded from active main graph; loaded audio is separate."
   },

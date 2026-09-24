@@ -189,3 +189,15 @@ See position-history.md for the exact gate, feedback lifetimes and source change
 
 - Close AC3C's grid/attribute probe next, then revisit ADB6/B00D siblings. The
   active graph exposes these callers beyond4FF9; do not rely on cold-only xrefs.
+
+
+## Next discriminating local checks
+
+- Test AC3C internal probe and independently entered AC56 together, including
+  counter underflow and wrapped negative-Y sentinel. Keep AC54 shared; do not
+  force this into a single-entry historical function. Source names are now present.
+- Trace record +20/+24 initializers and the BEDC/98C0/BEFF gates before assigning
+  stronger gameplay names. Recover the attribute patch streams selected at 0B9F.
+- Add a byte-guarded constructed-IRET edge from 1534:003B to 004E and a synthetic
+  full-handler stack test before promoting its 13-byte continuation. Keep the
+  following five zero bytes UNKNOWN and saved far return unresolved.

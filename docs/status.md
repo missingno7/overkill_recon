@@ -58,3 +58,11 @@ Main: 48 reviewed contracts/boundaries, 47 boundaries STRONG/PROVEN; 1579 unique
 Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 16, 'UNKNOWN': 9, 'GAME_LOGIC': 23}.
 
 Main reviewed data: 72 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.
+
+
+Semantic source follow-up: AC3C/AC56 now expose the shared grid/scan response
+path, scoped record counter/response fields and caller-specific sentinel handling.
+This is a static source-vocabulary batch, not additional reviewed-contract or
+instruction-byte coverage. Exact main and both optional-module comparisons PASS;
+known mismatches remain zero. Dynamic attribute-table extent is 256 bytes;
+resource identity and stronger gameplay role remain unknown.

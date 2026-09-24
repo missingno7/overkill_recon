@@ -75740,7 +75740,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44087,
-          "text": "JNE_SHORT loc_0AC3C"
+          "text": "JNE_SHORT ProbeGridForRecordResponse_0AC3C"
         },
         {
           "address": "0000:AC39",
@@ -75780,7 +75780,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44101,
-          "text": "JNE_SHORT loc_0AC56"
+          "text": "JNE_SHORT SetResponseAndStepRecordCounter_0AC56"
         },
         {
           "address": "0000:AC47",
@@ -75788,7 +75788,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44103,
-          "text": "test word ptr ss:[bp + 4], 0Fh"
+          "text": "test word ptr ss:[bp + REC_X], 0Fh"
         },
         {
           "address": "0000:AC4C",
@@ -75796,7 +75796,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44108,
-          "text": "JE_SHORT loc_0AC54"
+          "text": "JE_SHORT RecordResponseReturnClear_0AC54"
         },
         {
           "address": "0000:AC4E",
@@ -75820,7 +75820,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44114,
-          "text": "JNE_SHORT loc_0AC56"
+          "text": "JNE_SHORT SetResponseAndStepRecordCounter_0AC56"
         },
         {
           "address": "0000:AC54",
@@ -75852,7 +75852,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44123,
-          "text": "JE_SHORT loc_0AC62"
+          "text": "JE_SHORT SetRecordResponseWord_0AC62"
         },
         {
           "address": "0000:AC5D",
@@ -75868,7 +75868,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44130,
-          "text": "mov word ptr ss:[bp + 024h], 5"
+          "text": "mov word ptr ss:[bp + RESPONSE_WORD_24], 5"
         },
         {
           "address": "0000:AC67",
@@ -75884,7 +75884,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44140,
-          "text": "JNE_SHORT loc_0AC75"
+          "text": "JNE_SHORT StepRecordResponseCounter_0AC75"
         },
         {
           "address": "0000:AC6E",
@@ -75892,7 +75892,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44142,
-          "text": "cmp word ptr ds:[02324h], 1"
+          "text": "cmp word ptr ds:[COUNT_GATE_2324], 1"
         },
         {
           "address": "0000:AC73",
@@ -75900,7 +75900,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44147,
-          "text": "JNE_SHORT loc_0AC54"
+          "text": "JNE_SHORT RecordResponseReturnClear_0AC54"
         },
         {
           "address": "0000:AC75",
@@ -75908,7 +75908,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44149,
-          "text": "dec word ptr ss:[bp + 020h]"
+          "text": "dec word ptr ss:[bp + RESPONSE_COUNTER_20]"
         },
         {
           "address": "0000:AC78",
@@ -75916,7 +75916,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44152,
-          "text": "JNE_SHORT loc_0AC54"
+          "text": "JNE_SHORT RecordResponseReturnClear_0AC54"
         },
         {
           "address": "0000:AC7A",
@@ -75924,7 +75924,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44154,
-          "text": "mov word ptr ss:[bp + 024h], 0"
+          "text": "mov word ptr ss:[bp + RESPONSE_WORD_24], 0"
         },
         {
           "address": "0000:AC7F",
@@ -76284,7 +76284,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44273,
-          "text": "CALL_NEAR loc_0AC56"
+          "text": "CALL_NEAR SetResponseAndStepRecordCounter_0AC56"
         },
         {
           "address": "0000:ACF4",

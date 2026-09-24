@@ -385,3 +385,22 @@ actual symbol offsets above are measured from linked instruction bytes. All four
 EXEs have zero load relocations; that does not mean the input OMF objects lack
 link-time fixups. Exact reports and tool pins are in
 `metadata/critical-vector-topology.json`.
+
+
+### Shared response path and critical-error continuation follow-up
+
+The grid probe at AC3C and scan at AC81 converge on AC56, sharing record fields
++20/+24 and the AC54 return. This is SEMANTICALLY_SUPPORTED shared behavior;
+it does not distinguish one source contribution from several byte-aligned ones.
+The dynamic attribute table C3AA..C4A9 connects startup initialization, reset,
+XLAT and grid readers. Shared state is evidence of a common concept, not proof
+of a historical include, STRUC or file boundary.
+
+Independent extraction also confirms the 13-byte continuation at 1534:004E:
+PUSHF; PUSH AX; MOV AH,19h; INT 21h; POP AX; POPF; far JMP CS:[0]. The handler
+constructs that IRET destination after saving an outer return pointer in its
+private CS words. Five zero bytes follow before frame 153A. Their role as
+padding is still UNKNOWN. Promotion is deferred until a synthetic whole-handler
+stack-contract test and guarded CFG edge are added; actual DOS-version stack
+compatibility must not be inferred from a synthetic test. No module boundary
+has been promoted from this observation.

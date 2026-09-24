@@ -1,4 +1,15 @@
 {
+  "attribute_table_lifecycle": {
+    "base": "DS:C3AA",
+    "evidence": [
+      "0B8E..0B9C fills 256 bytes with 1",
+      "0B9F..0BB7 applies selected index,value stream until FF index",
+      "CFDB..CFE8 clears 256 bytes before call 007EF",
+      "505B zero-extends byte source index; 4BA5 also uses XLAT"
+    ],
+    "extent_bytes": 256,
+    "unknown": "Source resource identity, selected stream contents and gameplay meaning; no static data promotion"
+  },
   "caller_insights": [
     {
       "address": "0000:9B2E",
@@ -146,6 +157,27 @@
       "Meaning of C3AA attributes",
       "9E19 state/countdown and callees511F/61DC"
     ]
+  },
+  "grid_response_cluster": {
+    "callers": "AC28 callers AB81/ABD7; ACF1 enters AC56 directly",
+    "carry": "set only when gated decrement produces zero; otherwise clear",
+    "caveats": [
+      "Negative Y sentinel not rejected before +13 at AC3C or ADB6",
+      "Record role and meaning of globals 98C0/BEFF/BEDC unresolved",
+      "No claim that internal entry AC3C is a historical function"
+    ],
+    "confidence": "SEMANTICALLY_SUPPORTED; static local contract, not a new tested closed-function claim",
+    "counter_gate": "BEDC != 0 OR DS:2324 == 1",
+    "entries": {
+      "AC3C": "internal branch entry after AC28 gates",
+      "AC56": "shared response helper, separately called at ACF1"
+    },
+    "fields": {
+      "+20": "modular response countdown in this context",
+      "+24": "response word: 5 on entry; 0 on countdown transition to zero"
+    },
+    "region": "0000:AC3C..AC80",
+    "shared_exit": "AC54 CLC/RET"
   },
   "liveness": [
     {

@@ -4,6 +4,9 @@ include MOVEMENT.INC
 part05 segment byte public 'CODE'
 assume cs:part05,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Fields scoped to the AC56 response path; no entity/health identity asserted.
+RESPONSE_COUNTER_20 equ 020h
+RESPONSE_WORD_24 equ 024h
 UpdatePlacementXOffsetsAtRecordEdges_0A616 equ 0616h
 ; Offset-placement use of field+8 does not define its role in other record types.
 ApplyPositionHistoryToRecords_0A031 equ 031h
@@ -84,11 +87,11 @@ loc_0AC05 equ 0C05h
 loc_0AC22 equ 0C22h
 loc_0AC28 equ 0C28h
 loc_0AC32 equ 0C32h
-loc_0AC3C equ 0C3Ch
-loc_0AC54 equ 0C54h
-loc_0AC56 equ 0C56h
-loc_0AC62 equ 0C62h
-loc_0AC75 equ 0C75h
+ProbeGridForRecordResponse_0AC3C equ 0C3Ch
+RecordResponseReturnClear_0AC54 equ 0C54h
+SetResponseAndStepRecordCounter_0AC56 equ 0C56h
+SetRecordResponseWord_0AC62 equ 0C62h
+StepRecordResponseCounter_0AC75 equ 0C75h
 loc_0AC81 equ 0C81h
 loc_0AC8B equ 0C8Bh
 loc_0AC97 equ 0C97h
@@ -2314,9 +2317,13 @@ loc_0F797 equ 05797h
 ; @0AC32 0000:AC32 original=833eacbd01 runtime CFG evidence
     cmp word ptr ds:[0BDACh], 1
 ; @0AC37 0000:AC37 original=7503 runtime CFG evidence
-    JNE_SHORT loc_0AC3C
+    JNE_SHORT ProbeGridForRecordResponse_0AC3C
 ; @0AC39 0000:AC39 original=e908fe runtime CFG evidence
     JMP_NEAR loc_0AA44
+; ProbeGridForRecordResponse: internal entry after AC28 gates, not a separate proven function.
+; Probe base+13, then base+14 only if first attribute is zero and X low nibble !=0.
+; Negative-Y FFFF sentinel is NOT checked here: +13 wraps to 000C.
+; Attribute ZF controls response entry; source/table gameplay identities remain unknown.
 ; @0AC3C 0000:AC3C original=e834a4 runtime CFG evidence
     CALL_NEAR ComputeRecordGridOffset_05073
 ; @0AC3F 0000:AC3F original=83c30d runtime CFG evidence
@@ -2324,43 +2331,49 @@ loc_0F797 equ 05797h
 ; @0AC42 0000:AC42 original=e816a4 runtime CFG evidence
     CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0AC45 0000:AC45 original=750f runtime CFG evidence
-    JNE_SHORT loc_0AC56
+    JNE_SHORT SetResponseAndStepRecordCounter_0AC56
 ; @0AC47 0000:AC47 original=f746040f00 runtime CFG evidence
-    test word ptr ss:[bp + 4], 0Fh
+    test word ptr ss:[bp + REC_X], 0Fh
 ; @0AC4C 0000:AC4C original=7406 runtime CFG evidence
-    JE_SHORT loc_0AC54
+    JE_SHORT RecordResponseReturnClear_0AC54
 ; @0AC4E 0000:AC4E original=43 runtime CFG evidence
     inc bx
 ; @0AC4F 0000:AC4F original=e809a4 runtime CFG evidence
     CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0AC52 0000:AC52 original=7502 runtime CFG evidence
-    JNE_SHORT loc_0AC56
+    JNE_SHORT SetResponseAndStepRecordCounter_0AC56
+; Shared clear-carry return for both grid probe and independently called response helper.
 ; @0AC54 0000:AC54 original=f8 runtime CFG evidence
     clc
 ; @0AC55 0000:AC55 original=c3 runtime CFG evidence
     ret
+; SetResponseAndStepRecordCounter: also CALLed from ACF1 in the record scan.
+; SS:BP record; DS state. Set +24=5; decrement +20 only when BEDC!=0 or 2324==1.
+; CF=1 only on decremented zero, also clearing +24; otherwise CF=0. Zero wraps to FFFF.
+; If DS:98C0!=0, write BEFF=0E. Other flag values are path-dependent.
+; No general/segment register changes in this entry; shared return at AC54.
 ; @0AC56 0000:AC56 original=803ec09800 runtime CFG evidence
     cmp byte ptr ds:[098C0h], 0
 ; @0AC5B 0000:AC5B original=7405 runtime CFG evidence
-    JE_SHORT loc_0AC62
+    JE_SHORT SetRecordResponseWord_0AC62
 ; @0AC5D 0000:AC5D original=c606ffbe0e runtime CFG evidence
     mov byte ptr ds:[0BEFFh], 0Eh
 ; @0AC62 0000:AC62 original=c746240500 runtime CFG evidence
-    mov word ptr ss:[bp + 024h], 5
+    mov word ptr ss:[bp + RESPONSE_WORD_24], 5
 ; @0AC67 0000:AC67 original=833edcbe00 runtime CFG evidence
     cmp word ptr ds:[0BEDCh], 0
 ; @0AC6C 0000:AC6C original=7507 runtime CFG evidence
-    JNE_SHORT loc_0AC75
+    JNE_SHORT StepRecordResponseCounter_0AC75
 ; @0AC6E 0000:AC6E original=833e242301 runtime CFG evidence
-    cmp word ptr ds:[02324h], 1
+    cmp word ptr ds:[COUNT_GATE_2324], 1
 ; @0AC73 0000:AC73 original=75df runtime CFG evidence
-    JNE_SHORT loc_0AC54
+    JNE_SHORT RecordResponseReturnClear_0AC54
 ; @0AC75 0000:AC75 original=ff4e20 runtime CFG evidence
-    dec word ptr ss:[bp + 020h]
+    dec word ptr ss:[bp + RESPONSE_COUNTER_20]
 ; @0AC78 0000:AC78 original=75da runtime CFG evidence
-    JNE_SHORT loc_0AC54
+    JNE_SHORT RecordResponseReturnClear_0AC54
 ; @0AC7A 0000:AC7A original=c746240000 runtime CFG evidence
-    mov word ptr ss:[bp + 024h], 0
+    mov word ptr ss:[bp + RESPONSE_WORD_24], 0
 ; @0AC7F 0000:AC7F original=f9 runtime CFG evidence
     stc
 ; @0AC80 0000:AC80 original=c3 runtime CFG evidence
@@ -2449,8 +2462,9 @@ loc_0F797 equ 05797h
     JNE_SHORT loc_0ACD2
 ; @0ACEE 0000:ACEE original=e8a8fe runtime CFG evidence
     CALL_NEAR loc_0AB99
+; Record scan shares the same response/counter path as the grid attribute probe.
 ; @0ACF1 0000:ACF1 original=e862ff runtime CFG evidence
-    CALL_NEAR loc_0AC56
+    CALL_NEAR SetResponseAndStepRecordCounter_0AC56
 ; @0ACF4 0000:ACF4 original=7201 runtime CFG evidence
     JB_SHORT loc_0ACF7
 ; @0ACF6 0000:ACF6 original=c3 runtime CFG evidence
@@ -2591,6 +2605,8 @@ loc_0F797 equ 05797h
     cmp word ptr ds:[0BDACh], 1
 ; @0ADB4 0000:ADB4 original=7412 runtime CFG evidence
     JE_SHORT loc_0ADC8
+; Sibling grid probe: unlike AC3C, distinguishes attribute 1 from other nonzero bytes.
+; The FFFF grid sentinel is again not checked before adding 13.
 ; @0ADB6 0000:ADB6 original=e8baa2 runtime CFG evidence
     CALL_NEAR ComputeRecordGridOffset_05073
 ; @0ADB9 0000:ADB9 original=83c30d runtime CFG evidence
@@ -2801,6 +2817,7 @@ loc_0F797 equ 05797h
     cmp word ptr ds:[0A430h], 0
 ; @0B00C 0000:B00C original=c3 runtime CFG evidence
     ret
+; Sibling grid consumer explicitly rejects BX=FFFF; grid-helper flags are dead.
 ; @0B00D 0000:B00D original=e863a0 runtime CFG evidence
     CALL_NEAR ComputeRecordGridOffset_05073
 ; @0B010 0000:B010 original=83fbff runtime CFG evidence
