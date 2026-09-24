@@ -815,7 +815,7 @@
     },
     {
       "confidence": "UNKNOWN",
-      "end": 40118,
+      "end": 40066,
       "kind": "UNKNOWN",
       "start": 40048
     },
@@ -823,7 +823,7 @@
       "confidence": "INFERRED",
       "end": 40295,
       "kind": "reachable_instruction",
-      "start": 40118
+      "start": 40066
     },
     {
       "confidence": "UNKNOWN",
@@ -2998,6 +2998,27 @@
       "kind": "near_code_pointer_table",
       "site": "0000:083E",
       "start": 22874
+    },
+    {
+      "confidence": "PROVEN",
+      "end": 40066,
+      "entries": [
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9CAD",
+        "0000:9C82",
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9C93",
+        "0000:9C82",
+        "0000:44AF"
+      ],
+      "evidence": "metadata/record-movement.json; two conditional increments each of initially zero AH and AL give index AL+3*AH in0..8",
+      "exhaustive": true,
+      "kind": "near_code_pointer_table",
+      "precondition": "normal entry through9C01/9C35; no arbitrary mid-block entry or asynchronous register corruption",
+      "site": "0000:9C6B",
+      "start": 40048
     }
   ],
   "uninitialized_state": "UNKNOWN; do not label unpacker workspace or zero-filled initialized bytes BSS."

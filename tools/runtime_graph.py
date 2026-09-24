@@ -32,7 +32,7 @@ def generate(folders):
     for f in a['functions']:
         f['call_graph_depth']=depth[f['address']]
         if f['address'] in names:
-            r=names[f['address']];f.update({k:r[k] for k in ('name','category','contract','confidence','claim_axes')});f['named']=True
+            r=names[f['address']];f.update({k:r[k] for k in ('name','category','contract','confidence','claim_axes','concern','concern_evidence')});f['named']=True
     write_json(out/'functions.json',a['functions']);write_json(out/'bottom-up-queue.json',sorted(a['functions'],key=lambda f:(f['call_graph_depth'],len(f['instructions']),f['address'])))
     write_json(out/'call-graph.json',dict(nodes=[dict(address=f['address'],name=f['name'],depth=depth[f['address']]) for f in a['functions']],edges=[dict(caller=f['address'],callee=c,kind=kind) for f in a['functions'] for kind,values in [('call',f['callees']),('tail',f['tail_targets'])] for c in values],external_driver_entrypoints=['1022:0000','1022:0004'],strongly_connected_components=groups))
     write_json(out/'observed-coverage.json',dict(runs=runs,observed_main_instruction_bytes=len(executed),main_cfg_instruction_bytes=len(code_offsets(a)),additional_main_cfg_instruction_bytes=len(newbytes),main_function_candidates=len(a['functions']),initial_function_candidates=len(old['functions']),conflicts=a['conflicts'],unmatched_runtime_instruction_versions=versions,newly_discovered_main_bytes_are_assembled=not bool(newbytes-assembled),newly_discovered_main_bytes_remaining_opaque=len(newbytes-assembled),source_priority='Use runtime graph for bottom-up work; preserve reviewed source. Exact source-map accounting independently tracks instruction versus opaque representation.'))

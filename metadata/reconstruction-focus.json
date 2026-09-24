@@ -1,4 +1,11 @@
 {
+  "completed_record_batch": {
+    "data_promoted": 18,
+    "evidence": "metadata/record-movement.json",
+    "indirect_site_closed": "0000:9C6B",
+    "instructions_promoted": 52,
+    "symbolic_operands_promoted": 69
+  },
   "completed_second_batch": {
     "evidence": "metadata/drivers/adlib-data.json",
     "reviewed_data_bytes": 56,
@@ -69,10 +76,10 @@
     "WriteOpl2Register"
   ],
   "next_static_queue": [
-    "AdLib02AA conditional cached write using reviewed record fields",
-    "AdLib02C9/02F6 shared update tail and stack conventions",
-    "Tandy3153 mask renderer including16/17 branches",
-    "DS:234C source-window writers and caller preconditions"
+    "Record pool fallback BD0D and unchecked callers C450/D1AE: prove capacity/lifetime obligations",
+    "9CF1 position-history consumer after reviewed9C01 adjustment",
+    "9CD9 and9CF1 shared record237C field relationships",
+    "AdLib02AA conditional write only as bounded secondary task"
   ],
   "preserved_variants": [
     "CGA",

@@ -2266,6 +2266,16 @@
       "kind": "call"
     },
     {
+      "callee": "0000:A5FC",
+      "caller": "0000:9C01",
+      "kind": "tail"
+    },
+    {
+      "callee": "0000:A60A",
+      "caller": "0000:9C01",
+      "kind": "tail"
+    },
+    {
       "callee": "0000:4FF9",
       "caller": "0000:9CB6",
       "kind": "call"
@@ -4879,7 +4889,7 @@
     {
       "address": "0000:7524",
       "depth": 0,
-      "name": "sub_0000_7524"
+      "name": "FindFreeRecordPoolA"
     },
     {
       "address": "0000:7547",
@@ -4889,7 +4899,7 @@
     {
       "address": "0000:7573",
       "depth": 0,
-      "name": "sub_0000_7573"
+      "name": "FindFreeRecordPoolB"
     },
     {
       "address": "0000:7596",
@@ -5034,7 +5044,7 @@
     {
       "address": "0000:99BF",
       "depth": 0,
-      "name": "sub_0000_99BF"
+      "name": "InitPositionHistory"
     },
     {
       "address": "0000:99F6",
@@ -5064,7 +5074,7 @@
     {
       "address": "0000:9C01",
       "depth": 2,
-      "name": "sub_0000_9C01"
+      "name": "AdjustRecordXFromCounts"
     },
     {
       "address": "0000:9CB6",
@@ -5074,12 +5084,12 @@
     {
       "address": "0000:9CD9",
       "depth": 0,
-      "name": "sub_0000_9CD9"
+      "name": "StorePositionHistory"
     },
     {
       "address": "0000:9CF1",
       "depth": 0,
-      "name": "sub_0000_9CF1"
+      "name": "AdvancePositionHistoryIfRequested"
     },
     {
       "address": "0000:9D4D",
@@ -5124,17 +5134,17 @@
     {
       "address": "0000:9FAF",
       "depth": 1,
-      "name": "sub_0000_9FAF"
+      "name": "PlaceFourRecordsFromOffsetTables"
     },
     {
       "address": "0000:9FEA",
       "depth": 0,
-      "name": "sub_0000_9FEA"
+      "name": "PlaceRecordFromOffsetPair"
     },
     {
       "address": "0000:A031",
       "depth": 0,
-      "name": "sub_0000_A031"
+      "name": "ApplyPositionHistoryToRecords"
     },
     {
       "address": "0000:A067",
@@ -5229,7 +5239,7 @@
     {
       "address": "0000:A5D1",
       "depth": 1,
-      "name": "sub_0000_A5D1"
+      "name": "DecRecordYByMode"
     },
     {
       "address": "0000:A5DB",
@@ -5239,7 +5249,7 @@
     {
       "address": "0000:A5EA",
       "depth": 1,
-      "name": "sub_0000_A5EA"
+      "name": "IncRecordYTwice"
     },
     {
       "address": "0000:A5ED",
@@ -5249,7 +5259,7 @@
     {
       "address": "0000:A5F9",
       "depth": 1,
-      "name": "sub_0000_A5F9"
+      "name": "DecRecordXTwice"
     },
     {
       "address": "0000:A5FC",
@@ -5259,7 +5269,7 @@
     {
       "address": "0000:A607",
       "depth": 1,
-      "name": "sub_0000_A607"
+      "name": "IncRecordXTwice"
     },
     {
       "address": "0000:A60A",

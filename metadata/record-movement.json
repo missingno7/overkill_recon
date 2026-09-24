@@ -1,0 +1,200 @@
+{
+  "caller_insights": [
+    {
+      "address": "0000:9B2E",
+      "concern": "MIXED",
+      "confidence": "STRONG",
+      "evidence": "Calls keyboard/joystick poll0162 then operates on record237C; movement is only one branch of a larger partially understood update",
+      "name": "not promoted to UpdatePlayer"
+    },
+    {
+      "address": "0000:7420/7476/A515/A584",
+      "concern": "GAME_LOGIC",
+      "confidence": "STRONG_FOR_REVIEWED_RECORD_EFFECTS",
+      "evidence": "Free-slot searches, coordinate initialization, activation/type fields; object role still unknown"
+    }
+  ],
+  "count_dispatch": {
+    "action": "sign(AH-AL) gives one guarded X step; magnitude1 suppressed if DS2324==1; magnitude2 not suppressed; equal returns",
+    "boundaries": "These are internal branch/tail entries of9C01, not invented functions",
+    "branch_bodies": [
+      [
+        "0000:9C82",
+        "increment if gate!=1"
+      ],
+      [
+        "0000:9C93",
+        "increment"
+      ],
+      [
+        "0000:9C9C",
+        "decrement if gate!=1"
+      ],
+      [
+        "0000:9CAD",
+        "decrement"
+      ]
+    ],
+    "byte_sha256": "7071a239441ddbfea46c20a434140825d3fd14fe1657b44647ded92d3586f8c4",
+    "confidence": "PROVEN",
+    "end": 40066,
+    "exhaustive_under": "normal entry through9C01/9C35 and preserved registers across interrupts; arbitrary mid-block execution not claimed",
+    "negative_count_slots": [
+      43368,
+      43372
+    ],
+    "positive_count_slots": [
+      43366,
+      43370
+    ],
+    "presence": "word != FFFF; zero is present",
+    "proof": "XOR AX; two conditional INC AH and two conditional INC AL; no other AX-changing calls; index=AL+3*AH ranges0..8",
+    "shared_return": "0000:44AF",
+    "site": "0000:9C6B",
+    "start": 40048,
+    "synthetic_tests": "all16 sentinel combinations; gate0/1/2; input auto-step order; bounds/wrap",
+    "words": [
+      17583,
+      40092,
+      40109,
+      40066,
+      17583,
+      40092,
+      40083,
+      40066,
+      17583
+    ]
+  },
+  "fields": [
+    {
+      "full_state_enum": "UNKNOWN",
+      "meaning": "zero accepted by free-record searches; nonzero skipped",
+      "name": "REC_STATUS",
+      "offset": 0,
+      "operation_confidence": "PROVEN",
+      "width": 2
+    },
+    {
+      "evidence": [
+        "30D2 uses BP+2 to index row-offset table99C8",
+        "0F15 initializes table with16-row bias and CS959E pitch",
+        "9B76/9B80 update it through bit8/bit4 inputs"
+      ],
+      "meaning": "vertical coordinate-like word",
+      "name": "REC_Y",
+      "offset": 2,
+      "semantic_confidence": "STRONG",
+      "unknown": "entity identity and full signed domain",
+      "width": 2
+    },
+    {
+      "evidence": [
+        "30EC..30F6 divides BP+4 by2 and adds row offset for packed Tandy bytes",
+        "9B8A/9B94 and9C01 move it through bit1/bit2 paths"
+      ],
+      "meaning": "horizontal pixel-coordinate-like word",
+      "name": "REC_X",
+      "offset": 4,
+      "semantic_confidence": "STRONG",
+      "unknown": "global coordinate frame outside reviewed callers",
+      "width": 2
+    }
+  ],
+  "liveness": [
+    {
+      "dead_at_reviewed_sites": "CMP BX,FFFF immediately follows most calls; atA6CA POP SI precedes CMP and does not inspect flags",
+      "demonstrably_observed": [
+        "BX used as pointer orFFFF result",
+        "DS cursor used by next search"
+      ],
+      "modified": [
+        "BX",
+        "CX",
+        "arithmetic flags"
+      ],
+      "not_claimed_dead": [
+        "CX across all caller paths",
+        "flags through unchecked helper chains"
+      ],
+      "site": "0000:7524/7573"
+    },
+    {
+      "flags_dead_at": "9B76->TEST9B79,9B80->TEST9B83,9B8A->TEST9B8D,9B94->CMP9B97;9C15->MOV9C18->TEST9C1E;9C2C->MOV9C2F->XOR9C35",
+      "modified": [
+        "record coordinate word",
+        "arithmetic flags",
+        "temporary stack slots"
+      ],
+      "observable": "record word; registers preserved",
+      "site": "0000:A5D1/A5EA/A5F9/A607"
+    },
+    {
+      "ax_bx_global_liveness": "UNKNOWN; no dead-register ABI relaxation claimed",
+      "flags_dead_at": "9CF1 first instruction TEST DS:98BE,0F",
+      "modified": [
+        "AX",
+        "BX",
+        "arithmetic flags",
+        "SS:[BP+4]",
+        "DS:A360"
+      ],
+      "observable": "SS coordinate andA360 read by downstream9CF1 path",
+      "site": "0000:9C01"
+    }
+  ],
+  "metric_limits": "Pool span is not fully understood data: only documented field operations are reviewed. Candidate function ownership is not a proven partition.",
+  "movement": {
+    "category": "ASM_COUPLED",
+    "classification": "GAME_LOGIC",
+    "future_conversion": "Logical whole wrapper contract is isolatable, but preserve inner/outer stack and shared-entry conventions until observable state is fully established",
+    "preconditions": "BP addresses record in SS; globals in DS; no required equality of DS and SS",
+    "shape": "CALL to next instruction then fallthrough through same helper after inner return; two guarded steps",
+    "special_case": "A5D1 nonzero DS:A47C branches to one unconditional decrement, including word wrap",
+    "wrappers": [
+      "0000:A5D1",
+      "0000:A5EA",
+      "0000:A5F9",
+      "0000:A607"
+    ]
+  },
+  "pool_semantics": {
+    "confidence": "PROVEN under stated cursor preconditions",
+    "evidence": [
+      "original initial cursor words atDS95D8/95DA are23B4/2B5C",
+      "original strides/counts/wraps in7524 and7573",
+      "every start/free position and full pool tested with unmodified record bodies",
+      "7429/A6D3 write status1 only after search returns"
+    ],
+    "failure": "BX=FFFF,CX=0; cursor unchanged",
+    "operation": "Find first zero status word, update cursor, do not activate",
+    "unchecked_call_sites": [
+      "0000:C450",
+      "0000:D1AE"
+    ],
+    "unchecked_failure_preconditions": "UNKNOWN; do not infer callers always guarantee free capacity"
+  },
+  "pools": [
+    {
+      "count": 35,
+      "cursor": 38360,
+      "cursor_precondition": "aligned member pointer; end pointer is not normalized before read",
+      "end": 11100,
+      "name": "POOL_A",
+      "search": "0000:7524",
+      "start": 9140,
+      "stride": 56
+    },
+    {
+      "count": 34,
+      "cursor": 38362,
+      "cursor_precondition": "aligned member pointer or exact end pointer; normalized before read",
+      "end": 13004,
+      "name": "POOL_B",
+      "search": "0000:7573",
+      "start": 11100,
+      "stride": 56
+    }
+  ],
+  "schema": 1,
+  "scope": "Static record search and coordinate-adjustment cluster; no entity type or player identity asserted"
+}

@@ -3,6 +3,9 @@ include ENCODING.INC
 part01 segment byte public 'CODE'
 assume cs:part01,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Modern record/state symbols; evidence in metadata/record-movement.json.
+REC_X equ 04h
+REC_Y equ 02h
 CopyWorkspace104x192ToTandy_03354 equ 01354h
 ClearTandy104x200_03389 equ 01389h
 CopyPackedRowsToTandyBanks_0306F equ 0106Fh
@@ -2525,7 +2528,7 @@ loc_0511F equ 0311Fh
 ; @030D1 0000:30D1 original=c3
     ret
 ; @030D2 0000:30D2 original=8b5e02 runtime CFG evidence
-    mov bx, word ptr ss:[bp + 2]
+    mov bx, word ptr ss:[bp + REC_Y]
 ; @030D5 0000:30D5 original=81fbe000 runtime CFG evidence
     cmp bx, 0E0h
 ; @030D9 0000:30D9 original=7203 runtime CFG evidence
@@ -2543,7 +2546,7 @@ loc_0511F equ 0311Fh
 ; @030E9 0000:30E9 original=e9c6f4 runtime CFG evidence
     JMP_NEAR loc_025B2
 ; @030EC 0000:30EC original=8b4604 runtime CFG evidence
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
 ; @030EF 0000:30EF original=c746120000 runtime CFG evidence
     mov word ptr ss:[bp + 012h], 0
 ; @030F4 0000:30F4 original=d1e8 runtime CFG evidence

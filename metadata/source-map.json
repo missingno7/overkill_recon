@@ -18298,7 +18298,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 12498,
-          "text": "mov bx, word ptr ss:[bp + 2]"
+          "text": "mov bx, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:30D5",
@@ -18370,7 +18370,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 12524,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:30EF",
@@ -30336,7 +30336,7 @@
           "end": 19154,
           "kind": "instruction",
           "start": 19151,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:4AD2",
@@ -56992,7 +56992,7 @@
           "end": 29731,
           "kind": "instruction",
           "start": 29728,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:7423",
@@ -57020,7 +57020,7 @@
           "end": 29741,
           "kind": "instruction",
           "start": 29737,
-          "text": "mov word ptr ds:[bx], 1"
+          "text": "mov word ptr ds:[bx + REC_STATUS], 1"
         },
         {
           "address": "0000:742D",
@@ -57041,7 +57041,7 @@
           "end": 29751,
           "kind": "instruction",
           "start": 29748,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         },
         {
           "address": "0000:7437",
@@ -57076,7 +57076,7 @@
           "end": 29765,
           "kind": "instruction",
           "start": 29762,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:7445",
@@ -57168,7 +57168,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29814,
-          "text": "CALL_NEAR loc_07573"
+          "text": "CALL_NEAR FindFreeRecordPoolB_07573"
         },
         {
           "address": "0000:7479",
@@ -57272,7 +57272,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29854,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:74A1",
@@ -57288,7 +57288,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29859,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:74A6",
@@ -57296,7 +57296,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29862,
-          "text": "mov ax, word ptr ss:[bp + 2]"
+          "text": "mov ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:74A9",
@@ -57312,7 +57312,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29867,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         },
         {
           "address": "0000:74AE",
@@ -57344,7 +57344,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29877,
-          "text": "mov word ptr ds:[bx], 1"
+          "text": "mov word ptr ds:[bx + REC_STATUS], 1"
         },
         {
           "address": "0000:74B9",
@@ -57424,7 +57424,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29922,
-          "text": "mov ax, word ptr ds:[bx + 4]"
+          "text": "mov ax, word ptr ds:[bx + REC_X]"
         },
         {
           "address": "0000:74E5",
@@ -57464,7 +57464,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29937,
-          "text": "mov ax, word ptr ds:[bx + 2]"
+          "text": "mov ax, word ptr ds:[bx + REC_Y]"
         },
         {
           "address": "0000:74F4",
@@ -57504,7 +57504,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 29950,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:7501",
@@ -57615,21 +57615,21 @@
           "end": 29991,
           "kind": "instruction",
           "start": 29988,
-          "text": "mov cx, 023h"
+          "text": "mov cx, POOL_A_COUNT"
         },
         {
           "address": "0000:7527",
           "end": 29995,
           "kind": "instruction",
           "start": 29991,
-          "text": "mov bx, word ptr ds:[095D8h]"
+          "text": "mov bx, word ptr ds:[POOL_A_CURSOR]"
         },
         {
           "address": "0000:752B",
           "end": 29998,
           "kind": "instruction",
           "start": 29995,
-          "text": "cmp word ptr ds:[bx], 0"
+          "text": "cmp word ptr ds:[bx + REC_STATUS], 0"
         },
         {
           "address": "0000:752E",
@@ -57643,14 +57643,14 @@
           "end": 30003,
           "kind": "instruction",
           "start": 30000,
-          "text": "add bx, 038h"
+          "text": "add bx, REC_STRIDE"
         },
         {
           "address": "0000:7533",
           "end": 30007,
           "kind": "instruction",
           "start": 30003,
-          "text": "cmp bx, 02B5Ch"
+          "text": "cmp bx, POOL_A_END"
         },
         {
           "address": "0000:7537",
@@ -57664,7 +57664,7 @@
           "end": 30012,
           "kind": "instruction",
           "start": 30009,
-          "text": "mov bx, 023B4h"
+          "text": "mov bx, POOL_A_START"
         },
         {
           "address": "0000:753C",
@@ -57692,7 +57692,7 @@
           "end": 30022,
           "kind": "instruction",
           "start": 30018,
-          "text": "mov word ptr ds:[095D8h], bx"
+          "text": "mov word ptr ds:[POOL_A_CURSOR], bx"
         },
         {
           "address": "0000:7546",
@@ -57706,7 +57706,7 @@
           "end": 30026,
           "kind": "instruction",
           "start": 30023,
-          "text": "CALL_NEAR loc_07573"
+          "text": "CALL_NEAR FindFreeRecordPoolB_07573"
         },
         {
           "address": "0000:754A",
@@ -57818,21 +57818,21 @@
           "end": 30070,
           "kind": "instruction",
           "start": 30067,
-          "text": "mov cx, 022h"
+          "text": "mov cx, POOL_B_COUNT"
         },
         {
           "address": "0000:7576",
           "end": 30074,
           "kind": "instruction",
           "start": 30070,
-          "text": "mov bx, word ptr ds:[095DAh]"
+          "text": "mov bx, word ptr ds:[POOL_B_CURSOR]"
         },
         {
           "address": "0000:757A",
           "end": 30078,
           "kind": "instruction",
           "start": 30074,
-          "text": "cmp bx, 032CCh"
+          "text": "cmp bx, POOL_B_END"
         },
         {
           "address": "0000:757E",
@@ -57846,14 +57846,14 @@
           "end": 30083,
           "kind": "instruction",
           "start": 30080,
-          "text": "mov bx, 02B5Ch"
+          "text": "mov bx, POOL_B_START"
         },
         {
           "address": "0000:7583",
           "end": 30086,
           "kind": "instruction",
           "start": 30083,
-          "text": "cmp word ptr ds:[bx], 0"
+          "text": "cmp word ptr ds:[bx + REC_STATUS], 0"
         },
         {
           "address": "0000:7586",
@@ -57867,7 +57867,7 @@
           "end": 30091,
           "kind": "instruction",
           "start": 30088,
-          "text": "add bx, 038h"
+          "text": "add bx, REC_STRIDE"
         },
         {
           "address": "0000:758B",
@@ -57895,7 +57895,7 @@
           "end": 30101,
           "kind": "instruction",
           "start": 30097,
-          "text": "mov word ptr ds:[095DAh], bx"
+          "text": "mov word ptr ds:[POOL_B_CURSOR], bx"
         },
         {
           "address": "0000:7595",
@@ -60054,7 +60054,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 31268,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:7A27",
@@ -61390,7 +61390,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 33257,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:81EC",
@@ -61430,7 +61430,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 33268,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:81F7",
@@ -65261,7 +65261,7 @@
           "end": 38790,
           "kind": "instruction",
           "start": 38787,
-          "text": "CALL_NEAR loc_099BF"
+          "text": "CALL_NEAR InitPositionHistory_099BF"
         },
         {
           "address": "0000:9786",
@@ -66444,35 +66444,35 @@
           "end": 39364,
           "kind": "instruction",
           "start": 39359,
-          "text": "mov es, word ptr cs:[09596h]"
+          "text": "mov es, word ptr cs:[MAIN_DATA_SEGMENT]"
         },
         {
           "address": "0000:99C4",
           "end": 39367,
           "kind": "instruction",
           "start": 39364,
-          "text": "mov di, 0A27Ah"
+          "text": "mov di, HISTORY_BEGIN"
         },
         {
           "address": "0000:99C7",
           "end": 39370,
           "kind": "instruction",
           "start": 39367,
-          "text": "mov cx, 030h"
+          "text": "mov cx, HISTORY_PAIR_COUNT"
         },
         {
           "address": "0000:99CA",
           "end": 39373,
           "kind": "instruction",
           "start": 39370,
-          "text": "mov bp, 0237Ch"
+          "text": "mov bp, PRIMARY_RECORD"
         },
         {
           "address": "0000:99CD",
           "end": 39376,
           "kind": "instruction",
           "start": 39373,
-          "text": "mov ax, word ptr ss:[bp + 2]"
+          "text": "mov ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:99D0",
@@ -66493,7 +66493,7 @@
           "end": 39383,
           "kind": "instruction",
           "start": 39380,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:99D7",
@@ -66521,28 +66521,28 @@
           "end": 39395,
           "kind": "instruction",
           "start": 39389,
-          "text": "mov word ptr ds:[0A33Ah], 0A27Ah"
+          "text": "mov word ptr ds:[HISTORY_WRITE_CURSOR], HISTORY_BEGIN"
         },
         {
           "address": "0000:99E3",
           "end": 39401,
           "kind": "instruction",
           "start": 39395,
-          "text": "mov word ptr ds:[0A33Ch], 0A2FEh"
+          "text": "mov word ptr ds:[HISTORY_READ_CURSOR_15], HISTORY_INITIAL_READ_15"
         },
         {
           "address": "0000:99E9",
           "end": 39407,
           "kind": "instruction",
           "start": 39401,
-          "text": "mov word ptr ds:[0A33Eh], 0A2BEh"
+          "text": "mov word ptr ds:[HISTORY_READ_CURSOR_31], HISTORY_INITIAL_READ_31"
         },
         {
           "address": "0000:99EF",
           "end": 39413,
           "kind": "instruction",
           "start": 39407,
-          "text": "mov word ptr ds:[0A340h], 0A27Eh"
+          "text": "mov word ptr ds:[HISTORY_CURSOR_47], HISTORY_INITIAL_CURSOR_47"
         },
         {
           "address": "0000:99F5",
@@ -66797,7 +66797,7 @@
           "end": 39746,
           "kind": "instruction",
           "start": 39741,
-          "text": "cmp word ptr ds:[0A47Ch], 0"
+          "text": "cmp word ptr ds:[MOVE_MODE_A47C], 0"
         },
         {
           "address": "0000:9B42",
@@ -66818,7 +66818,7 @@
           "end": 39756,
           "kind": "instruction",
           "start": 39751,
-          "text": "cmp word ptr ds:[0A47Ch], 4"
+          "text": "cmp word ptr ds:[MOVE_MODE_A47C], 4"
         },
         {
           "address": "0000:9B4C",
@@ -66895,7 +66895,7 @@
           "end": 39796,
           "kind": "instruction",
           "start": 39791,
-          "text": "test byte ptr ds:[098BEh], 8"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_YMINUS"
         },
         {
           "address": "0000:9B74",
@@ -66909,14 +66909,14 @@
           "end": 39801,
           "kind": "instruction",
           "start": 39798,
-          "text": "CALL_NEAR loc_0A5D1"
+          "text": "CALL_NEAR DecRecordYByMode_0A5D1"
         },
         {
           "address": "0000:9B79",
           "end": 39806,
           "kind": "instruction",
           "start": 39801,
-          "text": "test byte ptr ds:[098BEh], 4"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_YPLUS"
         },
         {
           "address": "0000:9B7E",
@@ -66930,14 +66930,14 @@
           "end": 39811,
           "kind": "instruction",
           "start": 39808,
-          "text": "CALL_NEAR loc_0A5EA"
+          "text": "CALL_NEAR IncRecordYTwice_0A5EA"
         },
         {
           "address": "0000:9B83",
           "end": 39816,
           "kind": "instruction",
           "start": 39811,
-          "text": "test byte ptr ds:[098BEh], 1"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XPLUS"
         },
         {
           "address": "0000:9B88",
@@ -66951,14 +66951,14 @@
           "end": 39821,
           "kind": "instruction",
           "start": 39818,
-          "text": "CALL_NEAR loc_0A607"
+          "text": "CALL_NEAR IncRecordXTwice_0A607"
         },
         {
           "address": "0000:9B8D",
           "end": 39826,
           "kind": "instruction",
           "start": 39821,
-          "text": "test byte ptr ds:[098BEh], 2"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XMINUS"
         },
         {
           "address": "0000:9B92",
@@ -66972,7 +66972,7 @@
           "end": 39831,
           "kind": "instruction",
           "start": 39828,
-          "text": "CALL_NEAR loc_0A5F9"
+          "text": "CALL_NEAR DecRecordXTwice_0A5F9"
         },
         {
           "address": "0000:9B97",
@@ -66993,7 +66993,7 @@
           "end": 39844,
           "kind": "instruction",
           "start": 39839,
-          "text": "test byte ptr ds:[098BEh], 020h"
+          "text": "test byte ptr ds:[INPUT_BITS], 020h"
         },
         {
           "address": "0000:9BA4",
@@ -67063,7 +67063,7 @@
           "end": 39877,
           "kind": "instruction",
           "start": 39872,
-          "text": "cmp word ptr ds:[0A47Ch], 1"
+          "text": "cmp word ptr ds:[MOVE_MODE_A47C], 1"
         },
         {
           "address": "0000:9BC5",
@@ -67084,7 +67084,7 @@
           "end": 39887,
           "kind": "instruction",
           "start": 39882,
-          "text": "cmp word ptr ds:[0A47Ch], 0"
+          "text": "cmp word ptr ds:[MOVE_MODE_A47C], 0"
         },
         {
           "address": "0000:9BCF",
@@ -67119,28 +67119,28 @@
           "end": 39903,
           "kind": "instruction",
           "start": 39900,
-          "text": "CALL_NEAR loc_09C01"
+          "text": "CALL_NEAR AdjustRecordXFromCounts_09C01"
         },
         {
           "address": "0000:9BDF",
           "end": 39906,
           "kind": "instruction",
           "start": 39903,
-          "text": "CALL_NEAR loc_09CF1"
+          "text": "CALL_NEAR AdvancePositionHistoryIfRequested_09CF1"
         },
         {
           "address": "0000:9BE2",
           "end": 39909,
           "kind": "instruction",
           "start": 39906,
-          "text": "CALL_NEAR loc_09CD9"
+          "text": "CALL_NEAR StorePositionHistory_09CD9"
         },
         {
           "address": "0000:9BE5",
           "end": 39912,
           "kind": "instruction",
           "start": 39909,
-          "text": "CALL_NEAR loc_0A031"
+          "text": "CALL_NEAR ApplyPositionHistoryToRecords_0A031"
         },
         {
           "address": "0000:9BE8",
@@ -67175,7 +67175,7 @@
           "end": 39930,
           "kind": "instruction",
           "start": 39927,
-          "text": "CALL_NEAR loc_09FAF"
+          "text": "CALL_NEAR PlaceFourRecordsFromOffsetTables_09FAF"
         },
         {
           "address": "0000:9BFA",
@@ -67217,14 +67217,14 @@
           "end": 39943,
           "kind": "instruction",
           "start": 39937,
-          "text": "mov word ptr ds:[0A360h], 0"
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 0"
         },
         {
           "address": "0000:9C07",
           "end": 39948,
           "kind": "instruction",
           "start": 39943,
-          "text": "test byte ptr ds:[098BEh], 2"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XMINUS"
         },
         {
           "address": "0000:9C0C",
@@ -67238,7 +67238,7 @@
           "end": 39955,
           "kind": "instruction",
           "start": 39950,
-          "text": "cmp byte ptr ds:[0A39Eh], 1"
+          "text": "cmp byte ptr ds:[AUTO_XPLUS_A39E], 1"
         },
         {
           "address": "0000:9C13",
@@ -67252,21 +67252,21 @@
           "end": 39960,
           "kind": "instruction",
           "start": 39957,
-          "text": "CALL_NEAR loc_0A607"
+          "text": "CALL_NEAR IncRecordXTwice_0A607"
         },
         {
           "address": "0000:9C18",
           "end": 39966,
           "kind": "instruction",
           "start": 39960,
-          "text": "mov word ptr ds:[0A360h], 1"
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
         },
         {
           "address": "0000:9C1E",
           "end": 39971,
           "kind": "instruction",
           "start": 39966,
-          "text": "test byte ptr ds:[098BEh], 1"
+          "text": "test byte ptr ds:[INPUT_BITS], IN_XPLUS"
         },
         {
           "address": "0000:9C23",
@@ -67280,7 +67280,7 @@
           "end": 39978,
           "kind": "instruction",
           "start": 39973,
-          "text": "cmp byte ptr ds:[0A39Fh], 1"
+          "text": "cmp byte ptr ds:[AUTO_XMINUS_A39F], 1"
         },
         {
           "address": "0000:9C2A",
@@ -67294,14 +67294,14 @@
           "end": 39983,
           "kind": "instruction",
           "start": 39980,
-          "text": "CALL_NEAR loc_0A5F9"
+          "text": "CALL_NEAR DecRecordXTwice_0A5F9"
         },
         {
           "address": "0000:9C2F",
           "end": 39989,
           "kind": "instruction",
           "start": 39983,
-          "text": "mov word ptr ds:[0A360h], 1"
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
         },
         {
           "address": "0000:9C35",
@@ -67315,7 +67315,7 @@
           "end": 39996,
           "kind": "instruction",
           "start": 39991,
-          "text": "cmp word ptr ds:[0A966h], -1"
+          "text": "cmp word ptr ds:[PLUS_SLOT_A966], -1"
         },
         {
           "address": "0000:9C3C",
@@ -67336,7 +67336,7 @@
           "end": 40006,
           "kind": "instruction",
           "start": 40001,
-          "text": "cmp word ptr ds:[0A968h], -1"
+          "text": "cmp word ptr ds:[MINUS_SLOT_A968], -1"
         },
         {
           "address": "0000:9C46",
@@ -67357,7 +67357,7 @@
           "end": 40016,
           "kind": "instruction",
           "start": 40011,
-          "text": "cmp word ptr ds:[0A96Ah], -1"
+          "text": "cmp word ptr ds:[PLUS_SLOT_A96A], -1"
         },
         {
           "address": "0000:9C50",
@@ -67378,7 +67378,7 @@
           "end": 40026,
           "kind": "instruction",
           "start": 40021,
-          "text": "cmp word ptr ds:[0A96Ch], -1"
+          "text": "cmp word ptr ds:[MINUS_SLOT_A96C], -1"
         },
         {
           "address": "0000:9C5A",
@@ -67441,32 +67441,182 @@
           "end": 40048,
           "kind": "instruction",
           "start": 40043,
-          "text": "jmp word ptr cs:[bx - 06390h]"
+          "text": "jmp word ptr cs:[bx + COUNT_X_TABLE]"
+        },
+        {
+          "end": 40050,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40048,
+          "text": "dw CountXReturn"
+        },
+        {
+          "end": 40052,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40050,
+          "text": "dw CountXDecIfGate"
+        },
+        {
+          "end": 40054,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40052,
+          "text": "dw CountXDec"
+        },
+        {
+          "end": 40056,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40054,
+          "text": "dw CountXIncIfGate"
+        },
+        {
+          "end": 40058,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40056,
+          "text": "dw CountXReturn"
+        },
+        {
+          "end": 40060,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40058,
+          "text": "dw CountXDecIfGate"
+        },
+        {
+          "end": 40062,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40060,
+          "text": "dw CountXInc"
         },
         {
           "end": 40064,
-          "kind": "opaque_unknown",
-          "start": 40048
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40062,
+          "text": "dw CountXIncIfGate"
         },
         {
+          "end": 40066,
+          "evidence": "metadata/record-movement.json#count_dispatch",
+          "kind": "reconstructed_data",
+          "start": 40064,
+          "text": "dw CountXReturn"
+        },
+        {
+          "address": "0000:9C82",
+          "end": 40071,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40066,
+          "text": "cmp word ptr ds:[COUNT_GATE_2324], 1"
+        },
+        {
+          "address": "0000:9C87",
+          "end": 40073,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40071,
+          "text": "JNE_SHORT loc_09C8A"
+        },
+        {
+          "address": "0000:9C89",
+          "end": 40074,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40073,
+          "text": "ret"
+        },
+        {
+          "address": "0000:9C8A",
           "end": 40080,
-          "kind": "opaque_unknown",
-          "start": 40064
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40074,
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
         },
         {
-          "end": 40096,
-          "kind": "opaque_unknown",
-          "start": 40080
+          "address": "0000:9C90",
+          "end": 40083,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40080,
+          "text": "JMP_NEAR loc_0A60A"
         },
         {
-          "end": 40112,
-          "kind": "opaque_unknown",
-          "start": 40096
+          "address": "0000:9C93",
+          "end": 40089,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40083,
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
         },
         {
+          "address": "0000:9C99",
+          "end": 40092,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40089,
+          "text": "JMP_NEAR loc_0A60A"
+        },
+        {
+          "address": "0000:9C9C",
+          "end": 40097,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40092,
+          "text": "cmp word ptr ds:[COUNT_GATE_2324], 1"
+        },
+        {
+          "address": "0000:9CA1",
+          "end": 40099,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40097,
+          "text": "JNE_SHORT loc_09CA4"
+        },
+        {
+          "address": "0000:9CA3",
+          "end": 40100,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40099,
+          "text": "ret"
+        },
+        {
+          "address": "0000:9CA4",
+          "end": 40106,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40100,
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+        },
+        {
+          "address": "0000:9CAA",
+          "end": 40109,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40106,
+          "text": "JMP_NEAR loc_0A5FC"
+        },
+        {
+          "address": "0000:9CAD",
+          "end": 40115,
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40109,
+          "text": "mov word ptr ds:[X_ADJUST_TAKEN], 1"
+        },
+        {
+          "address": "0000:9CB3",
           "end": 40118,
-          "kind": "opaque_unknown",
-          "start": 40112
+          "kind": "instruction",
+          "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
+          "start": 40115,
+          "text": "JMP_NEAR loc_0A5FC"
         },
         {
           "address": "0000:9CB6",
@@ -67571,21 +67721,21 @@
           "end": 40158,
           "kind": "instruction",
           "start": 40153,
-          "text": "mov es, word ptr cs:[09596h]"
+          "text": "mov es, word ptr cs:[MAIN_DATA_SEGMENT]"
         },
         {
           "address": "0000:9CDE",
           "end": 40162,
           "kind": "instruction",
           "start": 40158,
-          "text": "mov di, word ptr ds:[0A33Ah]"
+          "text": "mov di, word ptr ds:[HISTORY_WRITE_CURSOR]"
         },
         {
           "address": "0000:9CE2",
           "end": 40165,
           "kind": "instruction",
           "start": 40162,
-          "text": "mov ax, word ptr ss:[bp + 2]"
+          "text": "mov ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:9CE5",
@@ -67606,7 +67756,7 @@
           "end": 40172,
           "kind": "instruction",
           "start": 40169,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:9CEC",
@@ -67669,14 +67819,14 @@
           "end": 40197,
           "kind": "instruction",
           "start": 40192,
-          "text": "add word ptr ds:[0A33Ah], 4"
+          "text": "add word ptr ds:[HISTORY_WRITE_CURSOR], HISTORY_PAIR_BYTES"
         },
         {
           "address": "0000:9D05",
           "end": 40203,
           "kind": "instruction",
           "start": 40197,
-          "text": "cmp word ptr ds:[0A33Ah], 0A33Ah"
+          "text": "cmp word ptr ds:[HISTORY_WRITE_CURSOR], HISTORY_END"
         },
         {
           "address": "0000:9D0B",
@@ -67690,21 +67840,21 @@
           "end": 40211,
           "kind": "instruction",
           "start": 40205,
-          "text": "mov word ptr ds:[0A33Ah], 0A27Ah"
+          "text": "mov word ptr ds:[HISTORY_WRITE_CURSOR], HISTORY_BEGIN"
         },
         {
           "address": "0000:9D13",
           "end": 40216,
           "kind": "instruction",
           "start": 40211,
-          "text": "add word ptr ds:[0A33Ch], 4"
+          "text": "add word ptr ds:[HISTORY_READ_CURSOR_15], HISTORY_PAIR_BYTES"
         },
         {
           "address": "0000:9D18",
           "end": 40222,
           "kind": "instruction",
           "start": 40216,
-          "text": "cmp word ptr ds:[0A33Ch], 0A33Ah"
+          "text": "cmp word ptr ds:[HISTORY_READ_CURSOR_15], HISTORY_END"
         },
         {
           "address": "0000:9D1E",
@@ -67718,21 +67868,21 @@
           "end": 40230,
           "kind": "instruction",
           "start": 40224,
-          "text": "mov word ptr ds:[0A33Ch], 0A27Ah"
+          "text": "mov word ptr ds:[HISTORY_READ_CURSOR_15], HISTORY_BEGIN"
         },
         {
           "address": "0000:9D26",
           "end": 40235,
           "kind": "instruction",
           "start": 40230,
-          "text": "add word ptr ds:[0A33Eh], 4"
+          "text": "add word ptr ds:[HISTORY_READ_CURSOR_31], HISTORY_PAIR_BYTES"
         },
         {
           "address": "0000:9D2B",
           "end": 40241,
           "kind": "instruction",
           "start": 40235,
-          "text": "cmp word ptr ds:[0A33Eh], 0A33Ah"
+          "text": "cmp word ptr ds:[HISTORY_READ_CURSOR_31], HISTORY_END"
         },
         {
           "address": "0000:9D31",
@@ -67746,21 +67896,21 @@
           "end": 40249,
           "kind": "instruction",
           "start": 40243,
-          "text": "mov word ptr ds:[0A33Eh], 0A27Ah"
+          "text": "mov word ptr ds:[HISTORY_READ_CURSOR_31], HISTORY_BEGIN"
         },
         {
           "address": "0000:9D39",
           "end": 40254,
           "kind": "instruction",
           "start": 40249,
-          "text": "add word ptr ds:[0A340h], 4"
+          "text": "add word ptr ds:[HISTORY_CURSOR_47], HISTORY_PAIR_BYTES"
         },
         {
           "address": "0000:9D3E",
           "end": 40260,
           "kind": "instruction",
           "start": 40254,
-          "text": "cmp word ptr ds:[0A340h], 0A33Ah"
+          "text": "cmp word ptr ds:[HISTORY_CURSOR_47], HISTORY_END"
         },
         {
           "address": "0000:9D44",
@@ -67774,7 +67924,7 @@
           "end": 40268,
           "kind": "instruction",
           "start": 40262,
-          "text": "mov word ptr ds:[0A340h], 0A27Ah"
+          "text": "mov word ptr ds:[HISTORY_CURSOR_47], HISTORY_BEGIN"
         },
         {
           "address": "0000:9D4C",
@@ -68769,7 +68919,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 40870,
-          "text": "CALL_NEAR loc_09FAF"
+          "text": "CALL_NEAR PlaceFourRecordsFromOffsetTables_09FAF"
         },
         {
           "address": "0000:9FA9",
@@ -68800,119 +68950,119 @@
           "end": 40884,
           "kind": "instruction",
           "start": 40879,
-          "text": "mov byte ptr ds:[0A39Eh], 0"
+          "text": "mov byte ptr ds:[AUTO_XPLUS_A39E], 0"
         },
         {
           "address": "0000:9FB4",
           "end": 40889,
           "kind": "instruction",
           "start": 40884,
-          "text": "mov byte ptr ds:[0A39Fh], 0"
+          "text": "mov byte ptr ds:[AUTO_XMINUS_A39F], 0"
         },
         {
           "address": "0000:9FB9",
           "end": 40892,
           "kind": "instruction",
           "start": 40889,
-          "text": "mov ax, word ptr ds:[0A39Ah]"
+          "text": "mov ax, word ptr ds:[OFFSET_X_GROUP_A]"
         },
         {
           "address": "0000:9FBC",
           "end": 40895,
           "kind": "instruction",
           "start": 40892,
-          "text": "mov word ptr ds:[0A398h], ax"
+          "text": "mov word ptr ds:[OFFSET_X_WORK], ax"
         },
         {
           "address": "0000:9FBF",
           "end": 40898,
           "kind": "instruction",
           "start": 40895,
-          "text": "mov si, 0A38Ch"
+          "text": "mov si, OFFSET_TABLE_A38C"
         },
         {
           "address": "0000:9FC2",
           "end": 40902,
           "kind": "instruction",
           "start": 40898,
-          "text": "mov bx, word ptr ds:[0A96Ch]"
+          "text": "mov bx, word ptr ds:[MINUS_SLOT_A96C]"
         },
         {
           "address": "0000:9FC6",
           "end": 40905,
           "kind": "instruction",
           "start": 40902,
-          "text": "CALL_NEAR loc_09FEA"
+          "text": "CALL_NEAR PlaceRecordFromOffsetPair_09FEA"
         },
         {
           "address": "0000:9FC9",
           "end": 40908,
           "kind": "instruction",
           "start": 40905,
-          "text": "mov si, 0A374h"
+          "text": "mov si, OFFSET_TABLE_A374"
         },
         {
           "address": "0000:9FCC",
           "end": 40912,
           "kind": "instruction",
           "start": 40908,
-          "text": "mov bx, word ptr ds:[0A968h]"
+          "text": "mov bx, word ptr ds:[MINUS_SLOT_A968]"
         },
         {
           "address": "0000:9FD0",
           "end": 40915,
           "kind": "instruction",
           "start": 40912,
-          "text": "CALL_NEAR loc_09FEA"
+          "text": "CALL_NEAR PlaceRecordFromOffsetPair_09FEA"
         },
         {
           "address": "0000:9FD3",
           "end": 40918,
           "kind": "instruction",
           "start": 40915,
-          "text": "mov ax, word ptr ds:[0A39Ch]"
+          "text": "mov ax, word ptr ds:[OFFSET_X_GROUP_B]"
         },
         {
           "address": "0000:9FD6",
           "end": 40921,
           "kind": "instruction",
           "start": 40918,
-          "text": "mov word ptr ds:[0A398h], ax"
+          "text": "mov word ptr ds:[OFFSET_X_WORK], ax"
         },
         {
           "address": "0000:9FD9",
           "end": 40924,
           "kind": "instruction",
           "start": 40921,
-          "text": "mov si, 0A380h"
+          "text": "mov si, OFFSET_TABLE_A380"
         },
         {
           "address": "0000:9FDC",
           "end": 40928,
           "kind": "instruction",
           "start": 40924,
-          "text": "mov bx, word ptr ds:[0A96Ah]"
+          "text": "mov bx, word ptr ds:[PLUS_SLOT_A96A]"
         },
         {
           "address": "0000:9FE0",
           "end": 40931,
           "kind": "instruction",
           "start": 40928,
-          "text": "CALL_NEAR loc_09FEA"
+          "text": "CALL_NEAR PlaceRecordFromOffsetPair_09FEA"
         },
         {
           "address": "0000:9FE3",
           "end": 40934,
           "kind": "instruction",
           "start": 40931,
-          "text": "mov si, 0A368h"
+          "text": "mov si, OFFSET_TABLE_A368"
         },
         {
           "address": "0000:9FE6",
           "end": 40938,
           "kind": "instruction",
           "start": 40934,
-          "text": "mov bx, word ptr ds:[0A966h]"
+          "text": "mov bx, word ptr ds:[PLUS_SLOT_A966]"
         },
         {
           "address": "0000:9FEA",
@@ -68940,7 +69090,7 @@
           "end": 40947,
           "kind": "instruction",
           "start": 40944,
-          "text": "mov ax, word ptr ss:[bp + 8]"
+          "text": "mov ax, word ptr ss:[bp + OFFSET_PAIR_INDEX_08]"
         },
         {
           "address": "0000:9FF3",
@@ -68975,14 +69125,14 @@
           "end": 40957,
           "kind": "instruction",
           "start": 40954,
-          "text": "add ax, word ptr ss:[bp + 2]"
+          "text": "add ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:9FFD",
           "end": 40960,
           "kind": "instruction",
           "start": 40957,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         }
       ],
       "start": 32768
@@ -69003,35 +69153,35 @@
           "end": 40964,
           "kind": "instruction",
           "start": 40961,
-          "text": "add ax, word ptr ss:[bp + 4]"
+          "text": "add ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:A004",
           "end": 40968,
           "kind": "instruction",
           "start": 40964,
-          "text": "add ax, word ptr ds:[0A398h]"
+          "text": "add ax, word ptr ds:[OFFSET_X_WORK]"
         },
         {
           "address": "0000:A008",
           "end": 40972,
           "kind": "instruction",
           "start": 40968,
-          "text": "add ax, word ptr ds:[0A398h]"
+          "text": "add ax, word ptr ds:[OFFSET_X_WORK]"
         },
         {
           "address": "0000:A00C",
           "end": 40975,
           "kind": "instruction",
           "start": 40972,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:A00F",
           "end": 40979,
           "kind": "instruction",
           "start": 40975,
-          "text": "cmp word ptr ds:[bx + 4], 0"
+          "text": "cmp word ptr ds:[bx + REC_X], 0"
         },
         {
           "address": "0000:A013",
@@ -69045,21 +69195,21 @@
           "end": 40986,
           "kind": "instruction",
           "start": 40981,
-          "text": "mov word ptr ds:[bx + 4], 0"
+          "text": "mov word ptr ds:[bx + REC_X], 0"
         },
         {
           "address": "0000:A01A",
           "end": 40991,
           "kind": "instruction",
           "start": 40986,
-          "text": "mov byte ptr ds:[0A39Eh], 1"
+          "text": "mov byte ptr ds:[AUTO_XPLUS_A39E], 1"
         },
         {
           "address": "0000:A01F",
           "end": 40996,
           "kind": "instruction",
           "start": 40991,
-          "text": "cmp word ptr ds:[bx + 4], 0C0h"
+          "text": "cmp word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX"
         },
         {
           "address": "0000:A024",
@@ -69073,14 +69223,14 @@
           "end": 41003,
           "kind": "instruction",
           "start": 40998,
-          "text": "mov word ptr ds:[bx + 4], 0C0h"
+          "text": "mov word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX"
         },
         {
           "address": "0000:A02B",
           "end": 41008,
           "kind": "instruction",
           "start": 41003,
-          "text": "mov byte ptr ds:[0A39Fh], 1"
+          "text": "mov byte ptr ds:[AUTO_XMINUS_A39F], 1"
         },
         {
           "address": "0000:A030",
@@ -69094,7 +69244,7 @@
           "end": 41014,
           "kind": "instruction",
           "start": 41009,
-          "text": "cmp word ptr ds:[0A962h], -1"
+          "text": "cmp word ptr ds:[HISTORY_RECORD_SLOT_15], -1"
         },
         {
           "address": "0000:A036",
@@ -69108,14 +69258,14 @@
           "end": 41020,
           "kind": "instruction",
           "start": 41016,
-          "text": "mov bx, word ptr ds:[0A962h]"
+          "text": "mov bx, word ptr ds:[HISTORY_RECORD_SLOT_15]"
         },
         {
           "address": "0000:A03C",
           "end": 41024,
           "kind": "instruction",
           "start": 41020,
-          "text": "mov si, word ptr ds:[0A33Ch]"
+          "text": "mov si, word ptr ds:[HISTORY_READ_CURSOR_15]"
         },
         {
           "address": "0000:A040",
@@ -69129,7 +69279,7 @@
           "end": 41028,
           "kind": "instruction",
           "start": 41025,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         },
         {
           "address": "0000:A044",
@@ -69143,14 +69293,14 @@
           "end": 41032,
           "kind": "instruction",
           "start": 41029,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:A048",
           "end": 41037,
           "kind": "instruction",
           "start": 41032,
-          "text": "cmp word ptr ds:[0A964h], -1"
+          "text": "cmp word ptr ds:[HISTORY_RECORD_SLOT_31], -1"
         },
         {
           "address": "0000:A04D",
@@ -69164,14 +69314,14 @@
           "end": 41043,
           "kind": "instruction",
           "start": 41039,
-          "text": "mov bx, word ptr ds:[0A964h]"
+          "text": "mov bx, word ptr ds:[HISTORY_RECORD_SLOT_31]"
         },
         {
           "address": "0000:A053",
           "end": 41047,
           "kind": "instruction",
           "start": 41043,
-          "text": "mov si, word ptr ds:[0A33Eh]"
+          "text": "mov si, word ptr ds:[HISTORY_READ_CURSOR_31]"
         },
         {
           "address": "0000:A057",
@@ -69185,7 +69335,7 @@
           "end": 41051,
           "kind": "instruction",
           "start": 41048,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         },
         {
           "address": "0000:A05B",
@@ -69199,7 +69349,7 @@
           "end": 41055,
           "kind": "instruction",
           "start": 41052,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:A05F",
@@ -71349,7 +71499,7 @@
           "end": 42356,
           "kind": "instruction",
           "start": 42353,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:A574",
@@ -71363,14 +71513,14 @@
           "end": 42362,
           "kind": "instruction",
           "start": 42359,
-          "text": "mov word ptr ds:[bx + 4], ax"
+          "text": "mov word ptr ds:[bx + REC_X], ax"
         },
         {
           "address": "0000:A57A",
           "end": 42365,
           "kind": "instruction",
           "start": 42362,
-          "text": "mov ax, word ptr ss:[bp + 2]"
+          "text": "mov ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:A57D",
@@ -71384,7 +71534,7 @@
           "end": 42371,
           "kind": "instruction",
           "start": 42368,
-          "text": "mov word ptr ds:[bx + 2], ax"
+          "text": "mov word ptr ds:[bx + REC_Y], ax"
         },
         {
           "address": "0000:A583",
@@ -71482,7 +71632,7 @@
           "end": 42414,
           "kind": "instruction",
           "start": 42410,
-          "text": "and word ptr ds:[bx + 4], 0FFFCh"
+          "text": "and word ptr ds:[bx + REC_X], 0FFFCh"
         },
         {
           "address": "0000:A5AE",
@@ -71524,7 +71674,7 @@
           "end": 42438,
           "kind": "instruction",
           "start": 42434,
-          "text": "and word ptr ds:[bx + 4], 0FFFCh"
+          "text": "and word ptr ds:[bx + REC_X], 0FFFCh"
         },
         {
           "address": "0000:A5C6",
@@ -71552,7 +71702,7 @@
           "end": 42454,
           "kind": "instruction",
           "start": 42449,
-          "text": "cmp word ptr ds:[0A47Ch], 0"
+          "text": "cmp word ptr ds:[MOVE_MODE_A47C], 0"
         },
         {
           "address": "0000:A5D6",
@@ -71573,7 +71723,7 @@
           "end": 42463,
           "kind": "instruction",
           "start": 42459,
-          "text": "cmp word ptr ss:[bp + 2], 020h"
+          "text": "cmp word ptr ss:[bp + REC_Y], RECORD_Y_MIN"
         },
         {
           "address": "0000:A5DF",
@@ -71594,7 +71744,7 @@
           "end": 42469,
           "kind": "instruction",
           "start": 42466,
-          "text": "dec word ptr ss:[bp + 2]"
+          "text": "dec word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:A5E5",
@@ -71608,7 +71758,7 @@
           "end": 42473,
           "kind": "instruction",
           "start": 42470,
-          "text": "dec word ptr ss:[bp + 2]"
+          "text": "dec word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:A5E9",
@@ -71629,7 +71779,7 @@
           "end": 42482,
           "kind": "instruction",
           "start": 42477,
-          "text": "cmp word ptr ss:[bp + 2], 0C0h"
+          "text": "cmp word ptr ss:[bp + REC_Y], RECORD_Y_MAX"
         },
         {
           "address": "0000:A5F2",
@@ -71650,7 +71800,7 @@
           "end": 42488,
           "kind": "instruction",
           "start": 42485,
-          "text": "inc word ptr ss:[bp + 2]"
+          "text": "inc word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:A5F8",
@@ -71671,7 +71821,7 @@
           "end": 42496,
           "kind": "instruction",
           "start": 42492,
-          "text": "cmp word ptr ss:[bp + 4], 0"
+          "text": "cmp word ptr ss:[bp + REC_X], 0"
         },
         {
           "address": "0000:A600",
@@ -71692,7 +71842,7 @@
           "end": 42502,
           "kind": "instruction",
           "start": 42499,
-          "text": "dec word ptr ss:[bp + 4]"
+          "text": "dec word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:A606",
@@ -71713,7 +71863,7 @@
           "end": 42511,
           "kind": "instruction",
           "start": 42506,
-          "text": "cmp word ptr ss:[bp + 4], 0B0h"
+          "text": "cmp word ptr ss:[bp + REC_X], RECORD_X_MAX"
         },
         {
           "address": "0000:A60F",
@@ -71734,7 +71884,7 @@
           "end": 42517,
           "kind": "instruction",
           "start": 42514,
-          "text": "inc word ptr ss:[bp + 4]"
+          "text": "inc word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:A615",
@@ -72238,7 +72388,7 @@
           "end": 42701,
           "kind": "instruction",
           "start": 42698,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:A6CD",
@@ -84043,7 +84193,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 49759,
-          "text": "CALL_NEAR loc_07573"
+          "text": "CALL_NEAR FindFreeRecordPoolB_07573"
         },
         {
           "address": "0000:C262",
@@ -84769,7 +84919,7 @@
           "end": 50259,
           "kind": "instruction",
           "start": 50256,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:C453",
@@ -91982,7 +92132,7 @@
           "end": 53211,
           "kind": "instruction",
           "start": 53208,
-          "text": "CALL_NEAR loc_099BF"
+          "text": "CALL_NEAR InitPositionHistory_099BF"
         },
         {
           "address": "0000:CFDB",
@@ -92798,7 +92948,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 53660,
-          "text": "JMP_NEAR loc_09FAF"
+          "text": "JMP_NEAR PlaceFourRecordsFromOffsetTables_09FAF"
         },
         {
           "address": "0000:D19F",
@@ -92838,7 +92988,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 53678,
-          "text": "CALL_NEAR loc_07524"
+          "text": "CALL_NEAR FindFreeRecordPoolA_07524"
         },
         {
           "address": "0000:D1B1",
@@ -126238,24 +126388,182 @@
           "start": 130832
         },
         {
-          "end": 130864,
+          "end": 130856,
           "kind": "opaque_unknown",
           "start": 130848
         },
         {
+          "end": 130858,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130856,
+          "text": "dw 010h"
+        },
+        {
+          "end": 130860,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130858,
+          "text": "dw 0FFF8h"
+        },
+        {
+          "end": 130862,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130860,
+          "text": "dw 0Ch"
+        },
+        {
+          "end": 130864,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130862,
+          "text": "dw 0FFF4h"
+        },
+        {
+          "end": 130866,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130864,
+          "text": "dw 0Fh"
+        },
+        {
+          "end": 130868,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130866,
+          "text": "dw 0FFF3h"
+        },
+        {
+          "end": 130870,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130868,
+          "text": "dw 010h"
+        },
+        {
+          "end": 130872,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130870,
+          "text": "dw 018h"
+        },
+        {
+          "end": 130874,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130872,
+          "text": "dw 0Ch"
+        },
+        {
+          "end": 130876,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130874,
+          "text": "dw 01Ch"
+        },
+        {
+          "end": 130878,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130876,
+          "text": "dw 0Fh"
+        },
+        {
           "end": 130880,
-          "kind": "opaque_unknown",
-          "start": 130864
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130878,
+          "text": "dw 01Dh"
+        },
+        {
+          "end": 130882,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130880,
+          "text": "dw 014h"
+        },
+        {
+          "end": 130884,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130882,
+          "text": "dw 0FFECh"
+        },
+        {
+          "end": 130886,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130884,
+          "text": "dw 010h"
+        },
+        {
+          "end": 130888,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130886,
+          "text": "dw 0FFE8h"
+        },
+        {
+          "end": 130890,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130888,
+          "text": "dw 013h"
+        },
+        {
+          "end": 130892,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130890,
+          "text": "dw 0FFE7h"
+        },
+        {
+          "end": 130894,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130892,
+          "text": "dw 014h"
         },
         {
           "end": 130896,
-          "kind": "opaque_unknown",
-          "start": 130880
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130894,
+          "text": "dw 024h"
+        },
+        {
+          "end": 130898,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130896,
+          "text": "dw 010h"
+        },
+        {
+          "end": 130900,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130898,
+          "text": "dw 028h"
+        },
+        {
+          "end": 130902,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130900,
+          "text": "dw 013h"
+        },
+        {
+          "end": 130904,
+          "evidence": "metadata/position-history.json#offset_tables",
+          "kind": "reconstructed_data",
+          "start": 130902,
+          "text": "dw 029h"
         },
         {
           "end": 130912,
           "kind": "opaque_unknown",
-          "start": 130896
+          "start": 130904
         },
         {
           "end": 130928,

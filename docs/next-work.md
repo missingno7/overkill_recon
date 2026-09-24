@@ -91,3 +91,29 @@ AdLib command table is reconstructed data with independent accounting. Next:
   bounds for color and character indices rather than invented clipping.
 - Propagate DS:234C's demonstrated source-window role through its writers before
   assigning scrolling or gameplay names.
+
+## Current highest-information work: records and movement
+
+See [record-movement.md](record-movement.md). Seven main routines now have reviewed
+contracts; the9C6B dispatch is closed and its52 branch-body bytes plus18 table bytes
+are maintained source. Field and pool constants are propagated into the ASM.
+The position-history follow-up is reviewed below. Pool-reuse BD0D and unchecked
+search callers C450/D1AE remain open. Keep AdLib work bounded to specific contract questions.
+The earlier platform queues above remain useful secondary work, not the sole path.
+
+## Position-history and placement follow-up
+
+Six more entries now have source names and contracts; see [position-history.md](position-history.md).
+9CF1 advances four cursors;9CD9 stores a pair;A031 copies delayed positions.
+9FAF/9FEA explain the clamp-byte feedback consumed by9C01. Continue with:
+
+- Bound the primary record's field+8 at9FAF callers. Four bases12 bytes apart are
+  evidence for adjacent groups, not proof that the index is always0..2.
+- Trace record creation and retirement for A962/A964 and A966..A96C. Use these
+  consumers to clarify roles conservatively; do not jump directly to enemy names.
+- Resolve BD17's C054/AC19 effects before naming BD0D as a release operation.
+  Preserve its type-dependent state changes and nontrivial shared tails.
+- Examine capacity guarantees at unchecked pool-A callers C450/D1AE. Do not infer
+  successful allocation merely because most other callers check BX againstFFFF.
+- Investigate A340 only through concrete xrefs or recovered code; no broad replay
+  is needed. Preserve the unresolved fourth-cursor role.

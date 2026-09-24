@@ -7,7 +7,7 @@ can never execute. Implicit stack effects are counted separately.
 
 ## main
 
-Explicit memory-write operands: 2061; direct CS targets: 204; unresolved address/segment: 1857; direct CS overlaps with identified code: 0.
+Explicit memory-write operands: 2065; direct CS targets: 204; unresolved address/segment: 1861; direct CS overlaps with identified code: 0.
 
 ## adlib
 

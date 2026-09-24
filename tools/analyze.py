@@ -54,6 +54,15 @@ def analyze(image=None,m=None,seeds=None,output=None,excluded=(),quiet=False,obs
                 enqueue(*dest,f'{"call" if is_call else "branch"} from {k}',entry=is_call)
             else:
                 node['unresolved'].append('indirect_call' if is_call else 'indirect_jump')
+                # Reviewed finite count dispatch: normal entry9C01 clears AX at9C35,
+                # calls INC AH twice and INC AL twice conditionally, then BX=2*(AL+3*AH).
+                # Exact guard prevents applying this proof to another module/version.
+                if cs==0 and ip==0x9c6b and image[0x9bfb:0x9c01]==bytes.fromhex('fec4c3fec0c3') and image[0x9c35:0x9c70]==bytes.fromhex('33c0833e66a9ff7403e8baff833e68a9ff7403e8b3ff833e6aa9ff7403e8a6ff833e6ca9ff7403e89fff8ad832ff02dc02dc02dcd1e32effa7709c'):
+                    targets=[key(0,int.from_bytes(image[0x9c70+2*i:0x9c72+2*i],'little')) for i in range(9)]
+                    node['unresolved'].clear();node['successors'].extend(sorted(set(targets)))
+                    node['resolved_candidates']=targets
+                    for target in sorted(set(targets)):enqueue(0,int(target[5:],16),'proved count dispatch from '+k)
+                    tables.append(dict(start=0x9c70,end=0x9c82,kind='near_code_pointer_table',entries=targets,site=k,confidence='PROVEN',exhaustive=True,evidence='metadata/record-movement.json; two conditional increments each of initially zero AH and AL give index AL+3*AH in0..8',precondition='normal entry through9C01/9C35; no arbitrary mid-block entry or asynchronous register corruption'))
                 # A measured recurring selector dispatch. Keep unresolved status:
                 # 0..2 is supported at startup, not a proof of all later writes.
                 if cs==0 and image[linear-7:linear]==bytes.fromhex('2e8b1ebc95d1e3') and len(ins.operands)==1 and ins.operands[0].type==X86_OP_MEM:

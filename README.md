@@ -5,8 +5,8 @@ This is an **exact but incomplete bootstrap**, not a finished source recovery or
 
 The maintained TASM source currently rebuilds all **143,088 bytes** of the normalized
 pre-startup game image, with **123 ordered relocation sites** and entry `0000:95C9`.
-**25,564 bytes are decoded assembly instructions; 117,524 bytes remain explicit,
-accounted raw bootstrap material.** Raw bytes are not counted as reconstructed code.
+Instruction, reviewed-data and opaque-byte counts are maintained in
+[docs/status.md](docs/status.md). Raw bytes are not counted as reconstructed code.
 The original packed file is not yet rebuilt. See [current status](docs/status.md).
 
 From this directory, on Windows with Python 3.10 or later:

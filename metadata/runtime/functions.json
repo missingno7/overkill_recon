@@ -2066,6 +2066,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -2161,6 +2163,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "INFERRED",
       "calling_convention": "STRONG",
@@ -2463,6 +2467,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -2528,6 +2534,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -2594,6 +2602,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -2661,6 +2671,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -2895,6 +2907,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "PROVEN",
       "calling_convention": "STRONG",
@@ -8850,6 +8864,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14314,6 +14330,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14447,6 +14465,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14577,6 +14597,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14833,6 +14855,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14913,6 +14937,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -14992,6 +15018,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -15872,6 +15900,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -15957,6 +15987,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -16099,6 +16131,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Reviewed hardware/buffer operation",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -43847,13 +43881,23 @@
       "0000:A66F",
       "0000:C3A6"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. DS:95D8 supplies the first candidate. Inspect at most35 status words at stride38h in23B4..2B5B, wrapping BX after increment equals2B5C. Return BX=first zero-status record, CX=35-skipped; save BX to DS:95D8 without activating record. Full pool returns BX=FFFF,CX=0 and leaves cursor unchanged. Requires aligned in-pool cursor; unlike poolB, end cursor is not normalized before first read. AX,DX,SI,DI,BP,segments preserved; flags changed.",
     "evidence": [
       "call from 0000:4ACF",
       "call from 0000:7420",
@@ -43915,8 +43959,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_7524",
-    "named": false,
+    "name": "FindFreeRecordPoolA",
+    "named": true,
     "registers_read": [
       "bx",
       "cx",
@@ -43928,6 +43972,11 @@
       "cx",
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "752B checks only word+0;7542 writes only cursor. Callers7429 andA6D3 activate selected records separately.",
+      "tests/test_records.py covers every valid cursor/free-slot pair, full pools and invalid end-cursor distinction.",
+      "Several call sites compare BX withFFFF; C450 andD1AE use BX without checking failure, so caller capacity preconditions remain open."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -44039,13 +44088,23 @@
       "0000:7547",
       "0000:C237"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. DS:95DA supplies cursor. Normalize BX==32CCh to2B5Ch before reading; inspect at most34 zero-status records at stride38h. Success returns BX and CX=34-skipped and saves cursor; failure BX=FFFF,CX=0 leaves cursor unchanged. Accept aligned pool cursor or exact end32CC; other pointers not validated. Does not activate or clear records. AX,DX,SI,DI,BP,segments preserved; flags changed.",
     "evidence": [
       "call from 0000:7476",
       "call from 0000:7547",
@@ -44101,8 +44160,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_7573",
-    "named": false,
+    "name": "FindFreeRecordPoolB",
+    "named": true,
     "registers_read": [
       "bx",
       "cx",
@@ -44114,6 +44173,11 @@
       "cx",
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "757A wraps before reading, unlike7524;7591 only saves cursor.",
+      "tests/test_records.py exhausts cursor/free-slot positions and failure cases.",
+      "7476 andC237 explicitly compare BX before writing selected records."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -48928,13 +48992,23 @@
       "0000:95C9",
       "0000:CF2E"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. Set ES=CS:9596, BP=237Ch. With DF=0 fill48 four-byte pairs at ES:A27A with (SS:[237E]+8, SS:[2380]+9), modulo65536. Then DS:A33A/A33C/A33E/A340 become A27A/A2FE/A2BE/A27E. CX=0,DI=A33A,AX=last X+9; BX,DX,SI,DS,SS preserved. Flags from final ADD. Requires valid buffers and source not overwritten by destination for uniform-fill interpretation; loads repeat each iteration. Unlike later writes, initial X bias is9, not8.",
     "evidence": [
       "call from 0000:9783",
       "call from 0000:CFD8"
@@ -49052,8 +49126,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_99BF",
-    "named": false,
+    "name": "InitPositionHistory",
+    "named": true,
     "registers_read": [
       "ax",
       "bp",
@@ -49072,6 +49146,11 @@
       "es",
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "99BF..99F5; callers9783/CFD8 initialize before record-update use.",
+      "Startup95D3 clears DF;95D5/95DA set DS/SS from CS9596. These are local preconditions, not an all-path segment/DF proof.",
+      "tests/test_history.py checks whole buffers, distinct segments, word wrap and cursor initialization."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -49722,19 +49801,30 @@
     "callers": [
       "0000:9B2E"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near entry; DS holds input/state, SS:BP the record. Clear DS:A360. If bit2 of DS:98BE absent and byte A39E==1, apply IncRecordXTwice and set A360=1. Then if bit1 absent and A39F==1, apply DecRecordXTwice and set A360=1. AH counts words A966/A96A notFFFF; AL counts A968/A96C notFFFF. If counts equal, return via shared44AF RET. Otherwise, if count difference magnitude2 or DS:2324!=1, set A360=1 and tail to one-step X increment for AH>AL, decrement otherwise. FlagA360 records taking an adjustment path even if bound prevents movement. Return AX=(AHcount<<8)|ALcount,BX=2*(ALcount+3*AHcount); CX,DX,SI,DI,BP and segments preserved. Flags are path-dependent; caller9BDF ignores them before overwrite in9CF1. Assumes normal entry and no asynchronous register corruption.",
     "evidence": [
       "call from 0000:9BDC"
     ],
     "hardware": [],
-    "instruction_bytes": 111,
+    "instruction_bytes": 164,
     "instructions": [
+      "0000:44AF",
       "0000:9C01",
       "0000:9C07",
       "0000:9C0C",
@@ -49767,7 +49857,21 @@
       "0000:9C65",
       "0000:9C67",
       "0000:9C69",
-      "0000:9C6B"
+      "0000:9C6B",
+      "0000:9C82",
+      "0000:9C87",
+      "0000:9C89",
+      "0000:9C8A",
+      "0000:9C90",
+      "0000:9C93",
+      "0000:9C99",
+      "0000:9C9C",
+      "0000:9CA1",
+      "0000:9CA3",
+      "0000:9CA4",
+      "0000:9CAA",
+      "0000:9CAD",
+      "0000:9CB3"
     ],
     "leaf": false,
     "memory": [
@@ -49890,10 +49994,70 @@
         "scale": 1,
         "segment": "cs",
         "size": 2
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 8996,
+        "index": null,
+        "instruction": "0000:9C82",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": -23712,
+        "index": null,
+        "instruction": "0000:9C8A",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": -23712,
+        "index": null,
+        "instruction": "0000:9C93",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 8996,
+        "index": null,
+        "instruction": "0000:9C9C",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": -23712,
+        "index": null,
+        "instruction": "0000:9CA4",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": -23712,
+        "index": null,
+        "instruction": "0000:9CAD",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
       }
     ],
-    "name": "sub_0000_9C01",
-    "named": false,
+    "name": "AdjustRecordXFromCounts",
+    "named": true,
     "registers_read": [
       "ah",
       "al",
@@ -49904,7 +50068,8 @@
       "cs",
       "eip",
       "esp",
-      "flags"
+      "flags",
+      "sp"
     ],
     "registers_written": [
       "ax",
@@ -49912,13 +50077,22 @@
       "bl",
       "bx",
       "esp",
-      "flags"
+      "flags",
+      "sp"
     ],
-    "shared_instructions": [],
-    "tail_targets": [],
-    "unresolved": [
-      "indirect_jump"
-    ]
+    "semantic_evidence": [
+      "9C35 clears AX;9BFB/9BFE increment AH/AL; each called at most twice. Thus table9C70 has exactly9 entries.",
+      "9C82/9C9C gate magnitude1 with2324;9C93/9CAD handle magnitude2 unconditionally.",
+      "tests/test_records.py covers all16 sentinel combinations, input auto-step order, three gate values, bound cases and unchanged DS alias."
+    ],
+    "shared_instructions": [
+      "0000:44AF"
+    ],
+    "tail_targets": [
+      "0000:A5FC",
+      "0000:A60A"
+    ],
+    "unresolved": []
   },
   {
     "address": "0000:9CB6",
@@ -50007,13 +50181,23 @@
     "callers": [
       "0000:9BE2"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. ES=CS:9596, DI=DS:A33A; with DF=0 store SS:[BP+2]+8 then SS:[BP+4]+8 to ES:DI/DI+2, modulo65536. DI advances4; AX holds X+8, flags from final ADD. BX,CX,DX,SI,BP,DS,SS preserved. Does not move the ring cursor. Assumes valid nonoverlapping record/history for pair semantics; the second source load occurs after the first store. DF is preserved, not cleared.",
     "evidence": [
       "call from 0000:9BE2"
     ],
@@ -50093,8 +50277,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_9CD9",
-    "named": false,
+    "name": "StorePositionHistory",
+    "named": true,
     "registers_read": [
       "ax",
       "bp",
@@ -50111,6 +50295,11 @@
       "flags",
       "sp"
     ],
+    "semantic_evidence": [
+      "9BE2 calls this before A031; incoming AX/DI/ES from9CF1 are dead here.",
+      "99BF seeds the same pair format with a distinct X+9 bias.",
+      "tests/test_history.py separates DS,SS,ES and checks DF direction and alias-order behavior."
+    ],
     "shared_instructions": [],
     "tail_targets": [],
     "unresolved": []
@@ -50122,13 +50311,23 @@
     "callers": [
       "0000:9B2E"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. If low nibble of DS:98BE is zero and word DS:A360 is zero, return without writes. Otherwise advance each of four word cursors DS:A33A/A33C/A33E/A340 by4 modulo65536, replacing exactly A33Ah with A27Ah. Ring interpretation requires each cursor aligned within A27A..A336. No validation or >= wrap; invalid cursors remain mechanically advanced. All general/segment registers preserved. Flags changed by final TEST/CMP; caller9BDF falls through9BE2, whose9CD9 ADD kills them before use. Trigger means requested input/adjustment, not proof that a coordinate changed.",
     "evidence": [
       "call from 0000:9BDF"
     ],
@@ -50301,8 +50500,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_9CF1",
-    "named": false,
+    "name": "AdvancePositionHistoryIfRequested",
+    "named": true,
     "registers_read": [
       "flags",
       "sp"
@@ -50310,6 +50509,11 @@
     "registers_written": [
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "99BF supplies all four valid initial cursors; advancing preserves their relative phases.",
+      "A360 is set by9C01 even when a bound prevents movement.",
+      "tests/test_history.py exhausts each valid ring position and input nibble, and checks invalid cursor/wrap distinctions."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -51462,13 +51666,23 @@
       "0000:9BE2",
       "0000:9F82"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Closed near-entry cluster ending through shared9FEA leaf tail. Clear bytes DS:A39E/A39F. Set A398=A39A, apply PlaceRecordFromOffsetPair to slots A96C then A968 using tables A38C/A374. Set A398=A39C, apply to A96A then fall through for A966 using A380/A368. FFFF slots skipped. Clamp bytes aggregate whether any present record hit signed X clamp; they do not count records or report actual source movement. Preserve CX,DX,DI,BP and segments; AX,BX,SI scratch with path-dependent returns. No internal index bound; requires each selected table/index and record valid. Shared global A398 means non-reentrant without external protection.",
     "evidence": [
       "call from 0000:9BF7",
       "call from 0000:9FA6"
@@ -51597,8 +51811,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_9FAF",
-    "named": false,
+    "name": "PlaceFourRecordsFromOffsetTables",
+    "named": true,
     "registers_read": [
       "ax",
       "eip",
@@ -51609,6 +51823,11 @@
       "bx",
       "esp",
       "si"
+    ],
+    "semantic_evidence": [
+      "9BE2 optionally runs this after the history copy.9C01 consumes A39E/A39F before the next9BE2 update, feeding clamp state back into primary-record adjustment.",
+      "Source order is A96C,A968,A96A,A966; exact CALL/CALL/CALL/fallthrough retained.",
+      "tests/test_history.py checks all16 slot-presence combinations, shared destination overwrite order and aggregate flags."
     ],
     "shared_instructions": [],
     "tail_targets": [
@@ -51623,13 +51842,23 @@
     "callers": [
       "0000:9FAF"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near callable leaf and fallthrough tail of9FAF. BX=FFFF returns unchanged registers, flags CMP(BX,FFFF). Otherwise with DF=0 select pair at DS:(SI+4*SS:[BP+8]) modulo65536. Store Y=pair.word0+SS:[BP+2] modulo65536 to DS:[BX+2], then raw X=pair.word1+SS:[BP+4]+2*DS:A398 modulo65536 to DS:[BX+4]. Clamp signed raw X to0..192; set byte A39E on lower clamp, A39F on upper, never clear them. AX retains raw unclamped X; SI advances past pair; BX,CX,DX,DI,BP,segments preserved. Final flags compare post-lower-clamp X with192, before optional upper store. Requires valid index/pointers and nonaliasing for pair formula; actual sequential loads/stores remain authoritative.",
     "evidence": [
       "call from 0000:9FC6",
       "call from 0000:9FD0",
@@ -51816,8 +52045,8 @@
         "size": 1
       }
     ],
-    "name": "sub_0000_9FEA",
-    "named": false,
+    "name": "PlaceRecordFromOffsetPair",
+    "named": true,
     "registers_read": [
       "ax",
       "bp",
@@ -51832,6 +52061,11 @@
       "si",
       "sp"
     ],
+    "semantic_evidence": [
+      "9FF0 reads offset index at+8;A00F/A024 use signed JGE/JLE, unlike unsigned movement bounds.",
+      "9FAF supplies four bases12 bytes apart but does not bound index: do not silently restrict all callers to0..2.",
+      "tests/test_history.py checks signed clamp boundaries, wraparound, absent BX and preserved stale clamp flags."
+    ],
     "shared_instructions": [],
     "tail_targets": [],
     "unresolved": []
@@ -51843,13 +52077,23 @@
     "callers": [
       "0000:9BE2"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. If DS:A962 !=FFFF, copy two sequential words from DS:[DS:A33C] to record DS:[DS:A962]+2/+4. Then independently do the same for A964/A33E. With DF=0 these are Y/X pairs and SI advances4 after the last copy; AX=last X,BX=last destination. If neither slot exists AX/BX/SI unchanged. Flags are always CMP(A964,FFFF), even on copy; caller9BE8 overwrites them. CX,DX,DI,BP and segments preserved. Requires valid selected pointers; pair abstraction assumes destinations do not alias cursors/slots/source. Actual load/store order remains significant; no activation/type checks.",
     "evidence": [
       "call from 0000:9BE5"
     ],
@@ -52017,8 +52261,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_A031",
-    "named": false,
+    "name": "ApplyPositionHistoryToRecords",
+    "named": true,
     "registers_read": [
       "ax",
       "bx",
@@ -52032,6 +52276,11 @@
       "flags",
       "si",
       "sp"
+    ],
+    "semantic_evidence": [
+      "9BE5 follows StorePositionHistory; initialized read cursors lag write cursor by15 and31 entries modulo48.",
+      "tests/test_history.py checks absent/present slots, coincident destinations, sequential aliasing and whole data-segment footprint.",
+      "Record entity roles and fourth-cursor consumer remain unknown."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -54599,6 +54848,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -54884,13 +55135,23 @@
     "callers": [
       "0000:9B2E"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.",
     "evidence": [
       "call from 0000:9B76"
     ],
@@ -54926,8 +55187,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_A5D1",
-    "named": false,
+    "name": "DecRecordYByMode",
+    "named": true,
     "registers_read": [
       "bp",
       "eip",
@@ -54939,6 +55200,10 @@
       "esp",
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "9B76 calls after input bit8; BP=237C from9B5B.",
+      "Tests cover guard crossing, wrap, separate DS/SS and nonzero mode bypass."
     ],
     "shared_instructions": [],
     "tail_targets": [
@@ -54960,6 +55225,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -55031,13 +55298,23 @@
     "callers": [
       "0000:9B2E"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.",
     "evidence": [
       "call from 0000:9B80"
     ],
@@ -55048,14 +55325,19 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_0000_A5EA",
-    "named": false,
+    "name": "IncRecordYTwice",
+    "named": true,
     "registers_read": [
       "eip",
       "esp"
     ],
     "registers_written": [
       "esp"
+    ],
+    "semantic_evidence": [
+      "A5EA CALL has displacement0: callee starts at the pushed return IP.",
+      "9B80 caller overwrites flags with next input TEST.",
+      "tests/test_records.py proves two-step boundary/wrap behavior."
     ],
     "shared_instructions": [],
     "tail_targets": [
@@ -55077,6 +55359,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -55149,13 +55433,23 @@
       "0000:9B2E",
       "0000:9C01"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.",
     "evidence": [
       "call from 0000:9B94",
       "call from 0000:9C2C"
@@ -55167,14 +55461,19 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_0000_A5F9",
-    "named": false,
+    "name": "DecRecordXTwice",
+    "named": true,
     "registers_read": [
       "eip",
       "esp"
     ],
     "registers_written": [
       "esp"
+    ],
+    "semantic_evidence": [
+      "A5F9 CALL displacement0;9B94 and9C2C call sites.",
+      "Caller9C2C writes A360 then XOR AX overwrites flags.",
+      "Isolated tests include0,1,2 andFFFF."
     ],
     "shared_instructions": [],
     "tail_targets": [
@@ -55187,6 +55486,7 @@
     "call_graph_depth": 0,
     "callees": [],
     "callers": [
+      "0000:9C01",
       "0000:A5F9"
     ],
     "category": "C_READY_WITH_ENV",
@@ -55196,6 +55496,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -55268,13 +55570,23 @@
       "0000:9B2E",
       "0000:9C01"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.",
     "evidence": [
       "call from 0000:9B8A",
       "call from 0000:9C15"
@@ -55286,14 +55598,18 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_0000_A607",
-    "named": false,
+    "name": "IncRecordXTwice",
+    "named": true,
     "registers_read": [
       "eip",
       "esp"
     ],
     "registers_written": [
       "esp"
+    ],
+    "semantic_evidence": [
+      "A607 CALL displacement0;9B8A and9C15 callers.",
+      "Tests distinguish AFh->B0h from unguarded+2."
     ],
     "shared_instructions": [],
     "tail_targets": [
@@ -55306,6 +55622,7 @@
     "call_graph_depth": 0,
     "callees": [],
     "callers": [
+      "0000:9C01",
       "0000:A607"
     ],
     "category": "C_READY_WITH_ENV",
@@ -55315,6 +55632,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Record operations consumed by input/update/render callers; see metadata/record-movement.json",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -65344,6 +65663,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -65407,6 +65728,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -66258,6 +66581,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -66661,6 +66986,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Role not reviewed in this classification",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",

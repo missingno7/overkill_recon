@@ -1,0 +1,238 @@
+{
+  "abi": {
+    "liveness": [
+      "9CF1 arithmetic flags killed by9CD9 ADD before use",
+      "9CD9 arithmetic flags killed byA031 entry CMP",
+      "A031 flags killed by9BE8 CMP",
+      "AX/BX/SI outputs not declared globally dead across9BE2; paths and outer callers remain to review"
+    ],
+    "preconditions": [
+      "DF=0 for pair/history interpretation; startup95D3 CLD is evidence, not proof of every path",
+      "Valid selected record pointers and readable offset-index entries; FFFF is only absence test",
+      "Nonoverlapping source/destination/cursor/slot cells for simple pair abstraction; original sequential alias behavior retained and tested",
+      "DS/SS/CS9596 equality is startup-established at95D5/95DA, not silently assumed by isolated tests",
+      "No asynchronous mutation during compound update for simple snapshot interpretation"
+    ]
+  },
+  "concern": "GAME_LOGIC",
+  "evidence": "Coordinate/state operations in input-update callers, no direct hardware; entity identities UNKNOWN",
+  "evidence_axes": {
+    "BYTE_EXACT": "PASS; verify.py",
+    "HISTORICALLY_PROVEN": false,
+    "SEMANTICALLY_SUPPORTED": true,
+    "STRUCTURALLY_SUPPORTED": "Shared state and callable/fallthrough boundaries; historical module boundary UNKNOWN"
+  },
+  "feedback": {
+    "confidence": "PROVEN local instruction order; no enemy/player/weapon names assigned",
+    "consumer": "9C01 requests positive/negative primary-record X steps respectively, conditional on input bits",
+    "latency": "9C01 precedes optional9FAF on9B2E/9BE2 path; consumes previous saved clamp state",
+    "producers": "9FAF clears A39E/A39F;9FEA sets them for lower/upper signed X clamp",
+    "scratch": "A398 overwritten first from A39A then A39C; group roles beyond offset unknown",
+    "slot_order": [
+      "A96C",
+      "A968",
+      "A96A",
+      "A966"
+    ]
+  },
+  "future_translation": {
+    "asm_coupled": "9FAF remains a shared-tail cluster with scratch-state coupling; do not model as six independent abstractions",
+    "matched_c": "No new compiler-matching evidence; no C experiments performed",
+    "platform": "No new hardware islands; existing Tandy/OPL2/IRQ regions remain separate",
+    "verified_c": "Four history leaves and offset-pair leaf have explicit local contracts suitable for later native-source equivalence work under established preconditions"
+  },
+  "offset_tables": {
+    "bound": "UNKNOWN; 12-byte spacing identifies adjacent groups, not an all-caller index0..2 proof",
+    "confidence": "PROVEN literal bytes/consumer; STRONG adjacent table grouping",
+    "index": "SS:[BP+8] *4 modulo65536; meaning scoped to this helper, not all record types",
+    "linear_end_exclusive": 130904,
+    "linear_start": 130856,
+    "rows": [
+      {
+        "ds_offset": 41832,
+        "pairs": [
+          [
+            16,
+            -8
+          ],
+          [
+            12,
+            -12
+          ],
+          [
+            15,
+            -13
+          ]
+        ]
+      },
+      {
+        "ds_offset": 41844,
+        "pairs": [
+          [
+            16,
+            24
+          ],
+          [
+            12,
+            28
+          ],
+          [
+            15,
+            29
+          ]
+        ]
+      },
+      {
+        "ds_offset": 41856,
+        "pairs": [
+          [
+            20,
+            -20
+          ],
+          [
+            16,
+            -24
+          ],
+          [
+            19,
+            -25
+          ]
+        ]
+      },
+      {
+        "ds_offset": 41868,
+        "pairs": [
+          [
+            20,
+            36
+          ],
+          [
+            16,
+            40
+          ],
+          [
+            19,
+            41
+          ]
+        ]
+      }
+    ],
+    "sha256": "cbdfc17301f08f3cc53bd19d38ba953e2481c86e0125e2f98c18f088fb91b025",
+    "source": "src/R15.ASM",
+    "x": "signed clamp of wrapped16-bit sum to0..192; AX retains raw value"
+  },
+  "oracle": "Oracle A, independently extracted original main image",
+  "ring": {
+    "advance": "low input nibble nonzero OR word A360 nonzero; all four cursors +4 with equality-only wrap",
+    "caveat": "Not a frame clock: paused cursors still receive overwritten current position; requested motion need not change coordinates",
+    "confidence": "PROVEN operations; STRONG history interpretation",
+    "count": 48,
+    "cursors": [
+      {
+        "cell": 41786,
+        "initial": 41594,
+        "role": "write"
+      },
+      {
+        "cell": 41788,
+        "initial": 41726,
+        "lag_entries": 15,
+        "role": "read into record slot A962"
+      },
+      {
+        "cell": 41790,
+        "initial": 41662,
+        "lag_entries": 31,
+        "role": "read into record slot A964"
+      },
+      {
+        "cell": 41792,
+        "initial": 41598,
+        "lag_entries": 47,
+        "role": "consumer UNKNOWN"
+      }
+    ],
+    "end_exclusive": 41786,
+    "fields": [
+      {
+        "name": "Y plus bias",
+        "offset": 0,
+        "width": 2
+      },
+      {
+        "name": "X plus bias",
+        "offset": 2,
+        "width": 2
+      }
+    ],
+    "initial_bias": {
+      "X": 9,
+      "Y": 8
+    },
+    "later_bias": {
+      "X": 8,
+      "Y": 8
+    },
+    "segment": "data segment from CS:9596 (relative15BC before relocation)",
+    "start": 41594,
+    "stride": 4
+  },
+  "routines": [
+    {
+      "address": "0000:99BF",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:99F6",
+      "name": "InitPositionHistory",
+      "sha256": "4fdf62bb525466c260615f5f81c1067c70737564cff565539ff2c069f354ae2b",
+      "tests": "tests/test_history.py"
+    },
+    {
+      "address": "0000:9CD9",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:9CF1",
+      "name": "StorePositionHistory",
+      "sha256": "58fa36e929f3ad34580d5b9128d69cf7f68ce5579c44b613884b6de247dcfb56",
+      "tests": "tests/test_history.py"
+    },
+    {
+      "address": "0000:9CF1",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:9D4D",
+      "name": "AdvancePositionHistoryIfRequested",
+      "sha256": "36ae000084d54f5f54c64df9790828fe78a18df4dc6c9fa60fe7306d1e2082be",
+      "tests": "tests/test_history.py"
+    },
+    {
+      "address": "0000:A031",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:A060",
+      "name": "ApplyPositionHistoryToRecords",
+      "sha256": "1ca4fb624bf19affcb51e0873bc07311eb158d4534b60991760bd2ca9c671f03",
+      "tests": "tests/test_history.py"
+    },
+    {
+      "address": "0000:9FEA",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:A031",
+      "name": "PlaceRecordFromOffsetPair",
+      "sha256": "2e8ff299d1a4c6dfc02365da280103d61d0905429bc42d147bb36ba05d21216d",
+      "tests": "tests/test_history.py"
+    },
+    {
+      "address": "0000:9FAF",
+      "contract": "metadata/symbols.json",
+      "end_exclusive": "0000:A031",
+      "name": "PlaceFourRecordsFromOffsetTables",
+      "sha256": "2e1ef54ce7bcd3630f9a1d55e3cbcf1bcafafadfe8df1a0754a13b1e84466264",
+      "tests": "tests/test_history.py"
+    }
+  ],
+  "schema": 1,
+  "unresolved": [
+    "All-path bounds on primary record field+8 used by offset tables",
+    "Fourth history cursor consumer, including unknown executable regions",
+    "Record entity roles for A962/A964 and A966..A96C",
+    "Full outer caller register/flag liveness",
+    "Record lifetime and unchecked pool-A allocation callers C450/D1AE"
+  ]
+}

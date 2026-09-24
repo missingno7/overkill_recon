@@ -5,21 +5,22 @@ This is an exact, incomplete ASM bootstrap. Byte coverage and semantic understan
 | Metric | Value |
 |---|---:|
 | program_image_bytes_accounted | 143088 |
-| decoded_instruction_bytes | 25564 |
-| reconstructed_asm_bytes | 36551 |
-| opaque_raw_fallback_bytes | 106537 |
+| decoded_instruction_bytes | 36603 |
+| reconstructed_asm_bytes | 36603 |
+| reconstructed_data_bytes | 66 |
+| opaque_raw_fallback_bytes | 106419 |
 | identified_functions | 371 |
-| named_functions | 26 |
-| anonymous_functions | 345 |
+| named_functions | 39 |
+| anonymous_functions | 332 |
 | leaf_functions | 143 |
 | C_READY | 2 |
-| C_READY_WITH_ENV | 19 |
-| ASM_COUPLED | 15 |
+| C_READY_WITH_ENV | 26 |
+| ASM_COUPLED | 21 |
 | HARDWARE | 62 |
-| STRUCTURAL | 98 |
-| UNKNOWN | 175 |
-| semantically_supported_unique_instruction_bytes | 756 |
-| unresolved_indirect_sites | 45 |
+| STRUCTURAL | 92 |
+| UNKNOWN | 168 |
+| semantically_supported_unique_instruction_bytes | 1361 |
+| unresolved_indirect_sites | 44 |
 | decode_conflicts | 0 |
 
 Build: **PASS**. Normalized program image: **BYTE_EXACT_NORMALIZED_PROGRAM_IMAGE**.
@@ -37,7 +38,7 @@ Next: resolve remaining indirect tables with bounded-index evidence; recover key
 
 The initial-entry inventory above retains 371 function candidates. The active main runtime graph has **421 candidates**, with **10987 additional identified instruction bytes**. This is reachability evidence, not a new main-code variant.
 
-Maintained main instruction source: **36551 bytes**; explicit main UNKNOWN DB: **106537 bytes**. Initial plus runtime discovery identifies 36551 instruction bytes. See metadata/runtime/observed-coverage.json for actual execution coverage.
+Maintained main instruction source: **36603 bytes**; explicit main UNKNOWN DB: **106419 bytes**. Initial plus runtime discovery identifies 36603 instruction bytes. See metadata/runtime/observed-coverage.json for actual execution coverage.
 
 | Module | Total bytes | Instruction ASM | Reviewed data | Opaque bytes | Functions | Named | Leaf |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -49,3 +50,11 @@ Module totals include data and UNKNOWN bytes; they are separate input artifacts 
 Runtime verifier: **PASS**. This verifies the reproducible candidate 9690 frontier and ASM correspondence, not global stability.
 
 Active queues: metadata/runtime/bottom-up-queue.json and metadata/drivers/*-bottom-up-queue.json. Initial/cold inventory is retained for provenance. See [runtime-materialization.md](runtime-materialization.md) for the exact watch scope and untested paths.
+
+## Reviewed semantics
+
+Main: 39 reviewed contracts/boundaries, 38 boundaries STRONG/PROVEN; 1361 unique instruction bytes with reviewed contracts and names. Optional drivers: 6 reviewed contracts.
+
+Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 14, 'UNKNOWN': 7, 'GAME_LOGIC': 18}.
+
+Main reviewed data: 66 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.

@@ -3,6 +3,19 @@ include ENCODING.INC
 part03 segment byte public 'CODE'
 assume cs:part03,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Modern record/state symbols; evidence in metadata/record-movement.json.
+POOL_A_COUNT equ 023h
+POOL_A_CURSOR equ 095D8h
+POOL_A_END equ 02B5Ch
+POOL_A_START equ 023B4h
+POOL_B_COUNT equ 022h
+POOL_B_CURSOR equ 095DAh
+POOL_B_END equ 032CCh
+POOL_B_START equ 02B5Ch
+REC_STATUS equ 00h
+REC_STRIDE equ 038h
+REC_X equ 04h
+REC_Y equ 02h
 loc_07CA9 equ 01CADh
 loc_07CB0 equ 01CB4h
 loc_07CB7 equ 01CBBh
@@ -306,7 +319,7 @@ loc_062E7 equ 02EBh
 loc_062EE equ 02F2h
 loc_07429 equ 0142Dh
 loc_07442 equ 01446h
-loc_07524 equ 01528h
+FindFreeRecordPoolA_07524 equ 01528h
 loc_0752B equ 0152Fh
 loc_0753C equ 01540h
 loc_07542 equ 01546h
@@ -314,7 +327,7 @@ loc_07550 equ 01554h
 loc_07556 equ 0155Ah
 loc_07568 equ 0156Ch
 loc_07570 equ 01574h
-loc_07573 equ 01577h
+FindFreeRecordPoolB_07573 equ 01577h
 loc_0757A equ 0157Eh
 loc_07583 equ 01587h
 loc_07591 equ 01595h
@@ -4254,7 +4267,7 @@ loc_0BFC7 equ 05FCBh
     ret
 ; sub_0000_7420
 ; @07420 0000:7420 original=e80101
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @07423 0000:7423 original=83fbff
     cmp bx, -1
 ; @07426 0000:7426 original=7501
@@ -4262,13 +4275,13 @@ loc_0BFC7 equ 05FCBh
 ; @07428 0000:7428 original=c3
     ret
 ; @07429 0000:7429 original=c7070100
-    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + REC_STATUS], 1
 ; @0742D 0000:742D original=a17823
     mov ax, word ptr ds:[02378h]
 ; @07430 0000:7430 original=030678a2
     add ax, word ptr ds:[0A278h]
 ; @07434 0000:7434 original=894702
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
 ; @07437 0000:7437 original=a17623
     mov ax, word ptr ds:[02376h]
 ; @0743A 0000:743A original=3dc000
@@ -4278,7 +4291,7 @@ loc_0BFC7 equ 05FCBh
 ; @0743F 0000:743F original=b8c000
     mov ax, 0C0h
 ; @07442 0000:7442 original=894704
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @07445 0000:7445 original=c747220000
     mov word ptr ds:[bx + 022h], 0
 ; @0744A 0000:744A original=c747140100
@@ -4304,7 +4317,7 @@ loc_0BFC7 equ 05FCBh
 ; @07475 0000:7475 original=c3
     ret
 ; @07476 0000:7476 original=e8fa00 runtime CFG evidence
-    CALL_NEAR loc_07573
+    CALL_NEAR FindFreeRecordPoolB_07573
 ; @07479 0000:7479 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0747C 0000:747C original=7501 runtime CFG evidence
@@ -4330,17 +4343,17 @@ loc_0BFC7 equ 05FCBh
 ; @0749B 0000:749B original=ba0800 runtime CFG evidence
     mov dx, 8
 ; @0749E 0000:749E original=8b4604 runtime CFG evidence
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
 ; @074A1 0000:74A1 original=03c1 runtime CFG evidence
     add ax, cx
 ; @074A3 0000:74A3 original=894704 runtime CFG evidence
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @074A6 0000:74A6 original=8b4602 runtime CFG evidence
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
 ; @074A9 0000:74A9 original=03c2 runtime CFG evidence
     add ax, dx
 ; @074AB 0000:74AB original=894702 runtime CFG evidence
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
 ; @074AE 0000:74AE original=e80400 runtime CFG evidence
     CALL_NEAR loc_074B5
 ; @074B1 0000:74B1 original=e82e00 runtime CFG evidence
@@ -4348,7 +4361,7 @@ loc_0BFC7 equ 05FCBh
 ; @074B4 0000:74B4 original=c3 runtime CFG evidence
     ret
 ; @074B5 0000:74B5 original=c7070100 runtime CFG evidence
-    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + REC_STATUS], 1
 ; @074B9 0000:74B9 original=c7471e0000 runtime CFG evidence
     mov word ptr ds:[bx + 01Eh], 0
 ; @074BE 0000:74BE original=c747060000 runtime CFG evidence
@@ -4368,7 +4381,7 @@ loc_0BFC7 equ 05FCBh
 ; @074E1 0000:74E1 original=c3 runtime CFG evidence
     ret
 ; @074E2 0000:74E2 original=8b4704 runtime CFG evidence
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
 ; @074E5 0000:74E5 original=8b0e8023 runtime CFG evidence
     mov cx, word ptr ds:[02380h]
 ; @074E9 0000:74E9 original=83c109 runtime CFG evidence
@@ -4378,7 +4391,7 @@ loc_0BFC7 equ 05FCBh
 ; @074EE 0000:74EE original=89472c runtime CFG evidence
     mov word ptr ds:[bx + 02Ch], ax
 ; @074F1 0000:74F1 original=8b4702 runtime CFG evidence
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
 ; @074F4 0000:74F4 original=8b0e7e23 runtime CFG evidence
     mov cx, word ptr ds:[0237Eh]
 ; @074F8 0000:74F8 original=2bc1 runtime CFG evidence
@@ -4388,7 +4401,7 @@ loc_0BFC7 equ 05FCBh
 ; @074FD 0000:74FD original=c3 runtime CFG evidence
     ret
 ; @074FE 0000:74FE original=e82300 runtime CFG evidence
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @07501 0000:7501 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @07504 0000:7504 original=7401 runtime CFG evidence
@@ -4416,22 +4429,29 @@ loc_0BFC7 equ 05FCBh
 ; @07521 0000:7521 original=e9e947 runtime CFG evidence
     JMP_NEAR loc_0BD0D
 ; sub_0000_7524
+; FindFreeRecordPoolA (modern reconstruction name)
+; Near leaf. DS:95D8 supplies the first candidate. Inspect at most35 status words at stride38h in23B4..2B5B,
+; wrapping BX after increment equals2B5C. Return BX=first zero-status record, CX=35-skipped; save BX to DS:95D8
+; without activating record. Full pool returns BX=FFFF,CX=0 and leaves cursor unchanged. Requires aligned in-
+; pool cursor; unlike poolB, end cursor is not normalized before first read. AX,DX,SI,DI,BP,segments preserved;
+; flags changed.
+; Evidence: metadata/symbols.json
 ; @07524 0000:7524 original=b92300
-    mov cx, 023h
+    mov cx, POOL_A_COUNT
 ; @07527 0000:7527 original=8b1ed895
-    mov bx, word ptr ds:[095D8h]
+    mov bx, word ptr ds:[POOL_A_CURSOR]
 ; @0752B 0000:752B original=833f00
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
 ; @0752E 0000:752E original=7412
     JE_SHORT loc_07542
 ; @07530 0000:7530 original=83c338
-    add bx, 038h
+    add bx, REC_STRIDE
 ; @07533 0000:7533 original=81fb5c2b
-    cmp bx, 02B5Ch
+    cmp bx, POOL_A_END
 ; @07537 0000:7537 original=7503
     JNE_SHORT loc_0753C
 ; @07539 0000:7539 original=bbb423
-    mov bx, 023B4h
+    mov bx, POOL_A_START
 ; @0753C 0000:753C original=e2ed
     LOOP_SHORT loc_0752B
 ; @0753E 0000:753E original=bbffff
@@ -4439,12 +4459,12 @@ loc_0BFC7 equ 05FCBh
 ; @07541 0000:7541 original=c3
     ret
 ; @07542 0000:7542 original=891ed895
-    mov word ptr ds:[095D8h], bx
+    mov word ptr ds:[POOL_A_CURSOR], bx
 ; @07546 0000:7546 original=c3
     ret
 ; sub_0000_7547
 ; @07547 0000:7547 original=e82900
-    CALL_NEAR loc_07573
+    CALL_NEAR FindFreeRecordPoolB_07573
 ; @0754A 0000:754A original=83fbff
     cmp bx, -1
 ; @0754D 0000:754D original=7401
@@ -4476,22 +4496,28 @@ loc_0BFC7 equ 05FCBh
 ; @07570 0000:7570 original=e99a47
     JMP_NEAR loc_0BD0D
 ; sub_0000_7573
+; FindFreeRecordPoolB (modern reconstruction name)
+; Near leaf. DS:95DA supplies cursor. Normalize BX==32CCh to2B5Ch before reading; inspect at most34 zero-status
+; records at stride38h. Success returns BX and CX=34-skipped and saves cursor; failure BX=FFFF,CX=0 leaves
+; cursor unchanged. Accept aligned pool cursor or exact end32CC; other pointers not validated. Does not activate
+; or clear records. AX,DX,SI,DI,BP,segments preserved; flags changed.
+; Evidence: metadata/symbols.json
 ; @07573 0000:7573 original=b92200
-    mov cx, 022h
+    mov cx, POOL_B_COUNT
 ; @07576 0000:7576 original=8b1eda95
-    mov bx, word ptr ds:[095DAh]
+    mov bx, word ptr ds:[POOL_B_CURSOR]
 ; @0757A 0000:757A original=81fbcc32
-    cmp bx, 032CCh
+    cmp bx, POOL_B_END
 ; @0757E 0000:757E original=7503
     JNE_SHORT loc_07583
 ; @07580 0000:7580 original=bb5c2b
-    mov bx, 02B5Ch
+    mov bx, POOL_B_START
 ; @07583 0000:7583 original=833f00
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
 ; @07586 0000:7586 original=7409
     JE_SHORT loc_07591
 ; @07588 0000:7588 original=83c338
-    add bx, 038h
+    add bx, REC_STRIDE
 ; @0758B 0000:758B original=e2ed
     LOOP_SHORT loc_0757A
 ; @0758D 0000:758D original=bbffff
@@ -4499,7 +4525,7 @@ loc_0BFC7 equ 05FCBh
 ; @07590 0000:7590 original=c3
     ret
 ; @07591 0000:7591 original=891eda95
-    mov word ptr ds:[095DAh], bx
+    mov word ptr ds:[POOL_B_CURSOR], bx
 ; @07595 0000:7595 original=c3
     ret
 ; sub_0000_7596
@@ -5109,7 +5135,7 @@ loc_0BFC7 equ 05FCBh
 ; @07A1F 0000:7A1F original=26c6440129 runtime CFG evidence
     mov byte ptr es:[si + 1], 029h
 ; @07A24 0000:7A24 original=e8fdfa runtime CFG evidence
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @07A27 0000:7A27 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @07A2A 0000:7A2A original=7501 runtime CFG evidence

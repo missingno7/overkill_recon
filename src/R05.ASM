@@ -3,6 +3,28 @@ include ENCODING.INC
 part05 segment byte public 'CODE'
 assume cs:part05,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Offset-placement use of field+8 does not define its role in other record types.
+AUTO_XMINUS_A39F equ 0A39Fh
+AUTO_XPLUS_A39E equ 0A39Eh
+OFFSET_RECORD_X_MAX equ 0C0h
+OFFSET_X_WORK equ 0A398h
+ApplyPositionHistoryToRecords_0A031 equ 031h
+; Modern position-history symbols; see metadata/position-history.json.
+HISTORY_READ_CURSOR_15 equ 0A33Ch
+HISTORY_READ_CURSOR_31 equ 0A33Eh
+HISTORY_RECORD_SLOT_15 equ 0A962h
+HISTORY_RECORD_SLOT_31 equ 0A964h
+; Modern record/state symbols; evidence in metadata/record-movement.json.
+MOVE_MODE_A47C equ 0A47Ch
+RECORD_X_MAX equ 0B0h
+RECORD_Y_MAX equ 0C0h
+RECORD_Y_MIN equ 020h
+REC_X equ 04h
+REC_Y equ 02h
+DecRecordYByMode_0A5D1 equ 05D1h
+IncRecordYTwice_0A5EA equ 05EAh
+DecRecordXTwice_0A5F9 equ 05F9h
+IncRecordXTwice_0A607 equ 0607h
 loc_0AECD equ 0ECDh
 loc_0AED6 equ 0ED6h
 loc_0AEE4 equ 0EE4h
@@ -182,7 +204,7 @@ loc_05A92 equ 0BA92h
 loc_05AC8 equ 0BAC8h
 loc_05F0D equ 0BF0Dh
 loc_062AA equ 0C2AAh
-loc_07524 equ 0D524h
+FindFreeRecordPoolA_07524 equ 0D524h
 loc_07547 equ 0D547h
 loc_07596 equ 0D596h
 loc_07746 equ 0D746h
@@ -351,64 +373,72 @@ loc_0F797 equ 05797h
 ; @0A000 0000:A000 original=ad
     lodsw
 ; @0A001 0000:A001 original=034604
-    add ax, word ptr ss:[bp + 4]
+    add ax, word ptr ss:[bp + REC_X]
 ; @0A004 0000:A004 original=030698a3
-    add ax, word ptr ds:[0A398h]
+    add ax, word ptr ds:[OFFSET_X_WORK]
 ; @0A008 0000:A008 original=030698a3
-    add ax, word ptr ds:[0A398h]
+    add ax, word ptr ds:[OFFSET_X_WORK]
 ; @0A00C 0000:A00C original=894704
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @0A00F 0000:A00F original=837f0400
-    cmp word ptr ds:[bx + 4], 0
+    cmp word ptr ds:[bx + REC_X], 0
 ; @0A013 0000:A013 original=7d0a
     JGE_SHORT loc_0A01F
 ; @0A015 0000:A015 original=c747040000
-    mov word ptr ds:[bx + 4], 0
+    mov word ptr ds:[bx + REC_X], 0
 ; @0A01A 0000:A01A original=c6069ea301
-    mov byte ptr ds:[0A39Eh], 1
+    mov byte ptr ds:[AUTO_XPLUS_A39E], 1
 ; @0A01F 0000:A01F original=817f04c000
-    cmp word ptr ds:[bx + 4], 0C0h
+    cmp word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX
 ; @0A024 0000:A024 original=7e0a
     JLE_SHORT loc_0A030
 ; @0A026 0000:A026 original=c74704c000
-    mov word ptr ds:[bx + 4], 0C0h
+    mov word ptr ds:[bx + REC_X], OFFSET_RECORD_X_MAX
 ; @0A02B 0000:A02B original=c6069fa301
-    mov byte ptr ds:[0A39Fh], 1
+    mov byte ptr ds:[AUTO_XMINUS_A39F], 1
 ; @0A030 0000:A030 original=c3
     ret
 ; sub_0000_A031
+; ApplyPositionHistoryToRecords (modern reconstruction name)
+; Near leaf. If DS:A962 !=FFFF, copy two sequential words from DS:[DS:A33C] to record DS:[DS:A962]+2/+4. Then
+; independently do the same for A964/A33E. With DF=0 these are Y/X pairs and SI advances4 after the last copy;
+; AX=last X,BX=last destination. If neither slot exists AX/BX/SI unchanged. Flags are always CMP(A964,FFFF),
+; even on copy; caller9BE8 overwrites them. CX,DX,DI,BP and segments preserved. Requires valid selected
+; pointers; pair abstraction assumes destinations do not alias cursors/slots/source. Actual load/store order
+; remains significant; no activation/type checks.
+; Evidence: metadata/symbols.json
 ; @0A031 0000:A031 original=833e62a9ff
-    cmp word ptr ds:[0A962h], -1
+    cmp word ptr ds:[HISTORY_RECORD_SLOT_15], -1
 ; @0A036 0000:A036 original=7410
     JE_SHORT loc_0A048
 ; @0A038 0000:A038 original=8b1e62a9
-    mov bx, word ptr ds:[0A962h]
+    mov bx, word ptr ds:[HISTORY_RECORD_SLOT_15]
 ; @0A03C 0000:A03C original=8b363ca3
-    mov si, word ptr ds:[0A33Ch]
+    mov si, word ptr ds:[HISTORY_READ_CURSOR_15]
 ; @0A040 0000:A040 original=ad
     lodsw
 ; @0A041 0000:A041 original=894702
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
 ; @0A044 0000:A044 original=ad
     lodsw
 ; @0A045 0000:A045 original=894704
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @0A048 0000:A048 original=833e64a9ff
-    cmp word ptr ds:[0A964h], -1
+    cmp word ptr ds:[HISTORY_RECORD_SLOT_31], -1
 ; @0A04D 0000:A04D original=7410
     JE_SHORT loc_0A05F
 ; @0A04F 0000:A04F original=8b1e64a9
-    mov bx, word ptr ds:[0A964h]
+    mov bx, word ptr ds:[HISTORY_RECORD_SLOT_31]
 ; @0A053 0000:A053 original=8b363ea3
-    mov si, word ptr ds:[0A33Eh]
+    mov si, word ptr ds:[HISTORY_READ_CURSOR_31]
 ; @0A057 0000:A057 original=ad
     lodsw
 ; @0A058 0000:A058 original=894702
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
 ; @0A05B 0000:A05B original=ad
     lodsw
 ; @0A05C 0000:A05C original=894704
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @0A05F 0000:A05F original=c3
     ret
 ; @0A060 0000:A060 original=c70680a90000
@@ -1056,17 +1086,17 @@ loc_0F797 equ 05797h
 ; latter result. Order matters if memory aliases. Flags are from the second ADD.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
 ; @0A571 0000:A571 original=8b4604
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
 ; @0A574 0000:A574 original=050a00
     add ax, 0Ah
 ; @0A577 0000:A577 original=894704
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
 ; @0A57A 0000:A57A original=8b4602
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
 ; @0A57D 0000:A57D original=050a00
     add ax, 0Ah
 ; @0A580 0000:A580 original=894702
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
 ; @0A583 0000:A583 original=c3
     ret
 ; sub_0000_A584
@@ -1095,7 +1125,7 @@ loc_0F797 equ 05797h
 ; @0A5A7 0000:A5A7 original=e8c7ff
     CALL_NEAR CopyWords2And4Plus10_0A571
 ; @0A5AA 0000:A5AA original=836704fc
-    and word ptr ds:[bx + 4], 0FFFCh
+    and word ptr ds:[bx + REC_X], 0FFFCh
 ; @0A5AE 0000:A5AE original=c747080800
     mov word ptr ds:[bx + 8], 8
 ; @0A5B3 0000:A5B3 original=c747180500
@@ -1107,7 +1137,7 @@ loc_0F797 equ 05797h
 ; @0A5BF 0000:A5BF original=e8afff
     CALL_NEAR CopyWords2And4Plus10_0A571
 ; @0A5C2 0000:A5C2 original=836704fc
-    and word ptr ds:[bx + 4], 0FFFCh
+    and word ptr ds:[bx + REC_X], 0FFFCh
 ; @0A5C6 0000:A5C6 original=c747080800
     mov word ptr ds:[bx + 8], 8
 ; @0A5CB 0000:A5CB original=c747180600
@@ -1115,8 +1145,13 @@ loc_0F797 equ 05797h
 ; @0A5D0 0000:A5D0 original=c3
     ret
 ; sub_0000_A5D1
+; DecRecordYByMode (modern reconstruction name)
+; DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise
+; decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags
+; changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
+; Evidence: metadata/symbols.json
 ; @0A5D1 0000:A5D1 original=833e7ca400
-    cmp word ptr ds:[0A47Ch], 0
+    cmp word ptr ds:[MOVE_MODE_A47C], 0
 ; @0A5D6 0000:A5D6 original=750e
     JNE_SHORT loc_0A5E6
 ; @0A5D8 0000:A5D8 original=e80000
@@ -1127,20 +1162,25 @@ loc_0F797 equ 05797h
 ; preserves that CF.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
 ; @0A5DB 0000:A5DB original=837e0220
-    cmp word ptr ss:[bp + 2], 020h
+    cmp word ptr ss:[bp + REC_Y], RECORD_Y_MIN
 ; @0A5DF 0000:A5DF original=7501
     JNE_SHORT loc_0A5E2
 ; @0A5E1 0000:A5E1 original=c3
     ret
 ; @0A5E2 0000:A5E2 original=ff4e02
-    dec word ptr ss:[bp + 2]
+    dec word ptr ss:[bp + REC_Y]
 ; @0A5E5 0000:A5E5 original=c3
     ret
 ; @0A5E6 0000:A5E6 original=ff4e02
-    dec word ptr ss:[bp + 2]
+    dec word ptr ss:[bp + REC_Y]
 ; @0A5E9 0000:A5E9 original=c3
     ret
 ; sub_0000_A5EA
+; IncRecordYTwice (modern reconstruction name)
+; Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh
+; becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF
+; preserved; normal outer near return.
+; Evidence: metadata/symbols.json
 ; @0A5EA 0000:A5EA original=e80000
     CALL_NEAR IncBP2UnlessC0_0A5ED
 ; IncBP2UnlessC0
@@ -1148,16 +1188,21 @@ loc_0F797 equ 05797h
 ; increment.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
 ; @0A5ED 0000:A5ED original=817e02c000
-    cmp word ptr ss:[bp + 2], 0C0h
+    cmp word ptr ss:[bp + REC_Y], RECORD_Y_MAX
 ; @0A5F2 0000:A5F2 original=7501
     JNE_SHORT loc_0A5F5
 ; @0A5F4 0000:A5F4 original=c3
     ret
 ; @0A5F5 0000:A5F5 original=ff4602
-    inc word ptr ss:[bp + 2]
+    inc word ptr ss:[bp + REC_Y]
 ; @0A5F8 0000:A5F8 original=c3
     ret
 ; sub_0000_A5F9
+; DecRecordXTwice (modern reconstruction name)
+; Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word.
+; Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain
+; in ASM.
+; Evidence: metadata/symbols.json
 ; @0A5F9 0000:A5F9 original=e80000
     CALL_NEAR DecBP4UnlessZero_0A5FC
 ; DecBP4UnlessZero
@@ -1165,16 +1210,21 @@ loc_0F797 equ 05797h
 ; CMP/DEC.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
 ; @0A5FC 0000:A5FC original=837e0400
-    cmp word ptr ss:[bp + 4], 0
+    cmp word ptr ss:[bp + REC_X], 0
 ; @0A600 0000:A600 original=7501
     JNE_SHORT loc_0A603
 ; @0A602 0000:A602 original=c3
     ret
 ; @0A603 0000:A603 original=ff4e04
-    dec word ptr ss:[bp + 4]
+    dec word ptr ss:[bp + REC_X]
 ; @0A606 0000:A606 original=c3
     ret
 ; sub_0000_A607
+; IncRecordXTwice (modern reconstruction name)
+; Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below
+; it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near
+; return.
+; Evidence: metadata/symbols.json
 ; @0A607 0000:A607 original=e80000
     CALL_NEAR IncBP4BelowB0_0A60A
 ; IncBP4BelowB0
@@ -1182,13 +1232,13 @@ loc_0F797 equ 05797h
 ; unchanged.
 ; Modern semantic name; see metadata/symbols.json for confidence and evidence.
 ; @0A60A 0000:A60A original=817e04b000
-    cmp word ptr ss:[bp + 4], 0B0h
+    cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
 ; @0A60F 0000:A60F original=7201
     JB_SHORT loc_0A612
 ; @0A611 0000:A611 original=c3
     ret
 ; @0A612 0000:A612 original=ff4604
-    inc word ptr ss:[bp + 4]
+    inc word ptr ss:[bp + REC_X]
 ; @0A615 0000:A615 original=c3
     ret
 ; sub_0000_A616
@@ -1335,7 +1385,7 @@ loc_0F797 equ 05797h
 ; @0A6C9 0000:A6C9 original=56
     push si
 ; @0A6CA 0000:A6CA original=e857ce
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @0A6CD 0000:A6CD original=5e
     pop si
 ; @0A6CE 0000:A6CE original=83fbff

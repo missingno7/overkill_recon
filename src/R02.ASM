@@ -267,7 +267,7 @@ loc_05FCB equ 01FCBh
 loc_05FE7 equ 01FE7h
 loc_05FF8 equ 01FF8h
 loc_06030 equ 02030h
-loc_07524 equ 03524h
+FindFreeRecordPoolA_07524 equ 03524h
 loc_0A781 equ 06781h
 loc_0C640 equ 08640h
 loc_0C9EA equ 089EAh
@@ -1779,7 +1779,7 @@ loc_0CBE8 equ 08BE8h
 ; @04ACE 0000:4ACE original=51
     push cx
 ; @04ACF 0000:4ACF original=e8522a
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @04AD2 0000:4AD2 original=83fbff
     cmp bx, -1
 ; @04AD5 0000:4AD5 original=7503

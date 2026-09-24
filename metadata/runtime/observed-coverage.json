@@ -2,7 +2,7 @@
   "additional_main_cfg_instruction_bytes": 10987,
   "conflicts": [],
   "initial_function_candidates": 371,
-  "main_cfg_instruction_bytes": 36542,
+  "main_cfg_instruction_bytes": 36594,
   "main_function_candidates": 421,
   "newly_discovered_main_bytes_are_assembled": true,
   "newly_discovered_main_bytes_remaining_opaque": 0,

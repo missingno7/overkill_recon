@@ -23347,6 +23347,66 @@
     {
       "access": 1,
       "base": null,
+      "displacement": 8996,
+      "index": null,
+      "instruction": "0000:9C82",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9C8A",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9C93",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 1,
+      "base": null,
+      "displacement": 8996,
+      "index": null,
+      "instruction": "0000:9C9C",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9CA4",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9CAD",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 1,
+      "base": null,
       "displacement": -16676,
       "index": null,
       "instruction": "0000:9CBD",

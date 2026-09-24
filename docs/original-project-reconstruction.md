@@ -210,3 +210,25 @@ Anomalous register values remain exact. Nine32-byte driver records are supported
 by repeated callers and initial bytes; field offsets now have operation-based
 metadata. This supports a shared record convention without proving a historical
 STRUCT, EQU include, macro or source filename. See `metadata/drivers/adlib-data.json`.
+
+## Current structural utility: record cluster
+
+The record search and movement cluster now supplies shared56-byte record and field
+relationships across generic updates and Tandy addressing. Local modern EQU names
+improve maintained source without moving physical chunks or claiming historical
+module boundaries. The count-dispatch proof closes a concrete CFG gap. See
+[record-movement.md](record-movement.md) and `metadata/record-movement.json`.
+Further toolchain archaeology is lower priority unless it resolves an exact-build,
+code-boundary or data-ownership question.
+
+## Coordinate history and offset-placement ownership
+
+Six reviewed entries connect a48-entry position history, two delayed record
+positions and four offset-positioned records to the input-update caller. The
+shared state and explicit fallthrough support a semantic cluster; they do not
+prove an original source or object boundary. Modern local EQU names expose this
+relationship without moving the exact physical chunks. Four adjacent Y/X pair
+groups are48 bytes of maintained word data, with the caller index domain still
+open. See [position-history.md](position-history.md) and its machine-readable
+metadata. These facts improve future translation boundaries without assuming
+historical STRUCT syntax, filenames or compiler behavior.

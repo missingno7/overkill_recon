@@ -44,7 +44,11 @@ def audit_source():
                 expected_lines=[v.split(';',1)[0].strip() for v in r['text'].splitlines() if v.split(';',1)[0].strip()]
                 if blocks.get(r['start'])!=expected_lines:raise ValueError(f'Instruction/source-map mismatch at {r["start"]:05X}; review and update its representation.')
                 instructions.append(r)
-            elif any(not v.lower().startswith('db ') for v in blocks.get(r['start'],[])):raise ValueError('Raw region has unaccounted directives')
+            elif r['kind']=='reconstructed_data':
+                if not r.get('evidence') or r['end']-r['start']!=2:raise ValueError('Reviewed word data needs extent and evidence')
+                if not re.fullmatch(r'dw (?:0[0-9A-F]+h|[A-Za-z_][A-Za-z_0-9]*)',r['text']):raise ValueError('Unsupported reviewed word expression')
+                if blocks.get(r['start'])!=[r['text']]:raise ValueError('Reviewed data/source-map mismatch')
+            elif r['kind']!='opaque_unknown' or any(not v.lower().startswith('db ') for v in blocks.get(r['start'],[])):raise ValueError('Raw region has unaccounted directives')
     if cursor!=read_json(ROOT/'metadata/oracle.json')['program_bytes']:raise ValueError('Incomplete source accounting')
     return counts
 

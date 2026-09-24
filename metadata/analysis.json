@@ -41389,8 +41389,9 @@
         "call from 0000:9BDC"
       ],
       "hardware": [],
-      "instruction_bytes": 111,
+      "instruction_bytes": 164,
       "instructions": [
+        "0000:44AF",
         "0000:9C01",
         "0000:9C07",
         "0000:9C0C",
@@ -41423,7 +41424,21 @@
         "0000:9C65",
         "0000:9C67",
         "0000:9C69",
-        "0000:9C6B"
+        "0000:9C6B",
+        "0000:9C82",
+        "0000:9C87",
+        "0000:9C89",
+        "0000:9C8A",
+        "0000:9C90",
+        "0000:9C93",
+        "0000:9C99",
+        "0000:9C9C",
+        "0000:9CA1",
+        "0000:9CA3",
+        "0000:9CA4",
+        "0000:9CAA",
+        "0000:9CAD",
+        "0000:9CB3"
       ],
       "leaf": false,
       "memory": [
@@ -41546,6 +41561,66 @@
           "scale": 1,
           "segment": "cs",
           "size": 2
+        },
+        {
+          "access": 1,
+          "base": null,
+          "displacement": 8996,
+          "index": null,
+          "instruction": "0000:9C82",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        },
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "instruction": "0000:9C8A",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        },
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "instruction": "0000:9C93",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        },
+        {
+          "access": 1,
+          "base": null,
+          "displacement": 8996,
+          "index": null,
+          "instruction": "0000:9C9C",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        },
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "instruction": "0000:9CA4",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        },
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "instruction": "0000:9CAD",
+          "scale": 1,
+          "segment": "default",
+          "size": 2
         }
       ],
       "name": "sub_0000_9C01",
@@ -41560,7 +41635,8 @@
         "cs",
         "eip",
         "esp",
-        "flags"
+        "flags",
+        "sp"
       ],
       "registers_written": [
         "ax",
@@ -41568,13 +41644,17 @@
         "bl",
         "bx",
         "esp",
-        "flags"
+        "flags",
+        "sp"
       ],
-      "shared_instructions": [],
-      "tail_targets": [],
-      "unresolved": [
-        "indirect_jump"
-      ]
+      "shared_instructions": [
+        "0000:44AF"
+      ],
+      "tail_targets": [
+        "0000:A5FC",
+        "0000:A60A"
+      ],
+      "unresolved": []
     },
     {
       "address": "0000:9CB6",
@@ -46382,6 +46462,7 @@
       "address": "0000:A5FC",
       "callees": [],
       "callers": [
+        "0000:9C01",
         "0000:A5F9"
       ],
       "category": "UNKNOWN",
@@ -46487,6 +46568,7 @@
       "address": "0000:A60A",
       "callees": [],
       "callers": [
+        "0000:9C01",
         "0000:A607"
       ],
       "category": "UNKNOWN",
@@ -214143,12 +214225,353 @@
         "bx"
       ],
       "registers_written": [],
+      "resolved_candidates": [
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9CAD",
+        "0000:9C82",
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9C93",
+        "0000:9C82",
+        "0000:44AF"
+      ],
       "segment": 0,
       "size": 5,
+      "successors": [
+        "0000:44AF",
+        "0000:9C82",
+        "0000:9C93",
+        "0000:9C9C",
+        "0000:9CAD"
+      ],
+      "unresolved": []
+    },
+    "0000:9C82": {
+      "address": "0000:9C82",
+      "calls": [],
+      "hex": "833e242301",
+      "linear": 40066,
+      "memory": [
+        {
+          "access": 1,
+          "base": null,
+          "displacement": 8996,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "cmp",
+      "offset": 40066,
+      "operands": "word ptr [0x2324], 1",
+      "registers_read": [],
+      "registers_written": [
+        "flags"
+      ],
+      "segment": 0,
+      "size": 5,
+      "successors": [
+        "0000:9C87"
+      ],
+      "unresolved": []
+    },
+    "0000:9C87": {
+      "address": "0000:9C87",
+      "calls": [],
+      "hex": "7501",
+      "linear": 40071,
+      "memory": [],
+      "mnemonic": "jne",
+      "offset": 40071,
+      "operands": "0x9c8a",
+      "registers_read": [
+        "flags"
+      ],
+      "registers_written": [],
+      "segment": 0,
+      "size": 2,
+      "successors": [
+        "0000:9C8A",
+        "0000:9C89"
+      ],
+      "unresolved": []
+    },
+    "0000:9C89": {
+      "address": "0000:9C89",
+      "calls": [],
+      "hex": "c3",
+      "linear": 40073,
+      "memory": [],
+      "mnemonic": "ret",
+      "offset": 40073,
+      "operands": "",
+      "registers_read": [
+        "sp"
+      ],
+      "registers_written": [
+        "sp"
+      ],
+      "segment": 0,
+      "size": 1,
       "successors": [],
-      "unresolved": [
-        "indirect_jump"
-      ]
+      "unresolved": []
+    },
+    "0000:9C8A": {
+      "address": "0000:9C8A",
+      "calls": [],
+      "hex": "c70660a30100",
+      "linear": 40074,
+      "memory": [
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "mov",
+      "offset": 40074,
+      "operands": "word ptr [0xa360], 1",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 6,
+      "successors": [
+        "0000:9C90"
+      ],
+      "unresolved": []
+    },
+    "0000:9C90": {
+      "address": "0000:9C90",
+      "calls": [],
+      "hex": "e97709",
+      "linear": 40080,
+      "memory": [],
+      "mnemonic": "jmp",
+      "offset": 40080,
+      "operands": "0xa60a",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 3,
+      "successors": [
+        "0000:A60A"
+      ],
+      "unresolved": []
+    },
+    "0000:9C93": {
+      "address": "0000:9C93",
+      "calls": [],
+      "hex": "c70660a30100",
+      "linear": 40083,
+      "memory": [
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "mov",
+      "offset": 40083,
+      "operands": "word ptr [0xa360], 1",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 6,
+      "successors": [
+        "0000:9C99"
+      ],
+      "unresolved": []
+    },
+    "0000:9C99": {
+      "address": "0000:9C99",
+      "calls": [],
+      "hex": "e96e09",
+      "linear": 40089,
+      "memory": [],
+      "mnemonic": "jmp",
+      "offset": 40089,
+      "operands": "0xa60a",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 3,
+      "successors": [
+        "0000:A60A"
+      ],
+      "unresolved": []
+    },
+    "0000:9C9C": {
+      "address": "0000:9C9C",
+      "calls": [],
+      "hex": "833e242301",
+      "linear": 40092,
+      "memory": [
+        {
+          "access": 1,
+          "base": null,
+          "displacement": 8996,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "cmp",
+      "offset": 40092,
+      "operands": "word ptr [0x2324], 1",
+      "registers_read": [],
+      "registers_written": [
+        "flags"
+      ],
+      "segment": 0,
+      "size": 5,
+      "successors": [
+        "0000:9CA1"
+      ],
+      "unresolved": []
+    },
+    "0000:9CA1": {
+      "address": "0000:9CA1",
+      "calls": [],
+      "hex": "7501",
+      "linear": 40097,
+      "memory": [],
+      "mnemonic": "jne",
+      "offset": 40097,
+      "operands": "0x9ca4",
+      "registers_read": [
+        "flags"
+      ],
+      "registers_written": [],
+      "segment": 0,
+      "size": 2,
+      "successors": [
+        "0000:9CA4",
+        "0000:9CA3"
+      ],
+      "unresolved": []
+    },
+    "0000:9CA3": {
+      "address": "0000:9CA3",
+      "calls": [],
+      "hex": "c3",
+      "linear": 40099,
+      "memory": [],
+      "mnemonic": "ret",
+      "offset": 40099,
+      "operands": "",
+      "registers_read": [
+        "sp"
+      ],
+      "registers_written": [
+        "sp"
+      ],
+      "segment": 0,
+      "size": 1,
+      "successors": [],
+      "unresolved": []
+    },
+    "0000:9CA4": {
+      "address": "0000:9CA4",
+      "calls": [],
+      "hex": "c70660a30100",
+      "linear": 40100,
+      "memory": [
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "mov",
+      "offset": 40100,
+      "operands": "word ptr [0xa360], 1",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 6,
+      "successors": [
+        "0000:9CAA"
+      ],
+      "unresolved": []
+    },
+    "0000:9CAA": {
+      "address": "0000:9CAA",
+      "calls": [],
+      "hex": "e94f09",
+      "linear": 40106,
+      "memory": [],
+      "mnemonic": "jmp",
+      "offset": 40106,
+      "operands": "0xa5fc",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 3,
+      "successors": [
+        "0000:A5FC"
+      ],
+      "unresolved": []
+    },
+    "0000:9CAD": {
+      "address": "0000:9CAD",
+      "calls": [],
+      "hex": "c70660a30100",
+      "linear": 40109,
+      "memory": [
+        {
+          "access": 2,
+          "base": null,
+          "displacement": -23712,
+          "index": null,
+          "scale": 1,
+          "segment": "default",
+          "size": 2
+        }
+      ],
+      "mnemonic": "mov",
+      "offset": 40109,
+      "operands": "word ptr [0xa360], 1",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 6,
+      "successors": [
+        "0000:9CB3"
+      ],
+      "unresolved": []
+    },
+    "0000:9CB3": {
+      "address": "0000:9CB3",
+      "calls": [],
+      "hex": "e94609",
+      "linear": 40115,
+      "memory": [],
+      "mnemonic": "jmp",
+      "offset": 40115,
+      "operands": "0xa5fc",
+      "registers_read": [],
+      "registers_written": [],
+      "segment": 0,
+      "size": 3,
+      "successors": [
+        "0000:A5FC"
+      ],
+      "unresolved": []
     },
     "0000:9CB6": {
       "address": "0000:9CB6",
@@ -298894,7 +299317,7 @@
     },
     {
       "confidence": "UNKNOWN",
-      "end": 40118,
+      "end": 40066,
       "kind": "UNKNOWN",
       "start": 40048
     },
@@ -298902,7 +299325,7 @@
       "confidence": "INFERRED",
       "end": 40295,
       "kind": "reachable_instruction",
-      "start": 40118
+      "start": 40066
     },
     {
       "confidence": "UNKNOWN",
@@ -301078,6 +301501,27 @@
       "kind": "near_code_pointer_table",
       "site": "0000:083E",
       "start": 22874
+    },
+    {
+      "confidence": "PROVEN",
+      "end": 40066,
+      "entries": [
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9CAD",
+        "0000:9C82",
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9C93",
+        "0000:9C82",
+        "0000:44AF"
+      ],
+      "evidence": "metadata/record-movement.json; two conditional increments each of initially zero AH and AL give index AL+3*AH in0..8",
+      "exhaustive": true,
+      "kind": "near_code_pointer_table",
+      "precondition": "normal entry through9C01/9C35; no arbitrary mid-block entry or asynchronous register corruption",
+      "site": "0000:9C6B",
+      "start": 40048
     }
   ],
   "unresolved": [
@@ -301240,10 +301684,6 @@
     {
       "address": "0000:83AC",
       "kind": "indirect_call"
-    },
-    {
-      "address": "0000:9C6B",
-      "kind": "indirect_jump"
     },
     {
       "address": "0000:8D8E",

@@ -33,7 +33,7 @@ def generate():
     functions=a['functions']; nodes=a['nodes'];image,m=extract()
     for f in functions:
         if f['address'] in reviewed:
-            r=reviewed[f['address']];f.update({k:r[k] for k in ('name','category','contract','confidence','claim_axes')});f['semantic_evidence']=r['evidence'];f['named']=True
+            r=reviewed[f['address']];f.update({k:r[k] for k in ('name','category','contract','confidence','claim_axes','concern','concern_evidence')});f['semantic_evidence']=r['evidence'];f['named']=True
     groups,depth=scc_order(functions)
     for f in functions:f['call_graph_depth']=depth[f['address']]
     write_json(ROOT/'metadata/functions.json',functions)
@@ -43,7 +43,7 @@ def generate():
     status=dict(schema=1,original_container_bytes=m['mz']['executable_bytes']+m['mz']['appended_bytes'],original_executable_bytes_accounted=m['mz']['executable_bytes'],
         original_appended_bytes_accounted=m['mz']['appended_bytes'],program_image_bytes_accounted=len(image),accounting_means='Complete address/range coverage, including UNKNOWN; not semantic recovery.',
         decoded_instruction_bytes=sum(r['end']-r['start'] for r in a['regions'] if r['kind']=='reachable_instruction'),
-        reconstructed_asm_bytes=counts.get('instruction',0),opaque_raw_fallback_bytes=counts.get('opaque_unknown',0),
+        reconstructed_data_bytes=counts.get('reconstructed_data',0),reconstructed_asm_bytes=counts.get('instruction',0),opaque_raw_fallback_bytes=counts.get('opaque_unknown',0),
         identified_functions=len(functions),function_boundary_caveat='Candidates from entry, direct calls, dispatch pointers and verified vector installation; shared tails and aliases are explicit.',
         named_functions=sum(f['named'] for f in functions),anonymous_functions=sum(not f['named'] for f in functions),leaf_functions=sum(f['leaf'] for f in functions),
         **{c:categories[c] for c in ['C_READY','C_READY_WITH_ENV','ASM_COUPLED','HARDWARE','STRUCTURAL','UNKNOWN']},
@@ -52,7 +52,7 @@ def generate():
         unresolved_indirect_sites=len(a['unresolved']),decode_conflicts=len(a['conflicts']),historical_module_boundaries_proven=0)
     write_json(ROOT/'metadata/status.json',status)
     lines=['# Reconstruction status','', 'This is an exact, incomplete ASM bootstrap. Byte coverage and semantic understanding are separate.','', '| Metric | Value |','|---|---:|']
-    for key in ['program_image_bytes_accounted','decoded_instruction_bytes','reconstructed_asm_bytes','opaque_raw_fallback_bytes','identified_functions','named_functions','anonymous_functions','leaf_functions','C_READY','C_READY_WITH_ENV','ASM_COUPLED','HARDWARE','STRUCTURAL','UNKNOWN','semantically_supported_unique_instruction_bytes','unresolved_indirect_sites','decode_conflicts']:
+    for key in ['program_image_bytes_accounted','decoded_instruction_bytes','reconstructed_asm_bytes','reconstructed_data_bytes','opaque_raw_fallback_bytes','identified_functions','named_functions','anonymous_functions','leaf_functions','C_READY','C_READY_WITH_ENV','ASM_COUPLED','HARDWARE','STRUCTURAL','UNKNOWN','semantically_supported_unique_instruction_bytes','unresolved_indirect_sites','decode_conflicts']:
         lines.append('| '+key+' | '+str(status[key])+' |')
     lines+=['',f"Build: **{status['build_status']}**. Normalized program image: **{status['binary_match_status']}**.",'Known mismatching ranges: '+str(status['known_mismatching_ranges'])+'. Packed original file: **not rebuilt**.','',
         'Every one of the 143,088 initialized image bytes has a source-map owner. UNKNOWN ranges use visible DB declarations and count as opaque. The instruction denominator for the whole game is not yet known. No 100% code-recovery claim is made.','',

@@ -1000,13 +1000,61 @@ chunk_base label byte
 ; @1FF10 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 00h,01h,07h,00h,00h,02h,06h,02h,0AAh,00h,058h,00h,00h,00h,058h,00h
 ; @1FF20 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,00h,00h,090h,00h,00h,00h,00h,010h,00h,0F8h,0FFh,0Ch,00h,0F4h,0FFh
-; @1FF30 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Fh,00h,0F3h,0FFh,010h,00h,018h,00h,0Ch,00h,01Ch,00h,0Fh,00h,01Dh,00h
-; @1FF40 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 014h,00h,0ECh,0FFh,010h,00h,0E8h,0FFh,013h,00h,0E7h,0FFh,014h,00h,024h,00h
-; @1FF50 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 010h,00h,028h,00h,013h,00h,029h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+    db 00h,00h,00h,090h,00h,00h,00h,00h
+; Offset pairs at DS:A368; three adjacent pairs, caller index bound not proven.
+; @1FF28 reviewed offset pair 0 field Y, signed value 16
+    dw 010h
+; @1FF2A reviewed offset pair 0 field X, signed value -8
+    dw 0FFF8h
+; @1FF2C reviewed offset pair 1 field Y, signed value 12
+    dw 0Ch
+; @1FF2E reviewed offset pair 1 field X, signed value -12
+    dw 0FFF4h
+; @1FF30 reviewed offset pair 2 field Y, signed value 15
+    dw 0Fh
+; @1FF32 reviewed offset pair 2 field X, signed value -13
+    dw 0FFF3h
+; Offset pairs at DS:A374; three adjacent pairs, caller index bound not proven.
+; @1FF34 reviewed offset pair 0 field Y, signed value 16
+    dw 010h
+; @1FF36 reviewed offset pair 0 field X, signed value 24
+    dw 018h
+; @1FF38 reviewed offset pair 1 field Y, signed value 12
+    dw 0Ch
+; @1FF3A reviewed offset pair 1 field X, signed value 28
+    dw 01Ch
+; @1FF3C reviewed offset pair 2 field Y, signed value 15
+    dw 0Fh
+; @1FF3E reviewed offset pair 2 field X, signed value 29
+    dw 01Dh
+; Offset pairs at DS:A380; three adjacent pairs, caller index bound not proven.
+; @1FF40 reviewed offset pair 0 field Y, signed value 20
+    dw 014h
+; @1FF42 reviewed offset pair 0 field X, signed value -20
+    dw 0FFECh
+; @1FF44 reviewed offset pair 1 field Y, signed value 16
+    dw 010h
+; @1FF46 reviewed offset pair 1 field X, signed value -24
+    dw 0FFE8h
+; @1FF48 reviewed offset pair 2 field Y, signed value 19
+    dw 013h
+; @1FF4A reviewed offset pair 2 field X, signed value -25
+    dw 0FFE7h
+; Offset pairs at DS:A38C; three adjacent pairs, caller index bound not proven.
+; @1FF4C reviewed offset pair 0 field Y, signed value 20
+    dw 014h
+; @1FF4E reviewed offset pair 0 field X, signed value 36
+    dw 024h
+; @1FF50 reviewed offset pair 1 field Y, signed value 16
+    dw 010h
+; @1FF52 reviewed offset pair 1 field X, signed value 40
+    dw 028h
+; @1FF54 reviewed offset pair 2 field Y, signed value 19
+    dw 013h
+; @1FF56 reviewed offset pair 2 field X, signed value 41
+    dw 029h
+; @1FF58 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,00h,00h,00h,00h,00h,00h,00h
 ; @1FF60 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 00h,00h,00h,00h,00h,00h,00h,00h,06h,00h,0Ch,00h,00h,00h,0Ch,00h
 ; @1FF70 UNKNOWN bootstrap bytes: not reconstructed code/data

@@ -241,6 +241,141 @@ Evidence:
 - Selector2 of wrapper5BCA targets3389.
 - Whole64KiB destination test checks exact cleared footprint and untouched bytes.
 
+## FindFreeRecordPoolA (0000:7524)
+
+Near leaf. DS:95D8 supplies the first candidate. Inspect at most35 status words at stride38h in23B4..2B5B, wrapping BX after increment equals2B5C. Return BX=first zero-status record, CX=35-skipped; save BX to DS:95D8 without activating record. Full pool returns BX=FFFF,CX=0 and leaves cursor unchanged. Requires aligned in-pool cursor; unlike poolB, end cursor is not normalized before first read. AX,DX,SI,DI,BP,segments preserved; flags changed.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:4A65, 0000:7420, 0000:A66F, 0000:C3A6.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read bx, cx, flags, sp; write bx, cx, flags, sp.
+
+Evidence:
+- 752B checks only word+0;7542 writes only cursor. Callers7429 andA6D3 activate selected records separately.
+- tests/test_records.py covers every valid cursor/free-slot pair, full pools and invalid end-cursor distinction.
+- Several call sites compare BX withFFFF; C450 andD1AE use BX without checking failure, so caller capacity preconditions remain open.
+
+## FindFreeRecordPoolB (0000:7573)
+
+Near leaf. DS:95DA supplies cursor. Normalize BX==32CCh to2B5Ch before reading; inspect at most34 zero-status records at stride38h. Success returns BX and CX=34-skipped and saves cursor; failure BX=FFFF,CX=0 leaves cursor unchanged. Accept aligned pool cursor or exact end32CC; other pointers not validated. Does not activate or clear records. AX,DX,SI,DI,BP,segments preserved; flags changed.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:7547.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read bx, cx, flags, sp; write bx, cx, flags, sp.
+
+Evidence:
+- 757A wraps before reading, unlike7524;7591 only saves cursor.
+- tests/test_records.py exhausts cursor/free-slot positions and failure cases.
+- 7476 andC237 explicitly compare BX before writing selected records.
+
+## InitPositionHistory (0000:99BF)
+
+Near leaf. Set ES=CS:9596, BP=237Ch. With DF=0 fill48 four-byte pairs at ES:A27A with (SS:[237E]+8, SS:[2380]+9), modulo65536. Then DS:A33A/A33C/A33E/A340 become A27A/A2FE/A2BE/A27E. CX=0,DI=A33A,AX=last X+9; BX,DX,SI,DS,SS preserved. Flags from final ADD. Requires valid buffers and source not overwritten by destination for uniform-fill interpretation; loads repeat each iteration. Unlike later writes, initial X bias is9, not8.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:95C9, 0000:CF2E.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, cx, di, es, flags, sp; write ax, bp, cx, di, es, flags, sp.
+
+Evidence:
+- 99BF..99F5; callers9783/CFD8 initialize before record-update use.
+- Startup95D3 clears DF;95D5/95DA set DS/SS from CS9596. These are local preconditions, not an all-path segment/DF proof.
+- tests/test_history.py checks whole buffers, distinct segments, word wrap and cursor initialization.
+
+## AdjustRecordXFromCounts (0000:9C01)
+
+Near entry; DS holds input/state, SS:BP the record. Clear DS:A360. If bit2 of DS:98BE absent and byte A39E==1, apply IncRecordXTwice and set A360=1. Then if bit1 absent and A39F==1, apply DecRecordXTwice and set A360=1. AH counts words A966/A96A notFFFF; AL counts A968/A96C notFFFF. If counts equal, return via shared44AF RET. Otherwise, if count difference magnitude2 or DS:2324!=1, set A360=1 and tail to one-step X increment for AH>AL, decrement otherwise. FlagA360 records taking an adjustment path even if bound prevents movement. Return AX=(AHcount<<8)|ALcount,BX=2*(ALcount+3*AHcount); CX,DX,SI,DI,BP and segments preserved. Flags are path-dependent; caller9BDF ignores them before overwrite in9CF1. Assumes normal entry and no asynchronous register corruption.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E.
+Callees: 0000:9BFB, 0000:9BFE, 0000:A5F9, 0000:A607.
+Register access inventory (decoder-derived, not a proven ABI): read ah, al, ax, bh, bl, bx, cs, eip, esp, flags, sp; write ax, bh, bl, bx, esp, flags, sp.
+
+Evidence:
+- 9C35 clears AX;9BFB/9BFE increment AH/AL; each called at most twice. Thus table9C70 has exactly9 entries.
+- 9C82/9C9C gate magnitude1 with2324;9C93/9CAD handle magnitude2 unconditionally.
+- tests/test_records.py covers all16 sentinel combinations, input auto-step order, three gate values, bound cases and unchanged DS alias.
+
+## StorePositionHistory (0000:9CD9)
+
+Near leaf. ES=CS:9596, DI=DS:A33A; with DF=0 store SS:[BP+2]+8 then SS:[BP+4]+8 to ES:DI/DI+2, modulo65536. DI advances4; AX holds X+8, flags from final ADD. BX,CX,DX,SI,BP,DS,SS preserved. Does not move the ring cursor. Assumes valid nonoverlapping record/history for pair semantics; the second source load occurs after the first store. DF is preserved, not cleared.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9BE2.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, di, es, flags, sp; write ax, di, es, flags, sp.
+
+Evidence:
+- 9BE2 calls this before A031; incoming AX/DI/ES from9CF1 are dead here.
+- 99BF seeds the same pair format with a distinct X+9 bias.
+- tests/test_history.py separates DS,SS,ES and checks DF direction and alias-order behavior.
+
+## AdvancePositionHistoryIfRequested (0000:9CF1)
+
+Near leaf. If low nibble of DS:98BE is zero and word DS:A360 is zero, return without writes. Otherwise advance each of four word cursors DS:A33A/A33C/A33E/A340 by4 modulo65536, replacing exactly A33Ah with A27Ah. Ring interpretation requires each cursor aligned within A27A..A336. No validation or >= wrap; invalid cursors remain mechanically advanced. All general/segment registers preserved. Flags changed by final TEST/CMP; caller9BDF falls through9BE2, whose9CD9 ADD kills them before use. Trigger means requested input/adjustment, not proof that a coordinate changed.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read flags, sp; write flags, sp.
+
+Evidence:
+- 99BF supplies all four valid initial cursors; advancing preserves their relative phases.
+- A360 is set by9C01 even when a bound prevents movement.
+- tests/test_history.py exhausts each valid ring position and input nibble, and checks invalid cursor/wrap distinctions.
+
+## PlaceFourRecordsFromOffsetTables (0000:9FAF)
+
+Closed near-entry cluster ending through shared9FEA leaf tail. Clear bytes DS:A39E/A39F. Set A398=A39A, apply PlaceRecordFromOffsetPair to slots A96C then A968 using tables A38C/A374. Set A398=A39C, apply to A96A then fall through for A966 using A380/A368. FFFF slots skipped. Clamp bytes aggregate whether any present record hit signed X clamp; they do not count records or report actual source movement. Preserve CX,DX,DI,BP and segments; AX,BX,SI scratch with path-dependent returns. No internal index bound; requires each selected table/index and record valid. Shared global A398 means non-reentrant without external protection.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9BE2.
+Callees: 0000:9FEA.
+Register access inventory (decoder-derived, not a proven ABI): read ax, eip, esp; write ax, bx, esp, si.
+
+Evidence:
+- 9BE2 optionally runs this after the history copy.9C01 consumes A39E/A39F before the next9BE2 update, feeding clamp state back into primary-record adjustment.
+- Source order is A96C,A968,A96A,A966; exact CALL/CALL/CALL/fallthrough retained.
+- tests/test_history.py checks all16 slot-presence combinations, shared destination overwrite order and aggregate flags.
+
+## PlaceRecordFromOffsetPair (0000:9FEA)
+
+Near callable leaf and fallthrough tail of9FAF. BX=FFFF returns unchanged registers, flags CMP(BX,FFFF). Otherwise with DF=0 select pair at DS:(SI+4*SS:[BP+8]) modulo65536. Store Y=pair.word0+SS:[BP+2] modulo65536 to DS:[BX+2], then raw X=pair.word1+SS:[BP+4]+2*DS:A398 modulo65536 to DS:[BX+4]. Clamp signed raw X to0..192; set byte A39E on lower clamp, A39F on upper, never clear them. AX retains raw unclamped X; SI advances past pair; BX,CX,DX,DI,BP,segments preserved. Final flags compare post-lower-clamp X with192, before optional upper store. Requires valid index/pointers and nonaliasing for pair formula; actual sequential loads/stores remain authoritative.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9FAF.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, bx, flags, si, sp; write ax, flags, si, sp.
+
+Evidence:
+- 9FF0 reads offset index at+8;A00F/A024 use signed JGE/JLE, unlike unsigned movement bounds.
+- 9FAF supplies four bases12 bytes apart but does not bound index: do not silently restrict all callers to0..2.
+- tests/test_history.py checks signed clamp boundaries, wraparound, absent BX and preserved stale clamp flags.
+
+## ApplyPositionHistoryToRecords (0000:A031)
+
+Near leaf. If DS:A962 !=FFFF, copy two sequential words from DS:[DS:A33C] to record DS:[DS:A962]+2/+4. Then independently do the same for A964/A33E. With DF=0 these are Y/X pairs and SI advances4 after the last copy; AX=last X,BX=last destination. If neither slot exists AX/BX/SI unchanged. Flags are always CMP(A964,FFFF), even on copy; caller9BE8 overwrites them. CX,DX,DI,BP and segments preserved. Requires valid selected pointers; pair abstraction assumes destinations do not alias cursors/slots/source. Actual load/store order remains significant; no activation/type checks.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9BE2.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bx, flags, si, sp; write ax, bx, flags, si, sp.
+
+Evidence:
+- 9BE5 follows StorePositionHistory; initialized read cursors lag write cursor by15 and31 entries modulo48.
+- tests/test_history.py checks absent/present slots, coincident destinations, sequential aliasing and whole data-segment footprint.
+- Record entity roles and fourth-cursor consumer remain unknown.
+
 ## CopyWords2And4Plus10 (0000:A571)
 
 First DS:[BX+4] = SS:[BP+4]+10 modulo 65536; then DS:[BX+2] = SS:[BP+2]+10. AX holds the latter result. Order matters if memory aliases. Flags are from the second ADD.
@@ -256,6 +391,20 @@ Evidence:
 - Tests deliberately separate DS and SS.
 - No coordinate, object-type or record-size claim yet.
 
+## DecRecordYByMode (0000:A5D1)
+
+DS:A47C==0: apply DecBP2Unless20 twice via CALL into next instruction then fallthrough re-entry. Otherwise decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E.
+Callees: 0000:A5DB.
+Register access inventory (decoder-derived, not a proven ABI): read bp, eip, esp, flags, sp; write esp, flags, sp.
+
+Evidence:
+- 9B76 calls after input bit8; BP=237C from9B5B.
+- Tests cover guard crossing, wrap, separate DS/SS and nonzero mode bypass.
+
 ## DecBP2Unless20 (0000:A5DB)
 
 Decrement word SS:[BP+2] modulo 65536 unless it equals 0020h. This is NOT a saturating lower-bound clamp: values below 20h also decrement. CMP always overwrites CF; DEC preserves that CF.
@@ -269,6 +418,21 @@ Register access inventory (decoder-derived, not a proven ABI): read bp, flags, s
 Evidence:
 - A5DB compares equality, A5E2 decrements only on not-equal.
 - Boundary and wraparound tests use SS distinct from DS.
+
+## IncRecordYTwice (0000:A5EA)
+
+Call IncBP2UnlessC0, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF preserved; normal outer near return.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E.
+Callees: 0000:A5ED.
+Register access inventory (decoder-derived, not a proven ABI): read eip, esp; write esp.
+
+Evidence:
+- A5EA CALL has displacement0: callee starts at the pushed return IP.
+- 9B80 caller overwrites flags with next input TEST.
+- tests/test_records.py proves two-step boundary/wrap behavior.
 
 ## IncBP2UnlessC0 (0000:A5ED)
 
@@ -284,13 +448,28 @@ Evidence:
 - Equality comparison A5ED, INC A5F5.
 - Boundary and wraparound tests.
 
+## DecRecordXTwice (0000:A5F9)
+
+Call DecBP4UnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word. Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain in ASM.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E, 0000:9C01.
+Callees: 0000:A5FC.
+Register access inventory (decoder-derived, not a proven ABI): read eip, esp; write esp.
+
+Evidence:
+- A5F9 CALL displacement0;9B94 and9C2C call sites.
+- Caller9C2C writes A360 then XOR AX overwrites flags.
+- Isolated tests include0,1,2 andFFFF.
+
 ## DecBP4UnlessZero (0000:A5FC)
 
 Decrement unsigned word SS:[BP+4] unless zero; register state preserved, flags changed by CMP/DEC.
 
 Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
-Callers: 0000:A5F9.
+Callers: 0000:9C01, 0000:A5F9.
 Callees: .
 Register access inventory (decoder-derived, not a proven ABI): read bp, flags, sp; write flags, sp.
 
@@ -298,13 +477,27 @@ Evidence:
 - CMP A5FC, conditional RET A602, DEC A603.
 - Boundary and wraparound tests.
 
+## IncRecordXTwice (0000:A607)
+
+Call IncBP4BelowB0 then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near return.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:9B2E, 0000:9C01.
+Callees: 0000:A60A.
+Register access inventory (decoder-derived, not a proven ABI): read eip, esp; write esp.
+
+Evidence:
+- A607 CALL displacement0;9B8A and9C15 callers.
+- Tests distinguish AFh->B0h from unguarded+2.
+
 ## IncBP4BelowB0 (0000:A60A)
 
 Increment unsigned word SS:[BP+4] iff below 00B0h; values at or above B0h remain unchanged.
 
 Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
 
-Callers: 0000:A607.
+Callers: 0000:9C01, 0000:A607.
 Callees: .
 Register access inventory (decoder-derived, not a proven ABI): read bp, flags, sp; write flags, sp.
 

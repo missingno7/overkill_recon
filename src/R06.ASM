@@ -3,7 +3,7 @@ include ENCODING.INC
 part06 segment byte public 'CODE'
 assume cs:part06,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
-loc_07573 equ 0B573h
+FindFreeRecordPoolB_07573 equ 0B573h
 loc_0C253 equ 0253h
 loc_0C25F equ 025Fh
 loc_0C268 equ 0268h
@@ -16,7 +16,7 @@ loc_0C354 equ 0354h
 loc_05DB2 equ 09DB2h
 loc_08209 equ 0C209h
 loc_09F5F equ 0DF5Fh
-loc_09FAF equ 0DFAFh
+PlaceFourRecordsFromOffsetTables_09FAF equ 0DFAFh
 loc_0BE97 equ 0FE97h
 loc_0D193 equ 01193h
 loc_0D1AB equ 011ABh
@@ -57,10 +57,10 @@ loc_05D0B equ 09D0Bh
 loc_05F61 equ 09F61h
 loc_060A2 equ 0A0A2h
 loc_07420 equ 0B420h
-loc_07524 equ 0B524h
+FindFreeRecordPoolA_07524 equ 0B524h
 loc_08517 equ 0C517h
 loc_0859E equ 0C59Eh
-loc_099BF equ 0D9BFh
+InitPositionHistory_099BF equ 0D9BFh
 loc_09BE2 equ 0DBE2h
 loc_09DB9 equ 0DDB9h
 loc_0A067 equ 0E067h
@@ -612,7 +612,7 @@ loc_0ECC9 equ 02CC9h
 ; @0C25E 0000:C25E original=c3 runtime CFG evidence
     ret
 ; @0C25F 0000:C25F original=e811b3 runtime CFG evidence
-    CALL_NEAR loc_07573
+    CALL_NEAR FindFreeRecordPoolB_07573
 ; @0C262 0000:C262 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0C265 0000:C265 original=7501 runtime CFG evidence
@@ -815,7 +815,7 @@ loc_0ECC9 equ 02CC9h
 ; @0C44B 0000:C44B original=c7460a0100
     mov word ptr ss:[bp + 0Ah], 1
 ; @0C450 0000:C450 original=e8d1b0
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @0C453 0000:C453 original=c7070100
     mov word ptr ds:[bx], 1
 ; @0C457 0000:C457 original=c747140100
@@ -2942,7 +2942,7 @@ loc_0ECC9 equ 02CC9h
 ; @0CFD2 0000:CFD2 original=c70650239c00
     mov word ptr ds:[02350h], 09Ch
 ; @0CFD8 0000:CFD8 original=e8e4c9
-    CALL_NEAR loc_099BF
+    CALL_NEAR InitPositionHistory_099BF
 ; @0CFDB 0000:CFDB original=2e8e069695
     mov es, word ptr cs:[09596h]
 ; @0CFE0 0000:CFE0 original=bfaac3
@@ -3177,7 +3177,7 @@ loc_0ECC9 equ 02CC9h
 ; @0D199 0000:D199 original=bd7c23 runtime CFG evidence
     mov bp, 0237Ch
 ; @0D19C 0000:D19C original=e910ce runtime CFG evidence
-    JMP_NEAR loc_09FAF
+    JMP_NEAR PlaceFourRecordsFromOffsetTables_09FAF
 ; @0D19F 0000:D19F original=803ec09800 runtime CFG evidence
     cmp byte ptr ds:[098C0h], 0
 ; @0D1A4 0000:D1A4 original=7405 runtime CFG evidence
@@ -3187,7 +3187,7 @@ loc_0ECC9 equ 02CC9h
 ; @0D1AB 0000:D1AB original=bd7c23 runtime CFG evidence
     mov bp, 0237Ch
 ; @0D1AE 0000:D1AE original=e873a3 runtime CFG evidence
-    CALL_NEAR loc_07524
+    CALL_NEAR FindFreeRecordPoolA_07524
 ; @0D1B1 0000:D1B1 original=891e6ea9 runtime CFG evidence
     mov word ptr ds:[0A96Eh], bx
 ; @0D1B5 0000:D1B5 original=e851b0 runtime CFG evidence

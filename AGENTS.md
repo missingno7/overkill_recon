@@ -67,3 +67,14 @@ These rules apply only inside overkill_recon.
 - Current semantic priority: Tandy/PCjr + AdLib/OPL2 with default keyboard.
   Keep other implementations intact. Use packed-pixel and bank-address facts in
   metadata/reconstruction-focus.json; visual equality with EGA is unproven.
+
+## Source usefulness and current priorities
+
+- Exact build comes first; semantic usefulness and local contracts take precedence
+  over speculative historical filenames, module ownership or future C shapes.
+- Propagate proven names, field offsets and state constants into maintained ASM.
+  Modern EQU names are reconstruction choices, not historical-source claims.
+- Track GAME_LOGIC / PLATFORM_LOGIC / MIXED / UNKNOWN separately from convertibility.
+- Distinguish modified registers/flags from values actually consumed by callers.
+- Revisit generic record/game behavior regularly; avoid indefinite driver work.
+- No broad C work, mixed C/ASM game, port APIs or new analysis framework in this phase.

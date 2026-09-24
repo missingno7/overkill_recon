@@ -11,6 +11,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": true
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "PROVEN",
@@ -82,6 +84,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -186,6 +190,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -274,6 +280,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -484,6 +492,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",
@@ -1299,6 +1309,8 @@
       "SEMANTICALLY_SUPPORTED": true,
       "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Separate audio module: reviewed register I/O, delay or driver-record sequencing; no game-world identity assigned",
     "confidence": {
       "boundary": "STRONG",
       "calling_convention": "STRONG",

@@ -1,9 +1,4 @@
 {
-  "adlib_record_evidence": {
-    "confidence": "STRONG nine records x32 bytes; field operations proven for reviewed paths",
-    "evidence": "metadata/drivers/adlib-data.json",
-    "source_syntax": "UNKNOWN; no historical STRUCT, macro or filename inferred"
-  },
   "claim_axes": [
     "BYTE_EXACT",
     "STRUCTURALLY_SUPPORTED",
@@ -317,7 +312,7 @@
     ],
     "selector_dispatch": {
       "claim": "Recurring idiom PROVEN; shared historical macro SPECULATIVE; macro name UNKNOWN",
-      "count": 23,
+      "count": 24,
       "pattern": "MOV BX,CS:[95BC]; SHL BX,1; indirect CS:[BX+table]",
       "sites": [
         "0000:4C85",
@@ -342,7 +337,8 @@
         "0000:5A4F",
         "0000:CD7E",
         "0000:6161",
-        "0000:083E"
+        "0000:083E",
+        "0000:9C6B"
       ]
     }
   },

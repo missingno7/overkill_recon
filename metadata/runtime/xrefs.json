@@ -44211,6 +44211,46 @@
       "size": 1
     },
     {
+      "access": 1,
+      "base": null,
+      "displacement": 8996,
+      "index": null,
+      "instruction": "0000:9C82",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9C93",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 1,
+      "base": null,
+      "displacement": 8996,
+      "index": null,
+      "instruction": "0000:9C9C",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9CAD",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
       "access": 2,
       "base": "bx",
       "displacement": 2,
@@ -44606,6 +44646,26 @@
       "displacement": 38394,
       "index": null,
       "instruction": "0000:8582",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9C8A",
+      "scale": 1,
+      "segment": "default",
+      "size": 2
+    },
+    {
+      "access": 2,
+      "base": null,
+      "displacement": -23712,
+      "index": null,
+      "instruction": "0000:9CA4",
       "scale": 1,
       "segment": "default",
       "size": 2
@@ -50157,6 +50217,27 @@
       "kind": "near_code_pointer_table",
       "site": "0000:5A4F",
       "start": 23124
+    },
+    {
+      "confidence": "PROVEN",
+      "end": 40066,
+      "entries": [
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9CAD",
+        "0000:9C82",
+        "0000:44AF",
+        "0000:9C9C",
+        "0000:9C93",
+        "0000:9C82",
+        "0000:44AF"
+      ],
+      "evidence": "metadata/record-movement.json; two conditional increments each of initially zero AH and AL give index AL+3*AH in0..8",
+      "exhaustive": true,
+      "kind": "near_code_pointer_table",
+      "precondition": "normal entry through9C01/9C35; no arbitrary mid-block entry or asynchronous register corruption",
+      "site": "0000:9C6B",
+      "start": 40048
     }
   ],
   "unresolved_transfers": [
@@ -50374,10 +50455,6 @@
     },
     {
       "address": "0000:A426",
-      "kind": "indirect_jump"
-    },
-    {
-      "address": "0000:9C6B",
       "kind": "indirect_jump"
     },
     {
