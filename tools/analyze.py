@@ -8,20 +8,23 @@ from capstone.x86 import *
 from collections import defaultdict,deque
 import re
 
-def analyze():
-    image,m=extract(); md=Cs(CS_ARCH_X86,CS_MODE_16); md.detail=True
-    pending=deque([(m['entry_cs'],m['entry_ip'],'unpacked_entry')]); nodes={}; entries={}; conflicts=[]; tables=[]; vectors=[]
+def analyze(image=None,m=None,seeds=None,output=None,excluded=(),quiet=False,observed=None):
+    if image is None:image,m=extract()
+    md=Cs(CS_ARCH_X86,CS_MODE_16); md.detail=True
+    pending=deque([(m['entry_cs'],m['entry_ip'],'unpacked_entry')]+list(seeds or [])+list(observed or [])); nodes={}; entries={}; conflicts=[]; tables=[]; vectors=[]
     def key(cs,ip): return f'{cs:04X}:{ip:04X}'
     def enqueue(cs,ip,why,entry=False):
         ip&=65535
-        if 0<=cs*16+ip<len(image):
+        if 0<=cs*16+ip<len(image) and not any(lo<=cs*16+ip<hi for lo,hi in excluded):
             pending.append((cs,ip,why))
             if entry: entries.setdefault(key(cs,ip),set()).add(why)
     entries[key(m['entry_cs'],m['entry_ip'])]={'unpacked_entry'}
+    for cs,ip,why in seeds or []:entries.setdefault(key(cs,ip),set()).add(why)
     while pending:
         cs,ip,why=pending.popleft(); k=key(cs,ip)
         if k in nodes: continue
         linear=cs*16+ip
+        if any(lo<=linear<hi for lo,hi in excluded):continue
         ins=next(md.disasm(image[linear:linear+15],ip,count=1),None)
         if ins is None:
             conflicts.append({'address':k,'reason':'undecodable reachable byte'}); continue
@@ -118,7 +121,8 @@ def analyze():
     result=dict(schema=1,image_sha256=m['program_sha256'],image_bytes=len(image),entry=f"{m['entry_cs']:04X}:{m['entry_ip']:04X}",
                 nodes=nodes,functions=functions,regions=regions,strings=strings,tables=tables,vectors=vectors,conflicts=conflicts,
                 unresolved=[dict(address=k,kind=t) for k,n in nodes.items() for t in n['unresolved']])
-    write_json(ROOT/'metadata'/'analysis.json',result)
+    write_json(output or ROOT/'metadata'/'analysis.json',result)
+    if quiet:return result
     print('instructions',len(nodes),'unique code bytes',len(code_bytes),'functions',len(functions),'conflicts',len(conflicts))
     for f in sorted((f for f in functions if f['leaf']),key=lambda f:len(f['instructions']))[:35]:
         print(f['address'],len(f['instructions']),' ; '.join(nodes[k]['mnemonic']+' '+nodes[k]['operands'] for k in f['instructions']))

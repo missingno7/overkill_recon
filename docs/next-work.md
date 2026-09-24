@@ -1,3 +1,18 @@
+# Current direction: static bottom-up reconstruction
+
+The user has explicitly limited execution to necessary probes ending no later than
+first gameplay entry. Broader scenario exploration is no longer a work item or an
+acceptance criterion. Existing long traces are retained as prior evidence only.
+
+1. Review the smallest runtime leaf candidates and their callers, register/flag
+   contracts, memory accesses and constants. Separate main and optional-module identities.
+2. Resolve executable-write questions by static destination/alias analysis. Keep
+   unknown indirect writes visible; do not substitute endless gameplay exploration.
+3. Recover data-field facts and propagate supported names upward. No speculative
+   subsystem architecture or original filenames.
+4. Assemble and compare after every meaningful batch. Use isolated original-routine
+   tests when they clarify a contract; use a bounded startup probe only when needed.
+
 # Remaining work, in evidence order
 
 The initial exact ASM bootstrap is accepted. The requested final reconstruction
@@ -10,8 +25,8 @@ than disguising unknown regions as finished reconstruction.
    particular inspect 5AB1/5ADC, AA30, 759B, D5F9, the record-driven callbacks at
    83AC/856F, and the AX/BP bridge at 8D8B/8D8E. Do not scan arbitrary words and
    declare each plausible pointer a function.
-2. Recover other installed vectors, especially keyboard handling, from actual
-   DOS vector calls or IVT writes. The analyzer currently proves INT08 installation.
+2. Review the now-observed INT08, INT09 and INT24 handlers bottom-up. In
+   particular retain nonlocal stack/state effects in the INT24 contract.
 3. Decode reachable additions, promote only proved tables/data extents, and drive
    explicit raw source bytes down. The current bootstrap helper can produce a
    candidate transcription, but must not overwrite reviewed source without a diff.
@@ -20,8 +35,9 @@ than disguising unknown regions as finished reconstruction.
    route restores an outer SP and exits through a shared tail.
 5. Use CS writes and xrefs to identify self-modifying regions and add versioned
    runtime code evidence. Preserve the original initial image as a distinct oracle.
-6. Recover the appended container directory, resource decoding and optional audio
-   driver images from original assets. Do not substitute initialized legacy caches.
+6. Continue static reconstruction of the independently extracted AdLib and Roland
+   modules. Directory and decoder recovery are complete; indirect dispatch and
+   record-field contracts remain open.
 7. Run real object-topology experiments at supported candidate boundaries. The
    existing tests establish alignment/non-uniqueness behavior, not original module
    ownership. Keep library/runtime identification UNKNOWN until evidenced.
@@ -33,3 +49,45 @@ than disguising unknown regions as finished reconstruction.
 
 Keep the two independent evidence streams in sync: semantic relationships and
 binary/linker constraints. No broad C translation belongs in this phase.
+
+## Runtime investigation follow-up
+
+- Preserve Oracle A; use the shared main runtime graph and separate audio graphs.
+  The alleged post-A 5E42 replacement was actually pre-A EXEPACK materialization.
+- Reproduce the candidate 9690 frontier with tools/materialize_runtime.py. Full
+  verification executes one bounded startup check and checks ASM correspondence plus deterministic
+  artifacts. Do not reuse generated RAM as an execution input.
+- Runtime environment limitations remain documented. Resolve concrete uncertainties
+  statically or with a targeted probe capped at first gameplay entry. Broad scenario
+  exploration and exhaustive state coverage are deliberately not acceptance requirements.
+- Keep 9690 as the bounded, reproducible startup boundary. Its absolute minimality
+  is unproven and is not a reason to expand execution. Refine it only if static
+  evidence exposes a concrete reconstruction need.
+- Resolve new observed control-flow edges and reconstruct newly identified main
+  instruction bytes incrementally. Keep the reviewed R00..R17 source intact until
+  explicit, independently verified edits are made; new CFG coverage is not ASM coverage.
+- Investigate module indirect dispatch tables, nine stride-20h record bases in the
+  AdLib tick routine, and shared audio-driver conventions. Keep field roles and
+  historical macro/file names uncertain until supported.
+- ReadOpl2Status is a tested leaf. Propagate its evidence into the register writer,
+  timer probe and callers; preserve PIT/port61 side effects in their contracts.
+
+## Immediate Tandy + AdLib queue
+
+Eight main helpers and the AdLib delay/register writer now have reviewed contracts.
+See [tandy-adlib.md](tandy-adlib.md). Continue with AdLib04A4's register table,
+024F's frequency words and fallthrough predecessor, then Tandy3153's mask renderer
+and3354's workspace-to-display copy. Resolve caller preconditions and field use
+before assigning gameplay or original module names. No further game replay is
+needed for this queue.
+
+## Completed second batch and next local questions
+
+04A4,024F,0244,3354 and3389 now have reviewed contracts and tests. The56-byte
+AdLib command table is reconstructed data with independent accounting. Next:
+- Trace AdLib02AA's conditional cached write and02C9/02F6's shared frequency-update
+  tail using the newly established record fields; retain their shared stack state.
+- Review the Tandy3153 mask renderer's normal and16/17 control paths, with caller
+  bounds for color and character indices rather than invented clipping.
+- Propagate DS:234C's demonstrated source-window role through its writers before
+  assigning scrolling or gameplay names.

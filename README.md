@@ -59,3 +59,15 @@ Original assets are private local inputs. The local historical tool binaries wer
 copied for this task; the project does not claim redistribution rights for them.
 `overkill_forged`, `legacy/overkill_port`, and `D:/prog/empires_reconstruction` were
 used read-only. No C reconstruction has been started.
+
+Runtime investigation: [docs/runtime-materialization.md](docs/runtime-materialization.md).
+`python tools/materialize_runtime.py --video tandy --sound adlib --input keyboard`
+reproduces the candidate post-initialization oracle directly from original assets.
+`verify.py --full` now checks one bounded startup execution as
+well as Oracle A and the two separately assembled optional sound modules.
+A global all-path ESMR proof remains open; the executable watch reports state
+exactly which paths and byte ranges were tested.
+
+Current policy: static bottom-up work first; original execution only for a specific
+question and never beyond first gameplay entry. Prior long-run evidence is retained,
+but exhaustive gameplay coverage is not an acceptance requirement.

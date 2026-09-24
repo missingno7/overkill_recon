@@ -1,0 +1,2647 @@
+[
+  {
+    "address": "0000:0000",
+    "call_graph_depth": 6,
+    "callees": [
+      "0000:0063"
+    ],
+    "callers": [],
+    "category": "UNKNOWN",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "unpacked_entry"
+    ],
+    "hardware": [],
+    "instruction_bytes": 4,
+    "instructions": [
+      "0000:0000",
+      "0000:0003"
+    ],
+    "leaf": false,
+    "memory": [],
+    "module": "adlib",
+    "name": "sub_0000_0000",
+    "named": false,
+    "registers_read": [
+      "eip",
+      "esp"
+    ],
+    "registers_written": [
+      "esp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0004",
+    "call_graph_depth": 3,
+    "callees": [
+      "0000:04E9"
+    ],
+    "callers": [],
+    "category": "UNKNOWN",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "original far initialization entry"
+    ],
+    "hardware": [],
+    "instruction_bytes": 4,
+    "instructions": [
+      "0000:0004",
+      "0000:0007"
+    ],
+    "leaf": false,
+    "memory": [],
+    "module": "adlib",
+    "name": "sub_0000_0004",
+    "named": false,
+    "registers_read": [
+      "eip",
+      "esp"
+    ],
+    "registers_written": [
+      "esp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0063",
+    "call_graph_depth": 5,
+    "callees": [
+      "0000:00CD",
+      "0000:0409"
+    ],
+    "callers": [
+      "0000:0000"
+    ],
+    "category": "UNKNOWN",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:0000"
+    ],
+    "hardware": [],
+    "instruction_bytes": 106,
+    "instructions": [
+      "0000:0063",
+      "0000:0064",
+      "0000:0065",
+      "0000:0066",
+      "0000:0067",
+      "0000:0068",
+      "0000:0069",
+      "0000:006A",
+      "0000:006B",
+      "0000:006C",
+      "0000:006F",
+      "0000:0072",
+      "0000:0074",
+      "0000:0076",
+      "0000:0079",
+      "0000:007D",
+      "0000:0080",
+      "0000:0083",
+      "0000:0086",
+      "0000:0089",
+      "0000:008C",
+      "0000:008F",
+      "0000:0092",
+      "0000:0095",
+      "0000:0098",
+      "0000:009B",
+      "0000:009E",
+      "0000:00A1",
+      "0000:00A4",
+      "0000:00A7",
+      "0000:00AA",
+      "0000:00AD",
+      "0000:00B0",
+      "0000:00B3",
+      "0000:00B8",
+      "0000:00BA",
+      "0000:00BD",
+      "0000:00C0",
+      "0000:00C5",
+      "0000:00C6",
+      "0000:00C7",
+      "0000:00C8",
+      "0000:00C9",
+      "0000:00CA",
+      "0000:00CB",
+      "0000:00CC"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:006F",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0074",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": null,
+        "displacement": 13,
+        "index": null,
+        "instruction": "0000:0079",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 13,
+        "index": null,
+        "instruction": "0000:00B3",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:00BA",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 13,
+        "index": null,
+        "instruction": "0000:00BD",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 98,
+        "index": null,
+        "instruction": "0000:00C0",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_0063",
+    "named": false,
+    "registers_read": [
+      "al",
+      "ax",
+      "bx",
+      "cx",
+      "di",
+      "dx",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "ax",
+      "bx",
+      "cx",
+      "di",
+      "ds",
+      "dx",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:00CD",
+    "call_graph_depth": 4,
+    "callees": [
+      "0000:0244",
+      "0000:024F",
+      "0000:02AA",
+      "0000:02C9",
+      "0000:02F6",
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:0063"
+    ],
+    "category": "STRUCTURAL",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:0080",
+      "call from 0000:0086",
+      "call from 0000:008C",
+      "call from 0000:0092",
+      "call from 0000:0098",
+      "call from 0000:009E",
+      "call from 0000:00A4",
+      "call from 0000:00AA",
+      "call from 0000:00B0"
+    ],
+    "hardware": [],
+    "instruction_bytes": 322,
+    "instructions": [
+      "0000:00CD",
+      "0000:00D2",
+      "0000:00D4",
+      "0000:00D7",
+      "0000:00D9",
+      "0000:00DB",
+      "0000:00DE",
+      "0000:00E3",
+      "0000:00E5",
+      "0000:00E8",
+      "0000:00EA",
+      "0000:00ED",
+      "0000:00F0",
+      "0000:00F3",
+      "0000:00F6",
+      "0000:00F7",
+      "0000:00F9",
+      "0000:00FA",
+      "0000:00FC",
+      "0000:00FE",
+      "0000:0100",
+      "0000:0103",
+      "0000:0106",
+      "0000:0109",
+      "0000:010C",
+      "0000:010F",
+      "0000:0112",
+      "0000:011B",
+      "0000:011D",
+      "0000:011F",
+      "0000:0121",
+      "0000:0123",
+      "0000:0125",
+      "0000:0127",
+      "0000:012A",
+      "0000:012C",
+      "0000:012E",
+      "0000:0131",
+      "0000:0133",
+      "0000:0135",
+      "0000:0137",
+      "0000:013A",
+      "0000:0181",
+      "0000:0183",
+      "0000:0186",
+      "0000:0188",
+      "0000:018B",
+      "0000:018C",
+      "0000:018F",
+      "0000:0191",
+      "0000:0193",
+      "0000:0195",
+      "0000:0197",
+      "0000:0199",
+      "0000:019C",
+      "0000:019E",
+      "0000:01A1",
+      "0000:01A4",
+      "0000:01A6",
+      "0000:01A8",
+      "0000:01AA",
+      "0000:01AD",
+      "0000:01B0",
+      "0000:01B2",
+      "0000:01B4",
+      "0000:01B7",
+      "0000:01BA",
+      "0000:01BC",
+      "0000:01BE",
+      "0000:01C1",
+      "0000:01C4",
+      "0000:01C6",
+      "0000:01C8",
+      "0000:01CB",
+      "0000:01CE",
+      "0000:01D0",
+      "0000:01D2",
+      "0000:01D5",
+      "0000:01D8",
+      "0000:01DA",
+      "0000:01DC",
+      "0000:01DF",
+      "0000:01E2",
+      "0000:01E5",
+      "0000:01E7",
+      "0000:01EA",
+      "0000:01ED",
+      "0000:01EF",
+      "0000:01F1",
+      "0000:01F4",
+      "0000:01F7",
+      "0000:01F9",
+      "0000:01FB",
+      "0000:01FE",
+      "0000:0201",
+      "0000:0204",
+      "0000:0208",
+      "0000:020B",
+      "0000:020D",
+      "0000:020F",
+      "0000:0211",
+      "0000:0213",
+      "0000:0215",
+      "0000:0217",
+      "0000:021A",
+      "0000:021D",
+      "0000:0220",
+      "0000:0223",
+      "0000:0227",
+      "0000:022A",
+      "0000:022C",
+      "0000:022E",
+      "0000:0230",
+      "0000:0232",
+      "0000:0234",
+      "0000:0236",
+      "0000:0239",
+      "0000:023C",
+      "0000:023F",
+      "0000:0240",
+      "0000:0291",
+      "0000:0294",
+      "0000:0297",
+      "0000:029A",
+      "0000:029D",
+      "0000:02A0",
+      "0000:02A3",
+      "0000:02A5",
+      "0000:02A9"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 95,
+        "index": null,
+        "instruction": "0000:00CD",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 16,
+        "index": null,
+        "instruction": "0000:00D4",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:00DB",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 13,
+        "index": null,
+        "instruction": "0000:00DE",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": "di",
+        "displacement": 1,
+        "index": null,
+        "instruction": "0000:00E5",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "bx",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:00F7",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:00FE",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0100",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:0109",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 17,
+        "index": null,
+        "instruction": "0000:010C",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 1,
+        "index": null,
+        "instruction": "0000:010F",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0133",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 17,
+        "index": null,
+        "instruction": "0000:0137",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 4,
+        "index": null,
+        "instruction": "0000:0183",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 4,
+        "index": null,
+        "instruction": "0000:018C",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 2,
+        "index": null,
+        "instruction": "0000:019E",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 5,
+        "index": null,
+        "instruction": "0000:01A1",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:01A4",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 1,
+        "index": null,
+        "instruction": "0000:01AD",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 2,
+        "index": null,
+        "instruction": "0000:01B7",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 3,
+        "index": null,
+        "instruction": "0000:01C1",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 6,
+        "index": null,
+        "instruction": "0000:01CB",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:01D5",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 9,
+        "index": null,
+        "instruction": "0000:01DF",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:01E2",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 4,
+        "index": null,
+        "instruction": "0000:01EA",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 5,
+        "index": null,
+        "instruction": "0000:01F4",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 10,
+        "index": null,
+        "instruction": "0000:01FE",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "bx",
+        "displacement": 1737,
+        "index": null,
+        "instruction": "0000:0204",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:0208",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 11,
+        "index": null,
+        "instruction": "0000:021A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 14,
+        "index": null,
+        "instruction": "0000:021D",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "bx",
+        "displacement": 1737,
+        "index": null,
+        "instruction": "0000:0223",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:0227",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0239",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 18,
+        "index": null,
+        "instruction": "0000:023C",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0297",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 16,
+        "index": null,
+        "instruction": "0000:029D",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:02A5",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_00CD",
+    "named": false,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "ch",
+      "cx",
+      "dh",
+      "di",
+      "dl",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "cx",
+      "di",
+      "dx",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [
+      "0000:0291",
+      "0000:0294",
+      "0000:0297",
+      "0000:029A",
+      "0000:029D",
+      "0000:02A0",
+      "0000:02A3",
+      "0000:02A5",
+      "0000:02A9"
+    ],
+    "tail_targets": [],
+    "unresolved": [
+      "indirect_jump"
+    ]
+  },
+  {
+    "address": "0000:0244",
+    "call_graph_depth": 3,
+    "callees": [],
+    "callers": [
+      "0000:00CD"
+    ],
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Load AL=byte DS:[DI+13h]. If zero, branch backward to shared RET0243, leaving AH unchanged and no writes/ports. Otherwise add byte[DI] modulo256, store it at[DI], and fall through into WriteRecordA0B0Pair. Inherits its outputs and hardware effects; must not insert an independent RET at024F.",
+    "evidence": [
+      "0249 JE0243;024D store ends immediately before024F push BX.",
+      "Static graph records024F as tail target, not an independent return.",
+      "Isolated tests cover zero step, positive wrap and FEh step with actual callee execution."
+    ],
+    "hardware": [],
+    "instruction_bytes": 12,
+    "instructions": [
+      "0000:0243",
+      "0000:0244",
+      "0000:0247",
+      "0000:0249",
+      "0000:024B",
+      "0000:024D"
+    ],
+    "kind": "function",
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 19,
+        "index": null,
+        "instruction": "0000:0244",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:024B",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:024D",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      }
+    ],
+    "module": "adlib",
+    "name": "StepIndex13AndWriteA0B0",
+    "named": true,
+    "registers_read": [
+      "al",
+      "di",
+      "flags",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [
+      "0000:024F"
+    ],
+    "unresolved": []
+  },
+  {
+    "address": "0000:024F",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:00CD",
+      "0000:0244"
+    ],
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "DS=driver,DI=record,DF=0. i=(byte[DI]+byte[DI+12h]) mod256; w=(word DS:[07A9+((2*i) mod256)]+word[DI+1Ah]) mod65536; h=high(w) OR byte DS:[0749+i]. Store w at+14h. Write (byte[DI+7] OR A0h,low(w)), then cache word (h<<8)|(byte[DI+7] OR B0h) at+8 and write its high byte OR20h to the B0-derived register. Copy+1Dh to+1Eh and return that byte in AL; AH=h OR20h. BX,SI,CX,DX,DI,BP and segments preserved, flags changed; inherits hardware effects. No index/channel/range validation.",
+    "evidence": [
+      "Calls reviewed0557 twice;0244 falls through into024F on its nonzero-step path.",
+      "025E doubles AL rather than AX, causing modulo256 byte-offset wrap.",
+      "Tests cover indices0,18,19,95,96,127,128,255, byte-sum wrap,16-bit word wrap, channels0/8 and exact cache fields."
+    ],
+    "hardware": [],
+    "instruction_bytes": 66,
+    "instructions": [
+      "0000:024F",
+      "0000:0250",
+      "0000:0251",
+      "0000:0253",
+      "0000:0256",
+      "0000:0258",
+      "0000:025A",
+      "0000:025E",
+      "0000:0260",
+      "0000:0263",
+      "0000:0265",
+      "0000:0266",
+      "0000:0269",
+      "0000:026C",
+      "0000:026E",
+      "0000:026F",
+      "0000:0271",
+      "0000:0274",
+      "0000:0276",
+      "0000:0279",
+      "0000:027A",
+      "0000:027D",
+      "0000:027F",
+      "0000:0282",
+      "0000:0285",
+      "0000:0288",
+      "0000:028B",
+      "0000:028E",
+      "0000:028F",
+      "0000:0290"
+    ],
+    "kind": "function",
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0251",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 18,
+        "index": null,
+        "instruction": "0000:0253",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 1865,
+        "index": null,
+        "instruction": "0000:025A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0265",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 26,
+        "index": null,
+        "instruction": "0000:0266",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 20,
+        "index": null,
+        "instruction": "0000:0269",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:0271",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:027A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:027F",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 29,
+        "index": null,
+        "instruction": "0000:0288",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 30,
+        "index": null,
+        "instruction": "0000:028B",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      }
+    ],
+    "module": "adlib",
+    "name": "WriteRecordA0B0Pair",
+    "named": true,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "di",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:02AA",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:00CD"
+    ],
+    "category": "UNKNOWN",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:00ED"
+    ],
+    "hardware": [],
+    "instruction_bytes": 31,
+    "instructions": [
+      "0000:02AA",
+      "0000:02AD",
+      "0000:02AF",
+      "0000:02B2",
+      "0000:02B5",
+      "0000:02B7",
+      "0000:02B9",
+      "0000:02BC",
+      "0000:02BE",
+      "0000:02C1",
+      "0000:02C4",
+      "0000:02C8"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "bx",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:02AA",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 2,
+        "index": null,
+        "instruction": "0000:02AF",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 14,
+        "index": null,
+        "instruction": "0000:02B2",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 1,
+        "index": null,
+        "instruction": "0000:02B9",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:02BE",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 19,
+        "index": null,
+        "instruction": "0000:02C4",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_02AA",
+    "named": false,
+    "registers_read": [
+      "al",
+      "bx",
+      "di",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "ax",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:02C9",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:00CD"
+    ],
+    "category": "ASM_COUPLED",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:00F0"
+    ],
+    "hardware": [],
+    "instruction_bytes": 94,
+    "instructions": [
+      "0000:02C9",
+      "0000:02CB",
+      "0000:02CE",
+      "0000:02D0",
+      "0000:02D3",
+      "0000:02D5",
+      "0000:02D8",
+      "0000:02DA",
+      "0000:02DB",
+      "0000:02DE",
+      "0000:02E1",
+      "0000:02E4",
+      "0000:02E7",
+      "0000:02EA",
+      "0000:02ED",
+      "0000:02EF",
+      "0000:02F2",
+      "0000:02F4",
+      "0000:0302",
+      "0000:0325",
+      "0000:0327",
+      "0000:032A",
+      "0000:032C",
+      "0000:032E",
+      "0000:0331",
+      "0000:0334",
+      "0000:0337",
+      "0000:0338",
+      "0000:033A",
+      "0000:033D",
+      "0000:033F",
+      "0000:0342",
+      "0000:0343",
+      "0000:0345",
+      "0000:0348",
+      "0000:034A",
+      "0000:034D",
+      "0000:0350",
+      "0000:0353",
+      "0000:0354"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 29,
+        "index": null,
+        "instruction": "0000:02CB",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 30,
+        "index": null,
+        "instruction": "0000:02D0",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": "di",
+        "displacement": 30,
+        "index": null,
+        "instruction": "0000:02D5",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:02DB",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 20,
+        "index": null,
+        "instruction": "0000:02E1",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 28,
+        "index": null,
+        "instruction": "0000:02E4",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 20,
+        "index": null,
+        "instruction": "0000:0334",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:033A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:0345",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:034A",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_02C9",
+    "named": false,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "ch",
+      "cx",
+      "di",
+      "eip",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "ch",
+      "cx",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [
+      "0000:0302",
+      "0000:0325",
+      "0000:0327",
+      "0000:032A",
+      "0000:032C",
+      "0000:032E",
+      "0000:0331",
+      "0000:0334",
+      "0000:0337",
+      "0000:0338",
+      "0000:033A",
+      "0000:033D",
+      "0000:033F",
+      "0000:0342",
+      "0000:0343",
+      "0000:0345",
+      "0000:0348",
+      "0000:034A",
+      "0000:034D",
+      "0000:0350",
+      "0000:0353",
+      "0000:0354"
+    ],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:02F6",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:00CD"
+    ],
+    "category": "ASM_COUPLED",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:00F3"
+    ],
+    "hardware": [],
+    "instruction_bytes": 95,
+    "instructions": [
+      "0000:02F6",
+      "0000:02F8",
+      "0000:02FB",
+      "0000:02FD",
+      "0000:0300",
+      "0000:0302",
+      "0000:0303",
+      "0000:0306",
+      "0000:0308",
+      "0000:030B",
+      "0000:030C",
+      "0000:030F",
+      "0000:0312",
+      "0000:0315",
+      "0000:0318",
+      "0000:031B",
+      "0000:031E",
+      "0000:0320",
+      "0000:0323",
+      "0000:0325",
+      "0000:0327",
+      "0000:032A",
+      "0000:032C",
+      "0000:032E",
+      "0000:0331",
+      "0000:0334",
+      "0000:0337",
+      "0000:0338",
+      "0000:033A",
+      "0000:033D",
+      "0000:033F",
+      "0000:0342",
+      "0000:0343",
+      "0000:0345",
+      "0000:0348",
+      "0000:034A",
+      "0000:034D",
+      "0000:0350",
+      "0000:0353",
+      "0000:0354"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 24,
+        "index": null,
+        "instruction": "0000:02F8",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": "di",
+        "displacement": 24,
+        "index": null,
+        "instruction": "0000:02FD",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 25,
+        "index": null,
+        "instruction": "0000:0303",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 3,
+        "base": "di",
+        "displacement": 25,
+        "index": null,
+        "instruction": "0000:0308",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:030C",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 20,
+        "index": null,
+        "instruction": "0000:0312",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 22,
+        "index": null,
+        "instruction": "0000:0315",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 20,
+        "index": null,
+        "instruction": "0000:0334",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:033A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 7,
+        "index": null,
+        "instruction": "0000:0345",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:034A",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_02F6",
+    "named": false,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "ch",
+      "cx",
+      "di",
+      "eip",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "ch",
+      "cx",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [
+      "0000:0302",
+      "0000:0325",
+      "0000:0327",
+      "0000:032A",
+      "0000:032C",
+      "0000:032E",
+      "0000:0331",
+      "0000:0334",
+      "0000:0337",
+      "0000:0338",
+      "0000:033A",
+      "0000:033D",
+      "0000:033F",
+      "0000:0342",
+      "0000:0343",
+      "0000:0345",
+      "0000:0348",
+      "0000:034A",
+      "0000:034D",
+      "0000:0350",
+      "0000:0353",
+      "0000:0354"
+    ],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0409",
+    "call_graph_depth": 3,
+    "callees": [
+      "0000:04A4",
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:0063"
+    ],
+    "category": "ASM_COUPLED",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:0076"
+    ],
+    "hardware": [],
+    "instruction_bytes": 180,
+    "instructions": [
+      "0000:0291",
+      "0000:0294",
+      "0000:0297",
+      "0000:029A",
+      "0000:029D",
+      "0000:02A0",
+      "0000:02A3",
+      "0000:02A5",
+      "0000:02A9",
+      "0000:0409",
+      "0000:040B",
+      "0000:040F",
+      "0000:0411",
+      "0000:0414",
+      "0000:0417",
+      "0000:041A",
+      "0000:041C",
+      "0000:041E",
+      "0000:0421",
+      "0000:0425",
+      "0000:0429",
+      "0000:042B",
+      "0000:042D",
+      "0000:0430",
+      "0000:0431",
+      "0000:0434",
+      "0000:0437",
+      "0000:043A",
+      "0000:043D",
+      "0000:0440",
+      "0000:0443",
+      "0000:0446",
+      "0000:0448",
+      "0000:0449",
+      "0000:044C",
+      "0000:044E",
+      "0000:0451",
+      "0000:0453",
+      "0000:0454",
+      "0000:0456",
+      "0000:0457",
+      "0000:045A",
+      "0000:045B",
+      "0000:045D",
+      "0000:045F",
+      "0000:0463",
+      "0000:0466",
+      "0000:046A",
+      "0000:046D",
+      "0000:046E",
+      "0000:0470",
+      "0000:0472",
+      "0000:0473",
+      "0000:0474",
+      "0000:0477",
+      "0000:047A",
+      "0000:047D",
+      "0000:0480",
+      "0000:0483",
+      "0000:0486",
+      "0000:0489",
+      "0000:048C",
+      "0000:048F",
+      "0000:0492",
+      "0000:0495",
+      "0000:0497",
+      "0000:049A",
+      "0000:049D",
+      "0000:04A0",
+      "0000:04A3"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0297",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 16,
+        "index": null,
+        "instruction": "0000:029D",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:02A5",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 9,
+        "index": null,
+        "instruction": "0000:040B",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0411",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 95,
+        "index": null,
+        "instruction": "0000:0414",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 95,
+        "index": null,
+        "instruction": "0000:0417",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:0421",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 95,
+        "index": null,
+        "instruction": "0000:0425",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "di",
+        "displacement": 8,
+        "index": null,
+        "instruction": "0000:043A",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 16,
+        "index": null,
+        "instruction": "0000:0440",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 9,
+        "index": null,
+        "instruction": "0000:0449",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0453",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0456",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:0457",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:045A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 96,
+        "index": null,
+        "instruction": "0000:045F",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": null,
+        "displacement": 13,
+        "index": null,
+        "instruction": "0000:0466",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:046D",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "bx",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:0470",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 10,
+        "index": null,
+        "instruction": "0000:0474",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 12,
+        "index": null,
+        "instruction": "0000:0477",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 19,
+        "index": null,
+        "instruction": "0000:047A",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 25,
+        "index": null,
+        "instruction": "0000:047D",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 29,
+        "index": null,
+        "instruction": "0000:0480",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 26,
+        "index": null,
+        "instruction": "0000:0483",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 27,
+        "index": null,
+        "instruction": "0000:0486",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 1,
+        "index": null,
+        "instruction": "0000:0489",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 16,
+        "index": null,
+        "instruction": "0000:048C",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      },
+      {
+        "access": 2,
+        "base": "di",
+        "displacement": 4,
+        "index": null,
+        "instruction": "0000:048F",
+        "scale": 1,
+        "segment": "default",
+        "size": 1
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_0409",
+    "named": false,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "bx",
+      "ch",
+      "cx",
+      "dh",
+      "di",
+      "dl",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "bx",
+      "ch",
+      "cl",
+      "cx",
+      "di",
+      "dx",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [
+      "0000:0291",
+      "0000:0294",
+      "0000:0297",
+      "0000:029A",
+      "0000:029D",
+      "0000:02A0",
+      "0000:02A3",
+      "0000:02A5",
+      "0000:02A9"
+    ],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:04A4",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:0409"
+    ],
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "DS must address driver; DF=0. Write first word at04B1 unconditionally using AL=index,AH=data; then read words and stop on zero before writing it. Original table has27 pairs plus zero terminator. Returns AX=0,SI=04E9; other general/segment registers preserved. Flags from OR AX,AX. Inherits PIT/port61 effects from WriteOpl2Register.",
+    "evidence": [
+      "04A7 first LODSW precedes any sentinel test; zero check follows04AB.",
+      "Original register list includes5Dh,B9h and omits4Dh,B5h; retain exact bytes, purpose UNKNOWN.",
+      "Isolated transcript test checks27 writes and a zero first word, which is still written."
+    ],
+    "hardware": [],
+    "instruction_bytes": 13,
+    "instructions": [
+      "0000:04A4",
+      "0000:04A7",
+      "0000:04A8",
+      "0000:04AB",
+      "0000:04AC",
+      "0000:04AE",
+      "0000:04B0"
+    ],
+    "kind": "function",
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:04A7",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      },
+      {
+        "access": 1,
+        "base": "si",
+        "displacement": 0,
+        "index": null,
+        "instruction": "0000:04AB",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "WriteOpl2Table04B1",
+    "named": true,
+    "registers_read": [
+      "ax",
+      "eip",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "registers_written": [
+      "ax",
+      "esp",
+      "flags",
+      "si",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:04E9",
+    "call_graph_depth": 2,
+    "callees": [
+      "0000:0557"
+    ],
+    "callers": [
+      "0000:0004"
+    ],
+    "category": "HARDWARE",
+    "confidence": {
+      "boundary": "INFERRED",
+      "gameplay_role": "UNKNOWN",
+      "operation": "UNKNOWN",
+      "semantic_name": "UNKNOWN"
+    },
+    "evidence": [
+      "call from 0000:0004"
+    ],
+    "hardware": [
+      "0000:050F",
+      "0000:0522"
+    ],
+    "instruction_bytes": 110,
+    "instructions": [
+      "0000:04E9",
+      "0000:04EA",
+      "0000:04EB",
+      "0000:04EC",
+      "0000:04ED",
+      "0000:04EE",
+      "0000:04EF",
+      "0000:04F3",
+      "0000:04F6",
+      "0000:04F9",
+      "0000:04FC",
+      "0000:04FF",
+      "0000:0502",
+      "0000:0504",
+      "0000:0507",
+      "0000:050A",
+      "0000:050D",
+      "0000:050F",
+      "0000:0510",
+      "0000:0511",
+      "0000:0514",
+      "0000:0517",
+      "0000:051A",
+      "0000:051D",
+      "0000:0520",
+      "0000:0522",
+      "0000:0523",
+      "0000:0524",
+      "0000:0527",
+      "0000:052A",
+      "0000:052D",
+      "0000:0530",
+      "0000:0531",
+      "0000:0532",
+      "0000:0534",
+      "0000:0537",
+      "0000:0539",
+      "0000:053B",
+      "0000:053D",
+      "0000:0540",
+      "0000:0543",
+      "0000:0546",
+      "0000:0549",
+      "0000:054B",
+      "0000:054C",
+      "0000:054D",
+      "0000:054E",
+      "0000:054F",
+      "0000:0550",
+      "0000:0552",
+      "0000:0553",
+      "0000:0554",
+      "0000:0555",
+      "0000:0556"
+    ],
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 14,
+        "index": null,
+        "instruction": "0000:04EF",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "sub_0000_04E9",
+    "named": false,
+    "registers_read": [
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "cx",
+      "dx",
+      "eip",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "ax",
+      "bl",
+      "bx",
+      "cx",
+      "ds",
+      "dx",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0557",
+    "call_graph_depth": 1,
+    "callees": [
+      "0000:0579"
+    ],
+    "callers": [
+      "0000:00CD",
+      "0000:024F",
+      "0000:02AA",
+      "0000:02C9",
+      "0000:02F6",
+      "0000:0409",
+      "0000:04A4",
+      "0000:04E9"
+    ],
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "AL register index, AH data, DS points to driver header. OUT base=DS:[000E],AL; call DelayViaPit2Counter(BX=1FFC); AL=AH; OUT base+1,AL; delay(BX=1FEC). Preserves BX/DX and other general/segment registers except AL, which returns equal to AH. FLAGS changed. Inherits PIT/port61 side effects and hardware-dependent termination.",
+    "evidence": [
+      "Eight known caller routines; caller04E9 uses timer register commands6004,8004,FF02,2104.",
+      "0579 delay contract independently reviewed first.",
+      "Isolated tests check port order and AX/BX/DX contracts across three register/data pairs."
+    ],
+    "hardware": [
+      "0000:055D",
+      "0000:0567"
+    ],
+    "instruction_bytes": 26,
+    "instructions": [
+      "0000:0557",
+      "0000:0558",
+      "0000:0559",
+      "0000:055D",
+      "0000:055E",
+      "0000:0561",
+      "0000:0564",
+      "0000:0566",
+      "0000:0567",
+      "0000:0568",
+      "0000:056B",
+      "0000:056E",
+      "0000:056F",
+      "0000:0570"
+    ],
+    "kind": "function",
+    "leaf": false,
+    "memory": [
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 14,
+        "index": null,
+        "instruction": "0000:0559",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "WriteOpl2Register",
+    "named": true,
+    "registers_read": [
+      "ah",
+      "al",
+      "bx",
+      "dx",
+      "eip",
+      "esp",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "bx",
+      "dx",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0571",
+    "call_graph_depth": 0,
+    "callees": [],
+    "callers": [],
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": true
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "PROVEN",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Read byte from port DS:[000E] into AL. Preserve AH, DX, other general registers and FLAGS. DS must address this driver header. Near RET.",
+    "evidence": [
+      "Original ADLIB.ENC contains 52 8B 16 0E 00 EC 5A C3 at0571",
+      "Port constant0388 at000E",
+      "tests/test_runtime.py checks original instructions, returned AL, preserved AH/DX/FLAGS and code bytes",
+      "Adjacent near routines delimit this eight-byte callable sequence. No original caller or gameplay invocation is currently known; contract tested in isolation."
+    ],
+    "hardware": [
+      "0000:0576"
+    ],
+    "instruction_bytes": 8,
+    "instructions": [
+      "0000:0571",
+      "0000:0572",
+      "0000:0576",
+      "0000:0577",
+      "0000:0578"
+    ],
+    "kind": "function",
+    "leaf": true,
+    "memory": [
+      {
+        "access": 1,
+        "base": null,
+        "displacement": 14,
+        "index": null,
+        "instruction": "0000:0572",
+        "scale": 1,
+        "segment": "default",
+        "size": 2
+      }
+    ],
+    "module": "adlib",
+    "name": "ReadOpl2Status",
+    "named": true,
+    "registers_read": [
+      "dx",
+      "esp",
+      "sp"
+    ],
+    "registers_written": [
+      "al",
+      "dx",
+      "esp",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  },
+  {
+    "address": "0000:0579",
+    "call_graph_depth": 0,
+    "callees": [],
+    "callers": [
+      "0000:0557"
+    ],
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": true,
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
+    },
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Preserve AX and all general/segment registers. BX is a signed comparison threshold; configure port43=B6, set port61 bits0/1, repeatedly write1FFFh to port42, issue43=86 thenB6, read two bytes from42 and repeat while signed AX>BX. Finally read61 and clear bit0. Changes flags; does not restore PIT configuration or original port61 state. Termination depends on hardware responses; no exact-duration claim.",
+    "evidence": [
+      "Only known caller0557 supplies1FFCh then1FECh.",
+      "Original signed JG at059F matters; do not rewrite as unsigned countdown.",
+      "tests/test_tandy_adlib.py drives repeat and exit paths with explicit read values and checks every IN/OUT plus preserved registers."
+    ],
+    "hardware": [
+      "0000:057C",
+      "0000:057E",
+      "0000:0582",
+      "0000:0587",
+      "0000:058B",
+      "0000:058F",
+      "0000:0593",
+      "0000:0595",
+      "0000:0599",
+      "0000:05A1",
+      "0000:05A5"
+    ],
+    "instruction_bytes": 48,
+    "instructions": [
+      "0000:0579",
+      "0000:057A",
+      "0000:057C",
+      "0000:057E",
+      "0000:0580",
+      "0000:0582",
+      "0000:0584",
+      "0000:0587",
+      "0000:0589",
+      "0000:058B",
+      "0000:058D",
+      "0000:058F",
+      "0000:0591",
+      "0000:0593",
+      "0000:0595",
+      "0000:0597",
+      "0000:0599",
+      "0000:059B",
+      "0000:059D",
+      "0000:059F",
+      "0000:05A1",
+      "0000:05A3",
+      "0000:05A5",
+      "0000:05A7",
+      "0000:05A8"
+    ],
+    "kind": "function",
+    "leaf": true,
+    "memory": [],
+    "module": "adlib",
+    "name": "DelayViaPit2Counter",
+    "named": true,
+    "registers_read": [
+      "ah",
+      "al",
+      "ax",
+      "bx",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "registers_written": [
+      "ah",
+      "al",
+      "ax",
+      "esp",
+      "flags",
+      "sp"
+    ],
+    "shared_instructions": [],
+    "tail_targets": [],
+    "unresolved": []
+  }
+]

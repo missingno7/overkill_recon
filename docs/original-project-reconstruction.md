@@ -156,3 +156,57 @@ uncertainty.
 
 The original project model remains revisable. Semantic certainty and build topology
 must reinforce each other before a subsystem/module hypothesis is promoted.
+
+## Independently established runtime module topology
+
+The main semantic model remains shared with Oracle A. A physical audio-module
+boundary is now STRUCTURALLY_SUPPORTED: the original container names ADLIB.ENC
+and ROLAND.ENC, selects one by startup state, decodes it at relative 1022:0000,
+initializes entry +4 and calls entry +0 from its timer handler. Independent
+resource decoding equals authentic loading byte-for-byte. These facts support
+separate executable modules more strongly than mere adjacency or naming guesses.
+They do not prove original OMF boundaries, assembler versions or ASM filenames.
+
+The module slot has versioned identities: initial placeholder, loaded AdLib or
+loaded Roland. Entry/header overlap is explicit; data writes to a loaded header
+are not instruction changes to a retired placeholder. PC speaker remains resident.
+The evidence does not support separate CGA/EGA/Tandy source binaries: existing
+renderer functions are selected through state and tables. K/alternate/joystick
+input choices also coexist as state-selected paths.
+
+Modern src/drivers names are organizational choices; original ENC resource names
+are surviving historical evidence. The driver sources preserve separate code/data
+address frames, near internal calls, far entry/return ABI and CS/DS-relative state.
+No fixup pass was observed between complete ENC output and initialization.
+
+Recurring register-save, nine record-base and sound-register patterns can now be
+studied within those modules. A recurring pattern is not a proven historical macro.
+For example, the AdLib status-read leaf preserves DX around a port read; its source
+name is modern and the operation is tested. Its port number resides in the module
+header, and the register-write delay helper has PIT/speaker-control side effects.
+
+The canonical research profile is Tandy/PCjr + AdLib/YM3812 + default keyboard.
+It materializes an optional executable module and exercises the Tandy renderer.
+Other video, input and Roland paths are retained. See runtime-materialization.md
+and metadata/runtime/materialization.json for confidence, scope and unresolved
+ESMR/stability questions. Binary identity never establishes historical source text.
+
+## Tandy + AdLib static evidence
+
+The current semantic priority and exact contracts are recorded in
+[tandy-adlib.md](tandy-adlib.md) and `metadata/reconstruction-focus.json`.
+Packed nibble masks, banked row addressing, corresponding EGA plane writes and
+repeated selector wrappers support a renderer implementation family. Repeated
+bank-step shapes support a source-level idiom hypothesis, not a proven macro.
+No historical module boundary or filename follows from these observations alone.
+The separately loaded AdLib resource remains stronger executable-module evidence.
+
+## Record/table evidence added in the second static batch
+
+The AdLib table04B1 is28 little-endian words,27 writes plus a zero terminator;
+its interpretation is established through reviewed0557 and04A4. It is now explicit
+word data in maintained ASM, counted independently from decoded instructions.
+Anomalous register values remain exact. Nine32-byte driver records are supported
+by repeated callers and initial bytes; field offsets now have operation-based
+metadata. This supports a shared record convention without proving a historical
+STRUCT, EQU include, macro or source filename. See `metadata/drivers/adlib-data.json`.

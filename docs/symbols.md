@@ -98,6 +98,149 @@ Register access inventory (decoder-derived, not a proven ABI): read al, ax, bp, 
 Evidence:
 - DS explicitly set to CS immediately before INT21/2508 at06B1.
 
+## BuildByteToNibbleMaskTable (0000:0FE4)
+
+For each byte0..255 write four bytes to DS:1514+4*value, mapping bits7..0 to high/low nibble masks F/0 in order. Sets ES=CS:9596 but stores use DS, which caller must supply. Changes AL,DX,DI and flags; AH,BX,CX,SI,BP,DS unchanged; DI=1917h on return.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:95C9.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read al, cs, dh, di, dl, flags, sp; write al, dh, di, dl, es, flags, sp.
+
+Evidence:
+- 0FEE..1037 expands low pairs while storing backward inside each four-byte entry; DH iterates256 values.
+- Tandy3153 reads this table to expand eight one-bit glyph pixels and ANDs with a repeated four-bit color.
+- tests/test_tandy_adlib.py checks all256 entries with DS deliberately distinct from ES.
+
+## CopyPackedRowsToTandyBanks (0000:306F)
+
+Read row count then width-units from DS:SI (two words); copy width*4 bytes per row to ES loaded from CS:95A4. DF must be clear, row count positive, ranges valid/nonoverlapping. Bank step is +2000h; if bit15 set add80A0h modulo65536. AX/BP=width*4, CX=0; SI advances4+rows*width*4; DI advances to next row start; ES and flags changed, BX/DX/DS unchanged.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A6C.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, cx, di, es, esp, flags, si, sp; write ax, bp, cx, di, es, esp, flags, si, sp.
+
+Evidence:
+- Selector2 at5A73/5A78 dispatches here; selector1 reaches24D7, which writes four plane masks1,2,4,8 via ports3C4/3C5.
+- tests/test_tandy_adlib.py verifies full destination memory against (y%4)*8192+(y//4)*160 and no port writes.
+
+## CopyPackedRowsStride104 (0000:3097)
+
+Read DS:SI row count and width-units, then copy width*4 bytes per row to ES=CS:9598 with104-byte row stride. DF=0, positive rows, valid nonoverlapping ranges required. AX/BP=width*4,CX=0; SI advanced4+payload; DI advanced104*rows; BX/DX/DS unchanged, ES/flags changed.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A48.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, cx, di, es, esp, flags, si, sp; write ax, bp, cx, di, es, esp, flags, si, sp.
+
+Evidence:
+- Selector2 at5A4F/5A54 dispatches here.
+- Independent memory-layout test covers seven rows and nonzero destination offsets.
+
+## CopyPackedRowsStride160 (0000:30B4)
+
+As CopyPackedRowsStride104 but destination stride160. DS:SI header row count and width-units; width is multiplied by4; ES=CS:9598. Requires DF=0, positive row count, valid nonoverlapping ranges. AX/BP=width*4,CX=0; SI advances4+payload; DI advances160*rows; BX/DX/DS unchanged; ES/flags changed.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A5A.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, cx, di, es, esp, flags, si, sp; write ax, bp, cx, di, es, esp, flags, si, sp.
+
+Evidence:
+- Selector2 at5A61/5A66 dispatches here.
+- Independent full-memory copy test.
+
+## TandyOffsetFromRow9EE8 (0000:3103)
+
+AH indexes unsigned word table DS:9EE8 (2*AH); AL is multiplied by4. AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. All other registers unchanged; arithmetic flags from final ADD. No bounds check: initializer populates only200 entries.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A00.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ah, ax, bh, bx, sp; write ah, ax, bh, bl, bx, di, flags, sp.
+
+Evidence:
+- Caller wrapper5A00 selects this for video selector2. EGA25B6 adds AL; CGA422B adds2*AL.
+- 0F61..0FA1 initializes200 interleaved row offsets.
+- Isolated tests include indices199,200,255 and16-bit addition wrap.
+
+## TandyOffsetFromRow9BC8 (0000:3118)
+
+AH indexes unsigned word table DS:9BC8 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A12.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ah, ax, bh, bx, sp; write ah, ax, bh, bl, bx, di, flags, sp.
+
+Evidence:
+- Wrapper5A12 selects this for selector2; 0F41..0F4F populates200 entries using CS:959E stride.
+- Isolated tests separate DS/SS and include word wrap.
+
+## TandyOffsetFromRow9D58 (0000:312D)
+
+AH indexes unsigned word table DS:9D58 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5A24.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ah, ax, bh, bx, sp; write ah, ax, bh, bl, bx, di, flags, sp.
+
+Evidence:
+- Wrapper5A24 selects this for selector2; 0F51..0F5F populates200 entries using CS:95A0 stride.
+- Isolated tests include full byte indices and word wrap.
+
+## ClearTandy32K (0000:3345)
+
+ES=CS:95A4; with DF=0 write32768 zero bytes at ES:0000..7FFF. AX=CX=0,DI=8000h; BX/DX/SI/BP/DS preserved. Flags from XOR DI,DI. Does not restore ES or set DF.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5BEE.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, cs, cx, di, es, flags, sp; write ax, cx, di, es, flags, sp.
+
+Evidence:
+- Wrapper5BEE dispatches selector2 to3345. REP STOSW count4000h.
+- Test checks entire64KiB destination, including untouched upper half.
+
+## CopyWorkspace104x192ToTandy (0000:3354)
+
+Read source offset from incoming DS:234C; set ES=CS:95A4 and DS=CS:9598. With DF=0 copy192 contiguous104-byte source rows into the first104 bytes of Tandy rows4..195. Then set DS=CS:9596, not incoming DS. SI advances19968, DI=1EA0h, BX=34h, CX=BP=0; AX/DX preserved; flags changed. Requires valid nonoverlapping buffers.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5BDC.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read bp, bx, cs, cx, di, es, flags, si, sp; write bp, bx, cx, di, ds, es, flags, si, sp.
+
+Evidence:
+- Selector2 of wrapper5BDC targets3354.
+- 3354 reads234C before changing DS;3383 assigns CS:9596 at exit.
+- Isolated full-memory test distinguishes incoming DS, source DS and returned DS; untouched pixels and padding checked.
+
+## ClearTandy104x200 (0000:3389)
+
+With DF=0 and ES=CS:95A4, clear the first104 bytes of each of200 Tandy display rows. Preserve remaining56 visible bytes per row and bank padding. AX=CX=BP=0, DI=1F40h; ES changed; DS/BX/DX/SI preserved. Flags changed. No clipping or DF setup.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:5BCA.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, cs, cx, di, es, flags, sp; write ax, bp, cx, di, es, flags, sp.
+
+Evidence:
+- Selector2 of wrapper5BCA targets3389.
+- Whole64KiB destination test checks exact cleared footprint and untouched bytes.
+
 ## CopyWords2And4Plus10 (0000:A571)
 
 First DS:[BX+4] = SS:[BP+4]+10 modulo 65536; then DS:[BX+2] = SS:[BP+2]+10. AX holds the latter result. Order matters if memory aliases. Flags are from the second ADD.

@@ -1,0 +1,9 @@
+{
+  "frontier": "0000:9690",
+  "irq_period": 20000,
+  "load_segment": 4112,
+  "main_address_space_sha256": "2610b303b144a9b63c1c2e83a6648990aa9f69918ce891f45489b7bac4e9d22b",
+  "profile": "tandy-adlib-keyboard",
+  "provenance": "Independent original packed execution, build/runtime-matrix/tandy-adlib. Recomputed and compared by full verifier; no snapshot is used as execution input.",
+  "size": 143088
+}

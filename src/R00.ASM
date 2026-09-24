@@ -3,6 +3,7 @@ include ENCODING.INC
 part00 segment byte public 'CODE'
 assume cs:part00,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+BuildByteToNibbleMaskTable_00FE4 equ 0FE4h
 IncrementByteCS066B_0066C equ 066Ch
 ReadBufferedByte_00624 equ 0624h
 ReadBufferedWordLE_00615 equ 0615h
@@ -2680,6 +2681,11 @@ loc_0D50E equ 0D50Eh
 ; @00FE1 0000:0FE1 original=e98642
     JMP_NEAR loc_0526A
 ; sub_0000_0FE4
+; BuildByteToNibbleMaskTable (modern reconstruction name)
+; For each byte0..255 write four bytes to DS:1514+4*value, mapping bits7..0 to high/low nibble masks F/0 in
+; order. Sets ES=CS:9596 but stores use DS, which caller must supply. Changes AL,DX,DI and flags;
+; AH,BX,CX,SI,BP,DS unchanged; DI=1917h on return.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @00FE4 0000:0FE4 original=2e8e069695
     mov es, word ptr cs:[09596h]
 ; @00FE9 0000:0FE9 original=bf1715

@@ -99,6 +99,8 @@ def generate():
     payload=json.dumps(functions).replace('<','\\u003c')
     browser='''<!doctype html><meta charset="utf-8"><title>Overkill function inventory</title><style>body{font:15px system-ui;margin:2rem;background:#141920;color:#e6edf3}input{padding:.7rem;width:32rem;max-width:90%}main{display:grid;grid-template-columns:32rem 1fr;gap:2rem}button{display:block;width:100%;text-align:left;background:#222c38;color:inherit;border:0;margin:3px 0;padding:.6rem;cursor:pointer}pre{white-space:pre-wrap}small{color:#a9bdcf}</style><h1>Overkill function inventory</h1><p>Candidate boundaries; unknown edges remain explicit. All addresses are relative to the load segment.</p><input id="search" placeholder="Filter address, name, class or contract"><main><section id="list"></section><pre id="detail">Select a function.</pre></main><script>const data='''+payload+''';const list=document.querySelector('#list'),detail=document.querySelector('#detail'),q=document.querySelector('#search');function render(){list.replaceChildren();for(const f of data){if(!JSON.stringify(f).toLowerCase().includes(q.value.toLowerCase()))continue;const b=document.createElement('button');b.textContent=f.address+' '+f.name+' ['+f.category+']';b.onclick=()=>detail.textContent=JSON.stringify(f,null,2);list.append(b)}}q.oninput=render;render();</script>'''
     (ROOT/'docs/functions.html').write_text(browser,encoding='utf-8')
+    from runtime_status import extend_reports
+    extend_reports()
     print('Reports updated:',status['identified_functions'],'candidates;',status['named_functions'],'reviewed names.')
 
 if __name__=='__main__':

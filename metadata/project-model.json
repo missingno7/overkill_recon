@@ -1,4 +1,9 @@
 {
+  "adlib_record_evidence": {
+    "confidence": "STRONG nine records x32 bytes; field operations proven for reviewed paths",
+    "evidence": "metadata/drivers/adlib-data.json",
+    "source_syntax": "UNKNOWN; no historical STRUCT, macro or filename inferred"
+  },
   "claim_axes": [
     "BYTE_EXACT",
     "STRUCTURALLY_SUPPORTED",
@@ -375,6 +380,29 @@
       "value": 8943
     }
   ],
+  "research_policy": {
+    "execution_cap": "0000:97B2 first gameplay entry",
+    "exhaustive_game_state_coverage_required": false,
+    "limits": "Global stability and earliest-frontier minimality remain unproven; resolve concrete uncertainties statically first.",
+    "method": "STATIC_BOTTOM_UP"
+  },
+  "runtime_module_topology": {
+    "confidence": "STRUCTURALLY_SUPPORTED executable modules; historical ASM/OMF boundaries UNKNOWN",
+    "evidence": "metadata/runtime/materialization.json",
+    "global_ESMR": "UNPROVEN; reproducible candidate at0000:9690",
+    "historically_surviving_resource_names": [
+      "ADLIB.ENC",
+      "ROLAND.ENC"
+    ],
+    "input": "coexisting runtime-state-selected paths",
+    "main": "Oracle A code shared with bounded live runtime",
+    "modern_driver_source_names": [
+      "src/drivers/ADLIB.ASM",
+      "src/drivers/ROLAND.ASM"
+    ],
+    "optional_slot": "relative 1022:0000 before1534 frame; separate AdLib/Roland identities",
+    "video": "coexisting renderer routines selected by data/table dispatch"
+  },
   "schema": 1,
   "toolchain": {
     "assembler_candidate": "TASM 1.0",
@@ -391,7 +419,6 @@
     "Original object ordering and module boundaries",
     "Original pre-packing MZ header and relocation order",
     "BSS ownership and maximum memory requirements",
-    "Remaining indirect call/jump tables and runtime-written code",
-    "Overlay directory and optional driver extraction"
+    "Remaining indirect call/jump tables and runtime-written code"
   ]
 }

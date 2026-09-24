@@ -3,6 +3,7 @@ include ENCODING.INC
 part10 segment byte public 'CODE'
 assume cs:part10,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+
 loc_15385 equ 01385h
 loc_153AE equ 013AEh
 loc_153BB equ 013BBh
@@ -661,13 +662,47 @@ loc_15AD9 equ 01AD9h
 ; @15330 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 ; @15340 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,00h,00h,00h,00h,00h,083h,0C4h,06h,058h,08Bh,0C7h,05Bh,059h,05Ah,05Eh
-; @15350 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05Fh,05Dh,01Fh,07h,02Eh,08Fh,06h,00h,00h,02Eh,08Fh,06h,02h,00h,02Eh,08Fh
-; @15360 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,04h,00h,02Eh,083h,0Eh,04h,00h,01h,02Eh,0FFh,036h,04h,00h,0Eh,02Eh
-; @15370 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,06h,04h,00h,04Eh,00h,02Eh,0FFh,036h,04h,00h,0CFh
+    db 00h,00h,00h,00h,00h,00h
+; @15346 1534:0006 original=83c406 runtime CFG evidence
+    add sp, 6
+; @15349 1534:0009 original=58 runtime CFG evidence
+    pop ax
+; @1534A 1534:000A original=8bc7 runtime CFG evidence
+    mov ax, di
+; @1534C 1534:000C original=5b runtime CFG evidence
+    pop bx
+; @1534D 1534:000D original=59 runtime CFG evidence
+    pop cx
+; @1534E 1534:000E original=5a runtime CFG evidence
+    pop dx
+; @1534F 1534:000F original=5e runtime CFG evidence
+    pop si
+; @15350 1534:0010 original=5f runtime CFG evidence
+    pop di
+; @15351 1534:0011 original=5d runtime CFG evidence
+    pop bp
+; @15352 1534:0012 original=1f runtime CFG evidence
+    pop ds
+; @15353 1534:0013 original=07 runtime CFG evidence
+    pop es
+; @15354 1534:0014 original=2e8f060000 runtime CFG evidence
+    pop word ptr cs:[0]
+; @15359 1534:0019 original=2e8f060200 runtime CFG evidence
+    pop word ptr cs:[2]
+; @1535E 1534:001E original=2e8f060400 runtime CFG evidence
+    pop word ptr cs:[4]
+; @15363 1534:0023 original=2e830e040001 runtime CFG evidence
+    or word ptr cs:[4], 1
+; @15369 1534:0029 original=2eff360400 runtime CFG evidence
+    push word ptr cs:[4]
+; @1536E 1534:002E original=0e runtime CFG evidence
+    push cs
+; @1536F 1534:002F original=2ec70604004e00 runtime CFG evidence
+    mov word ptr cs:[4], 04Eh
+; @15376 1534:0036 original=2eff360400 runtime CFG evidence
+    push word ptr cs:[4]
+; @1537B 1534:003B original=cf runtime CFG evidence
+    iret
 ; sub_1534_003C
 ; @1537C 1534:003C original=b024
     mov al, 024h

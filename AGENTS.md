@@ -33,3 +33,37 @@ These rules apply only inside overkill_recon.
   interrupts and nonlocal stack unwinds must remain explicit. No statistics gaming.
 - `bootstrap_source.py --replace-bootstrap` overwrites source; it is never an
   ordinary build step. Preserve manually recovered work when expanding coverage.
+
+- Preserve Oracle A at0000:95C9. Candidate runtime Oracle B at0000:9690 is an
+  additional environment-specific artifact, not a replacement or global stability proof.
+- The 5E42..5F1A write is pre-A EXEPACK materialization. Do not treat that main
+  address as a post-A cold/runtime split. The optional1022 module slot does have
+  initial, AdLib and Roland identities; loaded header data must not inherit cold
+  stub instruction classifications.
+- Runtime execution must start from pinned originals, not legacy/generated memory
+  snapshots. Trace original CPU writes and modeled environment writes separately;
+  retain unknown post-frontier mutations. Use original IRQ handlers for scripted input.
+- Use metadata/runtime and metadata/drivers for active bottom-up semantics. Keep
+  discovery coverage, maintained mnemonic source coverage and semantic confidence separate.
+- Every source promotion must rebuild exactly. Existing reviewed instruction text
+  and contracts must survive incremental UNKNOWN-range promotion.
+
+## Static-first research policy (user direction, 2026-09-24)
+
+- Prioritize static bottom-up reconstruction: small leaf contracts, callers/callees,
+  register and memory effects, data fields, conservative names, and build evidence.
+- Run original game code only to resolve a specific uncertainty that static work
+  cannot settle or to verify the pinned startup oracle. Do not routinely replay it.
+- Never continue an investigation run beyond first gameplay entry (0000:97B2).
+  The harness enforces that frontier. Earlier exploratory traces are historical
+  evidence, not a requirement or a recipe for further state-space exploration.
+- Do not require exhaustive levels, deaths, bosses, endings or possible game states
+  as an acceptance condition. Track static unknowns explicitly and resolve them
+  locally. Isolated routine contract tests remain appropriate.
+- Normal verification assembles and compares bytes without whole-game execution.
+  Full verification performs one necessary, bounded startup-oracle check at9690;
+  repeated startup runs require a specific determinism investigation.
+
+- Current semantic priority: Tandy/PCjr + AdLib/OPL2 with default keyboard.
+  Keep other implementations intact. Use packed-pixel and bank-address facts in
+  metadata/reconstruction-focus.json; visual equality with EGA is unproven.

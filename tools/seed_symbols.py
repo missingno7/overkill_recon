@@ -55,6 +55,36 @@ def main():
     add('0000:C80B','AdvanceABColonPrefix','C_READY_WITH_ENV',
         'Read pointer DS:21AA. If byte +1 is colon and ASCII-case-folded byte +0 is A or B, retain it only when DS:BB86 (A) or DS:BB87 (B) equals exactly1; otherwise increment original byte +0 and retry. Case of stored prefix is preserved. Other prefixes return unchanged. Flags and AL/SI are scratch.',
         ['Meaning of UppercaseAsciiAL independently established first.','C80F tests colon; C81B/C81F compare A/B; C824/C830 compare flags exactly1.','Tests combine uppercase/lowercase prefixes with flag values0,1,2; no role is assigned to the flags.'])
+    add('0000:306F','CopyPackedRowsToTandyBanks',"C_READY_WITH_ENV",
+        'Read row count then width-units from DS:SI (two words); copy width*4 bytes per row to ES loaded from CS:95A4. DF must be clear, row count positive, ranges valid/nonoverlapping. Bank step is +2000h; if bit15 set add80A0h modulo65536. AX/BP=width*4, CX=0; SI advances4+rows*width*4; DI advances to next row start; ES and flags changed, BX/DX/DS unchanged.',
+        ['Selector2 at5A73/5A78 dispatches here; selector1 reaches24D7, which writes four plane masks1,2,4,8 via ports3C4/3C5.', 'tests/test_tandy_adlib.py verifies full destination memory against (y%4)*8192+(y//4)*160 and no port writes.'])
+    add('0000:3097','CopyPackedRowsStride104',"C_READY_WITH_ENV",
+        'Read DS:SI row count and width-units, then copy width*4 bytes per row to ES=CS:9598 with104-byte row stride. DF=0, positive rows, valid nonoverlapping ranges required. AX/BP=width*4,CX=0; SI advanced4+payload; DI advanced104*rows; BX/DX/DS unchanged, ES/flags changed.',
+        ['Selector2 at5A4F/5A54 dispatches here.', 'Independent memory-layout test covers seven rows and nonzero destination offsets.'])
+    add('0000:30B4','CopyPackedRowsStride160',"C_READY_WITH_ENV",
+        'As CopyPackedRowsStride104 but destination stride160. DS:SI header row count and width-units; width is multiplied by4; ES=CS:9598. Requires DF=0, positive row count, valid nonoverlapping ranges. AX/BP=width*4,CX=0; SI advances4+payload; DI advances160*rows; BX/DX/DS unchanged; ES/flags changed.',
+        ['Selector2 at5A61/5A66 dispatches here.', 'Independent full-memory copy test.'])
+    add('0000:3103','TandyOffsetFromRow9EE8',"C_READY_WITH_ENV",
+        'AH indexes unsigned word table DS:9EE8 (2*AH); AL is multiplied by4. AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. All other registers unchanged; arithmetic flags from final ADD. No bounds check: initializer populates only200 entries.',
+        ['Caller wrapper5A00 selects this for video selector2. EGA25B6 adds AL; CGA422B adds2*AL.', '0F61..0FA1 initializes200 interleaved row offsets.', 'Isolated tests include indices199,200,255 and16-bit addition wrap.'])
+    add('0000:3118','TandyOffsetFromRow9BC8',"C_READY_WITH_ENV",
+        'AH indexes unsigned word table DS:9BC8 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.',
+        ['Wrapper5A12 selects this for selector2; 0F41..0F4F populates200 entries using CS:959E stride.', 'Isolated tests separate DS/SS and include word wrap.'])
+    add('0000:312D','TandyOffsetFromRow9D58',"C_READY_WITH_ENV",
+        'AH indexes unsigned word table DS:9D58 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.',
+        ['Wrapper5A24 selects this for selector2; 0F51..0F5F populates200 entries using CS:95A0 stride.', 'Isolated tests include full byte indices and word wrap.'])
+    add('0000:3345','ClearTandy32K',"C_READY_WITH_ENV",
+        'ES=CS:95A4; with DF=0 write32768 zero bytes at ES:0000..7FFF. AX=CX=0,DI=8000h; BX/DX/SI/BP/DS preserved. Flags from XOR DI,DI. Does not restore ES or set DF.',
+        ['Wrapper5BEE dispatches selector2 to3345. REP STOSW count4000h.', 'Test checks entire64KiB destination, including untouched upper half.'])
+    add('0000:0FE4','BuildByteToNibbleMaskTable','C_READY_WITH_ENV',
+        'For each byte0..255 write four bytes to DS:1514+4*value, mapping bits7..0 to high/low nibble masks F/0 in order. Sets ES=CS:9596 but stores use DS, which caller must supply. Changes AL,DX,DI and flags; AH,BX,CX,SI,BP,DS unchanged; DI=1917h on return.',
+        ['0FEE..1037 expands low pairs while storing backward inside each four-byte entry; DH iterates256 values.', 'Tandy3153 reads this table to expand eight one-bit glyph pixels and ANDs with a repeated four-bit color.', 'tests/test_tandy_adlib.py checks all256 entries with DS deliberately distinct from ES.'])
+    add('0000:3354','CopyWorkspace104x192ToTandy','C_READY_WITH_ENV',
+        'Read source offset from incoming DS:234C; set ES=CS:95A4 and DS=CS:9598. With DF=0 copy192 contiguous104-byte source rows into the first104 bytes of Tandy rows4..195. Then set DS=CS:9596, not incoming DS. SI advances19968, DI=1EA0h, BX=34h, CX=BP=0; AX/DX preserved; flags changed. Requires valid nonoverlapping buffers.',
+        ['Selector2 of wrapper5BDC targets3354.', '3354 reads234C before changing DS;3383 assigns CS:9596 at exit.', 'Isolated full-memory test distinguishes incoming DS, source DS and returned DS; untouched pixels and padding checked.'])
+    add('0000:3389','ClearTandy104x200','C_READY_WITH_ENV',
+        'With DF=0 and ES=CS:95A4, clear the first104 bytes of each of200 Tandy display rows. Preserve remaining56 visible bytes per row and bank padding. AX=CX=BP=0, DI=1F40h; ES changed; DS/BX/DX/SI preserved. Flags changed. No clipping or DF setup.',
+        ['Selector2 of wrapper5BCA targets3389.', 'Whole64KiB destination test checks exact cleared footprint and untouched bytes.'])
     write_json(ROOT/'metadata/symbols.json',dict(schema=1,symbols=rows))
     print('Recorded',len(rows),'reviewed symbols.')
 if __name__=='__main__':main()

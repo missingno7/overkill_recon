@@ -73,12 +73,16 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--full',action='store_true');args=parser.parse_args()
     if args.full:write_json(ROOT/'build/full-verification.json',dict(status='RUNNING_OR_FAILED'))
     verify()
+    from build_drivers import verify_drivers
+    verify_drivers()
     if args.full:
         from verify_unpack import verify as boot
         write_json(ROOT/'build/unpack-verification.json',[boot(b,a) for a in ('OVERKILL','OVERKILL.EXE') for b in (0x1010,0x2010)])
         from topology_experiments import run
         run()
+        from verify_runtime import verify as runtime
+        runtime(repeat=False)
         subprocess.run([sys.executable,'-m','unittest','discover','-s',str(ROOT/'tests'),'-v'],check=True,cwd=ROOT)
-        write_json(ROOT/'build/full-verification.json',dict(status='PASS',unpack_checks=4,semantic_and_infrastructure_tests='PASS',topology_variants=5,image_sha256=sha((ROOT/'build/program.bin').read_bytes())))
+        write_json(ROOT/'build/full-verification.json',dict(status='PASS',unpack_checks=4,semantic_and_infrastructure_tests='PASS',topology_variants=5,runtime_oracle='PASS bounded startup',optional_drivers='PASS',image_sha256=sha((ROOT/'build/program.bin').read_bytes())))
     from report import generate
     generate()

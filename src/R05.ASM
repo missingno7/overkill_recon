@@ -3,6 +3,172 @@ include ENCODING.INC
 part05 segment byte public 'CODE'
 assume cs:part05,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+loc_0AECD equ 0ECDh
+loc_0AED6 equ 0ED6h
+loc_0AEE4 equ 0EE4h
+loc_0AF60 equ 0F60h
+loc_0B00D equ 0100Dh
+loc_0B032 equ 01032h
+loc_0B053 equ 01053h
+loc_0B06A equ 0106Ah
+loc_0B076 equ 01076h
+loc_0B07D equ 0107Dh
+loc_0B09C equ 0109Ch
+loc_0B0B4 equ 010B4h
+loc_0B0C5 equ 010C5h
+loc_0B0D7 equ 010D7h
+loc_0B0EA equ 010EAh
+loc_0B102 equ 01102h
+loc_0B10A equ 0110Ah
+loc_0B10F equ 0110Fh
+loc_0B121 equ 01121h
+loc_0B134 equ 01134h
+loc_0B14C equ 0114Ch
+loc_0B158 equ 01158h
+loc_0BDD0 equ 01DD0h
+loc_0BDE3 equ 01DE3h
+loc_0BE35 equ 01E35h
+loc_0BE3A equ 01E3Ah
+loc_0C237 equ 02237h
+loc_04D95 equ 0AD95h
+loc_05059 equ 0B059h
+loc_0505B equ 0B05Bh
+loc_05073 equ 0B073h
+loc_05DB2 equ 0BDB2h
+loc_05E42 equ 0BE42h
+loc_062F6 equ 0C2F6h
+loc_07476 equ 0D476h
+loc_08331 equ 0E331h
+loc_09E19 equ 0FE19h
+loc_09E69 equ 0FE69h
+loc_0AA44 equ 0A44h
+loc_0AA46 equ 0A46h
+loc_0AA71 equ 0A71h
+loc_0AAAB equ 0AABh
+loc_0AACD equ 0ACDh
+loc_0AAD3 equ 0AD3h
+loc_0AADB equ 0ADBh
+loc_0AAE7 equ 0AE7h
+loc_0AB1A equ 0B1Ah
+loc_0AB24 equ 0B24h
+loc_0AB34 equ 0B34h
+loc_0AB4F equ 0B4Fh
+loc_0AB59 equ 0B59h
+loc_0AB61 equ 0B61h
+loc_0AB69 equ 0B69h
+loc_0AB71 equ 0B71h
+loc_0AB77 equ 0B77h
+loc_0AB8C equ 0B8Ch
+loc_0AB8F equ 0B8Fh
+loc_0AB99 equ 0B99h
+loc_0ABA3 equ 0BA3h
+loc_0ABBD equ 0BBDh
+loc_0ABC0 equ 0BC0h
+loc_0ABCA equ 0BCAh
+loc_0ABDC equ 0BDCh
+loc_0ABE4 equ 0BE4h
+loc_0ABEA equ 0BEAh
+loc_0ABF3 equ 0BF3h
+loc_0ABF9 equ 0BF9h
+loc_0AC05 equ 0C05h
+loc_0AC22 equ 0C22h
+loc_0AC28 equ 0C28h
+loc_0AC32 equ 0C32h
+loc_0AC3C equ 0C3Ch
+loc_0AC54 equ 0C54h
+loc_0AC56 equ 0C56h
+loc_0AC62 equ 0C62h
+loc_0AC75 equ 0C75h
+loc_0AC81 equ 0C81h
+loc_0AC8B equ 0C8Bh
+loc_0AC97 equ 0C97h
+loc_0ACD2 equ 0CD2h
+loc_0ACD9 equ 0CD9h
+loc_0ACE8 equ 0CE8h
+loc_0ACF7 equ 0CF7h
+loc_0ACF9 equ 0CF9h
+loc_0AD14 equ 0D14h
+loc_0AD1D equ 0D1Dh
+loc_0AD26 equ 0D26h
+loc_0AD2F equ 0D2Fh
+loc_0AD38 equ 0D38h
+loc_0AD41 equ 0D41h
+loc_0AD4D equ 0D4Dh
+loc_0AD59 equ 0D59h
+loc_0AD5A equ 0D5Ah
+loc_0AD60 equ 0D60h
+loc_0AD69 equ 0D69h
+loc_0AD73 equ 0D73h
+loc_0AD7D equ 0D7Dh
+loc_0ADAF equ 0DAFh
+loc_0ADC8 equ 0DC8h
+loc_0ADC9 equ 0DC9h
+loc_0AEE0 equ 0EE0h
+loc_0AF63 equ 0F63h
+loc_0B297 equ 01297h
+loc_0B2A3 equ 012A3h
+loc_0B729 equ 01729h
+loc_0B75F equ 0175Fh
+loc_0B76A equ 0176Ah
+loc_0B789 equ 01789h
+loc_0B791 equ 01791h
+loc_0B7A1 equ 017A1h
+loc_0B7A4 equ 017A4h
+loc_0B7B2 equ 017B2h
+loc_0B7BD equ 017BDh
+loc_0B7C7 equ 017C7h
+loc_0B7CE equ 017CEh
+loc_0B7D7 equ 017D7h
+loc_0B7F3 equ 017F3h
+loc_0B80E equ 0180Eh
+loc_0B826 equ 01826h
+loc_0B83A equ 0183Ah
+loc_0B859 equ 01859h
+loc_0B85C equ 0185Ch
+loc_0BC45 equ 01C45h
+loc_0BC4B equ 01C4Bh
+loc_0BC8A equ 01C8Ah
+loc_0BC94 equ 01C94h
+loc_0BC96 equ 01C96h
+loc_0BCA3 equ 01CA3h
+loc_0BCB0 equ 01CB0h
+loc_0BCCB equ 01CCBh
+loc_0BCD2 equ 01CD2h
+loc_0BCD9 equ 01CD9h
+loc_0BCE0 equ 01CE0h
+loc_0BCE7 equ 01CE7h
+loc_0BCF4 equ 01CF4h
+loc_0BCF9 equ 01CF9h
+loc_0BCFC equ 01CFCh
+loc_0BCFF equ 01CFFh
+loc_0BD09 equ 01D09h
+loc_0BD0D equ 01D0Dh
+loc_0BE46 equ 01E46h
+loc_0BE6F equ 01E6Fh
+loc_0BE84 equ 01E84h
+loc_0BE97 equ 01E97h
+loc_0BEA4 equ 01EA4h
+loc_0BECE equ 01ECEh
+loc_0BED7 equ 01ED7h
+loc_0BEE0 equ 01EE0h
+loc_0BEE9 equ 01EE9h
+loc_0BEF8 equ 01EF8h
+loc_0BF01 equ 01F01h
+loc_0BF07 equ 01F07h
+loc_0BF1B equ 01F1Bh
+loc_0BF25 equ 01F25h
+loc_0BF2D equ 01F2Dh
+loc_0BF35 equ 01F35h
+loc_0BF4D equ 01F4Dh
+loc_0BF52 equ 01F52h
+loc_0BF5F equ 01F5Fh
+loc_0BF90 equ 01F90h
+loc_0BF92 equ 01F92h
+loc_0BF97 equ 01F97h
+loc_0BFA8 equ 01FA8h
+loc_0BFB2 equ 01FB2h
+loc_0BFB9 equ 01FB9h
+loc_0BFC7 equ 01FC7h
 CopyWords2And4Plus10_0A571 equ 0571h
 DecBP2Unless20_0A5DB equ 05DBh
 DecBP4UnlessZero_0A5FC equ 05FCh
@@ -1753,67 +1919,323 @@ loc_0F797 equ 05797h
 ; @0AA30 0000:AA30 original=2effa736aa
     jmp word ptr cs:[bx - 055CAh]
 ; @0AA35 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 090h,045h,0BCh,04h,0ADh,0AEh,0EFh,0AFh,044h,0AEh,0EFh,0C2h,0AAh,010h,0ABh,0F8h
-; @0AA45 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C3h,08Bh,046h,02h,0Bh,0C0h,078h,0F7h,08Bh,036h,084h,023h,083h,0FEh,03h,073h
-; @0AA55 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0EEh,0D1h,0E6h,0D1h,0E6h,081h,0C6h,04Eh,021h,0ADh,03h,06h,07Eh,023h,0A3h,0F2h
-; @0AA65 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 095h,0ADh,03h,06h,080h,023h,0A3h,0F4h,095h,0E9h,0C0h,0D8h,08Bh,046h,02h,0Bh
-; @0AA75 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C0h,078h,0CCh,08Bh,046h,04h,05h,018h,00h,03Bh,06h,080h,023h,07Ch,0C0h,02Dh
-; @0AA85 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02Ch,00h,03Bh,06h,080h,023h,07Fh,0B7h,083h,03Eh,0C2h,0A8h,01h,075h,017h,08Bh
-; @0AA95 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,05h,08h,00h,03Bh,06h,07Eh,023h,072h,0A4h,02Dh,0Ch,00h,03Bh,06h
-; @0AAA5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,023h,077h,09Bh,0F9h,0C3h,08Bh,046h,02h,05h,018h,00h,03Bh,06h,07Eh,023h
-; @0AAB5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 072h,08Dh,02Dh,02Ch,00h,03Bh,06h,07Eh,023h,077h,084h,0F9h,0C3h,0FFh,046h,02h
-; @0AAC5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,07Eh,0FFh,072h,03h,0E9h,078h,011h,0E8h,03h,00h,0E9h,072h,011h,083h,03Eh
-; @0AAD5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 084h,023h,03h,072h,01h,0C3h,080h,03Eh,0C0h,098h,00h,074h,05h,0C6h,06h,0FFh
-; @0AAE5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0BEh,07h,0BBh,020h,00h,0E8h,020h,0B4h,055h,02Eh,0FFh,036h,0Ah,0ABh,08Bh,05Eh
-; @0AAF5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 026h,0BDh,07Ch,023h,0D1h,0E3h,02Eh,0FFh,0A7h,00h,0ABh,0AFh,044h,04Dh,09Dh,067h
-; @0AB05 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 09Dh,0AAh,062h,0B9h,09Dh,0Ch,0ABh,05Dh,0E9h,07h,012h,083h,03Eh,084h,023h,03h
-; @0AB15 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 072h,03h,0E9h,08h,01h,083h,03Eh,07Ch,0A4h,03h,072h,03h,0E9h,0FEh,00h,0A1h
-; @0AB25 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 036h,023h,0BBh,0Ch,0A4h,0D7h,05h,09h,00h,089h,046h,08h,0BAh,014h,0A4h,0BBh
-; @0AB35 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Ch,023h,08Bh,077h,08h,0D1h,0E6h,0D1h,0E6h,03h,0F2h,0ADh,03h,047h,02h,089h
-; @0AB45 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,0ADh,03h,047h,04h,089h,046h,04h,0C3h,0A1h,03Ch,023h,05h,018h,00h
-; @0AB55 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,046h,08h,0C3h,0C7h,06h,02Ch,0A4h,06Ch,0A9h,0EBh,016h,0C7h,06h,02Ch,0A4h
-; @0AB65 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06Ah,0A9h,0EBh,0Eh,0C7h,06h,02Ch,0A4h,068h,0A9h,0EBh,06h,0C7h,06h,02Ch,0A4h
-; @0AB75 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 066h,0A9h,083h,03Eh,084h,023h,03h,073h,011h,0E8h,0CEh,0FFh,0E8h,0A4h,00h,072h
-; @0AB85 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 09h,0E8h,0F8h,00h,072h,01h,0C3h,0E8h,0Ah,00h,08Bh,01Eh,02Ch,0A4h,0C7h,07h
-; @0AB95 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FFh,0FFh,0EBh,05Ah,055h,08Bh,0EBh,0E8h,028h,014h,08Bh,0DDh,05Dh,0C3h,089h,01Eh
-; @0ABA5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02Eh,0A4h,083h,03Eh,084h,023h,03h,073h,012h,0A1h,03Ch,023h,05h,014h,00h,089h
-; @0ABB5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,08h,0E8h,0C7h,00h,072h,01h,0C3h,0E8h,0D9h,0FFh,08Bh,01Eh,02Eh,0A4h,0C7h
-; @0ABC5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07h,0FFh,0FFh,0EBh,029h,083h,03Eh,084h,023h,03h,073h,0Bh,0BAh,020h,0A4h,0E8h
-; @0ABD5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05Dh,0FFh,0E8h,04Eh,00h,073h,08h,0C7h,06h,06Eh,0A9h,0FFh,0FFh,0EBh,0Fh,0E8h
-; @0ABE5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 09Ah,00h,072h,01h,0C3h,0C7h,06h,06Eh,0A9h,0FFh,0FFh,0E8h,0A6h,0FFh,083h,0FDh
-; @0ABF5 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FFh,075h,01h,0C3h,080h,03Eh,0C0h,098h,00h,074h,05h,0C6h,06h,0FFh,0BEh,019h
-; @0AC05 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,046h,018h,01h,00h,0C7h,046h,016h,04h,00h,0C7h,046h,022h,00h,00h,0C7h
-; @0AC15 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,08h,00h,00h
+    db 090h,045h,0BCh,04h,0ADh,0AEh,0EFh,0AFh,044h,0AEh,0EFh,0C2h,0AAh,010h,0ABh
+; @0AA44 0000:AA44 original=f8 runtime CFG evidence
+    clc
+; @0AA45 0000:AA45 original=c3 runtime CFG evidence
+    ret
+; @0AA46 0000:AA46 original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0AA49 0000:AA49 original=0bc0 runtime CFG evidence
+    or ax, ax
+; @0AA4B 0000:AA4B original=78f7 runtime CFG evidence
+    JS_SHORT loc_0AA44
+; @0AA4D 0000:AA4D original=8b368423 runtime CFG evidence
+    mov si, word ptr ds:[02384h]
+; @0AA51 0000:AA51 original=83fe03 runtime CFG evidence
+    cmp si, 3
+; @0AA54 0000:AA54 original=73ee runtime CFG evidence
+    JAE_SHORT loc_0AA44
+; @0AA56 0000:AA56 original=d1e6 runtime CFG evidence
+    shl si, 1
+; @0AA58 0000:AA58 original=d1e6 runtime CFG evidence
+    shl si, 1
+; @0AA5A 0000:AA5A original=81c64e21 runtime CFG evidence
+    add si, 0214Eh
+; @0AA5E 0000:AA5E original=ad runtime CFG evidence
+    lodsw
+; @0AA5F 0000:AA5F original=03067e23 runtime CFG evidence
+    add ax, word ptr ds:[0237Eh]
+; @0AA63 0000:AA63 original=a3f295 runtime CFG evidence
+    mov word ptr ds:[095F2h], ax
+; @0AA66 0000:AA66 original=ad runtime CFG evidence
+    lodsw
+; @0AA67 0000:AA67 original=03068023 runtime CFG evidence
+    add ax, word ptr ds:[02380h]
+; @0AA6B 0000:AA6B original=a3f495 runtime CFG evidence
+    mov word ptr ds:[095F4h], ax
+; @0AA6E 0000:AA6E original=e9c0d8 runtime CFG evidence
+    JMP_NEAR loc_08331
+; @0AA71 0000:AA71 original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0AA74 0000:AA74 original=0bc0 runtime CFG evidence
+    or ax, ax
+; @0AA76 0000:AA76 original=78cc runtime CFG evidence
+    JS_SHORT loc_0AA44
+; @0AA78 0000:AA78 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0AA7B 0000:AA7B original=051800 runtime CFG evidence
+    add ax, 018h
+; @0AA7E 0000:AA7E original=3b068023 runtime CFG evidence
+    cmp ax, word ptr ds:[02380h]
+; @0AA82 0000:AA82 original=7cc0 runtime CFG evidence
+    JL_SHORT loc_0AA44
+; @0AA84 0000:AA84 original=2d2c00 runtime CFG evidence
+    sub ax, 02Ch
+; @0AA87 0000:AA87 original=3b068023 runtime CFG evidence
+    cmp ax, word ptr ds:[02380h]
+; @0AA8B 0000:AA8B original=7fb7 runtime CFG evidence
+    JG_SHORT loc_0AA44
+; @0AA8D 0000:AA8D original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0AA92 0000:AA92 original=7517 runtime CFG evidence
+    JNE_SHORT loc_0AAAB
+; @0AA94 0000:AA94 original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0AA97 0000:AA97 original=050800 runtime CFG evidence
+    add ax, 8
+; @0AA9A 0000:AA9A original=3b067e23 runtime CFG evidence
+    cmp ax, word ptr ds:[0237Eh]
+; @0AA9E 0000:AA9E original=72a4 runtime CFG evidence
+    JB_SHORT loc_0AA44
+; @0AAA0 0000:AAA0 original=2d0c00 runtime CFG evidence
+    sub ax, 0Ch
+; @0AAA3 0000:AAA3 original=3b067e23 runtime CFG evidence
+    cmp ax, word ptr ds:[0237Eh]
+; @0AAA7 0000:AAA7 original=779b runtime CFG evidence
+    JA_SHORT loc_0AA44
+; @0AAA9 0000:AAA9 original=f9 runtime CFG evidence
+    stc
+; @0AAAA 0000:AAAA original=c3 runtime CFG evidence
+    ret
+; @0AAAB 0000:AAAB original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0AAAE 0000:AAAE original=051800 runtime CFG evidence
+    add ax, 018h
+; @0AAB1 0000:AAB1 original=3b067e23 runtime CFG evidence
+    cmp ax, word ptr ds:[0237Eh]
+; @0AAB5 0000:AAB5 original=728d runtime CFG evidence
+    JB_SHORT loc_0AA44
+; @0AAB7 0000:AAB7 original=2d2c00 runtime CFG evidence
+    sub ax, 02Ch
+; @0AABA 0000:AABA original=3b067e23 runtime CFG evidence
+    cmp ax, word ptr ds:[0237Eh]
+; @0AABE 0000:AABE original=7784 runtime CFG evidence
+    JA_SHORT loc_0AA44
+; @0AAC0 0000:AAC0 original=f9 runtime CFG evidence
+    stc
+; @0AAC1 0000:AAC1 original=c3 runtime CFG evidence
+    ret
+; @0AAC2 0000:AAC2 original=ff4602 runtime CFG evidence
+    inc word ptr ss:[bp + 2]
+; @0AAC5 0000:AAC5 original=e87eff runtime CFG evidence
+    CALL_NEAR loc_0AA46
+; @0AAC8 0000:AAC8 original=7203 runtime CFG evidence
+    JB_SHORT loc_0AACD
+; @0AACA 0000:AACA original=e97811 runtime CFG evidence
+    JMP_NEAR loc_0BC45
+; @0AACD 0000:AACD original=e80300 runtime CFG evidence
+    CALL_NEAR loc_0AAD3
+; @0AAD0 0000:AAD0 original=e97211 runtime CFG evidence
+    JMP_NEAR loc_0BC45
+; @0AAD3 0000:AAD3 original=833e842303 runtime CFG evidence
+    cmp word ptr ds:[02384h], 3
+; @0AAD8 0000:AAD8 original=7201 runtime CFG evidence
+    JB_SHORT loc_0AADB
+; @0AADA 0000:AADA original=c3 runtime CFG evidence
+    ret
+; @0AADB 0000:AADB original=803ec09800 runtime CFG evidence
+    cmp byte ptr ds:[098C0h], 0
+; @0AAE0 0000:AAE0 original=7405 runtime CFG evidence
+    JE_SHORT loc_0AAE7
+; @0AAE2 0000:AAE2 original=c606ffbe07 runtime CFG evidence
+    mov byte ptr ds:[0BEFFh], 7
+; @0AAE7 0000:AAE7 original=bb2000 runtime CFG evidence
+    mov bx, 020h
+; @0AAEA 0000:AAEA original=e820b4 runtime CFG evidence
+    CALL_NEAR loc_05F0D
+; @0AAED 0000:AAED original=55 runtime CFG evidence
+    push bp
+; @0AAEE 0000:AAEE original=2eff360aab runtime CFG evidence
+    push word ptr cs:[0AB0Ah]
+; @0AAF3 0000:AAF3 original=8b5e26 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 026h]
+; @0AAF6 0000:AAF6 original=bd7c23 runtime CFG evidence
+    mov bp, 0237Ch
+; @0AAF9 0000:AAF9 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0AAFB 0000:AAFB original=2effa700ab runtime CFG evidence
+    jmp word ptr cs:[bx - 05500h]
+; @0AB00 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0AFh,044h,04Dh,09Dh,067h,09Dh,0AAh,062h,0B9h,09Dh,0Ch,0ABh,05Dh,0E9h,07h,012h
+; @0AB10 0000:AB10 original=833e842303 runtime CFG evidence
+    cmp word ptr ds:[02384h], 3
+; @0AB15 0000:AB15 original=7203 runtime CFG evidence
+    JB_SHORT loc_0AB1A
+; @0AB17 0000:AB17 original=e90801 runtime CFG evidence
+    JMP_NEAR loc_0AC22
+; @0AB1A 0000:AB1A original=833e7ca403 runtime CFG evidence
+    cmp word ptr ds:[0A47Ch], 3
+; @0AB1F 0000:AB1F original=7203 runtime CFG evidence
+    JB_SHORT loc_0AB24
+; @0AB21 0000:AB21 original=e9fe00 runtime CFG evidence
+    JMP_NEAR loc_0AC22
+; @0AB24 0000:AB24 original=a13623 runtime CFG evidence
+    mov ax, word ptr ds:[02336h]
+; @0AB27 0000:AB27 original=bb0ca4 runtime CFG evidence
+    mov bx, 0A40Ch
+; @0AB2A 0000:AB2A original=d7 runtime CFG evidence
+    xlat
+; @0AB2B 0000:AB2B original=050900 runtime CFG evidence
+    add ax, 9
+; @0AB2E 0000:AB2E original=894608 runtime CFG evidence
+    mov word ptr ss:[bp + 8], ax
+; @0AB31 0000:AB31 original=ba14a4 runtime CFG evidence
+    mov dx, 0A414h
+; @0AB34 0000:AB34 original=bb7c23 runtime CFG evidence
+    mov bx, 0237Ch
+; @0AB37 0000:AB37 original=8b7708 runtime CFG evidence
+    mov si, word ptr ds:[bx + 8]
+; @0AB3A 0000:AB3A original=d1e6 runtime CFG evidence
+    shl si, 1
+; @0AB3C 0000:AB3C original=d1e6 runtime CFG evidence
+    shl si, 1
+; @0AB3E 0000:AB3E original=03f2 runtime CFG evidence
+    add si, dx
+; @0AB40 0000:AB40 original=ad runtime CFG evidence
+    lodsw
+; @0AB41 0000:AB41 original=034702 runtime CFG evidence
+    add ax, word ptr ds:[bx + 2]
+; @0AB44 0000:AB44 original=894602 runtime CFG evidence
+    mov word ptr ss:[bp + 2], ax
+; @0AB47 0000:AB47 original=ad runtime CFG evidence
+    lodsw
+; @0AB48 0000:AB48 original=034704 runtime CFG evidence
+    add ax, word ptr ds:[bx + 4]
+; @0AB4B 0000:AB4B original=894604 runtime CFG evidence
+    mov word ptr ss:[bp + 4], ax
+; @0AB4E 0000:AB4E original=c3 runtime CFG evidence
+    ret
+; @0AB4F 0000:AB4F original=a13c23 runtime CFG evidence
+    mov ax, word ptr ds:[0233Ch]
+; @0AB52 0000:AB52 original=051800 runtime CFG evidence
+    add ax, 018h
+; @0AB55 0000:AB55 original=894608 runtime CFG evidence
+    mov word ptr ss:[bp + 8], ax
+; @0AB58 0000:AB58 original=c3 runtime CFG evidence
+    ret
+; @0AB59 0000:AB59 original=c7062ca46ca9 runtime CFG evidence
+    mov word ptr ds:[0A42Ch], 0A96Ch
+; @0AB5F 0000:AB5F original=eb16 runtime CFG evidence
+    JMP_SHORT loc_0AB77
+; @0AB61 0000:AB61 original=c7062ca46aa9 runtime CFG evidence
+    mov word ptr ds:[0A42Ch], 0A96Ah
+; @0AB67 0000:AB67 original=eb0e runtime CFG evidence
+    JMP_SHORT loc_0AB77
+; @0AB69 0000:AB69 original=c7062ca468a9 runtime CFG evidence
+    mov word ptr ds:[0A42Ch], 0A968h
+; @0AB6F 0000:AB6F original=eb06 runtime CFG evidence
+    JMP_SHORT loc_0AB77
+; @0AB71 0000:AB71 original=c7062ca466a9 runtime CFG evidence
+    mov word ptr ds:[0A42Ch], 0A966h
+; @0AB77 0000:AB77 original=833e842303 runtime CFG evidence
+    cmp word ptr ds:[02384h], 3
+; @0AB7C 0000:AB7C original=7311 runtime CFG evidence
+    JAE_SHORT loc_0AB8F
+; @0AB7E 0000:AB7E original=e8ceff runtime CFG evidence
+    CALL_NEAR loc_0AB4F
+; @0AB81 0000:AB81 original=e8a400 runtime CFG evidence
+    CALL_NEAR loc_0AC28
+; @0AB84 0000:AB84 original=7209 runtime CFG evidence
+    JB_SHORT loc_0AB8F
+; @0AB86 0000:AB86 original=e8f800 runtime CFG evidence
+    CALL_NEAR loc_0AC81
+; @0AB89 0000:AB89 original=7201 runtime CFG evidence
+    JB_SHORT loc_0AB8C
+; @0AB8B 0000:AB8B original=c3 runtime CFG evidence
+    ret
+; @0AB8C 0000:AB8C original=e80a00 runtime CFG evidence
+    CALL_NEAR loc_0AB99
+; @0AB8F 0000:AB8F original=8b1e2ca4 runtime CFG evidence
+    mov bx, word ptr ds:[0A42Ch]
+; @0AB93 0000:AB93 original=c707ffff runtime CFG evidence
+    mov word ptr ds:[bx], 0FFFFh
+; @0AB97 0000:AB97 original=eb5a runtime CFG evidence
+    JMP_SHORT loc_0ABF3
+; @0AB99 0000:AB99 original=55 runtime CFG evidence
+    push bp
+; @0AB9A 0000:AB9A original=8beb runtime CFG evidence
+    mov bp, bx
+; @0AB9C 0000:AB9C original=e82814 runtime CFG evidence
+    CALL_NEAR loc_0BFC7
+; @0AB9F 0000:AB9F original=8bdd runtime CFG evidence
+    mov bx, bp
+; @0ABA1 0000:ABA1 original=5d runtime CFG evidence
+    pop bp
+; @0ABA2 0000:ABA2 original=c3 runtime CFG evidence
+    ret
+; @0ABA3 0000:ABA3 original=891e2ea4 runtime CFG evidence
+    mov word ptr ds:[0A42Eh], bx
+; @0ABA7 0000:ABA7 original=833e842303 runtime CFG evidence
+    cmp word ptr ds:[02384h], 3
+; @0ABAC 0000:ABAC original=7312 runtime CFG evidence
+    JAE_SHORT loc_0ABC0
+; @0ABAE 0000:ABAE original=a13c23 runtime CFG evidence
+    mov ax, word ptr ds:[0233Ch]
+; @0ABB1 0000:ABB1 original=051400 runtime CFG evidence
+    add ax, 014h
+; @0ABB4 0000:ABB4 original=894608 runtime CFG evidence
+    mov word ptr ss:[bp + 8], ax
+; @0ABB7 0000:ABB7 original=e8c700 runtime CFG evidence
+    CALL_NEAR loc_0AC81
+; @0ABBA 0000:ABBA original=7201 runtime CFG evidence
+    JB_SHORT loc_0ABBD
+; @0ABBC 0000:ABBC original=c3 runtime CFG evidence
+    ret
+; @0ABBD 0000:ABBD original=e8d9ff runtime CFG evidence
+    CALL_NEAR loc_0AB99
+; @0ABC0 0000:ABC0 original=8b1e2ea4 runtime CFG evidence
+    mov bx, word ptr ds:[0A42Eh]
+; @0ABC4 0000:ABC4 original=c707ffff runtime CFG evidence
+    mov word ptr ds:[bx], 0FFFFh
+; @0ABC8 0000:ABC8 original=eb29 runtime CFG evidence
+    JMP_SHORT loc_0ABF3
+; @0ABCA 0000:ABCA original=833e842303 runtime CFG evidence
+    cmp word ptr ds:[02384h], 3
+; @0ABCF 0000:ABCF original=730b runtime CFG evidence
+    JAE_SHORT loc_0ABDC
+; @0ABD1 0000:ABD1 original=ba20a4 runtime CFG evidence
+    mov dx, 0A420h
+; @0ABD4 0000:ABD4 original=e85dff runtime CFG evidence
+    CALL_NEAR loc_0AB34
+; @0ABD7 0000:ABD7 original=e84e00 runtime CFG evidence
+    CALL_NEAR loc_0AC28
+; @0ABDA 0000:ABDA original=7308 runtime CFG evidence
+    JAE_SHORT loc_0ABE4
+; @0ABDC 0000:ABDC original=c7066ea9ffff runtime CFG evidence
+    mov word ptr ds:[0A96Eh], 0FFFFh
+; @0ABE2 0000:ABE2 original=eb0f runtime CFG evidence
+    JMP_SHORT loc_0ABF3
+; @0ABE4 0000:ABE4 original=e89a00 runtime CFG evidence
+    CALL_NEAR loc_0AC81
+; @0ABE7 0000:ABE7 original=7201 runtime CFG evidence
+    JB_SHORT loc_0ABEA
+; @0ABE9 0000:ABE9 original=c3 runtime CFG evidence
+    ret
+; @0ABEA 0000:ABEA original=c7066ea9ffff runtime CFG evidence
+    mov word ptr ds:[0A96Eh], 0FFFFh
+; @0ABF0 0000:ABF0 original=e8a6ff runtime CFG evidence
+    CALL_NEAR loc_0AB99
+; @0ABF3 0000:ABF3 original=83fdff runtime CFG evidence
+    cmp bp, -1
+; @0ABF6 0000:ABF6 original=7501 runtime CFG evidence
+    JNE_SHORT loc_0ABF9
+; @0ABF8 0000:ABF8 original=c3 runtime CFG evidence
+    ret
+; @0ABF9 0000:ABF9 original=803ec09800 runtime CFG evidence
+    cmp byte ptr ds:[098C0h], 0
+; @0ABFE 0000:ABFE original=7405 runtime CFG evidence
+    JE_SHORT loc_0AC05
+; @0AC00 0000:AC00 original=c606ffbe19 runtime CFG evidence
+    mov byte ptr ds:[0BEFFh], 019h
+; @0AC05 0000:AC05 original=c746180100 runtime CFG evidence
+    mov word ptr ss:[bp + 018h], 1
+; @0AC0A 0000:AC0A original=c746160400 runtime CFG evidence
+    mov word ptr ss:[bp + 016h], 4
+; @0AC0F 0000:AC0F original=c746220000 runtime CFG evidence
+    mov word ptr ss:[bp + 022h], 0
+; @0AC14 0000:AC14 original=c746080000 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 0
 ; @0AC19 0000:AC19 original=55
     push bp
 ; @0AC1A 0000:AC1A original=e85dd7
@@ -1824,118 +2246,466 @@ loc_0F797 equ 05797h
     pop bp
 ; @0AC21 0000:AC21 original=c3
     ret
-; @0AC22 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,046h,00h,00h,00h,0C3h,083h,03Eh,07Ch,0A4h,00h,074h,03h,0E9h,012h,0FEh
-; @0AC32 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,03Eh,0ACh,0BDh,01h,075h,03h,0E9h,08h,0FEh,0E8h,034h,0A4h,083h,0C3h,0Dh
-; @0AC42 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,016h,0A4h,075h,0Fh,0F7h,046h,04h,0Fh,00h,074h,06h,043h,0E8h,09h,0A4h
-; @0AC52 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 075h,02h,0F8h,0C3h,080h,03Eh,0C0h,098h,00h,074h,05h,0C6h,06h,0FFh,0BEh,0Eh
-; @0AC62 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,046h,024h,05h,00h,083h,03Eh,0DCh,0BEh,00h,075h,07h,083h,03Eh,024h,023h
-; @0AC72 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,075h,0DFh,0FFh,04Eh,020h,075h,0DAh,0C7h,046h,024h,00h,00h,0F9h,0C3h,083h
-; @0AC82 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,0ACh,0BDh,01h,075h,03h,0E9h,0B9h,0FDh,0B9h,023h,00h,0BBh,0B4h,023h,08Bh
-; @0AC92 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,04h,08Bh,07Eh,02h,083h,03Fh,00h,074h,036h,083h,07Fh,018h,01h,074h,030h
-; @0ACA2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Fh,014h,01h,075h,02Ah,08Bh,077h,02h,083h,0C6h,010h,03Bh,0FEh,07Fh,020h
-; @0ACB2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,0EEh,020h,03Bh,0FEh,07Ch,019h,08Bh,077h,04h,083h,0C6h,010h,03Bh,0C6h,07Fh
-; @0ACC2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Fh,083h,0EEh,020h,03Bh,0C6h,07Ch,08h,08Bh,076h,0Eh,03Bh,077h,0Eh,075h,07h
-; @0ACD2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,0C3h,038h,0E2h,0C0h,0F8h,0C3h,083h,07Fh,016h,05h,074h,01Ah,083h,07Fh,014h
-; @0ACE2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,074h,03h,0E9h,071h,0A3h,083h,07Fh,016h,04h,075h,0E4h,0E8h,0A8h,0FEh,0E8h
-; @0ACF2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 062h,0FFh,072h,01h,0C3h,0F9h,0C3h,055h,08Bh,0EBh,0E8h,0D4h,0FDh,08Bh,0DDh,05Dh
-; @0AD02 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0F8h,0C3h,083h,03Eh,0ACh,0BDh,01h,074h,09h,081h,03Eh,050h,023h,0B6h,00h,077h
-; @0AD12 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,0C3h,083h,07Eh,08h,0Fh,075h,03h,0E9h,0ADh,0FEh,03Bh,02Eh,066h,0A9h,075h
-; @0AD22 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0E9h,04Bh,0FEh,03Bh,02Eh,068h,0A9h,075h,03h,0E9h,03Ah,0FEh,03Bh,02Eh,06Ah
-; @0AD32 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A9h,075h,03h,0E9h,029h,0FEh,03Bh,02Eh,06Ch,0A9h,075h,03h,0E9h,018h,0FEh,0BBh
-; @0AD42 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 062h,0A9h,03Bh,02Eh,062h,0A9h,075h,03h,0E9h,056h,0FEh,0BBh,064h,0A9h,03Bh,02Eh
-; @0AD52 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 064h,0A9h,075h,03h,0E9h,04Ah,0FEh,0C3h,0A1h,078h,0A2h,01h,046h,02h,083h,07Eh
-; @0AD62 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,08h,073h,03h,0E9h,0AEh,0Fh,081h,07Eh,02h,0E0h,00h,076h,03h,0E9h,0A4h
-; @0AD72 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Fh,081h,07Eh,04h,0C8h,00h,076h,03h,0E9h,09Ah,0Fh,083h,07Eh,016h,02h,075h
-; @0AD82 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 045h,083h,07Eh,018h,02h,074h,026h,083h,07Eh,018h,04h,074h,020h,083h,07Eh,018h
-; @0AD92 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Ch,074h,01Ah,083h,07Eh,018h,05h,074h,014h,083h,07Eh,018h,06h,074h,0Eh,083h
-; @0ADA2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,018h,09h,074h,08h,083h,07Eh,018h,08h,074h,02h,0EBh,019h,083h,03Eh,0ACh
-; @0ADB2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0BDh,01h,074h,012h,0E8h,0BAh,0A2h,083h,0C3h,0Dh,0E8h,09Ch,0A2h,074h,07h,0FEh
-; @0ADC2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C8h,075h,03h,0E9h,04Fh,0Fh,0C3h,0C7h,046h,02h,0FFh,0FFh,0EBh,090h,0FFh,046h
-; @0ADD2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,0FFh,046h,02h,0E9h,077h,04h,083h,06Eh,02h,010h,0EBh,081h,0A1h,026h,023h
-; @0ADE2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,05Ah,00h,089h,046h,08h,083h,06Eh,02h,03h,0E9h,071h,0FFh,0E9h,06Eh,0FFh
-; @0ADF2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A1h,02Ah,023h,0D1h,0E8h,05h,00h,00h,089h,046h,08h,0FFh,04Eh,01Ch,074h,0C7h
-; @0AE02 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0B8h,050h,0B2h,050h,0E9h,05Ah,01h,083h,07Eh,01Ch,00h,074h,0Ah,0FFh,04Eh,01Ch
-; @0AE12 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 075h,09h,0C7h,046h,06h,00h,00h,083h,06Eh,02h,02h,08Bh,046h,06h,05h,028h
-; @0AE22 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,089h,046h,08h,0E8h,0F9h,00h,0E9h,034h,0FFh,081h,07Eh,04h,0C8h,00h,074h
-; @0AE32 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 096h,083h,06Eh,02h,04h,0F7h,046h,04h,07h,00h,075h,020h,0F7h,046h,04h,08h
-; @0AE42 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,074h,019h,083h,03Eh,0ACh,0BDh,01h,074h,012h,0E8h,024h,0A2h,083h,0C3h,0Eh
-; @0AE52 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,06h,0A2h,0C7h,046h,06h,00h,00h,03Ch,01h,074h,09h,0C7h,046h,06h,01h
-; @0AE62 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,083h,046h,04h,04h,0A1h,026h,023h,0D1h,0E0h,0D1h,0E0h,025h,08h,00h,03h
-; @0AE72 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,06h,05h,08h,00h,089h,046h,08h,0E9h,0DDh,0FEh,083h,07Eh,04h,00h,075h
-; @0AE82 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0E9h,043h,0FFh,083h,06Eh,02h,04h,0F7h,046h,04h,0Fh,00h,075h,019h,083h
-; @0AE92 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,0ACh,0BDh,01h,074h,012h,0E8h,0D8h,0A1h,083h,0C3h,0Ch,0E8h,0BAh,0A1h,0C7h
-; @0AEA2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,06h,00h,00h,03Ch,01h,074h,09h,0C7h,046h,06h,07h,00h,083h,06Eh,04h
-; @0AEB2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,08Bh,046h,06h,05h,08h,00h,089h,046h,08h,0E9h,09Bh,0FEh,0B8h,050h,0B2h
-; @0AEC2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 050h,083h,03Eh,056h,023h,00h,074h,03h,0E9h,093h,00h,083h,07Eh,06h,04h,075h
-; @0AED2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0E9h,08Ah,00h,0EBh,0Ch,0FFh,04Eh,01Ch,075h,03h,0E9h,0E9h,0FEh,0B8h,050h
-; @0AEE2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0B2h,050h,08Bh,05Eh,06h,0D1h,0E3h,02Eh,0FFh,0A7h,0EEh,0AEh,0Bh,0AFh,010h,0AFh
-; @0AEF2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 014h,0AFh,0FEh,0AEh,02h,0AFh,019h,0AFh,01Dh,0AFh,07h,0AFh,083h,046h,04h,08h
-; @0AF02 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,046h,02h,08h,0C3h,083h,06Eh,04h,08h,083h,06Eh,02h,08h,0C3h,083h,06Eh
-; @0AF12 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,08h,083h,046h,04h,08h,0C3h,083h,046h,02h,08h,083h,06Eh,04h,08h,0C3h
-; @0AF22 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,05Eh,06h,0D1h,0E3h,02Eh,0FFh,0A7h,02Ch,0AFh,049h,0AFh,04Eh,0AFh,052h,0AFh
-; @0AF32 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Ch,0AFh,040h,0AFh,057h,0AFh,05Bh,0AFh,045h,0AFh,083h,046h,04h,03h,083h,046h
-; @0AF42 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,03h,0C3h,083h,06Eh,04h,03h,083h,06Eh,02h,03h,0C3h,083h,06Eh,02h,03h
-; @0AF52 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,046h,04h,03h,0C3h,083h,046h,02h,03h,083h,06Eh,04h,03h,0C3h,0E8h,00h
-; @0AF62 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,08Bh,05Eh,06h,0D1h,0E3h,02Eh,0FFh,0A7h,06Eh,0AFh,090h,08Bh,0AFh,090h,0AFh
-; @0AF72 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 094h,0AFh,07Eh,0AFh,082h,0AFh,099h,0AFh,09Dh,0AFh,087h,0AFh,083h,046h,04h,02h
-; @0AF82 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,046h,02h,02h,0C3h,083h,06Eh,04h,02h,083h,06Eh,02h,02h,0C3h,083h,06Eh
-; @0AF92 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,02h,083h,046h,04h,02h,0C3h,083h,046h,02h,02h,083h,06Eh,04h,02h,0C3h
+; @0AC22 0000:AC22 original=c746000000 runtime CFG evidence
+    mov word ptr ss:[bp], 0
+; @0AC27 0000:AC27 original=c3 runtime CFG evidence
+    ret
+; @0AC28 0000:AC28 original=833e7ca400 runtime CFG evidence
+    cmp word ptr ds:[0A47Ch], 0
+; @0AC2D 0000:AC2D original=7403 runtime CFG evidence
+    JE_SHORT loc_0AC32
+; @0AC2F 0000:AC2F original=e912fe runtime CFG evidence
+    JMP_NEAR loc_0AA44
+; @0AC32 0000:AC32 original=833eacbd01 runtime CFG evidence
+    cmp word ptr ds:[0BDACh], 1
+; @0AC37 0000:AC37 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AC3C
+; @0AC39 0000:AC39 original=e908fe runtime CFG evidence
+    JMP_NEAR loc_0AA44
+; @0AC3C 0000:AC3C original=e834a4 runtime CFG evidence
+    CALL_NEAR loc_05073
+; @0AC3F 0000:AC3F original=83c30d runtime CFG evidence
+    add bx, 0Dh
+; @0AC42 0000:AC42 original=e816a4 runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0AC45 0000:AC45 original=750f runtime CFG evidence
+    JNE_SHORT loc_0AC56
+; @0AC47 0000:AC47 original=f746040f00 runtime CFG evidence
+    test word ptr ss:[bp + 4], 0Fh
+; @0AC4C 0000:AC4C original=7406 runtime CFG evidence
+    JE_SHORT loc_0AC54
+; @0AC4E 0000:AC4E original=43 runtime CFG evidence
+    inc bx
+; @0AC4F 0000:AC4F original=e809a4 runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0AC52 0000:AC52 original=7502 runtime CFG evidence
+    JNE_SHORT loc_0AC56
+; @0AC54 0000:AC54 original=f8 runtime CFG evidence
+    clc
+; @0AC55 0000:AC55 original=c3 runtime CFG evidence
+    ret
+; @0AC56 0000:AC56 original=803ec09800 runtime CFG evidence
+    cmp byte ptr ds:[098C0h], 0
+; @0AC5B 0000:AC5B original=7405 runtime CFG evidence
+    JE_SHORT loc_0AC62
+; @0AC5D 0000:AC5D original=c606ffbe0e runtime CFG evidence
+    mov byte ptr ds:[0BEFFh], 0Eh
+; @0AC62 0000:AC62 original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0AC67 0000:AC67 original=833edcbe00 runtime CFG evidence
+    cmp word ptr ds:[0BEDCh], 0
+; @0AC6C 0000:AC6C original=7507 runtime CFG evidence
+    JNE_SHORT loc_0AC75
+; @0AC6E 0000:AC6E original=833e242301 runtime CFG evidence
+    cmp word ptr ds:[02324h], 1
+; @0AC73 0000:AC73 original=75df runtime CFG evidence
+    JNE_SHORT loc_0AC54
+; @0AC75 0000:AC75 original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0AC78 0000:AC78 original=75da runtime CFG evidence
+    JNE_SHORT loc_0AC54
+; @0AC7A 0000:AC7A original=c746240000 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 0
+; @0AC7F 0000:AC7F original=f9 runtime CFG evidence
+    stc
+; @0AC80 0000:AC80 original=c3 runtime CFG evidence
+    ret
+; @0AC81 0000:AC81 original=833eacbd01 runtime CFG evidence
+    cmp word ptr ds:[0BDACh], 1
+; @0AC86 0000:AC86 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AC8B
+; @0AC88 0000:AC88 original=e9b9fd runtime CFG evidence
+    JMP_NEAR loc_0AA44
+; @0AC8B 0000:AC8B original=b92300 runtime CFG evidence
+    mov cx, 023h
+; @0AC8E 0000:AC8E original=bbb423 runtime CFG evidence
+    mov bx, 023B4h
+; @0AC91 0000:AC91 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0AC94 0000:AC94 original=8b7e02 runtime CFG evidence
+    mov di, word ptr ss:[bp + 2]
+; @0AC97 0000:AC97 original=833f00 runtime CFG evidence
+    cmp word ptr ds:[bx], 0
+; @0AC9A 0000:AC9A original=7436 runtime CFG evidence
+    JE_SHORT loc_0ACD2
+; @0AC9C 0000:AC9C original=837f1801 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 1
+; @0ACA0 0000:ACA0 original=7430 runtime CFG evidence
+    JE_SHORT loc_0ACD2
+; @0ACA2 0000:ACA2 original=837f1401 runtime CFG evidence
+    cmp word ptr ds:[bx + 014h], 1
+; @0ACA6 0000:ACA6 original=752a runtime CFG evidence
+    JNE_SHORT loc_0ACD2
+; @0ACA8 0000:ACA8 original=8b7702 runtime CFG evidence
+    mov si, word ptr ds:[bx + 2]
+; @0ACAB 0000:ACAB original=83c610 runtime CFG evidence
+    add si, 010h
+; @0ACAE 0000:ACAE original=3bfe runtime CFG evidence
+    cmp di, si
+; @0ACB0 0000:ACB0 original=7f20 runtime CFG evidence
+    JG_SHORT loc_0ACD2
+; @0ACB2 0000:ACB2 original=83ee20 runtime CFG evidence
+    sub si, 020h
+; @0ACB5 0000:ACB5 original=3bfe runtime CFG evidence
+    cmp di, si
+; @0ACB7 0000:ACB7 original=7c19 runtime CFG evidence
+    JL_SHORT loc_0ACD2
+; @0ACB9 0000:ACB9 original=8b7704 runtime CFG evidence
+    mov si, word ptr ds:[bx + 4]
+; @0ACBC 0000:ACBC original=83c610 runtime CFG evidence
+    add si, 010h
+; @0ACBF 0000:ACBF original=3bc6 runtime CFG evidence
+    cmp ax, si
+; @0ACC1 0000:ACC1 original=7f0f runtime CFG evidence
+    JG_SHORT loc_0ACD2
+; @0ACC3 0000:ACC3 original=83ee20 runtime CFG evidence
+    sub si, 020h
+; @0ACC6 0000:ACC6 original=3bc6 runtime CFG evidence
+    cmp ax, si
+; @0ACC8 0000:ACC8 original=7c08 runtime CFG evidence
+    JL_SHORT loc_0ACD2
+; @0ACCA 0000:ACCA original=8b760e runtime CFG evidence
+    mov si, word ptr ss:[bp + 0Eh]
+; @0ACCD 0000:ACCD original=3b770e runtime CFG evidence
+    cmp si, word ptr ds:[bx + 0Eh]
+; @0ACD0 0000:ACD0 original=7507 runtime CFG evidence
+    JNE_SHORT loc_0ACD9
+; @0ACD2 0000:ACD2 original=83c338 runtime CFG evidence
+    add bx, 038h
+; @0ACD5 0000:ACD5 original=e2c0 runtime CFG evidence
+    LOOP_SHORT loc_0AC97
+; @0ACD7 0000:ACD7 original=f8 runtime CFG evidence
+    clc
+; @0ACD8 0000:ACD8 original=c3 runtime CFG evidence
+    ret
+; @0ACD9 0000:ACD9 original=837f1605 runtime CFG evidence
+    cmp word ptr ds:[bx + 016h], 5
+; @0ACDD 0000:ACDD original=741a runtime CFG evidence
+    JE_SHORT loc_0ACF9
+; @0ACDF 0000:ACDF original=837f1401 runtime CFG evidence
+    cmp word ptr ds:[bx + 014h], 1
+; @0ACE3 0000:ACE3 original=7403 runtime CFG evidence
+    JE_SHORT loc_0ACE8
+; @0ACE5 0000:ACE5 original=e971a3 runtime CFG evidence
+    JMP_NEAR loc_05059
+; @0ACE8 0000:ACE8 original=837f1604 runtime CFG evidence
+    cmp word ptr ds:[bx + 016h], 4
+; @0ACEC 0000:ACEC original=75e4 runtime CFG evidence
+    JNE_SHORT loc_0ACD2
+; @0ACEE 0000:ACEE original=e8a8fe runtime CFG evidence
+    CALL_NEAR loc_0AB99
+; @0ACF1 0000:ACF1 original=e862ff runtime CFG evidence
+    CALL_NEAR loc_0AC56
+; @0ACF4 0000:ACF4 original=7201 runtime CFG evidence
+    JB_SHORT loc_0ACF7
+; @0ACF6 0000:ACF6 original=c3 runtime CFG evidence
+    ret
+; @0ACF7 0000:ACF7 original=f9 runtime CFG evidence
+    stc
+; @0ACF8 0000:ACF8 original=c3 runtime CFG evidence
+    ret
+; @0ACF9 0000:ACF9 original=55 runtime CFG evidence
+    push bp
+; @0ACFA 0000:ACFA original=8beb runtime CFG evidence
+    mov bp, bx
+; @0ACFC 0000:ACFC original=e8d4fd runtime CFG evidence
+    CALL_NEAR loc_0AAD3
+; @0ACFF 0000:ACFF original=8bdd runtime CFG evidence
+    mov bx, bp
+; @0AD01 0000:AD01 original=5d runtime CFG evidence
+    pop bp
+; @0AD02 0000:AD02 original=f8 runtime CFG evidence
+    clc
+; @0AD03 0000:AD03 original=c3 runtime CFG evidence
+    ret
+; @0AD04 0000:AD04 original=833eacbd01 runtime CFG evidence
+    cmp word ptr ds:[0BDACh], 1
+; @0AD09 0000:AD09 original=7409 runtime CFG evidence
+    JE_SHORT loc_0AD14
+; @0AD0B 0000:AD0B original=813e5023b600 runtime CFG evidence
+    cmp word ptr ds:[02350h], 0B6h
+; @0AD11 0000:AD11 original=7701 runtime CFG evidence
+    JA_SHORT loc_0AD14
+; @0AD13 0000:AD13 original=c3 runtime CFG evidence
+    ret
+; @0AD14 0000:AD14 original=837e080f runtime CFG evidence
+    cmp word ptr ss:[bp + 8], 0Fh
+; @0AD18 0000:AD18 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD1D
+; @0AD1A 0000:AD1A original=e9adfe runtime CFG evidence
+    JMP_NEAR loc_0ABCA
+; @0AD1D 0000:AD1D original=3b2e66a9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A966h]
+; @0AD21 0000:AD21 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD26
+; @0AD23 0000:AD23 original=e94bfe runtime CFG evidence
+    JMP_NEAR loc_0AB71
+; @0AD26 0000:AD26 original=3b2e68a9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A968h]
+; @0AD2A 0000:AD2A original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD2F
+; @0AD2C 0000:AD2C original=e93afe runtime CFG evidence
+    JMP_NEAR loc_0AB69
+; @0AD2F 0000:AD2F original=3b2e6aa9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A96Ah]
+; @0AD33 0000:AD33 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD38
+; @0AD35 0000:AD35 original=e929fe runtime CFG evidence
+    JMP_NEAR loc_0AB61
+; @0AD38 0000:AD38 original=3b2e6ca9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A96Ch]
+; @0AD3C 0000:AD3C original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD41
+; @0AD3E 0000:AD3E original=e918fe runtime CFG evidence
+    JMP_NEAR loc_0AB59
+; @0AD41 0000:AD41 original=bb62a9 runtime CFG evidence
+    mov bx, 0A962h
+; @0AD44 0000:AD44 original=3b2e62a9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A962h]
+; @0AD48 0000:AD48 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD4D
+; @0AD4A 0000:AD4A original=e956fe runtime CFG evidence
+    JMP_NEAR loc_0ABA3
+; @0AD4D 0000:AD4D original=bb64a9 runtime CFG evidence
+    mov bx, 0A964h
+; @0AD50 0000:AD50 original=3b2e64a9 runtime CFG evidence
+    cmp bp, word ptr ds:[0A964h]
+; @0AD54 0000:AD54 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AD59
+; @0AD56 0000:AD56 original=e94afe runtime CFG evidence
+    JMP_NEAR loc_0ABA3
+; @0AD59 0000:AD59 original=c3 runtime CFG evidence
+    ret
+; @0AD5A 0000:AD5A original=a178a2 runtime CFG evidence
+    mov ax, word ptr ds:[0A278h]
+; @0AD5D 0000:AD5D original=014602 runtime CFG evidence
+    add word ptr ss:[bp + 2], ax
+; @0AD60 0000:AD60 original=837e0208 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 8
+; @0AD64 0000:AD64 original=7303 runtime CFG evidence
+    JAE_SHORT loc_0AD69
+; @0AD66 0000:AD66 original=e9ae0f runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0AD69 0000:AD69 original=817e02e000 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 0E0h
+; @0AD6E 0000:AD6E original=7603 runtime CFG evidence
+    JBE_SHORT loc_0AD73
+; @0AD70 0000:AD70 original=e9a40f runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0AD73 0000:AD73 original=817e04c800 runtime CFG evidence
+    cmp word ptr ss:[bp + 4], 0C8h
+; @0AD78 0000:AD78 original=7603 runtime CFG evidence
+    JBE_SHORT loc_0AD7D
+; @0AD7A 0000:AD7A original=e99a0f runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0AD7D 0000:AD7D original=837e1602 runtime CFG evidence
+    cmp word ptr ss:[bp + 016h], 2
+; @0AD81 0000:AD81 original=7545 runtime CFG evidence
+    JNE_SHORT loc_0ADC8
+; @0AD83 0000:AD83 original=837e1802 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 2
+; @0AD87 0000:AD87 original=7426 runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0AD89 0000:AD89 original=837e1804 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 4
+; @0AD8D 0000:AD8D original=7420 runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0AD8F 0000:AD8F original=837e180c runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 0Ch
+; @0AD93 0000:AD93 original=741a runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0AD95 0000:AD95 original=837e1805 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 5
+; @0AD99 0000:AD99 original=7414 runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0AD9B 0000:AD9B original=837e1806 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 6
+; @0AD9F 0000:AD9F original=740e runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0ADA1 0000:ADA1 original=837e1809 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 9
+; @0ADA5 0000:ADA5 original=7408 runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0ADA7 0000:ADA7 original=837e1808 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 8
+; @0ADAB 0000:ADAB original=7402 runtime CFG evidence
+    JE_SHORT loc_0ADAF
+; @0ADAD 0000:ADAD original=eb19 runtime CFG evidence
+    JMP_SHORT loc_0ADC8
+; @0ADAF 0000:ADAF original=833eacbd01 runtime CFG evidence
+    cmp word ptr ds:[0BDACh], 1
+; @0ADB4 0000:ADB4 original=7412 runtime CFG evidence
+    JE_SHORT loc_0ADC8
+; @0ADB6 0000:ADB6 original=e8baa2 runtime CFG evidence
+    CALL_NEAR loc_05073
+; @0ADB9 0000:ADB9 original=83c30d runtime CFG evidence
+    add bx, 0Dh
+; @0ADBC 0000:ADBC original=e89ca2 runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0ADBF 0000:ADBF original=7407 runtime CFG evidence
+    JE_SHORT loc_0ADC8
+; @0ADC1 0000:ADC1 original=fec8 runtime CFG evidence
+    dec al
+; @0ADC3 0000:ADC3 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0ADC8
+; @0ADC5 0000:ADC5 original=e94f0f runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0ADC8 0000:ADC8 original=c3 runtime CFG evidence
+    ret
+; @0ADC9 0000:ADC9 original=c74602ffff runtime CFG evidence
+    mov word ptr ss:[bp + 2], 0FFFFh
+; @0ADCE 0000:ADCE original=eb90 runtime CFG evidence
+    JMP_SHORT loc_0AD60
+; @0ADD0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0FFh,046h,02h,0FFh,046h,02h,0E9h,077h,04h,083h,06Eh,02h,010h,0EBh,081h,0A1h
+; @0ADE0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 026h,023h,05h,05Ah,00h,089h,046h,08h,083h,06Eh,02h,03h,0E9h,071h,0FFh,0E9h
+; @0ADF0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 06Eh,0FFh,0A1h,02Ah,023h,0D1h,0E8h,05h,00h,00h,089h,046h,08h,0FFh,04Eh,01Ch
+; @0AE00 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 074h,0C7h,0B8h,050h,0B2h,050h,0E9h,05Ah,01h,083h,07Eh,01Ch,00h,074h,0Ah,0FFh
+; @0AE10 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 04Eh,01Ch,075h,09h,0C7h,046h,06h,00h,00h,083h,06Eh,02h,02h,08Bh,046h,06h
+; @0AE20 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 05h,028h,00h,089h,046h,08h,0E8h,0F9h,00h,0E9h,034h,0FFh,081h,07Eh,04h,0C8h
+; @0AE30 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,074h,096h,083h,06Eh,02h,04h,0F7h,046h,04h,07h,00h,075h,020h,0F7h,046h
+; @0AE40 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 04h,08h,00h,074h,019h,083h,03Eh,0ACh,0BDh,01h,074h,012h,0E8h,024h,0A2h,083h
+; @0AE50 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C3h,0Eh,0E8h,06h,0A2h,0C7h,046h,06h,00h,00h,03Ch,01h,074h,09h,0C7h,046h
+; @0AE60 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 06h,01h,00h,083h,046h,04h,04h,0A1h,026h,023h,0D1h,0E0h,0D1h,0E0h,025h,08h
+; @0AE70 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,03h,046h,06h,05h,08h,00h,089h,046h,08h,0E9h,0DDh,0FEh,083h,07Eh,04h
+; @0AE80 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,075h,03h,0E9h,043h,0FFh,083h,06Eh,02h,04h,0F7h,046h,04h,0Fh,00h,075h
+; @0AE90 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 019h,083h,03Eh,0ACh,0BDh,01h,074h,012h,0E8h,0D8h,0A1h,083h,0C3h,0Ch,0E8h,0BAh
+; @0AEA0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A1h,0C7h,046h,06h,00h,00h,03Ch,01h,074h,09h,0C7h,046h,06h,07h,00h,083h
+; @0AEB0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 06Eh,04h,04h,08Bh,046h,06h,05h,08h,00h,089h,046h,08h,0E9h,09Bh,0FEh
+; @0AEBF 0000:AEBF original=b850b2 runtime CFG evidence
+    mov ax, 0B250h
+; @0AEC2 0000:AEC2 original=50 runtime CFG evidence
+    push ax
+; @0AEC3 0000:AEC3 original=833e562300 runtime CFG evidence
+    cmp word ptr ds:[02356h], 0
+; @0AEC8 0000:AEC8 original=7403 runtime CFG evidence
+    JE_SHORT loc_0AECD
+; @0AECA 0000:AECA original=e99300 runtime CFG evidence
+    JMP_NEAR loc_0AF60
+; @0AECD 0000:AECD original=837e0604 runtime CFG evidence
+    cmp word ptr ss:[bp + 6], 4
+; @0AED1 0000:AED1 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AED6
+; @0AED3 0000:AED3 original=e98a00 runtime CFG evidence
+    JMP_NEAR loc_0AF60
+; @0AED6 0000:AED6 original=eb0c runtime CFG evidence
+    JMP_SHORT loc_0AEE4
+; @0AED8 0000:AED8 original=ff4e1c runtime CFG evidence
+    dec word ptr ss:[bp + 01Ch]
+; @0AEDB 0000:AEDB original=7503 runtime CFG evidence
+    JNE_SHORT loc_0AEE0
+; @0AEDD 0000:AEDD original=e9e9fe runtime CFG evidence
+    JMP_NEAR loc_0ADC9
+; @0AEE0 0000:AEE0 original=b850b2 runtime CFG evidence
+    mov ax, 0B250h
+; @0AEE3 0000:AEE3 original=50 runtime CFG evidence
+    push ax
+; @0AEE4 0000:AEE4 original=8b5e06 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 6]
+; @0AEE7 0000:AEE7 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0AEE9 0000:AEE9 original=2effa7eeae runtime CFG evidence
+    jmp word ptr cs:[bx - 05112h]
+; @0AEEE UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0Bh,0AFh,010h,0AFh,014h,0AFh,0FEh,0AEh,02h,0AFh,019h,0AFh,01Dh,0AFh,07h,0AFh
+; @0AEFE 0000:AEFE original=83460408 runtime CFG evidence
+    add word ptr ss:[bp + 4], 8
+; @0AF02 0000:AF02 original=83460208 runtime CFG evidence
+    add word ptr ss:[bp + 2], 8
+; @0AF06 0000:AF06 original=c3 runtime CFG evidence
+    ret
+; @0AF07 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,06Eh,04h,08h
+; @0AF0B 0000:AF0B original=836e0208 runtime CFG evidence
+    sub word ptr ss:[bp + 2], 8
+; @0AF0F 0000:AF0F original=c3 runtime CFG evidence
+    ret
+; @0AF10 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,06Eh,02h,08h
+; @0AF14 0000:AF14 original=83460408 runtime CFG evidence
+    add word ptr ss:[bp + 4], 8
+; @0AF18 0000:AF18 original=c3 runtime CFG evidence
+    ret
+; @0AF19 0000:AF19 original=83460208 runtime CFG evidence
+    add word ptr ss:[bp + 2], 8
+; @0AF1D 0000:AF1D original=836e0408 runtime CFG evidence
+    sub word ptr ss:[bp + 4], 8
+; @0AF21 0000:AF21 original=c3 runtime CFG evidence
+    ret
+; @0AF22 0000:AF22 original=8b5e06 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 6]
+; @0AF25 0000:AF25 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0AF27 0000:AF27 original=2effa72caf runtime CFG evidence
+    jmp word ptr cs:[bx - 050D4h]
+; @0AF2C UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 049h,0AFh,04Eh,0AFh,052h,0AFh,03Ch,0AFh,040h,0AFh,057h,0AFh,05Bh,0AFh,045h,0AFh
+; @0AF3C 0000:AF3C original=83460403 runtime CFG evidence
+    add word ptr ss:[bp + 4], 3
+; @0AF40 0000:AF40 original=83460203 runtime CFG evidence
+    add word ptr ss:[bp + 2], 3
+; @0AF44 0000:AF44 original=c3 runtime CFG evidence
+    ret
+; @0AF45 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,06Eh,04h,03h,083h,06Eh,02h,03h,0C3h,083h,06Eh,02h,03h,083h,046h,04h
+; @0AF55 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03h,0C3h
+; @0AF57 0000:AF57 original=83460203 runtime CFG evidence
+    add word ptr ss:[bp + 2], 3
+; @0AF5B 0000:AF5B original=836e0403 runtime CFG evidence
+    sub word ptr ss:[bp + 4], 3
+; @0AF5F 0000:AF5F original=c3 runtime CFG evidence
+    ret
+; @0AF60 0000:AF60 original=e80000 runtime CFG evidence
+    CALL_NEAR loc_0AF63
+; @0AF63 0000:AF63 original=8b5e06 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 6]
+; @0AF66 0000:AF66 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0AF68 0000:AF68 original=2effa76eaf runtime CFG evidence
+    jmp word ptr cs:[bx - 05092h]
+; @0AF6D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 090h,08Bh,0AFh,090h,0AFh,094h,0AFh,07Eh,0AFh,082h,0AFh,099h,0AFh,09Dh,0AFh,087h
+; @0AF7D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0AFh
+; @0AF7E 0000:AF7E original=83460402 runtime CFG evidence
+    add word ptr ss:[bp + 4], 2
+; @0AF82 0000:AF82 original=83460202 runtime CFG evidence
+    add word ptr ss:[bp + 2], 2
+; @0AF86 0000:AF86 original=c3 runtime CFG evidence
+    ret
+; @0AF87 0000:AF87 original=836e0402 runtime CFG evidence
+    sub word ptr ss:[bp + 4], 2
+; @0AF8B 0000:AF8B original=836e0202 runtime CFG evidence
+    sub word ptr ss:[bp + 2], 2
+; @0AF8F 0000:AF8F original=c3 runtime CFG evidence
+    ret
+; @0AF90 0000:AF90 original=836e0202 runtime CFG evidence
+    sub word ptr ss:[bp + 2], 2
+; @0AF94 0000:AF94 original=83460402 runtime CFG evidence
+    add word ptr ss:[bp + 4], 2
+; @0AF98 0000:AF98 original=c3 runtime CFG evidence
+    ret
+; @0AF99 0000:AF99 original=83460202 runtime CFG evidence
+    add word ptr ss:[bp + 2], 2
+; @0AF9D 0000:AF9D original=836e0402 runtime CFG evidence
+    sub word ptr ss:[bp + 4], 2
+; @0AFA1 0000:AFA1 original=c3 runtime CFG evidence
+    ret
 ; @0AFA2 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 08Bh,05Eh,06h,0D1h,0E3h,02Eh,0FFh,0A7h,0ACh,0AFh,0C6h,0AFh,0CAh,0AFh,0CDh,0AFh
 ; @0AFB2 UNKNOWN bootstrap bytes: not reconstructed code/data
@@ -1943,55 +2713,279 @@ loc_0F797 equ 05797h
 ; @0AFC2 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 0C3h,0FFh,04Eh,04h,0FFh,04Eh,02h,0C3h,0FFh,04Eh,02h,0FFh,046h,04h,0C3h,0FFh
 ; @0AFD2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,0FFh,04Eh,04h,0C3h,0C7h,06h,030h,0A4h,00h,00h,08Bh,046h,02h,0A3h
-; @0AFE2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 032h,0A4h,0A3h,038h,0A4h,08Bh,046h,04h,0A3h,034h,0A4h,0A3h,036h,0A4h,0A1h,078h
-; @0AFF2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A2h,01h,046h,02h,083h,06Eh,02h,010h,0E8h,010h,00h,083h,046h,02h,010h,0A1h
-; @0B002 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 078h,0A2h,029h,046h,02h,083h,03Eh,030h,0A4h,00h,0C3h,0E8h,063h,0A0h,083h,0FBh
-; @0B012 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FFh,074h,01Dh,08Bh,0D3h,08Bh,05Eh,06h,0D1h,0E3h,02Eh,0FFh,0A7h,022h,0B0h,090h
-; @0B022 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Dh,0B0h,0C9h,0B0h,0CCh,0B0h,039h,0B0h,03Ch,0B0h,0Ch,0B1h,0Fh,0B1h,07Ah,0B0h
-; @0B032 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,06h,030h,0A4h,01h,00h,0C3h,0E8h,090h,00h,08Bh,0DAh,083h,0EBh,0Dh,0E8h
-; @0B042 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 017h,0A0h,075h,0ECh,0F7h,046h,04h,0Fh,00h,074h,06h,043h,0E8h,0Ah,0A0h,075h
-; @0B052 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0DFh,0FFh,046h,02h,0FFh,06h,038h,0A4h,053h,0E8h,072h,0Dh,05Bh,073h,09h,0FFh
-; @0B062 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04Eh,02h,0FFh,0Eh,038h,0A4h,0EBh,0C8h,0FFh,06h,05Ah,021h,083h,026h,05Ah,021h
-; @0B072 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Fh,074h,01h,0C3h,083h,0EAh,0Dh,0C3h,0E8h,092h,00h,08Bh,0DAh,0F7h,06h,05Ah
-; @0B082 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 021h,0Fh,00h,075h,015h,083h,0C3h,0Dh,0E8h,0CEh,09Fh,075h,0A3h,0F7h,046h,04h
-; @0B092 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Fh,00h,074h,06h,043h,0E8h,0C1h,09Fh,075h,096h,0FFh,04Eh,02h,0FFh,0Eh,038h
-; @0B0A2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A4h,053h,0E8h,029h,0Dh,05Bh,073h,0Ah,0FFh,046h,02h,0FFh,06h,038h,0A4h,0E9h
-; @0B0B2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,0FFh,0FFh,0Eh,05Ah,021h,083h,026h,05Ah,021h,0Fh,083h,03Eh,05Ah,021h,0Fh
-; @0B0C2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,01h,0C3h,083h,0C2h,0Dh,0C3h,0E8h,0B1h,0FFh,08Bh,0DAh,043h,0E8h,089h,09Fh
-; @0B0D2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,03h,0E9h,05Bh,0FFh,0F7h,06h,05Ah,021h,0Fh,00h,074h,0Bh,083h,0EBh,0Dh
-; @0B0E2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,076h,09Fh,074h,03h,0E9h,048h,0FFh,0FFh,046h,04h,0FFh,06h,036h,0A4h,053h
-; @0B0F2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,0DBh,0Ch,05Bh,073h,0Ah,0FFh,04Eh,04h,0FFh,0Eh,036h,0A4h,0E9h,030h,0FFh
-; @0B102 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0F7h,046h,04h,0Fh,00h,074h,01h,0C3h,042h,0C3h,0E8h,02Dh,0FFh,08Bh,0DAh,0F7h
-; @0B112 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,04h,0Fh,00h,075h,01Ch,04Bh,0E8h,03Fh,09Fh,074h,03h,0E9h,011h,0FFh,0F7h
-; @0B122 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,05Ah,021h,0Fh,00h,074h,0Bh,083h,0EBh,0Dh,0E8h,02Ch,09Fh,074h,03h,0E9h
-; @0B132 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FEh,0FEh,0FFh,04Eh,04h,0FFh,0Eh,036h,0A4h,053h,0E8h,091h,0Ch,05Bh,073h,0Ah
-; @0B142 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FFh,046h,04h,0FFh,06h,036h,0A4h,0E9h,0E6h,0FEh,08Bh,046h,04h,025h,0Fh,00h
-; @0B152 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Dh,0Fh,00h,074h,01h,0C3h,04Ah,0C3h
+    db 046h,02h,0FFh,04Eh,04h,0C3h
+; @0AFD8 0000:AFD8 original=c70630a40000 runtime CFG evidence
+    mov word ptr ds:[0A430h], 0
+; @0AFDE 0000:AFDE original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0AFE1 0000:AFE1 original=a332a4 runtime CFG evidence
+    mov word ptr ds:[0A432h], ax
+; @0AFE4 0000:AFE4 original=a338a4 runtime CFG evidence
+    mov word ptr ds:[0A438h], ax
+; @0AFE7 0000:AFE7 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0AFEA 0000:AFEA original=a334a4 runtime CFG evidence
+    mov word ptr ds:[0A434h], ax
+; @0AFED 0000:AFED original=a336a4 runtime CFG evidence
+    mov word ptr ds:[0A436h], ax
+; @0AFF0 0000:AFF0 original=a178a2 runtime CFG evidence
+    mov ax, word ptr ds:[0A278h]
+; @0AFF3 0000:AFF3 original=014602 runtime CFG evidence
+    add word ptr ss:[bp + 2], ax
+; @0AFF6 0000:AFF6 original=836e0210 runtime CFG evidence
+    sub word ptr ss:[bp + 2], 010h
+; @0AFFA 0000:AFFA original=e81000 runtime CFG evidence
+    CALL_NEAR loc_0B00D
+; @0AFFD 0000:AFFD original=83460210 runtime CFG evidence
+    add word ptr ss:[bp + 2], 010h
+; @0B001 0000:B001 original=a178a2 runtime CFG evidence
+    mov ax, word ptr ds:[0A278h]
+; @0B004 0000:B004 original=294602 runtime CFG evidence
+    sub word ptr ss:[bp + 2], ax
+; @0B007 0000:B007 original=833e30a400 runtime CFG evidence
+    cmp word ptr ds:[0A430h], 0
+; @0B00C 0000:B00C original=c3 runtime CFG evidence
+    ret
+; @0B00D 0000:B00D original=e863a0 runtime CFG evidence
+    CALL_NEAR loc_05073
+; @0B010 0000:B010 original=83fbff runtime CFG evidence
+    cmp bx, -1
+; @0B013 0000:B013 original=741d runtime CFG evidence
+    JE_SHORT loc_0B032
+; @0B015 0000:B015 original=8bd3 runtime CFG evidence
+    mov dx, bx
+; @0B017 0000:B017 original=8b5e06 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 6]
+; @0B01A 0000:B01A original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0B01C 0000:B01C original=2effa722b0 runtime CFG evidence
+    jmp word ptr cs:[bx - 04FDEh]
+; @0B021 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 090h,07Dh,0B0h,0C9h,0B0h,0CCh,0B0h,039h,0B0h,03Ch,0B0h,0Ch,0B1h,0Fh,0B1h,07Ah
+; @0B031 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0B0h
+; @0B032 0000:B032 original=c70630a40100 runtime CFG evidence
+    mov word ptr ds:[0A430h], 1
+; @0B038 0000:B038 original=c3 runtime CFG evidence
+    ret
+; @0B039 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,090h,00h
+; @0B03C 0000:B03C original=8bda runtime CFG evidence
+    mov bx, dx
+; @0B03E 0000:B03E original=83eb0d runtime CFG evidence
+    sub bx, 0Dh
+; @0B041 0000:B041 original=e817a0 runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B044 0000:B044 original=75ec runtime CFG evidence
+    JNE_SHORT loc_0B032
+; @0B046 0000:B046 original=f746040f00 runtime CFG evidence
+    test word ptr ss:[bp + 4], 0Fh
+; @0B04B 0000:B04B original=7406 runtime CFG evidence
+    JE_SHORT loc_0B053
+; @0B04D 0000:B04D original=43 runtime CFG evidence
+    inc bx
+; @0B04E 0000:B04E original=e80aa0 runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B051 0000:B051 original=75df runtime CFG evidence
+    JNE_SHORT loc_0B032
+; @0B053 0000:B053 original=ff4602 runtime CFG evidence
+    inc word ptr ss:[bp + 2]
+; @0B056 0000:B056 original=ff0638a4 runtime CFG evidence
+    inc word ptr ds:[0A438h]
+; @0B05A 0000:B05A original=53 runtime CFG evidence
+    push bx
+; @0B05B 0000:B05B original=e8720d runtime CFG evidence
+    CALL_NEAR loc_0BDD0
+; @0B05E 0000:B05E original=5b runtime CFG evidence
+    pop bx
+; @0B05F 0000:B05F original=7309 runtime CFG evidence
+    JAE_SHORT loc_0B06A
+; @0B061 0000:B061 original=ff4e02 runtime CFG evidence
+    dec word ptr ss:[bp + 2]
+; @0B064 0000:B064 original=ff0e38a4 runtime CFG evidence
+    dec word ptr ds:[0A438h]
+; @0B068 0000:B068 original=ebc8 runtime CFG evidence
+    JMP_SHORT loc_0B032
+; @0B06A 0000:B06A original=ff065a21 runtime CFG evidence
+    inc word ptr ds:[0215Ah]
+; @0B06E 0000:B06E original=83265a210f runtime CFG evidence
+    and word ptr ds:[0215Ah], 0Fh
+; @0B073 0000:B073 original=7401 runtime CFG evidence
+    JE_SHORT loc_0B076
+; @0B075 0000:B075 original=c3 runtime CFG evidence
+    ret
+; @0B076 0000:B076 original=83ea0d runtime CFG evidence
+    sub dx, 0Dh
+; @0B079 0000:B079 original=c3 runtime CFG evidence
+    ret
+; @0B07A 0000:B07A original=e89200 runtime CFG evidence
+    CALL_NEAR loc_0B10F
+; @0B07D 0000:B07D original=8bda runtime CFG evidence
+    mov bx, dx
+; @0B07F 0000:B07F original=f7065a210f00 runtime CFG evidence
+    test word ptr ds:[0215Ah], 0Fh
+; @0B085 0000:B085 original=7515 runtime CFG evidence
+    JNE_SHORT loc_0B09C
+; @0B087 0000:B087 original=83c30d runtime CFG evidence
+    add bx, 0Dh
+; @0B08A 0000:B08A original=e8ce9f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B08D 0000:B08D original=75a3 runtime CFG evidence
+    JNE_SHORT loc_0B032
+; @0B08F 0000:B08F original=f746040f00 runtime CFG evidence
+    test word ptr ss:[bp + 4], 0Fh
+; @0B094 0000:B094 original=7406 runtime CFG evidence
+    JE_SHORT loc_0B09C
+; @0B096 0000:B096 original=43 runtime CFG evidence
+    inc bx
+; @0B097 0000:B097 original=e8c19f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B09A 0000:B09A original=7596 runtime CFG evidence
+    JNE_SHORT loc_0B032
+; @0B09C 0000:B09C original=ff4e02 runtime CFG evidence
+    dec word ptr ss:[bp + 2]
+; @0B09F 0000:B09F original=ff0e38a4 runtime CFG evidence
+    dec word ptr ds:[0A438h]
+; @0B0A3 0000:B0A3 original=53 runtime CFG evidence
+    push bx
+; @0B0A4 0000:B0A4 original=e8290d runtime CFG evidence
+    CALL_NEAR loc_0BDD0
+; @0B0A7 0000:B0A7 original=5b runtime CFG evidence
+    pop bx
+; @0B0A8 0000:B0A8 original=730a runtime CFG evidence
+    JAE_SHORT loc_0B0B4
+; @0B0AA 0000:B0AA original=ff4602 runtime CFG evidence
+    inc word ptr ss:[bp + 2]
+; @0B0AD 0000:B0AD original=ff0638a4 runtime CFG evidence
+    inc word ptr ds:[0A438h]
+; @0B0B1 0000:B0B1 original=e97eff runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B0B4 0000:B0B4 original=ff0e5a21 runtime CFG evidence
+    dec word ptr ds:[0215Ah]
+; @0B0B8 0000:B0B8 original=83265a210f runtime CFG evidence
+    and word ptr ds:[0215Ah], 0Fh
+; @0B0BD 0000:B0BD original=833e5a210f runtime CFG evidence
+    cmp word ptr ds:[0215Ah], 0Fh
+; @0B0C2 0000:B0C2 original=7401 runtime CFG evidence
+    JE_SHORT loc_0B0C5
+; @0B0C4 0000:B0C4 original=c3 runtime CFG evidence
+    ret
+; @0B0C5 0000:B0C5 original=83c20d runtime CFG evidence
+    add dx, 0Dh
+; @0B0C8 0000:B0C8 original=c3 runtime CFG evidence
+    ret
+; @0B0C9 0000:B0C9 original=e8b1ff runtime CFG evidence
+    CALL_NEAR loc_0B07D
+; @0B0CC 0000:B0CC original=8bda runtime CFG evidence
+    mov bx, dx
+; @0B0CE 0000:B0CE original=43 runtime CFG evidence
+    inc bx
+; @0B0CF 0000:B0CF original=e8899f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B0D2 0000:B0D2 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B0D7
+; @0B0D4 0000:B0D4 original=e95bff runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B0D7 0000:B0D7 original=f7065a210f00 runtime CFG evidence
+    test word ptr ds:[0215Ah], 0Fh
+; @0B0DD 0000:B0DD original=740b runtime CFG evidence
+    JE_SHORT loc_0B0EA
+; @0B0DF 0000:B0DF original=83eb0d runtime CFG evidence
+    sub bx, 0Dh
+; @0B0E2 0000:B0E2 original=e8769f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B0E5 0000:B0E5 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B0EA
+; @0B0E7 0000:B0E7 original=e948ff runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B0EA 0000:B0EA original=ff4604 runtime CFG evidence
+    inc word ptr ss:[bp + 4]
+; @0B0ED 0000:B0ED original=ff0636a4 runtime CFG evidence
+    inc word ptr ds:[0A436h]
+; @0B0F1 0000:B0F1 original=53 runtime CFG evidence
+    push bx
+; @0B0F2 0000:B0F2 original=e8db0c runtime CFG evidence
+    CALL_NEAR loc_0BDD0
+; @0B0F5 0000:B0F5 original=5b runtime CFG evidence
+    pop bx
+; @0B0F6 0000:B0F6 original=730a runtime CFG evidence
+    JAE_SHORT loc_0B102
+; @0B0F8 0000:B0F8 original=ff4e04 runtime CFG evidence
+    dec word ptr ss:[bp + 4]
+; @0B0FB 0000:B0FB original=ff0e36a4 runtime CFG evidence
+    dec word ptr ds:[0A436h]
+; @0B0FF 0000:B0FF original=e930ff runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B102 0000:B102 original=f746040f00 runtime CFG evidence
+    test word ptr ss:[bp + 4], 0Fh
+; @0B107 0000:B107 original=7401 runtime CFG evidence
+    JE_SHORT loc_0B10A
+; @0B109 0000:B109 original=c3 runtime CFG evidence
+    ret
+; @0B10A 0000:B10A original=42 runtime CFG evidence
+    inc dx
+; @0B10B 0000:B10B original=c3 runtime CFG evidence
+    ret
+; @0B10C UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,02Dh,0FFh
+; @0B10F 0000:B10F original=8bda runtime CFG evidence
+    mov bx, dx
+; @0B111 0000:B111 original=f746040f00 runtime CFG evidence
+    test word ptr ss:[bp + 4], 0Fh
+; @0B116 0000:B116 original=751c runtime CFG evidence
+    JNE_SHORT loc_0B134
+; @0B118 0000:B118 original=4b runtime CFG evidence
+    dec bx
+; @0B119 0000:B119 original=e83f9f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B11C 0000:B11C original=7403 runtime CFG evidence
+    JE_SHORT loc_0B121
+; @0B11E 0000:B11E original=e911ff runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B121 0000:B121 original=f7065a210f00 runtime CFG evidence
+    test word ptr ds:[0215Ah], 0Fh
+; @0B127 0000:B127 original=740b runtime CFG evidence
+    JE_SHORT loc_0B134
+; @0B129 0000:B129 original=83eb0d runtime CFG evidence
+    sub bx, 0Dh
+; @0B12C 0000:B12C original=e82c9f runtime CFG evidence
+    CALL_NEAR loc_0505B
+; @0B12F 0000:B12F original=7403 runtime CFG evidence
+    JE_SHORT loc_0B134
+; @0B131 0000:B131 original=e9fefe runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B134 0000:B134 original=ff4e04 runtime CFG evidence
+    dec word ptr ss:[bp + 4]
+; @0B137 0000:B137 original=ff0e36a4 runtime CFG evidence
+    dec word ptr ds:[0A436h]
+; @0B13B 0000:B13B original=53 runtime CFG evidence
+    push bx
+; @0B13C 0000:B13C original=e8910c runtime CFG evidence
+    CALL_NEAR loc_0BDD0
+; @0B13F 0000:B13F original=5b runtime CFG evidence
+    pop bx
+; @0B140 0000:B140 original=730a runtime CFG evidence
+    JAE_SHORT loc_0B14C
+; @0B142 0000:B142 original=ff4604 runtime CFG evidence
+    inc word ptr ss:[bp + 4]
+; @0B145 0000:B145 original=ff0636a4 runtime CFG evidence
+    inc word ptr ds:[0A436h]
+; @0B149 0000:B149 original=e9e6fe runtime CFG evidence
+    JMP_NEAR loc_0B032
+; @0B14C 0000:B14C original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0B14F 0000:B14F original=250f00 runtime CFG evidence
+    and ax, 0Fh
+; @0B152 0000:B152 original=3d0f00 runtime CFG evidence
+    cmp ax, 0Fh
+; @0B155 0000:B155 original=7401 runtime CFG evidence
+    JE_SHORT loc_0B158
+; @0B157 0000:B157 original=c3 runtime CFG evidence
+    ret
+; @0B158 0000:B158 original=4a runtime CFG evidence
+    dec dx
+; @0B159 0000:B159 original=c3 runtime CFG evidence
+    ret
 ; sub_0000_B15A
 ; @0B15A 0000:B15A original=b92300
     mov cx, 023h
@@ -2072,115 +3066,171 @@ loc_0F797 equ 05797h
 ; @0B230 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 07Fh,02h,0DCh,00h,077h,0Fh,083h,07Fh,018h,01h,074h,09h,0E8h,0DCh,0ABh,0E8h
 ; @0B240 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0ACh,0E9h,015h,0FBh,0C7h,046h,01Ch,00h,00h,0E9h,0Dh,0FBh,0E8h,0F2h,0ABh
-; @0B250 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Eh,01Eh,01h,074h,04Dh,0A1h,07Eh,023h,08Bh,01Eh,080h,023h,02Dh,02h,00h
-; @0B260 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 039h,046h,02h,07Ch,03Eh,05h,014h,00h,039h,046h,02h,07Fh,036h,039h,05Eh,04h
-; @0B270 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 072h,031h,083h,0C3h,014h,039h,05Eh,04h,077h,029h,0B9h,01h,00h,083h,07Eh,018h
-; @0B280 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,075h,014h,083h,03Eh,0DCh,0BEh,00h,074h,0Dh,0B9h,03h,00h,083h,03Eh,0DCh
-; @0B290 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0BEh,01h,074h,03h,0B9h,05h,00h,051h,055h,0E8h,07Dh,0EBh,05Dh,059h,0E2h,0F7h
-; @0B2A0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,026h,0FBh,0E9h,0B4h,0FAh,0A1h,03Ch,023h,05h,01Ch,00h,089h,046h,08h,083h
-; @0B2B0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,02Ch,023h,01Fh,075h,03h,0E8h,028h,08h,0E9h,047h,08h,0C7h,046h,036h,05Ch
-; @0B2C0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A4h,0EBh,05h,0C7h,046h,036h,03Ch,0A4h,0C7h,046h,018h,012h,00h,08Bh,076h,036h
-; @0B2D0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0ADh,05h,020h,00h,0A3h,06h,023h,0ADh,0A3h,04h,023h,0C7h,06h,08h,023h,01h
-; @0B2E0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,083h,03Eh,056h,023h,00h,074h,07h,083h,03Eh,0ACh,0BDh,01h,075h,06h,0C7h
-; @0B2F0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,08h,023h,02h,00h,0E8h,0BAh,0AAh,083h,03Eh,0Ah,023h,00h,074h,05h,089h
-; @0B300 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 076h,036h,0EBh,0C9h,08Bh,046h,06h,05h,03Bh,00h,089h,046h,08h,083h,03Eh,0ACh
-; @0B310 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0BDh,01h,075h,03h,0E9h,034h,09h,083h,03Eh,056h,023h,05h,074h,0Eh,083h,03Eh
-; @0B320 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 056h,023h,06h,074h,07h,083h,03Eh,056h,023h,00h,075h,031h,08Bh,046h,06h,05h
-; @0B330 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 015h,01h,089h,046h,08h,081h,03Eh,050h,023h,052h,0Eh,074h,03h,0E9h,0Bh,09h
-; @0B340 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,046h,06h,05h,05h,01h,089h,046h,08h,083h,03Eh,056h,023h,00h,075h,03h
-; @0B350 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,0F8h,08h,083h,03Eh,056h,023h,06h,075h,03h,0E9h,0EEh,08h,08Bh,046h,06h
-; @0B360 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,02Ah,00h,089h,046h,08h,083h,03Eh,056h,023h,01h,075h,03h,0E9h,0DBh,08h
-; @0B370 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,046h,06h,05h,0D2h,00h,089h,046h,08h,083h,03Eh,056h,023h,02h,075h,03h
-; @0B380 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,0C8h,08h,08Bh,046h,06h,05h,0ECh,00h,089h,046h,08h,083h,03Eh,056h,023h
-; @0B390 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,075h,03h,0E9h,0B5h,08h,083h,03Eh,056h,023h,07h,075h,03h,0E9h,0ABh,08h
-; @0B3A0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,046h,06h,05h,0ECh,00h,089h,046h,08h,083h,03Eh,056h,023h,04h,075h,03h
-; @0B3B0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,098h,08h,08Bh,046h,06h,05h,0ECh,00h,089h,046h,08h,0E9h,08Ch,08h,0A1h
-; @0B3C0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 042h,023h,040h,0D1h,0E8h,05h,071h,00h,089h,046h,08h,0C3h,0E8h,0F0h,0FFh,083h
-; @0B3D0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,02h,081h,07Eh,02h,0A0h,00h,073h,03h,0E9h,068h,08h,0EBh,01Ah,0E8h
-; @0B3E0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0DDh,0FFh,0FFh,046h,02h,083h,03Eh,056h,023h,00h,075h,03h,0FFh,046h,02h,081h
-; @0B3F0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,02h,0A0h,00h,073h,03h,0E9h,04Ch,08h,0E8h,0CBh,0Bh,0E8h,03h,00h,0E9h
-; @0B400 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 043h,08h,0BAh,0Ch,00h,083h,07Eh,014h,02h,074h,03h,0BAh,04h,00h,08Bh,046h
-; @0B410 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,03h,0C2h,0A3h,0B2h,0A8h,08Bh,046h,02h,03h,0C2h,0A3h,0B4h,0A8h,0B9h,08h
-; @0B420 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,051h,0E8h,04Eh,0C1h,059h,083h,0FBh,0FFh,074h,03Ch,051h,049h,089h,04Fh,06h
-; @0B430 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,0C1h,08h,089h,04Fh,08h,0A1h,0B2h,0A8h,089h,047h,04h,0A1h,0B4h,0A8h,089h
-; @0B440 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 047h,02h,0C7h,07h,01h,00h,0C7h,047h,01Eh,00h,00h,0C7h,047h,0Ah,01h,00h
-; @0B450 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,047h,014h,00h,00h,0C7h,047h,016h,02h,00h,0C7h,047h,018h,03h,00h,0C7h
-; @0B460 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 047h,01Ch,0FFh,0FFh,059h,0E2h,0BAh,0C3h,055h,0B9h,023h,00h,033h,0C0h,051h,050h
-; @0B470 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,0D9h,0D1h,0E3h,08Bh,0AFh,0CAh,032h,058h,083h,07Eh,00h,00h,074h,07h,083h
-; @0B480 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,016h,04h,075h,01h,040h,059h,0E2h,0E5h,05Dh,0C3h,083h,03Eh,0A0h,0A7h,032h
-; @0B490 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 073h,03h,0E9h,080h,01h,083h,03Eh,0A0h,0A7h,05Ah,073h,03h,0E9h,0ACh,07h,0E9h
-; @0B4A0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 036h,01h,0E8h,0C3h,0FFh,03Dh,01h,00h,074h,03h,0E9h,09Eh,07h,0C7h,06h,0B6h
-; @0B4B0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A8h,00h,00h,0C7h,06h,0B8h,0A8h,00h,00h,0C7h,06h,0C2h,0A8h,01h,00h,0C7h
-; @0B4C0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,0C4h,0A8h,0D4h,0D2h,0C7h,046h,018h,078h,00h,0C7h,046h,08h,022h,00h,0C7h
-; @0B4D0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,020h,0C8h,00h,0C7h,046h,04h,00h,00h,0C7h,046h,02h,00h,00h,0C7h,046h
-; @0B4E0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 014h,02h,00h,0C7h,046h,028h,0FFh,0FFh,089h,02Eh,0BEh,0A8h,0E8h,035h,0C0h,083h
-; @0B4F0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FBh,0FFh,074h,056h,09Ah,089h,08h,07Fh,0Fh,0C7h,047h,018h,076h,00h,0C7h,047h
-; @0B500 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08h,020h,00h,089h,01Eh,0BAh,0A8h,0E8h,01Ah,0C0h,083h,0FBh,0FFh,074h,03Bh,09Ah
-; @0B510 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,08h,07Fh,0Fh,0C7h,047h,018h,077h,00h,0C7h,047h,08h,021h,00h,0C7h,047h
-; @0B520 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,020h,00h,089h,01Eh,0BCh,0A8h,0E8h,0FAh,0BFh,083h,0FBh,0FFh,074h,01Bh,09Ah
-; @0B530 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,08h,07Fh,0Fh,0C7h,047h,018h,079h,00h,0C7h,047h,08h,023h,00h,0C7h,047h
-; @0B540 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,020h,00h,089h,01Eh,0C0h,0A8h,0E9h,01h,07h,0C7h,06h,07Eh,0A4h,00h,00h
-; @0B550 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,057h,0ADh,0E9h,0F5h,06h,083h,03Eh,056h,023h,04h,075h,03h,0E9h,023h,0D8h
-; @0B560 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,03Eh,056h,023h,03h,075h,03h,0E9h,021h,0FFh,083h,03Eh,056h,023h,00h,075h
-; @0B570 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0E9h,02Eh,0FFh,081h,03Eh,0A0h,0A7h,0C8h,00h,073h,03h,0E9h,096h,00h,081h
-; @0B580 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,0A0h,0A7h,0F0h,00h,073h,03h,0E9h,0C1h,06h,0C7h,046h,018h,022h,00h,0C7h
-; @0B590 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,08h,071h,00h,08Bh,0Eh,056h,023h,041h,0B8h,0Ah,00h,0F7h,0E1h,089h,046h
-; @0B5A0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 020h,0C7h,046h,04h,060h,00h,0E9h,0A2h,06h
+    db 00h,0ACh,0E9h,015h,0FBh,0C7h,046h,01Ch,00h,00h,0E9h,0Dh,0FBh
+; @0B24D 0000:B24D original=e8f2ab runtime CFG evidence
+    CALL_NEAR loc_05E42
+; @0B250 0000:B250 original=837e1e01 runtime CFG evidence
+    cmp word ptr ss:[bp + 01Eh], 1
+; @0B254 0000:B254 original=744d runtime CFG evidence
+    JE_SHORT loc_0B2A3
+; @0B256 0000:B256 original=a17e23 runtime CFG evidence
+    mov ax, word ptr ds:[0237Eh]
+; @0B259 0000:B259 original=8b1e8023 runtime CFG evidence
+    mov bx, word ptr ds:[02380h]
+; @0B25D 0000:B25D original=2d0200 runtime CFG evidence
+    sub ax, 2
+; @0B260 0000:B260 original=394602 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], ax
+; @0B263 0000:B263 original=7c3e runtime CFG evidence
+    JL_SHORT loc_0B2A3
+; @0B265 0000:B265 original=051400 runtime CFG evidence
+    add ax, 014h
+; @0B268 0000:B268 original=394602 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], ax
+; @0B26B 0000:B26B original=7f36 runtime CFG evidence
+    JG_SHORT loc_0B2A3
+; @0B26D 0000:B26D original=395e04 runtime CFG evidence
+    cmp word ptr ss:[bp + 4], bx
+; @0B270 0000:B270 original=7231 runtime CFG evidence
+    JB_SHORT loc_0B2A3
+; @0B272 0000:B272 original=83c314 runtime CFG evidence
+    add bx, 014h
+; @0B275 0000:B275 original=395e04 runtime CFG evidence
+    cmp word ptr ss:[bp + 4], bx
+; @0B278 0000:B278 original=7729 runtime CFG evidence
+    JA_SHORT loc_0B2A3
+; @0B27A 0000:B27A original=b90100 runtime CFG evidence
+    mov cx, 1
+; @0B27D 0000:B27D original=837e1803 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 3
+; @0B281 0000:B281 original=7514 runtime CFG evidence
+    JNE_SHORT loc_0B297
+; @0B283 0000:B283 original=833edcbe00 runtime CFG evidence
+    cmp word ptr ds:[0BEDCh], 0
+; @0B288 0000:B288 original=740d runtime CFG evidence
+    JE_SHORT loc_0B297
+; @0B28A 0000:B28A original=b90300 runtime CFG evidence
+    mov cx, 3
+; @0B28D 0000:B28D original=833edcbe01 runtime CFG evidence
+    cmp word ptr ds:[0BEDCh], 1
+; @0B292 0000:B292 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B297
+; @0B294 0000:B294 original=b90500 runtime CFG evidence
+    mov cx, 5
+; @0B297 0000:B297 original=51 runtime CFG evidence
+    push cx
+; @0B298 0000:B298 original=55 runtime CFG evidence
+    push bp
+; @0B299 0000:B299 original=e87deb runtime CFG evidence
+    CALL_NEAR loc_09E19
+; @0B29C 0000:B29C original=5d runtime CFG evidence
+    pop bp
+; @0B29D 0000:B29D original=59 runtime CFG evidence
+    pop cx
+; @0B29E 0000:B29E original=e2f7 runtime CFG evidence
+    LOOP_SHORT loc_0B297
+; @0B2A0 0000:B2A0 original=e926fb runtime CFG evidence
+    JMP_NEAR loc_0ADC9
+; @0B2A3 0000:B2A3 original=e9b4fa runtime CFG evidence
+    JMP_NEAR loc_0AD5A
+; @0B2A6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A1h,03Ch,023h,05h,01Ch,00h,089h,046h,08h,083h,03Eh,02Ch,023h,01Fh,075h,03h
+; @0B2B6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,028h,08h,0E9h,047h,08h,0C7h,046h,036h,05Ch,0A4h,0EBh,05h,0C7h,046h,036h
+; @0B2C6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Ch,0A4h,0C7h,046h,018h,012h,00h,08Bh,076h,036h,0ADh,05h,020h,00h,0A3h,06h
+; @0B2D6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 023h,0ADh,0A3h,04h,023h,0C7h,06h,08h,023h,01h,00h,083h,03Eh,056h,023h,00h
+; @0B2E6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 074h,07h,083h,03Eh,0ACh,0BDh,01h,075h,06h,0C7h,06h,08h,023h,02h,00h,0E8h
+; @0B2F6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0BAh,0AAh,083h,03Eh,0Ah,023h,00h,074h,05h,089h,076h,036h,0EBh,0C9h,08Bh,046h
+; @0B306 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 06h,05h,03Bh,00h,089h,046h,08h,083h,03Eh,0ACh,0BDh,01h,075h,03h,0E9h,034h
+; @0B316 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 09h,083h,03Eh,056h,023h,05h,074h,0Eh,083h,03Eh,056h,023h,06h,074h,07h,083h
+; @0B326 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Eh,056h,023h,00h,075h,031h,08Bh,046h,06h,05h,015h,01h,089h,046h,08h,081h
+; @0B336 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Eh,050h,023h,052h,0Eh,074h,03h,0E9h,0Bh,09h,08Bh,046h,06h,05h,05h,01h
+; @0B346 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,046h,08h,083h,03Eh,056h,023h,00h,075h,03h,0E9h,0F8h,08h,083h,03Eh,056h
+; @0B356 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 023h,06h,075h,03h,0E9h,0EEh,08h,08Bh,046h,06h,05h,02Ah,00h,089h,046h,08h
+; @0B366 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,03Eh,056h,023h,01h,075h,03h,0E9h,0DBh,08h,08Bh,046h,06h,05h,0D2h,00h
+; @0B376 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,046h,08h,083h,03Eh,056h,023h,02h,075h,03h,0E9h,0C8h,08h,08Bh,046h,06h
+; @0B386 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 05h,0ECh,00h,089h,046h,08h,083h,03Eh,056h,023h,03h,075h,03h,0E9h,0B5h,08h
+; @0B396 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,03Eh,056h,023h,07h,075h,03h,0E9h,0ABh,08h,08Bh,046h,06h,05h,0ECh,00h
+; @0B3A6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,046h,08h,083h,03Eh,056h,023h,04h,075h,03h,0E9h,098h,08h,08Bh,046h,06h
+; @0B3B6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 05h,0ECh,00h,089h,046h,08h,0E9h,08Ch,08h,0A1h,042h,023h,040h,0D1h,0E8h,05h
+; @0B3C6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 071h,00h,089h,046h,08h,0C3h,0E8h,0F0h,0FFh,083h,046h,02h,02h,081h,07Eh,02h
+; @0B3D6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A0h,00h,073h,03h,0E9h,068h,08h,0EBh,01Ah,0E8h,0DDh,0FFh,0FFh,046h,02h,083h
+; @0B3E6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Eh,056h,023h,00h,075h,03h,0FFh,046h,02h,081h,07Eh,02h,0A0h,00h,073h,03h
+; @0B3F6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E9h,04Ch,08h,0E8h,0CBh,0Bh,0E8h,03h,00h,0E9h,043h,08h,0BAh,0Ch,00h,083h
+; @0B406 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 07Eh,014h,02h,074h,03h,0BAh,04h,00h,08Bh,046h,04h,03h,0C2h,0A3h,0B2h,0A8h
+; @0B416 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08Bh,046h,02h,03h,0C2h,0A3h,0B4h,0A8h,0B9h,08h,00h,051h,0E8h,04Eh,0C1h,059h
+; @0B426 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,0FBh,0FFh,074h,03Ch,051h,049h,089h,04Fh,06h,083h,0C1h,08h,089h,04Fh,08h
+; @0B436 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A1h,0B2h,0A8h,089h,047h,04h,0A1h,0B4h,0A8h,089h,047h,02h,0C7h,07h,01h,00h
+; @0B446 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C7h,047h,01Eh,00h,00h,0C7h,047h,0Ah,01h,00h,0C7h,047h,014h,00h,00h,0C7h
+; @0B456 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 047h,016h,02h,00h,0C7h,047h,018h,03h,00h,0C7h,047h,01Ch,0FFh,0FFh,059h,0E2h
+; @0B466 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0BAh,0C3h,055h,0B9h,023h,00h,033h,0C0h,051h,050h,08Bh,0D9h,0D1h,0E3h,08Bh,0AFh
+; @0B476 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0CAh,032h,058h,083h,07Eh,00h,00h,074h,07h,083h,07Eh,016h,04h,075h,01h,040h
+; @0B486 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 059h,0E2h,0E5h,05Dh,0C3h,083h,03Eh,0A0h,0A7h,032h,073h,03h,0E9h,080h,01h,083h
+; @0B496 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Eh,0A0h,0A7h,05Ah,073h,03h,0E9h,0ACh,07h,0E9h,036h,01h,0E8h,0C3h,0FFh,03Dh
+; @0B4A6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 01h,00h,074h,03h,0E9h,09Eh,07h,0C7h,06h,0B6h,0A8h,00h,00h,0C7h,06h,0B8h
+; @0B4B6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A8h,00h,00h,0C7h,06h,0C2h,0A8h,01h,00h,0C7h,06h,0C4h,0A8h,0D4h,0D2h,0C7h
+; @0B4C6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 046h,018h,078h,00h,0C7h,046h,08h,022h,00h,0C7h,046h,020h,0C8h,00h,0C7h,046h
+; @0B4D6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 04h,00h,00h,0C7h,046h,02h,00h,00h,0C7h,046h,014h,02h,00h,0C7h,046h,028h
+; @0B4E6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0FFh,0FFh,089h,02Eh,0BEh,0A8h,0E8h,035h,0C0h,083h,0FBh,0FFh,074h,056h,09Ah,089h
+; @0B4F6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08h,07Fh,0Fh,0C7h,047h,018h,076h,00h,0C7h,047h,08h,020h,00h,089h,01Eh,0BAh
+; @0B506 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A8h,0E8h,01Ah,0C0h,083h,0FBh,0FFh,074h,03Bh,09Ah,089h,08h,07Fh,0Fh,0C7h,047h
+; @0B516 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 018h,077h,00h,0C7h,047h,08h,021h,00h,0C7h,047h,04h,020h,00h,089h,01Eh,0BCh
+; @0B526 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A8h,0E8h,0FAh,0BFh,083h,0FBh,0FFh,074h,01Bh,09Ah,089h,08h,07Fh,0Fh,0C7h,047h
+; @0B536 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 018h,079h,00h,0C7h,047h,08h,023h,00h,0C7h,047h,04h,020h,00h,089h,01Eh,0C0h
+; @0B546 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A8h,0E9h,01h,07h,0C7h,06h,07Eh,0A4h,00h,00h,0E8h,057h,0ADh,0E9h,0F5h,06h
+; @0B556 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,03Eh,056h,023h,04h,075h,03h,0E9h,023h,0D8h,083h,03Eh,056h,023h,03h,075h
+; @0B566 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03h,0E9h,021h,0FFh,083h,03Eh,056h,023h,00h,075h,03h,0E9h,02Eh,0FFh,081h,03Eh
+; @0B576 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A0h,0A7h,0C8h,00h,073h,03h,0E9h,096h,00h,081h,03Eh,0A0h,0A7h,0F0h,00h,073h
+; @0B586 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03h,0E9h,0C1h,06h,0C7h,046h,018h,022h,00h,0C7h,046h,08h,071h,00h,08Bh,0Eh
+; @0B596 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 056h,023h,041h,0B8h,0Ah,00h,0F7h,0E1h,089h,046h,020h,0C7h,046h,04h,060h,00h
+; @0B5A6 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E9h,0A2h,06h
 ; sub_0000_B5A9
 ; @0B5A9 0000:B5A9 original=c706d0a8d2a8
     mov word ptr ds:[0A8D0h], 0A8D2h
@@ -2235,185 +3285,409 @@ loc_0F797 equ 05797h
 ; @0B70C UNKNOWN bootstrap bytes: not reconstructed code/data
     db 03Dh,05h,0A1h,03Ch,023h,05h,0B9h,00h,089h,046h,08h,0C7h,06h,012h,023h,02h
 ; @0B71C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0E8h,022h,0A7h,0C7h,06h,012h,023h,03h,00h,0E9h,022h,05h,08Bh,046h,032h
-; @0B72C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A3h,04h,023h,08Bh,046h,034h,0A3h,06h,023h,0E8h,07Ah,0A6h,083h,03Eh,0Ah,023h
-; @0B73C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0C3h,083h,07Eh,01Ch,0FFh,074h,04Dh,08Bh,05Eh,01Ch,0D1h,0E3h,02Eh,0FFh,0A7h
-; @0B74C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04Eh,0B7h,054h,0B7h,070h,0B7h,07Bh,0B7h,08Bh,046h,04h,03Bh,046h,032h,074h,03h
-; @0B75C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,0FDh,00h,08Bh,046h,02h,03Bh,046h,034h,074h,03h,0E9h,0F2h,00h,0FFh,046h
-; @0B76C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01Ch,0E9h,0DBh,04h,0C7h,046h,08h,079h,00h,0FFh,046h,01Ch,0E9h,0D0h,04h,083h
-; @0B77C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,04h,081h,07Eh,02h,0A0h,00h,073h,03h,0E9h,0C2h,04h,0C7h,046h,08h
-; @0B78C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 077h,00h,0E9h,0BAh,04h,0A1h,038h,023h,083h,07Eh,04h,060h,073h,07h,0F7h,0D8h
-; @0B79C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,07Fh,00h,0EBh,03h,05h,07Ah,00h,089h,046h,08h,08Bh,046h,04h,03Bh,046h
-; @0B7AC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 032h,074h,03h,0E9h,0AAh,00h,08Bh,046h,02h,03Bh,046h,034h,074h,03h,0E9h,09Fh
-; @0B7BC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,083h,03Eh,0A0h,0A7h,023h,073h,02Fh,0E9h,084h,04h,083h,03Eh,024h,023h,01h
-; @0B7CC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,09h,0A1h,080h,023h,05h,08h,00h,089h,046h,032h,083h,066h,032h,0F8h,0C7h
-; @0B7DC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,040h,023h,028h,00h,0C7h,046h,01Ch,00h,00h,0C7h,046h,08h,078h,00h,0C7h
-; @0B7EC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,034h,020h,00h,0E9h,058h,04h,081h,03Eh,040h,023h,0BCh,02h,072h,013h,081h
-; @0B7FC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,040h,023h,0D0h,02h,077h,0Bh,0E8h,08Fh,095h,083h,0E3h,01h,075h,03h,0E8h
-; @0B80C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 068h,0BCh,083h,03Eh,07Eh,0A4h,03h,076h,0B2h,083h,03Eh,040h,023h,05h,072h,0B2h
-; @0B81C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,03Eh,02Eh,023h,03Fh,074h,03h,0E9h,025h,04h,08Bh,036h,042h,0A8h,081h,0FEh
-; @0B82C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 094h,0A8h,072h,0Ah,0C7h,06h,042h,0A8h,044h,0A8h,08Bh,036h,042h,0A8h,0ADh,05h
-; @0B83C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 020h,00h,089h,046h,034h,0ADh,089h,046h,032h,089h,036h,042h,0A8h,08Bh,046h,02h
-; @0B84C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Bh,046h,034h,075h,08h,08Bh,046h,04h,03Bh,046h,032h,074h,0CDh,0E9h,0EFh,03h
-; @0B85C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,06h,08h,023h,02h,00h,0E8h,0C4h,0FEh,0C7h,046h,06h,04h,00h,0E9h,0DEh
-; @0B86C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,083h,03Eh,07Eh,0A4h,02h,077h,03h,0E9h,081h,00h,081h,07Eh,02h,0C0h,00h
-; @0B87C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 077h,07Ah,083h,03Eh,0A0h,0A7h,028h,073h,02Bh,0C7h,06h,08h,023h,01h,00h,0C7h
-; @0B88C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,08h,075h,00h,083h,066h,032h,0FEh,083h,066h,04h,0FEh,083h,066h,034h,0FEh
-; @0B89C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,066h,02h,0FEh,0E8h,086h,0FEh,075h,03h,0E9h,0A3h,03h,0C7h,046h,06h,04h
-; @0B8AC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0E9h,09Bh,03h,081h,03Eh,040h,023h,0EFh,02h,075h,03h,0E8h,0BBh,0BBh,081h
-; @0B8BC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,040h,023h,059h,01h,075h,03h,0E8h,0B0h,0BBh,083h,03Eh,040h,023h,079h,075h
-; @0B8CC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0E8h,0A6h,0BBh,0A1h,042h,023h,0F7h,0D8h,01h,046h,02h,0B8h,075h,00h,083h
-; @0B8DC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,042h,023h,0FFh,074h,03h,0B8h,076h,00h,089h,046h,08h,083h,03Eh,028h,023h
-; @0B8EC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07h,074h,03h,0E9h,059h,03h,0FFh,046h,02h,0E9h,053h,03h,0BBh,07Ch,023h,0E8h
-; @0B8FC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01Dh,0A5h,0E8h,041h,0A5h,0C7h,046h,08h,076h,00h,0E9h,042h,03h,0C7h,06h,08h
-; @0B90C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,02h,00h,0E8h,017h,0FEh,075h,03h,0E9h,034h,03h,0E8h,05Ch,0BBh,083h,07Eh
-; @0B91C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 032h,00h,074h,08h,0C7h,046h,032h,00h,00h,0E9h,023h,03h,0C7h,046h,032h,0C0h
-; @0B92C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0E9h,01Bh,03h,0C7h,06h,08h,023h,01h,00h,083h,03Eh,056h,023h,00h,075h
-; @0B93C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,0C7h,06h,08h,023h,02h,00h,0E8h,0E3h,0FDh,09Ch,08Bh,046h,06h,05h,0Dh
-; @0B94C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,089h,046h,08h,09Dh,075h,03h,0E9h,0F5h,02h,083h,07Eh,01Ch,00h,074h,01Eh
-; @0B95C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FFh,04Eh,01Ch,074h,03h,0E9h,0E7h,02h,0C7h,046h,034h,020h,00h,083h,07Eh,018h
-; @0B96C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 016h,075h,03h,0E9h,0D9h,02h,0C7h,046h,034h,040h,00h,0E9h,0D1h,02h,083h,03Eh
-; @0B97C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A0h,0A7h,031h,074h,03h,0E9h,0C7h,02h,0C7h,046h,018h,018h,00h,0E9h,0BFh,02h
-; @0B98C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A1h,040h,023h,025h,0FFh,03h,03Dh,0Ch,00h,075h,07h,0E8h,0DCh,0BAh,0FFh,06h
-; @0B99C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 040h,023h,08Bh,076h,036h,0ADh,03Dh,0FFh,0FFh,074h,043h,05h,020h,00h,0A3h,06h
-; @0B9AC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,0ADh,0A3h,04h,023h,0C7h,06h,08h,023h,03h,00h,0E8h,0F8h,0A3h,08Bh,046h
-; @0B9BC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,05h,0Dh,01h,089h,046h,08h,083h,03Eh,0Ah,023h,00h,075h,03h,0E9h,07Eh
-; @0B9CC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,089h,076h,036h,0E8h,0C2h,093h,083h,0E3h,07h,083h,0FBh,02h,075h,0B1h,0E8h
-; @0B9DC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 059h,08h,083h,0FBh,0FFh,074h,0A9h,0C7h,047h,06h,04h,00h,0EBh,0A2h,0ADh,089h
-; @0B9EC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,036h,0EBh,09Ch,081h,03Eh,082h,0A4h,0E4h,0A4h,075h,06Fh,081h,03Eh,040h,023h
-; @0B9FC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0EFh,02h,075h,07h,0E8h,073h,0BAh,0FFh,06h,040h,023h,0A1h,042h,023h,01h,046h
-; @0BA0C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 032h,0A1h,046h,023h,01h,046h,034h,081h,07Eh,034h,0D0h,00h,076h,05h,0C7h,046h
-; @0BA1C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 034h,020h,00h,08Bh,046h,04h,03h,06h,042h,023h,03Bh,046h,032h,075h,06Eh,08Bh
-; @0BA2C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,02h,03Bh,046h,034h,075h,066h,083h,03Eh,07Eh,0A4h,06h,072h,020h,0A1h,040h
-; @0BA3C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,083h,03Eh,0DCh,0BEh,02h,074h,0Ah,025h,0FFh,00h,03Dh,0FFh,00h,075h,01Bh
-; @0BA4C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0EBh,08h,025h,07Fh,00h,03Dh,07Fh,00h,075h,011h,0FFh,06h,040h,023h,0BBh,07Ch
-; @0BA5C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,0E8h,0BBh,0A3h,0E8h,0DFh,0A3h,083h,046h,02h,02h,0A1h,03Ch,023h,05h,01Ch
-; @0BA6C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,089h,046h,08h,0E9h,0D8h,01h,08Bh,046h,032h,025h,0FEh,0FFh,083h,066h,04h
-; @0BA7C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FEh,0A3h,04h,023h,08Bh,046h,034h,025h,0FEh,0FFh,083h,066h,02h,0FEh,0A3h,06h
-; @0BA8C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,0C7h,06h,08h,023h,01h,00h,0E8h,01Ch,0A3h,0E9h,0B2h,01h,08Bh,046h,02h
-; @0BA9C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Bh,046h,034h,076h,0D2h,0E8h,09Eh,0A3h,083h,03Eh,07Eh,0A4h,06h,073h,0Ah,083h
-; @0BAAC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,02Eh,023h,03Fh,075h,03h,0E8h,0C1h,0B9h,081h,07Eh,02h,0D0h,00h,077h,03h
-; @0BABC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E9h,08Ch,01h,0C7h,046h,02h,010h,00h,0E9h,084h,01h,0A1h,038h,023h,0D1h,0E8h
-; @0BACC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,027h,00h,089h,046h,08h,0EBh,0Bh,0A1h,038h,023h,0D1h,0E8h,05h,024h,00h
-; @0BADC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,046h,08h,0EBh,022h,0FFh,076h,06h,0C7h,046h,06h,04h,00h,0E8h,04Bh,07h
-; @0BAEC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Fh,046h,06h,0C3h,0A1h,03Ah,023h,05h,036h,00h,089h,046h,08h,083h,03Eh,02Eh
-; @0BAFC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,03Fh,075h,03h,0E8h,0DEh,0FFh,083h,07Eh,06h,06h,075h,01Bh,0C7h,046h,06h
-; @0BB0C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,00h,083h,07Eh,04h,00h,074h,08h,0E8h,0C1h,0F4h,075h,03h,0E9h,029h,01h
-; @0BB1C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,046h,06h,02h,00h,0E9h,021h,01h,0C7h,046h,06h,02h,00h,081h,07Eh,04h
-; @0BB2C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C0h,00h,074h,08h,0E8h,0A5h,0F4h,075h,03h,0E9h,0Dh,01h,0C7h,046h,06h,06h
-; @0BB3C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0E9h,05h,01h,0C7h,06h,052h,0A9h,0FFh,0FFh,0EBh,06h,0C7h,06h,052h,0A9h
-; @0BB4C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,00h,0E8h,09Ch,00h,0BBh,00h,00h,074h,0Ah,08Bh,01Eh,03Ch,023h,0D1h,0E3h
-; @0BB5C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,09Fh,0D2h,096h,0B8h,03Ah,01h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h
-; @0BB6C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06h,052h,0A9h,03h,0C3h,033h,0C9h,083h,07Eh,06h,00h,074h,03h,0B9h,03h,00h
-; @0BB7C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0C1h,0EBh,032h,0C7h,06h,052h,0A9h,0FFh,0FFh,0EBh,06h,0C7h,06h,052h,0A9h
-; @0BB8C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,00h,0E8h,05Ch,00h,0BBh,00h,00h,074h,04h,08Bh,01Eh,03Ch,023h,0B8h,061h
-; @0BB9C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h,06h,052h
-; @0BBAC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A9h,03h,0C3h,03h,046h,06h,089h,046h,08h,083h,03Eh,030h,023h,07Fh,074h,0Eh
-; @0BBBC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,03Eh,030h,023h,06Bh,074h,07h,083h,03Eh,030h,023h,057h,075h,07Bh,0E8h,0A9h
-; @0BBCC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0B8h,083h,0FBh,0FFh,074h,073h,0C7h,047h,08h,03h,00h,083h,06Fh,04h,08h,083h
-; @0BBDC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 06Fh,02h,08h,0EBh,064h,0C7h,06h,030h,0A4h,01h,00h,083h,03Eh,030h,0A4h,01h
-; @0BBEC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C3h,0C7h,06h,030h,0A4h,00h,00h,0C7h,046h,06h,00h,00h,0FFh,076h,02h,0A1h
-; @0BBFC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 078h,0A2h,01h,046h,02h,083h,06Eh,02h,010h,0E8h,06Bh,094h,08Fh,046h,02h,083h
-; @0BC0C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FBh,0FFh,074h,0D1h,08Bh,046h,02h,03Bh,06h,07Eh,023h,07Ch,012h,03h,01Eh,052h
-; @0BC1C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A9h,0E8h,03Bh,094h,074h,0BFh,0E8h,0B3h,0F3h,083h,03Eh,030h,0A4h,01h,0C3h,0C7h
-; @0BC2C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,06h,04h,00h,03h,01Eh,052h,0A9h,083h,0EBh,0Dh,0E8h,021h,094h,074h,0A5h
-; @0BC3C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,099h,0F3h,083h,03Eh,030h,0A4h,01h,0C3h,0A1h,078h,0A2h,01h,046h,02h,0E8h
-; @0BC4C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 063h,00h,083h,03Eh,07Ch,0A4h,00h,075h,041h,083h,07Eh,018h,00h,074h,03Bh,083h
-; @0BC5C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,018h,048h,074h,035h,083h,07Eh,018h,026h,074h,02Fh,081h,07Eh,018h,086h,00h
-; @0BC6C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,028h,083h,07Eh,018h,028h,074h,022h,083h,07Eh,018h,029h,074h,01Ch,083h,07Eh
-; @0BC7C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 018h,034h,074h,016h,081h,07Eh,02h,040h,0FFh,07Dh,03h,0E9h,08Dh,00h,081h,07Eh
-; @0BC8C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,0F0h,00h,07Ch,03h,0E9h,083h,00h,0EBh,0Dh,083h,07Eh,02h,0ECh,07Ch,07Bh
-; @0BC9C UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 081h,07Eh,02h,0F0h,00h,07Dh,074h,083h,03Eh,07Ch,0A4h,00h,075h,06h,0E8h,01Eh
-; @0BCAC UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,0E8h,046h,0A6h,0C3h
+    db 00h,0E8h,022h,0A7h,0C7h,06h,012h,023h,03h,00h,0E9h,022h,05h
+; @0B729 0000:B729 original=8b4632 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 032h]
+; @0B72C 0000:B72C original=a30423 runtime CFG evidence
+    mov word ptr ds:[02304h], ax
+; @0B72F 0000:B72F original=8b4634 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 034h]
+; @0B732 0000:B732 original=a30623 runtime CFG evidence
+    mov word ptr ds:[02306h], ax
+; @0B735 0000:B735 original=e87aa6 runtime CFG evidence
+    CALL_NEAR loc_05DB2
+; @0B738 0000:B738 original=833e0a2300 runtime CFG evidence
+    cmp word ptr ds:[0230Ah], 0
+; @0B73D 0000:B73D original=c3 runtime CFG evidence
+    ret
+; @0B73E 0000:B73E original=837e1cff runtime CFG evidence
+    cmp word ptr ss:[bp + 01Ch], -1
+; @0B742 0000:B742 original=744d runtime CFG evidence
+    JE_SHORT loc_0B791
+; @0B744 0000:B744 original=8b5e1c runtime CFG evidence
+    mov bx, word ptr ss:[bp + 01Ch]
+; @0B747 0000:B747 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0B749 0000:B749 original=2effa74eb7 runtime CFG evidence
+    jmp word ptr cs:[bx - 048B2h]
+; @0B74E UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 054h,0B7h,070h,0B7h,07Bh,0B7h
+; @0B754 0000:B754 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0B757 0000:B757 original=3b4632 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 032h]
+; @0B75A 0000:B75A original=7403 runtime CFG evidence
+    JE_SHORT loc_0B75F
+; @0B75C 0000:B75C original=e9fd00 runtime CFG evidence
+    JMP_NEAR loc_0B85C
+; @0B75F 0000:B75F original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0B762 0000:B762 original=3b4634 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 034h]
+; @0B765 0000:B765 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B76A
+; @0B767 0000:B767 original=e9f200 runtime CFG evidence
+    JMP_NEAR loc_0B85C
+; @0B76A 0000:B76A original=ff461c runtime CFG evidence
+    inc word ptr ss:[bp + 01Ch]
+; @0B76D 0000:B76D original=e9db04 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B770 0000:B770 original=c746087900 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 079h
+; @0B775 0000:B775 original=ff461c runtime CFG evidence
+    inc word ptr ss:[bp + 01Ch]
+; @0B778 0000:B778 original=e9d004 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B77B 0000:B77B original=83460204 runtime CFG evidence
+    add word ptr ss:[bp + 2], 4
+; @0B77F 0000:B77F original=817e02a000 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 0A0h
+; @0B784 0000:B784 original=7303 runtime CFG evidence
+    JAE_SHORT loc_0B789
+; @0B786 0000:B786 original=e9c204 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B789 0000:B789 original=c746087700 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 077h
+; @0B78E 0000:B78E original=e9ba04 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B791 0000:B791 original=a13823 runtime CFG evidence
+    mov ax, word ptr ds:[02338h]
+; @0B794 0000:B794 original=837e0460 runtime CFG evidence
+    cmp word ptr ss:[bp + 4], 060h
+; @0B798 0000:B798 original=7307 runtime CFG evidence
+    JAE_SHORT loc_0B7A1
+; @0B79A 0000:B79A original=f7d8 runtime CFG evidence
+    neg ax
+; @0B79C 0000:B79C original=057f00 runtime CFG evidence
+    add ax, 07Fh
+; @0B79F 0000:B79F original=eb03 runtime CFG evidence
+    JMP_SHORT loc_0B7A4
+; @0B7A1 0000:B7A1 original=057a00 runtime CFG evidence
+    add ax, 07Ah
+; @0B7A4 0000:B7A4 original=894608 runtime CFG evidence
+    mov word ptr ss:[bp + 8], ax
+; @0B7A7 0000:B7A7 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0B7AA 0000:B7AA original=3b4632 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 032h]
+; @0B7AD 0000:B7AD original=7403 runtime CFG evidence
+    JE_SHORT loc_0B7B2
+; @0B7AF 0000:B7AF original=e9aa00 runtime CFG evidence
+    JMP_NEAR loc_0B85C
+; @0B7B2 0000:B7B2 original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0B7B5 0000:B7B5 original=3b4634 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 034h]
+; @0B7B8 0000:B7B8 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B7BD
+; @0B7BA 0000:B7BA original=e99f00 runtime CFG evidence
+    JMP_NEAR loc_0B85C
+; @0B7BD 0000:B7BD original=833ea0a723 runtime CFG evidence
+    cmp word ptr ds:[0A7A0h], 023h
+; @0B7C2 0000:B7C2 original=732f runtime CFG evidence
+    JAE_SHORT loc_0B7F3
+; @0B7C4 0000:B7C4 original=e98404 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B7C7 0000:B7C7 original=833e242301 runtime CFG evidence
+    cmp word ptr ds:[02324h], 1
+; @0B7CC 0000:B7CC original=7409 runtime CFG evidence
+    JE_SHORT loc_0B7D7
+; @0B7CE 0000:B7CE original=a18023 runtime CFG evidence
+    mov ax, word ptr ds:[02380h]
+; @0B7D1 0000:B7D1 original=050800 runtime CFG evidence
+    add ax, 8
+; @0B7D4 0000:B7D4 original=894632 runtime CFG evidence
+    mov word ptr ss:[bp + 032h], ax
+; @0B7D7 0000:B7D7 original=836632f8 runtime CFG evidence
+    and word ptr ss:[bp + 032h], 0FFF8h
+; @0B7DB 0000:B7DB original=c70640232800 runtime CFG evidence
+    mov word ptr ds:[02340h], 028h
+; @0B7E1 0000:B7E1 original=c7461c0000 runtime CFG evidence
+    mov word ptr ss:[bp + 01Ch], 0
+; @0B7E6 0000:B7E6 original=c746087800 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 078h
+; @0B7EB 0000:B7EB original=c746342000 runtime CFG evidence
+    mov word ptr ss:[bp + 034h], 020h
+; @0B7F0 0000:B7F0 original=e95804 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B7F3 0000:B7F3 original=813e4023bc02 runtime CFG evidence
+    cmp word ptr ds:[02340h], 02BCh
+; @0B7F9 0000:B7F9 original=7213 runtime CFG evidence
+    JB_SHORT loc_0B80E
+; @0B7FB 0000:B7FB original=813e4023d002 runtime CFG evidence
+    cmp word ptr ds:[02340h], 02D0h
+; @0B801 0000:B801 original=770b runtime CFG evidence
+    JA_SHORT loc_0B80E
+; @0B803 0000:B803 original=e88f95 runtime CFG evidence
+    CALL_NEAR loc_04D95
+; @0B806 0000:B806 original=83e301 runtime CFG evidence
+    and bx, 1
+; @0B809 0000:B809 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0B80E
+; @0B80B 0000:B80B original=e868bc runtime CFG evidence
+    CALL_NEAR loc_07476
+; @0B80E 0000:B80E original=833e7ea403 runtime CFG evidence
+    cmp word ptr ds:[0A47Eh], 3
+; @0B813 0000:B813 original=76b2 runtime CFG evidence
+    JBE_SHORT loc_0B7C7
+; @0B815 0000:B815 original=833e402305 runtime CFG evidence
+    cmp word ptr ds:[02340h], 5
+; @0B81A 0000:B81A original=72b2 runtime CFG evidence
+    JB_SHORT loc_0B7CE
+; @0B81C 0000:B81C original=833e2e233f runtime CFG evidence
+    cmp word ptr ds:[0232Eh], 03Fh
+; @0B821 0000:B821 original=7403 runtime CFG evidence
+    JE_SHORT loc_0B826
+; @0B823 0000:B823 original=e92504 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B826 0000:B826 original=8b3642a8 runtime CFG evidence
+    mov si, word ptr ds:[0A842h]
+; @0B82A 0000:B82A original=81fe94a8 runtime CFG evidence
+    cmp si, 0A894h
+; @0B82E 0000:B82E original=720a runtime CFG evidence
+    JB_SHORT loc_0B83A
+; @0B830 0000:B830 original=c70642a844a8 runtime CFG evidence
+    mov word ptr ds:[0A842h], 0A844h
+; @0B836 0000:B836 original=8b3642a8 runtime CFG evidence
+    mov si, word ptr ds:[0A842h]
+; @0B83A 0000:B83A original=ad runtime CFG evidence
+    lodsw
+; @0B83B 0000:B83B original=052000 runtime CFG evidence
+    add ax, 020h
+; @0B83E 0000:B83E original=894634 runtime CFG evidence
+    mov word ptr ss:[bp + 034h], ax
+; @0B841 0000:B841 original=ad runtime CFG evidence
+    lodsw
+; @0B842 0000:B842 original=894632 runtime CFG evidence
+    mov word ptr ss:[bp + 032h], ax
+; @0B845 0000:B845 original=893642a8 runtime CFG evidence
+    mov word ptr ds:[0A842h], si
+; @0B849 0000:B849 original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0B84C 0000:B84C original=3b4634 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 034h]
+; @0B84F 0000:B84F original=7508 runtime CFG evidence
+    JNE_SHORT loc_0B859
+; @0B851 0000:B851 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0B854 0000:B854 original=3b4632 runtime CFG evidence
+    cmp ax, word ptr ss:[bp + 032h]
+; @0B857 0000:B857 original=74cd runtime CFG evidence
+    JE_SHORT loc_0B826
+; @0B859 0000:B859 original=e9ef03 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B85C 0000:B85C original=c70608230200 runtime CFG evidence
+    mov word ptr ds:[02308h], 2
+; @0B862 0000:B862 original=e8c4fe runtime CFG evidence
+    CALL_NEAR loc_0B729
+; @0B865 0000:B865 original=c746060400 runtime CFG evidence
+    mov word ptr ss:[bp + 6], 4
+; @0B86A 0000:B86A original=e9de03 runtime CFG evidence
+    JMP_NEAR loc_0BC4B
+; @0B86D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,03Eh,07Eh,0A4h,02h,077h,03h,0E9h,081h,00h,081h,07Eh,02h,0C0h,00h,077h
+; @0B87D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 07Ah,083h,03Eh,0A0h,0A7h,028h,073h,02Bh,0C7h,06h,08h,023h,01h,00h,0C7h,046h
+; @0B88D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08h,075h,00h,083h,066h,032h,0FEh,083h,066h,04h,0FEh,083h,066h,034h,0FEh,083h
+; @0B89D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 066h,02h,0FEh,0E8h,086h,0FEh,075h,03h,0E9h,0A3h,03h,0C7h,046h,06h,04h,00h
+; @0B8AD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E9h,09Bh,03h,081h,03Eh,040h,023h,0EFh,02h,075h,03h,0E8h,0BBh,0BBh,081h,03Eh
+; @0B8BD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 040h,023h,059h,01h,075h,03h,0E8h,0B0h,0BBh,083h,03Eh,040h,023h,079h,075h,03h
+; @0B8CD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,0A6h,0BBh,0A1h,042h,023h,0F7h,0D8h,01h,046h,02h,0B8h,075h,00h,083h,03Eh
+; @0B8DD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 042h,023h,0FFh,074h,03h,0B8h,076h,00h,089h,046h,08h,083h,03Eh,028h,023h,07h
+; @0B8ED UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 074h,03h,0E9h,059h,03h,0FFh,046h,02h,0E9h,053h,03h,0BBh,07Ch,023h,0E8h,01Dh
+; @0B8FD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A5h,0E8h,041h,0A5h,0C7h,046h,08h,076h,00h,0E9h,042h,03h,0C7h,06h,08h,023h
+; @0B90D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 02h,00h,0E8h,017h,0FEh,075h,03h,0E9h,034h,03h,0E8h,05Ch,0BBh,083h,07Eh,032h
+; @0B91D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,074h,08h,0C7h,046h,032h,00h,00h,0E9h,023h,03h,0C7h,046h,032h,0C0h,00h
+; @0B92D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E9h,01Bh,03h,0C7h,06h,08h,023h,01h,00h,083h,03Eh,056h,023h,00h,075h,06h
+; @0B93D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C7h,06h,08h,023h,02h,00h,0E8h,0E3h,0FDh,09Ch,08Bh,046h,06h,05h,0Dh,01h
+; @0B94D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,046h,08h,09Dh,075h,03h,0E9h,0F5h,02h,083h,07Eh,01Ch,00h,074h,01Eh,0FFh
+; @0B95D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 04Eh,01Ch,074h,03h,0E9h,0E7h,02h,0C7h,046h,034h,020h,00h,083h,07Eh,018h,016h
+; @0B96D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 075h,03h,0E9h,0D9h,02h,0C7h,046h,034h,040h,00h,0E9h,0D1h,02h,083h,03Eh,0A0h
+; @0B97D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A7h,031h,074h,03h,0E9h,0C7h,02h,0C7h,046h,018h,018h,00h,0E9h,0BFh,02h,0A1h
+; @0B98D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 040h,023h,025h,0FFh,03h,03Dh,0Ch,00h,075h,07h,0E8h,0DCh,0BAh,0FFh,06h,040h
+; @0B99D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 023h,08Bh,076h,036h,0ADh,03Dh,0FFh,0FFh,074h,043h,05h,020h,00h,0A3h,06h,023h
+; @0B9AD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0ADh,0A3h,04h,023h,0C7h,06h,08h,023h,03h,00h,0E8h,0F8h,0A3h,08Bh,046h,06h
+; @0B9BD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 05h,0Dh,01h,089h,046h,08h,083h,03Eh,0Ah,023h,00h,075h,03h,0E9h,07Eh,02h
+; @0B9CD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,076h,036h,0E8h,0C2h,093h,083h,0E3h,07h,083h,0FBh,02h,075h,0B1h,0E8h,059h
+; @0B9DD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08h,083h,0FBh,0FFh,074h,0A9h,0C7h,047h,06h,04h,00h,0EBh,0A2h,0ADh,089h,046h
+; @0B9ED UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 036h,0EBh,09Ch,081h,03Eh,082h,0A4h,0E4h,0A4h,075h,06Fh,081h,03Eh,040h,023h,0EFh
+; @0B9FD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 02h,075h,07h,0E8h,073h,0BAh,0FFh,06h,040h,023h,0A1h,042h,023h,01h,046h,032h
+; @0BA0D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A1h,046h,023h,01h,046h,034h,081h,07Eh,034h,0D0h,00h,076h,05h,0C7h,046h,034h
+; @0BA1D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 020h,00h,08Bh,046h,04h,03h,06h,042h,023h,03Bh,046h,032h,075h,06Eh,08Bh,046h
+; @0BA2D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 02h,03Bh,046h,034h,075h,066h,083h,03Eh,07Eh,0A4h,06h,072h,020h,0A1h,040h,023h
+; @0BA3D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 083h,03Eh,0DCh,0BEh,02h,074h,0Ah,025h,0FFh,00h,03Dh,0FFh,00h,075h,01Bh,0EBh
+; @0BA4D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08h,025h,07Fh,00h,03Dh,07Fh,00h,075h,011h,0FFh,06h,040h,023h,0BBh,07Ch,023h
+; @0BA5D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,0BBh,0A3h,0E8h,0DFh,0A3h,083h,046h,02h,02h,0A1h,03Ch,023h,05h,01Ch,00h
+; @0BA6D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 089h,046h,08h,0E9h,0D8h,01h,08Bh,046h,032h,025h,0FEh,0FFh,083h,066h,04h,0FEh
+; @0BA7D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A3h,04h,023h,08Bh,046h,034h,025h,0FEh,0FFh,083h,066h,02h,0FEh,0A3h,06h,023h
+; @0BA8D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C7h,06h,08h,023h,01h,00h,0E8h,01Ch,0A3h,0E9h,0B2h,01h,08Bh,046h,02h,03Bh
+; @0BA9D UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 046h,034h,076h,0D2h,0E8h,09Eh,0A3h,083h,03Eh,07Eh,0A4h,06h,073h,0Ah,083h,03Eh
+; @0BAAD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 02Eh,023h,03Fh,075h,03h,0E8h,0C1h,0B9h,081h,07Eh,02h,0D0h,00h,077h,03h,0E9h
+; @0BABD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08Ch,01h,0C7h,046h,02h,010h,00h,0E9h,084h,01h,0A1h,038h,023h,0D1h,0E8h,05h
+; @0BACD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 027h,00h,089h,046h,08h,0EBh,0Bh,0A1h,038h,023h,0D1h,0E8h,05h,024h,00h,089h
+; @0BADD UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 046h,08h,0EBh,022h
+; @0BAE1 0000:BAE1 original=ff7606 runtime CFG evidence
+    push word ptr ss:[bp + 6]
+; @0BAE4 0000:BAE4 original=c746060400 runtime CFG evidence
+    mov word ptr ss:[bp + 6], 4
+; @0BAE9 0000:BAE9 original=e84b07 runtime CFG evidence
+    CALL_NEAR loc_0C237
+; @0BAEC 0000:BAEC original=8f4606 runtime CFG evidence
+    pop word ptr ss:[bp + 6]
+; @0BAEF 0000:BAEF original=c3 runtime CFG evidence
+    ret
+; @0BAF0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A1h,03Ah,023h,05h,036h,00h,089h,046h,08h,083h,03Eh,02Eh,023h,03Fh,075h,03h
+; @0BB00 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,0DEh,0FFh,083h,07Eh,06h,06h,075h,01Bh,0C7h,046h,06h,06h,00h,083h,07Eh
+; @0BB10 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 04h,00h,074h,08h,0E8h,0C1h,0F4h,075h,03h,0E9h,029h,01h,0C7h,046h,06h,02h
+; @0BB20 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,0E9h,021h,01h,0C7h,046h,06h,02h,00h,081h,07Eh,04h,0C0h,00h,074h,08h
+; @0BB30 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0E8h,0A5h,0F4h,075h,03h,0E9h,0Dh,01h,0C7h,046h,06h,06h,00h,0E9h,05h,01h
+; @0BB40 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C7h,06h,052h,0A9h,0FFh,0FFh,0EBh,06h,0C7h,06h,052h,0A9h,01h,00h,0E8h,09Ch
+; @0BB50 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,0BBh,00h,00h,074h,0Ah,08Bh,01Eh,03Ch,023h,0D1h,0E3h,08Bh,09Fh,0D2h,096h
+; @0BB60 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0B8h,03Ah,01h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h
+; @0BB70 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C3h,033h,0C9h,083h,07Eh,06h,00h,074h,03h,0B9h,03h,00h,03h,0C1h,0EBh,032h
+; @0BB80 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0C7h,06h,052h,0A9h,0FFh,0FFh,0EBh,06h,0C7h,06h,052h,0A9h,01h,00h,0E8h,05Ch
+; @0BB90 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 00h,0BBh,00h,00h,074h,04h,08Bh,01Eh,03Ch,023h,0B8h,061h,00h,03h,06h,052h
+; @0BBA0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A9h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h,06h,052h,0A9h,03h,0C3h,03h
+; @0BBB0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 046h,06h,089h,046h,08h,083h,03Eh,030h,023h,07Fh,074h,0Eh,083h,03Eh,030h,023h
+; @0BBC0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 06Bh,074h,07h,083h,03Eh,030h,023h,057h,075h,07Bh,0E8h,0A9h,0B8h,083h,0FBh,0FFh
+; @0BBD0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 074h,073h,0C7h,047h,08h,03h,00h,083h,06Fh,04h,08h,083h,06Fh,02h,08h,0EBh
+; @0BBE0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 064h,0C7h,06h,030h,0A4h,01h,00h,083h,03Eh,030h,0A4h,01h,0C3h,0C7h,06h,030h
+; @0BBF0 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 0A4h,00h,00h,0C7h,046h,06h,00h,00h,0FFh,076h,02h,0A1h,078h,0A2h,01h,046h
+; @0BC00 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 02h,083h,06Eh,02h,010h,0E8h,06Bh,094h,08Fh,046h,02h,083h,0FBh,0FFh,074h,0D1h
+; @0BC10 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 08Bh,046h,02h,03Bh,06h,07Eh,023h,07Ch,012h,03h,01Eh,052h,0A9h,0E8h,03Bh,094h
+; @0BC20 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 074h,0BFh,0E8h,0B3h,0F3h,083h,03Eh,030h,0A4h,01h,0C3h,0C7h,046h,06h,04h,00h
+; @0BC30 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03h,01Eh,052h,0A9h,083h,0EBh,0Dh,0E8h,021h,094h,074h,0A5h,0E8h,099h,0F3h,083h
+; @0BC40 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 03Eh,030h,0A4h,01h,0C3h
+; @0BC45 0000:BC45 original=a178a2 runtime CFG evidence
+    mov ax, word ptr ds:[0A278h]
+; @0BC48 0000:BC48 original=014602 runtime CFG evidence
+    add word ptr ss:[bp + 2], ax
+; @0BC4B 0000:BC4B original=e86300 runtime CFG evidence
+    CALL_NEAR loc_0BCB1
+; @0BC4E 0000:BC4E original=833e7ca400 runtime CFG evidence
+    cmp word ptr ds:[0A47Ch], 0
+; @0BC53 0000:BC53 original=7541 runtime CFG evidence
+    JNE_SHORT loc_0BC96
+; @0BC55 0000:BC55 original=837e1800 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 0
+; @0BC59 0000:BC59 original=743b runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC5B 0000:BC5B original=837e1848 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 048h
+; @0BC5F 0000:BC5F original=7435 runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC61 0000:BC61 original=837e1826 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 026h
+; @0BC65 0000:BC65 original=742f runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC67 0000:BC67 original=817e188600 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 086h
+; @0BC6C 0000:BC6C original=7428 runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC6E 0000:BC6E original=837e1828 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 028h
+; @0BC72 0000:BC72 original=7422 runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC74 0000:BC74 original=837e1829 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 029h
+; @0BC78 0000:BC78 original=741c runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC7A 0000:BC7A original=837e1834 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 034h
+; @0BC7E 0000:BC7E original=7416 runtime CFG evidence
+    JE_SHORT loc_0BC96
+; @0BC80 0000:BC80 original=817e0240ff runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 0FF40h
+; @0BC85 0000:BC85 original=7d03 runtime CFG evidence
+    JGE_SHORT loc_0BC8A
+; @0BC87 0000:BC87 original=e98d00 runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0BC8A 0000:BC8A original=817e02f000 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 0F0h
+; @0BC8F 0000:BC8F original=7c03 runtime CFG evidence
+    JL_SHORT loc_0BC94
+; @0BC91 0000:BC91 original=e98300 runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0BC94 0000:BC94 original=eb0d runtime CFG evidence
+    JMP_SHORT loc_0BCA3
+; @0BC96 0000:BC96 original=837e02ec runtime CFG evidence
+    cmp word ptr ss:[bp + 2], -014h
+; @0BC9A 0000:BC9A original=7c7b runtime CFG evidence
+    JL_SHORT loc_0BD17
+; @0BC9C 0000:BC9C original=817e02f000 runtime CFG evidence
+    cmp word ptr ss:[bp + 2], 0F0h
+; @0BCA1 0000:BCA1 original=7d74 runtime CFG evidence
+    JGE_SHORT loc_0BD17
+; @0BCA3 0000:BCA3 original=833e7ca400 runtime CFG evidence
+    cmp word ptr ds:[0A47Ch], 0
+; @0BCA8 0000:BCA8 original=7506 runtime CFG evidence
+    JNE_SHORT loc_0BCB0
+; @0BCAA 0000:BCAA original=e81e00 runtime CFG evidence
+    CALL_NEAR loc_0BCCB
+; @0BCAD 0000:BCAD original=e846a6 runtime CFG evidence
+    CALL_NEAR loc_062F6
+; @0BCB0 0000:BCB0 original=c3 runtime CFG evidence
+    ret
 ; sub_0000_BCB1
 ; @0BCB1 0000:BCB1 original=817e04c000
     cmp word ptr ss:[bp + 4], 0C0h
@@ -2433,16 +3707,60 @@ loc_0F797 equ 05797h
     mov word ptr ss:[bp + 4], 0
 ; @0BCCA 0000:BCCA original=c3
     ret
-; @0BCCB UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Eh,00h,00h,075h,01h,0C3h,083h,07Eh,016h,05h,075h,01h,0C3h,083h,07Eh
-; @0BCDB UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 018h,00h,075h,01h,0C3h,083h,07Eh,018h,01h,075h,01h,0C3h,083h,07Eh,014h,01h
-; @0BCEB UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,07h,083h,07Eh,014h,02h,074h,06h,0C3h,0E8h,04Fh,0EDh,0EBh,03h,0E8h,075h
-; @0BCFB UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0EDh,072h,01h,0C3h,083h,03Eh,0C2h,0A8h,01h,074h,03h,0E8h,0BEh,02h,0E8h,05Dh
-; @0BD0B UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E1h,0C3h
+; @0BCCB 0000:BCCB original=837e0000 runtime CFG evidence
+    cmp word ptr ss:[bp], 0
+; @0BCCF 0000:BCCF original=7501 runtime CFG evidence
+    JNE_SHORT loc_0BCD2
+; @0BCD1 0000:BCD1 original=c3 runtime CFG evidence
+    ret
+; @0BCD2 0000:BCD2 original=837e1605 runtime CFG evidence
+    cmp word ptr ss:[bp + 016h], 5
+; @0BCD6 0000:BCD6 original=7501 runtime CFG evidence
+    JNE_SHORT loc_0BCD9
+; @0BCD8 0000:BCD8 original=c3 runtime CFG evidence
+    ret
+; @0BCD9 0000:BCD9 original=837e1800 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 0
+; @0BCDD 0000:BCDD original=7501 runtime CFG evidence
+    JNE_SHORT loc_0BCE0
+; @0BCDF 0000:BCDF original=c3 runtime CFG evidence
+    ret
+; @0BCE0 0000:BCE0 original=837e1801 runtime CFG evidence
+    cmp word ptr ss:[bp + 018h], 1
+; @0BCE4 0000:BCE4 original=7501 runtime CFG evidence
+    JNE_SHORT loc_0BCE7
+; @0BCE6 0000:BCE6 original=c3 runtime CFG evidence
+    ret
+; @0BCE7 0000:BCE7 original=837e1401 runtime CFG evidence
+    cmp word ptr ss:[bp + 014h], 1
+; @0BCEB 0000:BCEB original=7407 runtime CFG evidence
+    JE_SHORT loc_0BCF4
+; @0BCED 0000:BCED original=837e1402 runtime CFG evidence
+    cmp word ptr ss:[bp + 014h], 2
+; @0BCF1 0000:BCF1 original=7406 runtime CFG evidence
+    JE_SHORT loc_0BCF9
+; @0BCF3 0000:BCF3 original=c3 runtime CFG evidence
+    ret
+; @0BCF4 0000:BCF4 original=e84fed runtime CFG evidence
+    CALL_NEAR loc_0AA46
+; @0BCF7 0000:BCF7 original=eb03 runtime CFG evidence
+    JMP_SHORT loc_0BCFC
+; @0BCF9 0000:BCF9 original=e875ed runtime CFG evidence
+    CALL_NEAR loc_0AA71
+; @0BCFC 0000:BCFC original=7201 runtime CFG evidence
+    JB_SHORT loc_0BCFF
+; @0BCFE 0000:BCFE original=c3 runtime CFG evidence
+    ret
+; @0BCFF 0000:BCFF original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BD04 0000:BD04 original=7403 runtime CFG evidence
+    JE_SHORT loc_0BD09
+; @0BD06 0000:BD06 original=e8be02 runtime CFG evidence
+    CALL_NEAR loc_0BFC7
+; @0BD09 0000:BD09 original=e85de1 runtime CFG evidence
+    CALL_NEAR loc_09E69
+; @0BD0C 0000:BD0C original=c3 runtime CFG evidence
+    ret
 ; @0BD0D 0000:BD0D original=55
     push bp
 ; @0BD0E 0000:BD0E original=8beb
@@ -2586,70 +3904,318 @@ loc_0F797 equ 05797h
     dec word ptr ds:[0A976h]
 ; @0BDCF 0000:BDCF original=c3
     ret
-; @0BDD0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Eh,0Ah,01h,074h,064h,0B9h,023h,00h,0BBh,0B4h,023h,0A1h,036h,0A4h,08Bh
-; @0BDE0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Eh,038h,0A4h,083h,03Fh,00h,074h,04Dh,083h,07Fh,0Ah,01h,074h,047h,083h,07Fh
-; @0BDF0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 014h,01h,075h,041h,083h,07Fh,016h,04h,075h,03Bh,081h,07Fh,018h,082h,00h,072h
-; @0BE00 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 034h,081h,07Fh,018h,094h,00h,077h,02Dh,08Bh,077h,02h,083h,0C6h,010h,03Bh,0FEh
-; @0BE10 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Dh,023h,083h,0EEh,020h,03Bh,0FEh,07Eh,01Ch,08Bh,077h,04h,083h,0C6h,010h,03Bh
-; @0BE20 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C6h,07Dh,012h,083h,0EEh,020h,03Bh,0C6h,07Eh,0Bh,08Bh,076h,0Eh,03Bh,077h,0Eh
-; @0BE30 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,03h,0E9h,024h,092h,083h,0C3h,038h,0E2h,0A9h,0F8h,0C3h,083h,03Eh,024h,023h
-; @0BE40 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,074h,03h,0E9h,0FFh,0FDh,0FFh,046h,022h,08Bh,05Eh,014h,0D1h,0E3h,02Eh,0FFh
-; @0BE50 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A7h,054h,0BEh,090h,045h,0BCh,05Ah,0BEh,0B0h,0BEh,083h,07Eh,022h,09h,075h,044h
-; @0BE60 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Eh,01Ah,024h,074h,09h,083h,07Eh,01Ah,025h,074h,018h,0E9h,0A8h,0FEh,0C7h
-; @0BE70 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,06h,06h,00h,0C7h,046h,018h,026h,00h,0C7h,046h,08h,097h,00h,083h,06Eh
-; @0BE80 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,08h,0EBh,013h,0C7h,046h,06h,02h,00h,0C7h,046h,018h,026h,00h,0C7h,046h
-; @0BE90 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08h,091h,00h,083h,046h,04h,08h,08Bh,046h,04h,089h,046h,032h,08Bh,046h,02h
-; @0BEA0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,046h,034h,0C3h,08Bh,046h,022h,05h,00h,00h,089h,046h,08h,0E9h,095h,0FDh
+; @0BDD0 0000:BDD0 original=837e0a01 runtime CFG evidence
+    cmp word ptr ss:[bp + 0Ah], 1
+; @0BDD4 0000:BDD4 original=7464 runtime CFG evidence
+    JE_SHORT loc_0BE3A
+; @0BDD6 0000:BDD6 original=b92300 runtime CFG evidence
+    mov cx, 023h
+; @0BDD9 0000:BDD9 original=bbb423 runtime CFG evidence
+    mov bx, 023B4h
+; @0BDDC 0000:BDDC original=a136a4 runtime CFG evidence
+    mov ax, word ptr ds:[0A436h]
+; @0BDDF 0000:BDDF original=8b3e38a4 runtime CFG evidence
+    mov di, word ptr ds:[0A438h]
+; @0BDE3 0000:BDE3 original=833f00 runtime CFG evidence
+    cmp word ptr ds:[bx], 0
+; @0BDE6 0000:BDE6 original=744d runtime CFG evidence
+    JE_SHORT loc_0BE35
+; @0BDE8 0000:BDE8 original=837f0a01 runtime CFG evidence
+    cmp word ptr ds:[bx + 0Ah], 1
+; @0BDEC 0000:BDEC original=7447 runtime CFG evidence
+    JE_SHORT loc_0BE35
+; @0BDEE 0000:BDEE original=837f1401 runtime CFG evidence
+    cmp word ptr ds:[bx + 014h], 1
+; @0BDF2 0000:BDF2 original=7541 runtime CFG evidence
+    JNE_SHORT loc_0BE35
+; @0BDF4 0000:BDF4 original=837f1604 runtime CFG evidence
+    cmp word ptr ds:[bx + 016h], 4
+; @0BDF8 0000:BDF8 original=753b runtime CFG evidence
+    JNE_SHORT loc_0BE35
+; @0BDFA 0000:BDFA original=817f188200 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 082h
+; @0BDFF 0000:BDFF original=7234 runtime CFG evidence
+    JB_SHORT loc_0BE35
+; @0BE01 0000:BE01 original=817f189400 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 094h
+; @0BE06 0000:BE06 original=772d runtime CFG evidence
+    JA_SHORT loc_0BE35
+; @0BE08 0000:BE08 original=8b7702 runtime CFG evidence
+    mov si, word ptr ds:[bx + 2]
+; @0BE0B 0000:BE0B original=83c610 runtime CFG evidence
+    add si, 010h
+; @0BE0E 0000:BE0E original=3bfe runtime CFG evidence
+    cmp di, si
+; @0BE10 0000:BE10 original=7d23 runtime CFG evidence
+    JGE_SHORT loc_0BE35
+; @0BE12 0000:BE12 original=83ee20 runtime CFG evidence
+    sub si, 020h
+; @0BE15 0000:BE15 original=3bfe runtime CFG evidence
+    cmp di, si
+; @0BE17 0000:BE17 original=7e1c runtime CFG evidence
+    JLE_SHORT loc_0BE35
+; @0BE19 0000:BE19 original=8b7704 runtime CFG evidence
+    mov si, word ptr ds:[bx + 4]
+; @0BE1C 0000:BE1C original=83c610 runtime CFG evidence
+    add si, 010h
+; @0BE1F 0000:BE1F original=3bc6 runtime CFG evidence
+    cmp ax, si
+; @0BE21 0000:BE21 original=7d12 runtime CFG evidence
+    JGE_SHORT loc_0BE35
+; @0BE23 0000:BE23 original=83ee20 runtime CFG evidence
+    sub si, 020h
+; @0BE26 0000:BE26 original=3bc6 runtime CFG evidence
+    cmp ax, si
+; @0BE28 0000:BE28 original=7e0b runtime CFG evidence
+    JLE_SHORT loc_0BE35
+; @0BE2A 0000:BE2A original=8b760e runtime CFG evidence
+    mov si, word ptr ss:[bp + 0Eh]
+; @0BE2D 0000:BE2D original=3b770e runtime CFG evidence
+    cmp si, word ptr ds:[bx + 0Eh]
+; @0BE30 0000:BE30 original=7403 runtime CFG evidence
+    JE_SHORT loc_0BE35
+; @0BE32 0000:BE32 original=e92492 runtime CFG evidence
+    JMP_NEAR loc_05059
+; @0BE35 0000:BE35 original=83c338 runtime CFG evidence
+    add bx, 038h
+; @0BE38 0000:BE38 original=e2a9 runtime CFG evidence
+    LOOP_SHORT loc_0BDE3
+; @0BE3A 0000:BE3A original=f8 runtime CFG evidence
+    clc
+; @0BE3B 0000:BE3B original=c3 runtime CFG evidence
+    ret
+; @0BE3C 0000:BE3C original=833e242301 runtime CFG evidence
+    cmp word ptr ds:[02324h], 1
+; @0BE41 0000:BE41 original=7403 runtime CFG evidence
+    JE_SHORT loc_0BE46
+; @0BE43 0000:BE43 original=e9fffd runtime CFG evidence
+    JMP_NEAR loc_0BC45
+; @0BE46 0000:BE46 original=ff4622 runtime CFG evidence
+    inc word ptr ss:[bp + 022h]
+; @0BE49 0000:BE49 original=8b5e14 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 014h]
+; @0BE4C 0000:BE4C original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0BE4E 0000:BE4E original=2effa754be runtime CFG evidence
+    jmp word ptr cs:[bx - 041ACh]
+; @0BE53 UNKNOWN bootstrap bytes: not reconstructed code/data
+    db 090h,045h,0BCh,05Ah,0BEh,0B0h,0BEh
+; @0BE5A 0000:BE5A original=837e2209 runtime CFG evidence
+    cmp word ptr ss:[bp + 022h], 9
+; @0BE5E 0000:BE5E original=7544 runtime CFG evidence
+    JNE_SHORT loc_0BEA4
+; @0BE60 0000:BE60 original=837e1a24 runtime CFG evidence
+    cmp word ptr ss:[bp + 01Ah], 024h
+; @0BE64 0000:BE64 original=7409 runtime CFG evidence
+    JE_SHORT loc_0BE6F
+; @0BE66 0000:BE66 original=837e1a25 runtime CFG evidence
+    cmp word ptr ss:[bp + 01Ah], 025h
+; @0BE6A 0000:BE6A original=7418 runtime CFG evidence
+    JE_SHORT loc_0BE84
+; @0BE6C 0000:BE6C original=e9a8fe runtime CFG evidence
+    JMP_NEAR loc_0BD17
+; @0BE6F 0000:BE6F original=c746060600 runtime CFG evidence
+    mov word ptr ss:[bp + 6], 6
+; @0BE74 0000:BE74 original=c746182600 runtime CFG evidence
+    mov word ptr ss:[bp + 018h], 026h
+; @0BE79 0000:BE79 original=c746089700 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 097h
+; @0BE7E 0000:BE7E original=836e0408 runtime CFG evidence
+    sub word ptr ss:[bp + 4], 8
+; @0BE82 0000:BE82 original=eb13 runtime CFG evidence
+    JMP_SHORT loc_0BE97
+; @0BE84 0000:BE84 original=c746060200 runtime CFG evidence
+    mov word ptr ss:[bp + 6], 2
+; @0BE89 0000:BE89 original=c746182600 runtime CFG evidence
+    mov word ptr ss:[bp + 018h], 026h
+; @0BE8E 0000:BE8E original=c746089100 runtime CFG evidence
+    mov word ptr ss:[bp + 8], 091h
+; @0BE93 0000:BE93 original=83460408 runtime CFG evidence
+    add word ptr ss:[bp + 4], 8
+; @0BE97 0000:BE97 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @0BE9A 0000:BE9A original=894632 runtime CFG evidence
+    mov word ptr ss:[bp + 032h], ax
+; @0BE9D 0000:BE9D original=8b4602 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 2]
+; @0BEA0 0000:BEA0 original=894634 runtime CFG evidence
+    mov word ptr ss:[bp + 034h], ax
+; @0BEA3 0000:BEA3 original=c3 runtime CFG evidence
+    ret
+; @0BEA4 0000:BEA4 original=8b4622 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 022h]
+; @0BEA7 0000:BEA7 original=050000 runtime CFG evidence
+    add ax, 0
+; @0BEAA 0000:BEAA original=894608 runtime CFG evidence
+    mov word ptr ss:[bp + 8], ax
+; @0BEAD 0000:BEAD original=e995fd runtime CFG evidence
+    JMP_NEAR loc_0BC45
 ; @0BEB0 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 083h,07Eh,022h,0Ch,075h,03h,0E9h,05Eh,0FEh,08Bh,046h,022h,05h,03h,00h,089h
 ; @0BEC0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,08h,0E9h,080h,0FDh,083h,07Fh,018h,07h,075h,03h,0E9h,0EBh,00h,083h,07Fh
-; @0BED0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 018h,08h,075h,03h,0E9h,0E2h,00h,083h,07Fh,018h,0Ch,075h,03h,0E9h,0D9h,00h
-; @0BEE0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,07Fh,018h,09h,075h,03h,0E9h,0BFh,00h,083h,07Fh,018h,02h,074h,02Ch,083h
-; @0BEF0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Fh,018h,06h,075h,03h,0E9h,09Fh,00h,083h,07Fh,018h,05h,075h,03h,0E9h,096h
-; @0BF00 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,03Bh,06Fh,030h,074h,01h,0C3h,0C7h,047h,01Ch,00h,00h,083h,03Eh,0C2h,0A8h
-; @0BF10 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 01h,074h,012h,0C7h,046h,020h,00h,00h,0E9h,0ACh,00h,0C7h,07h,00h,00h,083h
-; @0BF20 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Fh,08h,033h,075h,08h,0FFh,04Eh,020h,075h,03h,0E9h,09Ah,00h,0FFh,04Eh,020h
-; @0BF30 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 075h,03h,0E9h,092h,00h,083h,03Eh,0DCh,0BEh,01h,074h,011h,083h,03Eh,0DCh,0BEh
-; @0BF40 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,075h,0Fh,0FFh,04Eh,020h,074h,07Fh,0FFh,04Eh,020h,074h,07Ah,0FFh,04Eh,020h
-; @0BF50 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 074h,075h,0C7h,046h,024h,05h,00h,083h,03Eh,0C2h,0A8h,01h,074h,01h,0C3h,055h
-; @0BF60 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,02Eh,0BAh,0A8h,0C7h,046h,024h,05h,00h,08Bh,02Eh,0BCh,0A8h,0C7h,046h,024h
-; @0BF70 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,00h,08Bh,02Eh,0BEh,0A8h,0C7h,046h,024h,05h,00h,08Bh,02Eh,0C0h,0A8h,0C7h
-; @0BF80 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,024h,05h,00h,080h,03Eh,0C0h,098h,00h,074h,05h,0C6h,06h,0FFh,0BEh,0Eh
-; @0BF90 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05Dh,0C3h,0E8h,078h,0FDh,0EBh,08Eh,0E8h,073h,0FDh,083h,03Eh,0C2h,0A8h,01h,074h
-; @0BFA0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 084h,0C7h,046h,020h,00h,00h,0EBh,01Fh,083h,03Eh,0C2h,0A8h,01h,075h,03h,0E9h
-; @0BFB0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 073h,0FFh,0C7h,046h,020h,00h,00h,0EBh,0Eh,083h,03Eh,0C2h,0A8h,01h,074h,0D2h
-; @0BFC0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,046h,020h,00h,00h,0EBh,00h
+    db 046h,08h,0E9h,080h,0FDh
+; @0BEC5 0000:BEC5 original=837f1807 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 7
+; @0BEC9 0000:BEC9 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BECE
+; @0BECB 0000:BECB original=e9eb00 runtime CFG evidence
+    JMP_NEAR loc_0BFB9
+; @0BECE 0000:BECE original=837f1808 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 8
+; @0BED2 0000:BED2 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BED7
+; @0BED4 0000:BED4 original=e9e200 runtime CFG evidence
+    JMP_NEAR loc_0BFB9
+; @0BED7 0000:BED7 original=837f180c runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 0Ch
+; @0BEDB 0000:BEDB original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BEE0
+; @0BEDD 0000:BEDD original=e9d900 runtime CFG evidence
+    JMP_NEAR loc_0BFB9
+; @0BEE0 0000:BEE0 original=837f1809 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 9
+; @0BEE4 0000:BEE4 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BEE9
+; @0BEE6 0000:BEE6 original=e9bf00 runtime CFG evidence
+    JMP_NEAR loc_0BFA8
+; @0BEE9 0000:BEE9 original=837f1802 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 2
+; @0BEED 0000:BEED original=742c runtime CFG evidence
+    JE_SHORT loc_0BF1B
+; @0BEEF 0000:BEEF original=837f1806 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 6
+; @0BEF3 0000:BEF3 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BEF8
+; @0BEF5 0000:BEF5 original=e99f00 runtime CFG evidence
+    JMP_NEAR loc_0BF97
+; @0BEF8 0000:BEF8 original=837f1805 runtime CFG evidence
+    cmp word ptr ds:[bx + 018h], 5
+; @0BEFC 0000:BEFC original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BF01
+; @0BEFE 0000:BEFE original=e99600 runtime CFG evidence
+    JMP_NEAR loc_0BF97
+; @0BF01 0000:BF01 original=3b6f30 runtime CFG evidence
+    cmp bp, word ptr ds:[bx + 030h]
+; @0BF04 0000:BF04 original=7401 runtime CFG evidence
+    JE_SHORT loc_0BF07
+; @0BF06 0000:BF06 original=c3 runtime CFG evidence
+    ret
+; @0BF07 0000:BF07 original=c7471c0000 runtime CFG evidence
+    mov word ptr ds:[bx + 01Ch], 0
+; @0BF0C 0000:BF0C original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BF11 0000:BF11 original=7412 runtime CFG evidence
+    JE_SHORT loc_0BF25
+; @0BF13 0000:BF13 original=c746200000 runtime CFG evidence
+    mov word ptr ss:[bp + 020h], 0
+; @0BF18 0000:BF18 original=e9ac00 runtime CFG evidence
+    JMP_NEAR loc_0BFC7
+; @0BF1B 0000:BF1B original=c7070000 runtime CFG evidence
+    mov word ptr ds:[bx], 0
+; @0BF1F 0000:BF1F original=837f0833 runtime CFG evidence
+    cmp word ptr ds:[bx + 8], 033h
+; @0BF23 0000:BF23 original=7508 runtime CFG evidence
+    JNE_SHORT loc_0BF2D
+; @0BF25 0000:BF25 original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0BF28 0000:BF28 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BF2D
+; @0BF2A 0000:BF2A original=e99a00 runtime CFG evidence
+    JMP_NEAR loc_0BFC7
+; @0BF2D 0000:BF2D original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0BF30 0000:BF30 original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BF35
+; @0BF32 0000:BF32 original=e99200 runtime CFG evidence
+    JMP_NEAR loc_0BFC7
+; @0BF35 0000:BF35 original=833edcbe01 runtime CFG evidence
+    cmp word ptr ds:[0BEDCh], 1
+; @0BF3A 0000:BF3A original=7411 runtime CFG evidence
+    JE_SHORT loc_0BF4D
+; @0BF3C 0000:BF3C original=833edcbe00 runtime CFG evidence
+    cmp word ptr ds:[0BEDCh], 0
+; @0BF41 0000:BF41 original=750f runtime CFG evidence
+    JNE_SHORT loc_0BF52
+; @0BF43 0000:BF43 original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0BF46 0000:BF46 original=747f runtime CFG evidence
+    JE_SHORT loc_0BFC7
+; @0BF48 0000:BF48 original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0BF4B 0000:BF4B original=747a runtime CFG evidence
+    JE_SHORT loc_0BFC7
+; @0BF4D 0000:BF4D original=ff4e20 runtime CFG evidence
+    dec word ptr ss:[bp + 020h]
+; @0BF50 0000:BF50 original=7475 runtime CFG evidence
+    JE_SHORT loc_0BFC7
+; @0BF52 0000:BF52 original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0BF57 0000:BF57 original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BF5C 0000:BF5C original=7401 runtime CFG evidence
+    JE_SHORT loc_0BF5F
+; @0BF5E 0000:BF5E original=c3 runtime CFG evidence
+    ret
+; @0BF5F 0000:BF5F original=55 runtime CFG evidence
+    push bp
+; @0BF60 0000:BF60 original=8b2ebaa8 runtime CFG evidence
+    mov bp, word ptr ds:[0A8BAh]
+; @0BF64 0000:BF64 original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0BF69 0000:BF69 original=8b2ebca8 runtime CFG evidence
+    mov bp, word ptr ds:[0A8BCh]
+; @0BF6D 0000:BF6D original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0BF72 0000:BF72 original=8b2ebea8 runtime CFG evidence
+    mov bp, word ptr ds:[0A8BEh]
+; @0BF76 0000:BF76 original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0BF7B 0000:BF7B original=8b2ec0a8 runtime CFG evidence
+    mov bp, word ptr ds:[0A8C0h]
+; @0BF7F 0000:BF7F original=c746240500 runtime CFG evidence
+    mov word ptr ss:[bp + 024h], 5
+; @0BF84 0000:BF84 original=803ec09800 runtime CFG evidence
+    cmp byte ptr ds:[098C0h], 0
+; @0BF89 0000:BF89 original=7405 runtime CFG evidence
+    JE_SHORT loc_0BF90
+; @0BF8B 0000:BF8B original=c606ffbe0e runtime CFG evidence
+    mov byte ptr ds:[0BEFFh], 0Eh
+; @0BF90 0000:BF90 original=5d runtime CFG evidence
+    pop bp
+; @0BF91 0000:BF91 original=c3 runtime CFG evidence
+    ret
+; @0BF92 0000:BF92 original=e878fd runtime CFG evidence
+    CALL_NEAR loc_0BD0D
+; @0BF95 0000:BF95 original=eb8e runtime CFG evidence
+    JMP_SHORT loc_0BF25
+; @0BF97 0000:BF97 original=e873fd runtime CFG evidence
+    CALL_NEAR loc_0BD0D
+; @0BF9A 0000:BF9A original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BF9F 0000:BF9F original=7484 runtime CFG evidence
+    JE_SHORT loc_0BF25
+; @0BFA1 0000:BFA1 original=c746200000 runtime CFG evidence
+    mov word ptr ss:[bp + 020h], 0
+; @0BFA6 0000:BFA6 original=eb1f runtime CFG evidence
+    JMP_SHORT loc_0BFC7
+; @0BFA8 0000:BFA8 original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BFAD 0000:BFAD original=7503 runtime CFG evidence
+    JNE_SHORT loc_0BFB2
+; @0BFAF 0000:BFAF original=e973ff runtime CFG evidence
+    JMP_NEAR loc_0BF25
+; @0BFB2 0000:BFB2 original=c746200000 runtime CFG evidence
+    mov word ptr ss:[bp + 020h], 0
+; @0BFB7 0000:BFB7 original=eb0e runtime CFG evidence
+    JMP_SHORT loc_0BFC7
+; @0BFB9 0000:BFB9 original=833ec2a801 runtime CFG evidence
+    cmp word ptr ds:[0A8C2h], 1
+; @0BFBE 0000:BFBE original=74d2 runtime CFG evidence
+    JE_SHORT loc_0BF92
+; @0BFC0 0000:BFC0 original=c746200000 runtime CFG evidence
+    mov word ptr ss:[bp + 020h], 0
+; @0BFC5 0000:BFC5 original=eb00 runtime CFG evidence
+    JMP_SHORT loc_0BFC7
 ; @0BFC7 0000:BFC7 original=837e1821
     cmp word ptr ss:[bp + 018h], 021h
 ; @0BFCB 0000:BFCB original=7508

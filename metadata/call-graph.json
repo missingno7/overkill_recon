@@ -3771,7 +3771,7 @@
     {
       "address": "0000:0FE4",
       "depth": 0,
-      "name": "sub_0000_0FE4"
+      "name": "BuildByteToNibbleMaskTable"
     },
     {
       "address": "0000:24D7",
@@ -3861,32 +3861,32 @@
     {
       "address": "0000:306F",
       "depth": 0,
-      "name": "sub_0000_306F"
+      "name": "CopyPackedRowsToTandyBanks"
     },
     {
       "address": "0000:3097",
       "depth": 0,
-      "name": "sub_0000_3097"
+      "name": "CopyPackedRowsStride104"
     },
     {
       "address": "0000:30B4",
       "depth": 0,
-      "name": "sub_0000_30B4"
+      "name": "CopyPackedRowsStride160"
     },
     {
       "address": "0000:3103",
       "depth": 0,
-      "name": "sub_0000_3103"
+      "name": "TandyOffsetFromRow9EE8"
     },
     {
       "address": "0000:3118",
       "depth": 0,
-      "name": "sub_0000_3118"
+      "name": "TandyOffsetFromRow9BC8"
     },
     {
       "address": "0000:312D",
       "depth": 0,
-      "name": "sub_0000_312D"
+      "name": "TandyOffsetFromRow9D58"
     },
     {
       "address": "0000:3153",
@@ -3896,17 +3896,17 @@
     {
       "address": "0000:3345",
       "depth": 0,
-      "name": "sub_0000_3345"
+      "name": "ClearTandy32K"
     },
     {
       "address": "0000:3354",
       "depth": 0,
-      "name": "sub_0000_3354"
+      "name": "CopyWorkspace104x192ToTandy"
     },
     {
       "address": "0000:3389",
       "depth": 0,
-      "name": "sub_0000_3389"
+      "name": "ClearTandy104x200"
     },
     {
       "address": "0000:33AF",

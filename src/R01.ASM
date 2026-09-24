@@ -3,6 +3,36 @@ include ENCODING.INC
 part01 segment byte public 'CODE'
 assume cs:part01,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+CopyWorkspace104x192ToTandy_03354 equ 01354h
+ClearTandy104x200_03389 equ 01389h
+CopyPackedRowsToTandyBanks_0306F equ 0106Fh
+CopyPackedRowsStride104_03097 equ 01097h
+CopyPackedRowsStride160_030B4 equ 010B4h
+TandyOffsetFromRow9EE8_03103 equ 01103h
+TandyOffsetFromRow9BC8_03118 equ 01118h
+TandyOffsetFromRow9D58_0312D equ 0112Dh
+ClearTandy32K_03345 equ 01345h
+loc_025AE equ 05AEh
+loc_025B2 equ 05B2h
+loc_02E6E equ 0E6Eh
+loc_02ECB equ 0ECBh
+loc_02F40 equ 0F40h
+loc_02F81 equ 0F81h
+loc_030DE equ 010DEh
+loc_030EC equ 010ECh
+loc_030FF equ 010FFh
+loc_034B5 equ 014B5h
+loc_034C5 equ 014C5h
+loc_034CB equ 014CBh
+loc_034DE equ 014DEh
+loc_03548 equ 01548h
+loc_03586 equ 01586h
+loc_0359A equ 0159Ah
+loc_035AA equ 015AAh
+loc_035BA equ 015BAh
+loc_035D8 equ 015D8h
+loc_03663 equ 01663h
+loc_05A36 equ 03A36h
 loc_024E9 equ 04E9h
 loc_02523 equ 0523h
 loc_02557 equ 0557h
@@ -449,14 +479,50 @@ loc_0511F equ 0311Fh
     LOOP_SHORT loc_02557
 ; @0257F 0000:257F original=c3
     ret
-; @02580 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,05Eh,02h,081h,0FBh,0E0h,00h,073h,029h,0D1h,0E3h,08Bh,09Fh,0C8h,099h,083h
-; @02590 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FBh,0FFh,074h,01Eh,08Bh,046h,04h,08Bh,0C8h,083h,0E1h,07h,089h,04Eh,012h,0D1h
-; @025A0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E8h,0D1h,0E8h,0D1h,0E8h,03h,0C3h,083h,07Eh,024h,00h,075h,01h,0C3h,0FFh,04Eh
-; @025B0 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 024h,0C3h,0B8h,0FFh,0FFh,0C3h
+; @02580 0000:2580 original=8b5e02 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 2]
+; @02583 0000:2583 original=81fbe000 runtime CFG evidence
+    cmp bx, 0E0h
+; @02587 0000:2587 original=7329 runtime CFG evidence
+    JAE_SHORT loc_025B2
+; @02589 0000:2589 original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @0258B 0000:258B original=8b9fc899 runtime CFG evidence
+    mov bx, word ptr ds:[bx - 06638h]
+; @0258F 0000:258F original=83fbff runtime CFG evidence
+    cmp bx, -1
+; @02592 0000:2592 original=741e runtime CFG evidence
+    JE_SHORT loc_025B2
+; @02594 0000:2594 original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @02597 0000:2597 original=8bc8 runtime CFG evidence
+    mov cx, ax
+; @02599 0000:2599 original=83e107 runtime CFG evidence
+    and cx, 7
+; @0259C 0000:259C original=894e12 runtime CFG evidence
+    mov word ptr ss:[bp + 012h], cx
+; @0259F 0000:259F original=d1e8 runtime CFG evidence
+    shr ax, 1
+; @025A1 0000:25A1 original=d1e8 runtime CFG evidence
+    shr ax, 1
+; @025A3 0000:25A3 original=d1e8 runtime CFG evidence
+    shr ax, 1
+; @025A5 0000:25A5 original=03c3 runtime CFG evidence
+    add ax, bx
+; @025A7 0000:25A7 original=837e2400 runtime CFG evidence
+    cmp word ptr ss:[bp + 024h], 0
+; @025AB 0000:25AB original=7501 runtime CFG evidence
+    JNE_SHORT loc_025AE
+; @025AD 0000:25AD original=c3 runtime CFG evidence
+    ret
+; @025AE 0000:25AE original=ff4e24 runtime CFG evidence
+    dec word ptr ss:[bp + 024h]
+; @025B1 0000:25B1 original=c3 runtime CFG evidence
+    ret
+; @025B2 0000:25B2 original=b8ffff runtime CFG evidence
+    mov ax, 0FFFFh
+; @025B5 0000:25B5 original=c3 runtime CFG evidence
+    ret
 ; sub_0000_25B6
 ; @025B6 0000:25B6 original=8adc
     mov bl, ah
@@ -1881,73 +1947,475 @@ loc_0511F equ 0311Fh
     mov ds, word ptr cs:[09596h]
 ; @02E6D 0000:2E6D original=c3
     ret
-; @02E6E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0BBh,058h,00h,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h
-; @02E7E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h
-; @02E8E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh
-; @02E9E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh
-; @02EAE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h
-; @02EBE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C6h,02h,0ABh,03h,0FBh,0E2h,0A9h,02Eh,08Eh,01Eh,096h,095h,0C3h,0BBh,058h,00h
-; @02ECE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h,0F7h
-; @02EDE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h,0F7h,0D0h,026h,09h
-; @02EEE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h
-; @02EFE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,083h,0C7h,02h,08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h
-; @02F0E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 02h,08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h
-; @02F1E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h,0F7h,0D0h,026h
-; @02F2E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 09h,05h,083h,0C6h,04h,083h,0C7h,02h,03h,0FBh,0E2h,091h,02Eh,08Eh,01Eh,096h
-; @02F3E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 095h,0C3h,0BBh,060h,00h,08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h
-; @02F4E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,02h,08Bh,04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh
-; @02F5E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,0F7h,0D0h,026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,08Bh,04h,0F7h,0D0h
-; @02F6E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 026h,09h,05h,083h,0C6h,04h,083h,0C7h,02h,03h,0FBh,0E2h,0C5h,02Eh,08Eh,01Eh
-; @02F7E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 096h,095h,0C3h,0BBh,060h,00h,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh
-; @02F8E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h
-; @02F9E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,03h,0FBh
-; @02FAE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0E2h,0D1h,02Eh,08Eh,01Eh,096h,095h,0C3h,0BBh,064h,00h,0ADh,026h,023h,05h,0Bh
-; @02FBE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,03h
-; @02FCE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0FBh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh
-; @02FDE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 04h,083h,0C6h,02h,0ABh,03h,0FBh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h
-; @02FEE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,03h,0FBh,0ADh,026h,023h
-; @02FFE UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h
-; @0300E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0ABh,03h,0FBh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h
-; @0301E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 05h,0Bh,04h,083h,0C6h,02h,0ABh,03h,0FBh,0ADh,026h,023h,05h,0Bh,04h,083h
-; @0302E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,03h,0FBh,0ADh
-; @0303E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h
-; @0304E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C6h,02h,0ABh,03h,0FBh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh
-; @0305E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,03h,0FBh,02Eh,08Eh,01Eh,096h,095h
-; @0306E UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C3h
+; @02E6E 0000:2E6E original=bb5800 runtime CFG evidence
+    mov bx, 058h
+; @02E71 0000:2E71 original=ad runtime CFG evidence
+    lodsw
+; @02E72 0000:2E72 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02E75 0000:2E75 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02E77 0000:2E77 original=83c602 runtime CFG evidence
+    add si, 2
+; @02E7A 0000:2E7A original=ab runtime CFG evidence
+    stosw
+; @02E7B 0000:2E7B original=ad runtime CFG evidence
+    lodsw
+; @02E7C 0000:2E7C original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02E7F 0000:2E7F original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02E81 0000:2E81 original=83c602 runtime CFG evidence
+    add si, 2
+; @02E84 0000:2E84 original=ab runtime CFG evidence
+    stosw
+; @02E85 0000:2E85 original=ad runtime CFG evidence
+    lodsw
+; @02E86 0000:2E86 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02E89 0000:2E89 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02E8B 0000:2E8B original=83c602 runtime CFG evidence
+    add si, 2
+; @02E8E 0000:2E8E original=ab runtime CFG evidence
+    stosw
+; @02E8F 0000:2E8F original=ad runtime CFG evidence
+    lodsw
+; @02E90 0000:2E90 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02E93 0000:2E93 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02E95 0000:2E95 original=83c602 runtime CFG evidence
+    add si, 2
+; @02E98 0000:2E98 original=ab runtime CFG evidence
+    stosw
+; @02E99 0000:2E99 original=ad runtime CFG evidence
+    lodsw
+; @02E9A 0000:2E9A original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02E9D 0000:2E9D original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02E9F 0000:2E9F original=83c602 runtime CFG evidence
+    add si, 2
+; @02EA2 0000:2EA2 original=ab runtime CFG evidence
+    stosw
+; @02EA3 0000:2EA3 original=ad runtime CFG evidence
+    lodsw
+; @02EA4 0000:2EA4 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02EA7 0000:2EA7 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02EA9 0000:2EA9 original=83c602 runtime CFG evidence
+    add si, 2
+; @02EAC 0000:2EAC original=ab runtime CFG evidence
+    stosw
+; @02EAD 0000:2EAD original=ad runtime CFG evidence
+    lodsw
+; @02EAE 0000:2EAE original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02EB1 0000:2EB1 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02EB3 0000:2EB3 original=83c602 runtime CFG evidence
+    add si, 2
+; @02EB6 0000:2EB6 original=ab runtime CFG evidence
+    stosw
+; @02EB7 0000:2EB7 original=ad runtime CFG evidence
+    lodsw
+; @02EB8 0000:2EB8 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02EBB 0000:2EBB original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02EBD 0000:2EBD original=83c602 runtime CFG evidence
+    add si, 2
+; @02EC0 0000:2EC0 original=ab runtime CFG evidence
+    stosw
+; @02EC1 0000:2EC1 original=03fb runtime CFG evidence
+    add di, bx
+; @02EC3 0000:2EC3 original=e2a9 runtime CFG evidence
+    LOOP_SHORT loc_02E6E
+; @02EC5 0000:2EC5 original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @02ECA 0000:2ECA original=c3 runtime CFG evidence
+    ret
+; @02ECB 0000:2ECB original=bb5800 runtime CFG evidence
+    mov bx, 058h
+; @02ECE 0000:2ECE original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02ED0 0000:2ED0 original=f7d0 runtime CFG evidence
+    not ax
+; @02ED2 0000:2ED2 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02ED5 0000:2ED5 original=83c604 runtime CFG evidence
+    add si, 4
+; @02ED8 0000:2ED8 original=83c702 runtime CFG evidence
+    add di, 2
+; @02EDB 0000:2EDB original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02EDD 0000:2EDD original=f7d0 runtime CFG evidence
+    not ax
+; @02EDF 0000:2EDF original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02EE2 0000:2EE2 original=83c604 runtime CFG evidence
+    add si, 4
+; @02EE5 0000:2EE5 original=83c702 runtime CFG evidence
+    add di, 2
+; @02EE8 0000:2EE8 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02EEA 0000:2EEA original=f7d0 runtime CFG evidence
+    not ax
+; @02EEC 0000:2EEC original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02EEF 0000:2EEF original=83c604 runtime CFG evidence
+    add si, 4
+; @02EF2 0000:2EF2 original=83c702 runtime CFG evidence
+    add di, 2
+; @02EF5 0000:2EF5 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02EF7 0000:2EF7 original=f7d0 runtime CFG evidence
+    not ax
+; @02EF9 0000:2EF9 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02EFC 0000:2EFC original=83c604 runtime CFG evidence
+    add si, 4
+; @02EFF 0000:2EFF original=83c702 runtime CFG evidence
+    add di, 2
+; @02F02 0000:2F02 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F04 0000:2F04 original=f7d0 runtime CFG evidence
+    not ax
+; @02F06 0000:2F06 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F09 0000:2F09 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F0C 0000:2F0C original=83c702 runtime CFG evidence
+    add di, 2
+; @02F0F 0000:2F0F original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F11 0000:2F11 original=f7d0 runtime CFG evidence
+    not ax
+; @02F13 0000:2F13 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F16 0000:2F16 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F19 0000:2F19 original=83c702 runtime CFG evidence
+    add di, 2
+; @02F1C 0000:2F1C original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F1E 0000:2F1E original=f7d0 runtime CFG evidence
+    not ax
+; @02F20 0000:2F20 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F23 0000:2F23 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F26 0000:2F26 original=83c702 runtime CFG evidence
+    add di, 2
+; @02F29 0000:2F29 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F2B 0000:2F2B original=f7d0 runtime CFG evidence
+    not ax
+; @02F2D 0000:2F2D original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F30 0000:2F30 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F33 0000:2F33 original=83c702 runtime CFG evidence
+    add di, 2
+; @02F36 0000:2F36 original=03fb runtime CFG evidence
+    add di, bx
+; @02F38 0000:2F38 original=e291 runtime CFG evidence
+    LOOP_SHORT loc_02ECB
+; @02F3A 0000:2F3A original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @02F3F 0000:2F3F original=c3 runtime CFG evidence
+    ret
+; @02F40 0000:2F40 original=bb6000 runtime CFG evidence
+    mov bx, 060h
+; @02F43 0000:2F43 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F45 0000:2F45 original=f7d0 runtime CFG evidence
+    not ax
+; @02F47 0000:2F47 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F4A 0000:2F4A original=83c604 runtime CFG evidence
+    add si, 4
+; @02F4D 0000:2F4D original=83c702 runtime CFG evidence
+    add di, 2
+; @02F50 0000:2F50 original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F52 0000:2F52 original=f7d0 runtime CFG evidence
+    not ax
+; @02F54 0000:2F54 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F57 0000:2F57 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F5A 0000:2F5A original=83c702 runtime CFG evidence
+    add di, 2
+; @02F5D 0000:2F5D original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F5F 0000:2F5F original=f7d0 runtime CFG evidence
+    not ax
+; @02F61 0000:2F61 original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F64 0000:2F64 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F67 0000:2F67 original=83c702 runtime CFG evidence
+    add di, 2
+; @02F6A 0000:2F6A original=8b04 runtime CFG evidence
+    mov ax, word ptr ds:[si]
+; @02F6C 0000:2F6C original=f7d0 runtime CFG evidence
+    not ax
+; @02F6E 0000:2F6E original=260905 runtime CFG evidence
+    or word ptr es:[di], ax
+; @02F71 0000:2F71 original=83c604 runtime CFG evidence
+    add si, 4
+; @02F74 0000:2F74 original=83c702 runtime CFG evidence
+    add di, 2
+; @02F77 0000:2F77 original=03fb runtime CFG evidence
+    add di, bx
+; @02F79 0000:2F79 original=e2c5 runtime CFG evidence
+    LOOP_SHORT loc_02F40
+; @02F7B 0000:2F7B original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @02F80 0000:2F80 original=c3 runtime CFG evidence
+    ret
+; @02F81 0000:2F81 original=bb6000 runtime CFG evidence
+    mov bx, 060h
+; @02F84 0000:2F84 original=ad runtime CFG evidence
+    lodsw
+; @02F85 0000:2F85 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02F88 0000:2F88 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02F8A 0000:2F8A original=83c602 runtime CFG evidence
+    add si, 2
+; @02F8D 0000:2F8D original=ab runtime CFG evidence
+    stosw
+; @02F8E 0000:2F8E original=ad runtime CFG evidence
+    lodsw
+; @02F8F 0000:2F8F original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02F92 0000:2F92 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02F94 0000:2F94 original=83c602 runtime CFG evidence
+    add si, 2
+; @02F97 0000:2F97 original=ab runtime CFG evidence
+    stosw
+; @02F98 0000:2F98 original=ad runtime CFG evidence
+    lodsw
+; @02F99 0000:2F99 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02F9C 0000:2F9C original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02F9E 0000:2F9E original=83c602 runtime CFG evidence
+    add si, 2
+; @02FA1 0000:2FA1 original=ab runtime CFG evidence
+    stosw
+; @02FA2 0000:2FA2 original=ad runtime CFG evidence
+    lodsw
+; @02FA3 0000:2FA3 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FA6 0000:2FA6 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FA8 0000:2FA8 original=83c602 runtime CFG evidence
+    add si, 2
+; @02FAB 0000:2FAB original=ab runtime CFG evidence
+    stosw
+; @02FAC 0000:2FAC original=03fb runtime CFG evidence
+    add di, bx
+; @02FAE 0000:2FAE original=e2d1 runtime CFG evidence
+    LOOP_SHORT loc_02F81
+; @02FB0 0000:2FB0 original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @02FB5 0000:2FB5 original=c3 runtime CFG evidence
+    ret
+; @02FB6 0000:2FB6 original=bb6400 runtime CFG evidence
+    mov bx, 064h
+; @02FB9 0000:2FB9 original=ad runtime CFG evidence
+    lodsw
+; @02FBA 0000:2FBA original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FBD 0000:2FBD original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FBF 0000:2FBF original=83c602 runtime CFG evidence
+    add si, 2
+; @02FC2 0000:2FC2 original=ab runtime CFG evidence
+    stosw
+; @02FC3 0000:2FC3 original=ad runtime CFG evidence
+    lodsw
+; @02FC4 0000:2FC4 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FC7 0000:2FC7 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FC9 0000:2FC9 original=83c602 runtime CFG evidence
+    add si, 2
+; @02FCC 0000:2FCC original=ab runtime CFG evidence
+    stosw
+; @02FCD 0000:2FCD original=03fb runtime CFG evidence
+    add di, bx
+; @02FCF 0000:2FCF original=ad runtime CFG evidence
+    lodsw
+; @02FD0 0000:2FD0 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FD3 0000:2FD3 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FD5 0000:2FD5 original=83c602 runtime CFG evidence
+    add si, 2
+; @02FD8 0000:2FD8 original=ab runtime CFG evidence
+    stosw
+; @02FD9 0000:2FD9 original=ad runtime CFG evidence
+    lodsw
+; @02FDA 0000:2FDA original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FDD 0000:2FDD original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FDF 0000:2FDF original=83c602 runtime CFG evidence
+    add si, 2
+; @02FE2 0000:2FE2 original=ab runtime CFG evidence
+    stosw
+; @02FE3 0000:2FE3 original=03fb runtime CFG evidence
+    add di, bx
+; @02FE5 0000:2FE5 original=ad runtime CFG evidence
+    lodsw
+; @02FE6 0000:2FE6 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FE9 0000:2FE9 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FEB 0000:2FEB original=83c602 runtime CFG evidence
+    add si, 2
+; @02FEE 0000:2FEE original=ab runtime CFG evidence
+    stosw
+; @02FEF 0000:2FEF original=ad runtime CFG evidence
+    lodsw
+; @02FF0 0000:2FF0 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FF3 0000:2FF3 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @02FF5 0000:2FF5 original=83c602 runtime CFG evidence
+    add si, 2
+; @02FF8 0000:2FF8 original=ab runtime CFG evidence
+    stosw
+; @02FF9 0000:2FF9 original=03fb runtime CFG evidence
+    add di, bx
+; @02FFB 0000:2FFB original=ad runtime CFG evidence
+    lodsw
+; @02FFC 0000:2FFC original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @02FFF 0000:2FFF original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03001 0000:3001 original=83c602 runtime CFG evidence
+    add si, 2
+; @03004 0000:3004 original=ab runtime CFG evidence
+    stosw
+; @03005 0000:3005 original=ad runtime CFG evidence
+    lodsw
+; @03006 0000:3006 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03009 0000:3009 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @0300B 0000:300B original=83c602 runtime CFG evidence
+    add si, 2
+; @0300E 0000:300E original=ab runtime CFG evidence
+    stosw
+; @0300F 0000:300F original=03fb runtime CFG evidence
+    add di, bx
+; @03011 0000:3011 original=ad runtime CFG evidence
+    lodsw
+; @03012 0000:3012 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03015 0000:3015 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03017 0000:3017 original=83c602 runtime CFG evidence
+    add si, 2
+; @0301A 0000:301A original=ab runtime CFG evidence
+    stosw
+; @0301B 0000:301B original=ad runtime CFG evidence
+    lodsw
+; @0301C 0000:301C original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @0301F 0000:301F original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03021 0000:3021 original=83c602 runtime CFG evidence
+    add si, 2
+; @03024 0000:3024 original=ab runtime CFG evidence
+    stosw
+; @03025 0000:3025 original=03fb runtime CFG evidence
+    add di, bx
+; @03027 0000:3027 original=ad runtime CFG evidence
+    lodsw
+; @03028 0000:3028 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @0302B 0000:302B original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @0302D 0000:302D original=83c602 runtime CFG evidence
+    add si, 2
+; @03030 0000:3030 original=ab runtime CFG evidence
+    stosw
+; @03031 0000:3031 original=ad runtime CFG evidence
+    lodsw
+; @03032 0000:3032 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03035 0000:3035 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03037 0000:3037 original=83c602 runtime CFG evidence
+    add si, 2
+; @0303A 0000:303A original=ab runtime CFG evidence
+    stosw
+; @0303B 0000:303B original=03fb runtime CFG evidence
+    add di, bx
+; @0303D 0000:303D original=ad runtime CFG evidence
+    lodsw
+; @0303E 0000:303E original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03041 0000:3041 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03043 0000:3043 original=83c602 runtime CFG evidence
+    add si, 2
+; @03046 0000:3046 original=ab runtime CFG evidence
+    stosw
+; @03047 0000:3047 original=ad runtime CFG evidence
+    lodsw
+; @03048 0000:3048 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @0304B 0000:304B original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @0304D 0000:304D original=83c602 runtime CFG evidence
+    add si, 2
+; @03050 0000:3050 original=ab runtime CFG evidence
+    stosw
+; @03051 0000:3051 original=03fb runtime CFG evidence
+    add di, bx
+; @03053 0000:3053 original=ad runtime CFG evidence
+    lodsw
+; @03054 0000:3054 original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03057 0000:3057 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03059 0000:3059 original=83c602 runtime CFG evidence
+    add si, 2
+; @0305C 0000:305C original=ab runtime CFG evidence
+    stosw
+; @0305D 0000:305D original=ad runtime CFG evidence
+    lodsw
+; @0305E 0000:305E original=262305 runtime CFG evidence
+    and ax, word ptr es:[di]
+; @03061 0000:3061 original=0b04 runtime CFG evidence
+    or ax, word ptr ds:[si]
+; @03063 0000:3063 original=83c602 runtime CFG evidence
+    add si, 2
+; @03066 0000:3066 original=ab runtime CFG evidence
+    stosw
+; @03067 0000:3067 original=03fb runtime CFG evidence
+    add di, bx
+; @03069 0000:3069 original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @0306E 0000:306E original=c3 runtime CFG evidence
+    ret
 ; sub_0000_306F
+; CopyPackedRowsToTandyBanks (modern reconstruction name)
+; Read row count then width-units from DS:SI (two words); copy width*4 bytes per row to ES loaded from CS:95A4.
+; DF must be clear, row count positive, ranges valid/nonoverlapping. Bank step is +2000h; if bit15 set add80A0h
+; modulo65536. AX/BP=width*4, CX=0; SI advances4+rows*width*4; DI advances to next row start; ES and flags
+; changed, BX/DX/DS unchanged.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @0306F 0000:306F original=ad
     lodsw
 ; @03070 0000:3070 original=8bc8
@@ -1985,6 +2453,11 @@ loc_0511F equ 0311Fh
 ; @03096 0000:3096 original=c3
     ret
 ; sub_0000_3097
+; CopyPackedRowsStride104 (modern reconstruction name)
+; Read DS:SI row count and width-units, then copy width*4 bytes per row to ES=CS:9598 with104-byte row stride.
+; DF=0, positive rows, valid nonoverlapping ranges required. AX/BP=width*4,CX=0; SI advanced4+payload; DI
+; advanced104*rows; BX/DX/DS unchanged, ES/flags changed.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @03097 0000:3097 original=2e8e069895
     mov es, word ptr cs:[09598h]
 ; @0309C 0000:309C original=ad
@@ -2016,6 +2489,11 @@ loc_0511F equ 0311Fh
 ; @030B3 0000:30B3 original=c3
     ret
 ; sub_0000_30B4
+; CopyPackedRowsStride160 (modern reconstruction name)
+; As CopyPackedRowsStride104 but destination stride160. DS:SI header row count and width-units; width is
+; multiplied by4; ES=CS:9598. Requires DF=0, positive row count, valid nonoverlapping ranges.
+; AX/BP=width*4,CX=0; SI advances4+payload; DI advances160*rows; BX/DX/DS unchanged; ES/flags changed.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @030B4 0000:30B4 original=2e8e069895
     mov es, word ptr cs:[09598h]
 ; @030B9 0000:30B9 original=ad
@@ -2046,15 +2524,48 @@ loc_0511F equ 0311Fh
     LOOP_SHORT loc_030C3
 ; @030D1 0000:30D1 original=c3
     ret
-; @030D2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Bh,05Eh,02h,081h,0FBh,0E0h,00h,072h,03h,0E9h,0D4h,0F4h,0D1h,0E3h,08Bh,09Fh
-; @030E2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C8h,099h,083h,0FBh,0FFh,075h,03h,0E9h,0C6h,0F4h,08Bh,046h,04h,0C7h,046h,012h
-; @030F2 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,00h,0D1h,0E8h,03h,0C3h,083h,07Eh,024h,00h,075h,01h,0C3h,0FFh,04Eh,024h
-; @03102 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C3h
+; @030D2 0000:30D2 original=8b5e02 runtime CFG evidence
+    mov bx, word ptr ss:[bp + 2]
+; @030D5 0000:30D5 original=81fbe000 runtime CFG evidence
+    cmp bx, 0E0h
+; @030D9 0000:30D9 original=7203 runtime CFG evidence
+    JB_SHORT loc_030DE
+; @030DB 0000:30DB original=e9d4f4 runtime CFG evidence
+    JMP_NEAR loc_025B2
+; @030DE 0000:30DE original=d1e3 runtime CFG evidence
+    shl bx, 1
+; @030E0 0000:30E0 original=8b9fc899 runtime CFG evidence
+    mov bx, word ptr ds:[bx - 06638h]
+; @030E4 0000:30E4 original=83fbff runtime CFG evidence
+    cmp bx, -1
+; @030E7 0000:30E7 original=7503 runtime CFG evidence
+    JNE_SHORT loc_030EC
+; @030E9 0000:30E9 original=e9c6f4 runtime CFG evidence
+    JMP_NEAR loc_025B2
+; @030EC 0000:30EC original=8b4604 runtime CFG evidence
+    mov ax, word ptr ss:[bp + 4]
+; @030EF 0000:30EF original=c746120000 runtime CFG evidence
+    mov word ptr ss:[bp + 012h], 0
+; @030F4 0000:30F4 original=d1e8 runtime CFG evidence
+    shr ax, 1
+; @030F6 0000:30F6 original=03c3 runtime CFG evidence
+    add ax, bx
+; @030F8 0000:30F8 original=837e2400 runtime CFG evidence
+    cmp word ptr ss:[bp + 024h], 0
+; @030FC 0000:30FC original=7501 runtime CFG evidence
+    JNE_SHORT loc_030FF
+; @030FE 0000:30FE original=c3 runtime CFG evidence
+    ret
+; @030FF 0000:30FF original=ff4e24 runtime CFG evidence
+    dec word ptr ss:[bp + 024h]
+; @03102 0000:3102 original=c3 runtime CFG evidence
+    ret
 ; sub_0000_3103
+; TandyOffsetFromRow9EE8 (modern reconstruction name)
+; AH indexes unsigned word table DS:9EE8 (2*AH); AL is multiplied by4. AX=DI=(table[AH]+4*AL) mod65536;
+; BX=table[AH]. All other registers unchanged; arithmetic flags from final ADD. No bounds check: initializer
+; populates only200 entries.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @03103 0000:3103 original=8adc
     mov bl, ah
 ; @03105 0000:3105 original=32ff
@@ -2076,6 +2587,9 @@ loc_0511F equ 0311Fh
 ; @03117 0000:3117 original=c3
     ret
 ; sub_0000_3118
+; TandyOffsetFromRow9BC8 (modern reconstruction name)
+; AH indexes unsigned word table DS:9BC8 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @03118 0000:3118 original=8adc
     mov bl, ah
 ; @0311A 0000:311A original=32ff
@@ -2097,6 +2611,9 @@ loc_0511F equ 0311Fh
 ; @0312C 0000:312C original=c3
     ret
 ; sub_0000_312D
+; TandyOffsetFromRow9D58 (modern reconstruction name)
+; AH indexes unsigned word table DS:9D58 (2*AH); AX=DI=(table[AH]+4*AL) mod65536; BX=table[AH]. Other registers preserved; final ADD flags. No bounds check.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @0312D 0000:312D original=8adc
     mov bl, ah
 ; @0312F 0000:312F original=32ff
@@ -2501,6 +3018,9 @@ loc_0511F equ 0311Fh
 ; @03344 0000:3344 original=c3
     ret
 ; sub_0000_3345
+; ClearTandy32K (modern reconstruction name)
+; ES=CS:95A4; with DF=0 write32768 zero bytes at ES:0000..7FFF. AX=CX=0,DI=8000h; BX/DX/SI/BP/DS preserved. Flags from XOR DI,DI. Does not restore ES or set DF.
+; Evidence: metadata/symbols.json; tests/test_tandy_adlib.py
 ; @03345 0000:3345 original=2e8e06a495
     mov es, word ptr cs:[095A4h]
 ; @0334A 0000:334A original=33ff
@@ -2514,6 +3034,12 @@ loc_0511F equ 0311Fh
 ; @03353 0000:3353 original=c3
     ret
 ; sub_0000_3354
+; CopyWorkspace104x192ToTandy (modern reconstruction name)
+; Read source offset from incoming DS:234C; set ES=CS:95A4 and DS=CS:9598. With DF=0 copy192 contiguous104-byte
+; source rows into the first104 bytes of Tandy rows4..195. Then set DS=CS:9596, not incoming DS. SI
+; advances19968, DI=1EA0h, BX=34h, CX=BP=0; AX/DX preserved; flags changed. Requires valid nonoverlapping
+; buffers.
+; Evidence: metadata/symbols.json
 ; @03354 0000:3354 original=8b364c23
     mov si, word ptr ds:[0234Ch]
 ; @03358 0000:3358 original=2e8e06a495
@@ -2549,6 +3075,11 @@ loc_0511F equ 0311Fh
 ; @03388 0000:3388 original=c3
     ret
 ; sub_0000_3389
+; ClearTandy104x200 (modern reconstruction name)
+; With DF=0 and ES=CS:95A4, clear the first104 bytes of each of200 Tandy display rows. Preserve remaining56
+; visible bytes per row and bank padding. AX=CX=BP=0, DI=1F40h; ES changed; DS/BX/DX/SI preserved. Flags
+; changed. No clipping or DF setup.
+; Evidence: metadata/symbols.json
 ; @03389 0000:3389 original=2e8e06a495
     mov es, word ptr cs:[095A4h]
 ; @0338E 0000:338E original=33ff
@@ -2764,70 +3295,616 @@ loc_0511F equ 0311Fh
     mov ax, bx
 ; @034AC 0000:34AC original=c3
     ret
-; @034AD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 083h,0FFh,0FFh,074h,03h,0E8h,010h,00h,08Bh,07Eh,010h,08Bh,076h,0Eh,081h,0C6h
-; @034BD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 040h,01h,083h,0FFh,0FFh,075h,01h,0C3h,0BBh,058h,00h,0B9h,010h,00h,0A5h,0A5h
-; @034CD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0E2h,0F4h,0C3h,083h,0FFh,0FFh,075h,01h
-; @034DD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C3h,0BBh,060h,00h,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh
-; @034ED UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h
-; @034FD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h
-; @0350D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh
-; @0351D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h
-; @0352D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h,0A5h,0A5h,03h,0FBh,0A5h,0A5h
-; @0353D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,03h,0FBh,0C3h,083h,0FFh,0FFh,075h,01h,0C3h,0BBh,064h,00h,0A5h,0A5h
-; @0354D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0FBh,0A5h,0A5h,03h,0FBh,0A5h,0A5h,03h,0FBh,0A5h,0A5h,03h,0FBh,0A5h,0A5h
-; @0355D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0FBh,0A5h,0A5h,03h,0FBh,0A5h,0A5h,03h,0FBh,0A5h,0A5h,03h,0FBh,0C3h,0E8h
-; @0356D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0C7h,024h,089h,046h,0Ch,03Dh,0FFh,0FFh,074h,0Fh,03h,06h,04Ch,023h,089h,046h
-; @0357D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0Ch,08Bh,0F0h,08Bh,07Eh,0Eh,0E8h,024h,00h,083h,046h,02h,010h,0E8h,0A9h,024h
-; @0358D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 089h,046h,010h,083h,06Eh,02h,010h,03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch
-; @0359D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 023h,089h,046h,010h,08Bh,0F0h,08Bh,07Eh,0Eh,081h,0C7h,040h,01h,02Eh,08Eh,06h
-; @035AD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 096h,095h,02Eh,08Eh,01Eh,098h,095h,0BBh,058h,00h,0B9h,010h,00h,0A5h,0A5h,0A5h
-; @035BD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0E2h,0F4h,02Eh,08Eh,01Eh,096h,095h,0C3h,0E8h
-; @035CD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 067h,024h,089h,046h,0Ch,03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h
-; @035DD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 046h,0Ch,08Bh,0F0h,08Bh,07Eh,0Eh,02Eh,08Eh,06h,096h,095h,02Eh,08Eh,01Eh,098h
-; @035ED UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 095h,0BBh,060h,00h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h
-; @035FD UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h
-; @0360D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h
-; @0361D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h
-; @0362D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h
-; @0363D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,0A5h,0A5h,03h,0F3h,0A5h,0A5h
-; @0364D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,0A5h,03h,0F3h,02Eh,08Eh,01Eh,096h,095h,0C3h,0E8h,0DCh,023h,089h,046h,0Ch
-; @0365D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h,046h,0Ch,08Bh,0F0h,08Bh
-; @0366D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 07Eh,0Eh,02Eh,08Eh,06h,096h,095h,02Eh,08Eh,01Eh,098h,095h,0BBh,064h,00h,0A5h
-; @0367D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,0A5h
-; @0368D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,0A5h,0A5h,03h,0F3h,02Eh
-; @0369D UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 08Eh,01Eh,096h,095h,0C3h
+; @034AD 0000:34AD original=83ffff runtime CFG evidence
+    cmp di, -1
+; @034B0 0000:34B0 original=7403 runtime CFG evidence
+    JE_SHORT loc_034B5
+; @034B2 0000:34B2 original=e81000 runtime CFG evidence
+    CALL_NEAR loc_034C5
+; @034B5 0000:34B5 original=8b7e10 runtime CFG evidence
+    mov di, word ptr ss:[bp + 010h]
+; @034B8 0000:34B8 original=8b760e runtime CFG evidence
+    mov si, word ptr ss:[bp + 0Eh]
+; @034BB 0000:34BB original=81c64001 runtime CFG evidence
+    add si, 0140h
+; @034BF 0000:34BF original=83ffff runtime CFG evidence
+    cmp di, -1
+; @034C2 0000:34C2 original=7501 runtime CFG evidence
+    JNE_SHORT loc_034C5
+; @034C4 0000:34C4 original=c3 runtime CFG evidence
+    ret
+; @034C5 0000:34C5 original=bb5800 runtime CFG evidence
+    mov bx, 058h
+; @034C8 0000:34C8 original=b91000 runtime CFG evidence
+    mov cx, 010h
+; @034CB 0000:34CB original=a5 runtime CFG evidence
+    movsw
+; @034CC 0000:34CC original=a5 runtime CFG evidence
+    movsw
+; @034CD 0000:34CD original=a5 runtime CFG evidence
+    movsw
+; @034CE 0000:34CE original=a5 runtime CFG evidence
+    movsw
+; @034CF 0000:34CF original=a5 runtime CFG evidence
+    movsw
+; @034D0 0000:34D0 original=a5 runtime CFG evidence
+    movsw
+; @034D1 0000:34D1 original=a5 runtime CFG evidence
+    movsw
+; @034D2 0000:34D2 original=a5 runtime CFG evidence
+    movsw
+; @034D3 0000:34D3 original=03fb runtime CFG evidence
+    add di, bx
+; @034D5 0000:34D5 original=e2f4 runtime CFG evidence
+    LOOP_SHORT loc_034CB
+; @034D7 0000:34D7 original=c3 runtime CFG evidence
+    ret
+; @034D8 0000:34D8 original=83ffff runtime CFG evidence
+    cmp di, -1
+; @034DB 0000:34DB original=7501 runtime CFG evidence
+    JNE_SHORT loc_034DE
+; @034DD 0000:34DD original=c3 runtime CFG evidence
+    ret
+; @034DE 0000:34DE original=bb6000 runtime CFG evidence
+    mov bx, 060h
+; @034E1 0000:34E1 original=a5 runtime CFG evidence
+    movsw
+; @034E2 0000:34E2 original=a5 runtime CFG evidence
+    movsw
+; @034E3 0000:34E3 original=a5 runtime CFG evidence
+    movsw
+; @034E4 0000:34E4 original=a5 runtime CFG evidence
+    movsw
+; @034E5 0000:34E5 original=03fb runtime CFG evidence
+    add di, bx
+; @034E7 0000:34E7 original=a5 runtime CFG evidence
+    movsw
+; @034E8 0000:34E8 original=a5 runtime CFG evidence
+    movsw
+; @034E9 0000:34E9 original=a5 runtime CFG evidence
+    movsw
+; @034EA 0000:34EA original=a5 runtime CFG evidence
+    movsw
+; @034EB 0000:34EB original=03fb runtime CFG evidence
+    add di, bx
+; @034ED 0000:34ED original=a5 runtime CFG evidence
+    movsw
+; @034EE 0000:34EE original=a5 runtime CFG evidence
+    movsw
+; @034EF 0000:34EF original=a5 runtime CFG evidence
+    movsw
+; @034F0 0000:34F0 original=a5 runtime CFG evidence
+    movsw
+; @034F1 0000:34F1 original=03fb runtime CFG evidence
+    add di, bx
+; @034F3 0000:34F3 original=a5 runtime CFG evidence
+    movsw
+; @034F4 0000:34F4 original=a5 runtime CFG evidence
+    movsw
+; @034F5 0000:34F5 original=a5 runtime CFG evidence
+    movsw
+; @034F6 0000:34F6 original=a5 runtime CFG evidence
+    movsw
+; @034F7 0000:34F7 original=03fb runtime CFG evidence
+    add di, bx
+; @034F9 0000:34F9 original=a5 runtime CFG evidence
+    movsw
+; @034FA 0000:34FA original=a5 runtime CFG evidence
+    movsw
+; @034FB 0000:34FB original=a5 runtime CFG evidence
+    movsw
+; @034FC 0000:34FC original=a5 runtime CFG evidence
+    movsw
+; @034FD 0000:34FD original=03fb runtime CFG evidence
+    add di, bx
+; @034FF 0000:34FF original=a5 runtime CFG evidence
+    movsw
+; @03500 0000:3500 original=a5 runtime CFG evidence
+    movsw
+; @03501 0000:3501 original=a5 runtime CFG evidence
+    movsw
+; @03502 0000:3502 original=a5 runtime CFG evidence
+    movsw
+; @03503 0000:3503 original=03fb runtime CFG evidence
+    add di, bx
+; @03505 0000:3505 original=a5 runtime CFG evidence
+    movsw
+; @03506 0000:3506 original=a5 runtime CFG evidence
+    movsw
+; @03507 0000:3507 original=a5 runtime CFG evidence
+    movsw
+; @03508 0000:3508 original=a5 runtime CFG evidence
+    movsw
+; @03509 0000:3509 original=03fb runtime CFG evidence
+    add di, bx
+; @0350B 0000:350B original=a5 runtime CFG evidence
+    movsw
+; @0350C 0000:350C original=a5 runtime CFG evidence
+    movsw
+; @0350D 0000:350D original=a5 runtime CFG evidence
+    movsw
+; @0350E 0000:350E original=a5 runtime CFG evidence
+    movsw
+; @0350F 0000:350F original=03fb runtime CFG evidence
+    add di, bx
+; @03511 0000:3511 original=a5 runtime CFG evidence
+    movsw
+; @03512 0000:3512 original=a5 runtime CFG evidence
+    movsw
+; @03513 0000:3513 original=a5 runtime CFG evidence
+    movsw
+; @03514 0000:3514 original=a5 runtime CFG evidence
+    movsw
+; @03515 0000:3515 original=03fb runtime CFG evidence
+    add di, bx
+; @03517 0000:3517 original=a5 runtime CFG evidence
+    movsw
+; @03518 0000:3518 original=a5 runtime CFG evidence
+    movsw
+; @03519 0000:3519 original=a5 runtime CFG evidence
+    movsw
+; @0351A 0000:351A original=a5 runtime CFG evidence
+    movsw
+; @0351B 0000:351B original=03fb runtime CFG evidence
+    add di, bx
+; @0351D 0000:351D original=a5 runtime CFG evidence
+    movsw
+; @0351E 0000:351E original=a5 runtime CFG evidence
+    movsw
+; @0351F 0000:351F original=a5 runtime CFG evidence
+    movsw
+; @03520 0000:3520 original=a5 runtime CFG evidence
+    movsw
+; @03521 0000:3521 original=03fb runtime CFG evidence
+    add di, bx
+; @03523 0000:3523 original=a5 runtime CFG evidence
+    movsw
+; @03524 0000:3524 original=a5 runtime CFG evidence
+    movsw
+; @03525 0000:3525 original=a5 runtime CFG evidence
+    movsw
+; @03526 0000:3526 original=a5 runtime CFG evidence
+    movsw
+; @03527 0000:3527 original=03fb runtime CFG evidence
+    add di, bx
+; @03529 0000:3529 original=a5 runtime CFG evidence
+    movsw
+; @0352A 0000:352A original=a5 runtime CFG evidence
+    movsw
+; @0352B 0000:352B original=a5 runtime CFG evidence
+    movsw
+; @0352C 0000:352C original=a5 runtime CFG evidence
+    movsw
+; @0352D 0000:352D original=03fb runtime CFG evidence
+    add di, bx
+; @0352F 0000:352F original=a5 runtime CFG evidence
+    movsw
+; @03530 0000:3530 original=a5 runtime CFG evidence
+    movsw
+; @03531 0000:3531 original=a5 runtime CFG evidence
+    movsw
+; @03532 0000:3532 original=a5 runtime CFG evidence
+    movsw
+; @03533 0000:3533 original=03fb runtime CFG evidence
+    add di, bx
+; @03535 0000:3535 original=a5 runtime CFG evidence
+    movsw
+; @03536 0000:3536 original=a5 runtime CFG evidence
+    movsw
+; @03537 0000:3537 original=a5 runtime CFG evidence
+    movsw
+; @03538 0000:3538 original=a5 runtime CFG evidence
+    movsw
+; @03539 0000:3539 original=03fb runtime CFG evidence
+    add di, bx
+; @0353B 0000:353B original=a5 runtime CFG evidence
+    movsw
+; @0353C 0000:353C original=a5 runtime CFG evidence
+    movsw
+; @0353D 0000:353D original=a5 runtime CFG evidence
+    movsw
+; @0353E 0000:353E original=a5 runtime CFG evidence
+    movsw
+; @0353F 0000:353F original=03fb runtime CFG evidence
+    add di, bx
+; @03541 0000:3541 original=c3 runtime CFG evidence
+    ret
+; @03542 0000:3542 original=83ffff runtime CFG evidence
+    cmp di, -1
+; @03545 0000:3545 original=7501 runtime CFG evidence
+    JNE_SHORT loc_03548
+; @03547 0000:3547 original=c3 runtime CFG evidence
+    ret
+; @03548 0000:3548 original=bb6400 runtime CFG evidence
+    mov bx, 064h
+; @0354B 0000:354B original=a5 runtime CFG evidence
+    movsw
+; @0354C 0000:354C original=a5 runtime CFG evidence
+    movsw
+; @0354D 0000:354D original=03fb runtime CFG evidence
+    add di, bx
+; @0354F 0000:354F original=a5 runtime CFG evidence
+    movsw
+; @03550 0000:3550 original=a5 runtime CFG evidence
+    movsw
+; @03551 0000:3551 original=03fb runtime CFG evidence
+    add di, bx
+; @03553 0000:3553 original=a5 runtime CFG evidence
+    movsw
+; @03554 0000:3554 original=a5 runtime CFG evidence
+    movsw
+; @03555 0000:3555 original=03fb runtime CFG evidence
+    add di, bx
+; @03557 0000:3557 original=a5 runtime CFG evidence
+    movsw
+; @03558 0000:3558 original=a5 runtime CFG evidence
+    movsw
+; @03559 0000:3559 original=03fb runtime CFG evidence
+    add di, bx
+; @0355B 0000:355B original=a5 runtime CFG evidence
+    movsw
+; @0355C 0000:355C original=a5 runtime CFG evidence
+    movsw
+; @0355D 0000:355D original=03fb runtime CFG evidence
+    add di, bx
+; @0355F 0000:355F original=a5 runtime CFG evidence
+    movsw
+; @03560 0000:3560 original=a5 runtime CFG evidence
+    movsw
+; @03561 0000:3561 original=03fb runtime CFG evidence
+    add di, bx
+; @03563 0000:3563 original=a5 runtime CFG evidence
+    movsw
+; @03564 0000:3564 original=a5 runtime CFG evidence
+    movsw
+; @03565 0000:3565 original=03fb runtime CFG evidence
+    add di, bx
+; @03567 0000:3567 original=a5 runtime CFG evidence
+    movsw
+; @03568 0000:3568 original=a5 runtime CFG evidence
+    movsw
+; @03569 0000:3569 original=03fb runtime CFG evidence
+    add di, bx
+; @0356B 0000:356B original=c3 runtime CFG evidence
+    ret
+; @0356C 0000:356C original=e8c724 runtime CFG evidence
+    CALL_NEAR loc_05A36
+; @0356F 0000:356F original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @03572 0000:3572 original=3dffff runtime CFG evidence
+    cmp ax, 0FFFFh
+; @03575 0000:3575 original=740f runtime CFG evidence
+    JE_SHORT loc_03586
+; @03577 0000:3577 original=03064c23 runtime CFG evidence
+    add ax, word ptr ds:[0234Ch]
+; @0357B 0000:357B original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @0357E 0000:357E original=8bf0 runtime CFG evidence
+    mov si, ax
+; @03580 0000:3580 original=8b7e0e runtime CFG evidence
+    mov di, word ptr ss:[bp + 0Eh]
+; @03583 0000:3583 original=e82400 runtime CFG evidence
+    CALL_NEAR loc_035AA
+; @03586 0000:3586 original=83460210 runtime CFG evidence
+    add word ptr ss:[bp + 2], 010h
+; @0358A 0000:358A original=e8a924 runtime CFG evidence
+    CALL_NEAR loc_05A36
+; @0358D 0000:358D original=894610 runtime CFG evidence
+    mov word ptr ss:[bp + 010h], ax
+; @03590 0000:3590 original=836e0210 runtime CFG evidence
+    sub word ptr ss:[bp + 2], 010h
+; @03594 0000:3594 original=3dffff runtime CFG evidence
+    cmp ax, 0FFFFh
+; @03597 0000:3597 original=7501 runtime CFG evidence
+    JNE_SHORT loc_0359A
+; @03599 0000:3599 original=c3 runtime CFG evidence
+    ret
+; @0359A 0000:359A original=03064c23 runtime CFG evidence
+    add ax, word ptr ds:[0234Ch]
+; @0359E 0000:359E original=894610 runtime CFG evidence
+    mov word ptr ss:[bp + 010h], ax
+; @035A1 0000:35A1 original=8bf0 runtime CFG evidence
+    mov si, ax
+; @035A3 0000:35A3 original=8b7e0e runtime CFG evidence
+    mov di, word ptr ss:[bp + 0Eh]
+; @035A6 0000:35A6 original=81c74001 runtime CFG evidence
+    add di, 0140h
+; @035AA 0000:35AA original=2e8e069695 runtime CFG evidence
+    mov es, word ptr cs:[09596h]
+; @035AF 0000:35AF original=2e8e1e9895 runtime CFG evidence
+    mov ds, word ptr cs:[09598h]
+; @035B4 0000:35B4 original=bb5800 runtime CFG evidence
+    mov bx, 058h
+; @035B7 0000:35B7 original=b91000 runtime CFG evidence
+    mov cx, 010h
+; @035BA 0000:35BA original=a5 runtime CFG evidence
+    movsw
+; @035BB 0000:35BB original=a5 runtime CFG evidence
+    movsw
+; @035BC 0000:35BC original=a5 runtime CFG evidence
+    movsw
+; @035BD 0000:35BD original=a5 runtime CFG evidence
+    movsw
+; @035BE 0000:35BE original=a5 runtime CFG evidence
+    movsw
+; @035BF 0000:35BF original=a5 runtime CFG evidence
+    movsw
+; @035C0 0000:35C0 original=a5 runtime CFG evidence
+    movsw
+; @035C1 0000:35C1 original=a5 runtime CFG evidence
+    movsw
+; @035C2 0000:35C2 original=03f3 runtime CFG evidence
+    add si, bx
+; @035C4 0000:35C4 original=e2f4 runtime CFG evidence
+    LOOP_SHORT loc_035BA
+; @035C6 0000:35C6 original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @035CB 0000:35CB original=c3 runtime CFG evidence
+    ret
+; @035CC 0000:35CC original=e86724 runtime CFG evidence
+    CALL_NEAR loc_05A36
+; @035CF 0000:35CF original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @035D2 0000:35D2 original=3dffff runtime CFG evidence
+    cmp ax, 0FFFFh
+; @035D5 0000:35D5 original=7501 runtime CFG evidence
+    JNE_SHORT loc_035D8
+; @035D7 0000:35D7 original=c3 runtime CFG evidence
+    ret
+; @035D8 0000:35D8 original=03064c23 runtime CFG evidence
+    add ax, word ptr ds:[0234Ch]
+; @035DC 0000:35DC original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @035DF 0000:35DF original=8bf0 runtime CFG evidence
+    mov si, ax
+; @035E1 0000:35E1 original=8b7e0e runtime CFG evidence
+    mov di, word ptr ss:[bp + 0Eh]
+; @035E4 0000:35E4 original=2e8e069695 runtime CFG evidence
+    mov es, word ptr cs:[09596h]
+; @035E9 0000:35E9 original=2e8e1e9895 runtime CFG evidence
+    mov ds, word ptr cs:[09598h]
+; @035EE 0000:35EE original=bb6000 runtime CFG evidence
+    mov bx, 060h
+; @035F1 0000:35F1 original=a5 runtime CFG evidence
+    movsw
+; @035F2 0000:35F2 original=a5 runtime CFG evidence
+    movsw
+; @035F3 0000:35F3 original=a5 runtime CFG evidence
+    movsw
+; @035F4 0000:35F4 original=a5 runtime CFG evidence
+    movsw
+; @035F5 0000:35F5 original=03f3 runtime CFG evidence
+    add si, bx
+; @035F7 0000:35F7 original=a5 runtime CFG evidence
+    movsw
+; @035F8 0000:35F8 original=a5 runtime CFG evidence
+    movsw
+; @035F9 0000:35F9 original=a5 runtime CFG evidence
+    movsw
+; @035FA 0000:35FA original=a5 runtime CFG evidence
+    movsw
+; @035FB 0000:35FB original=03f3 runtime CFG evidence
+    add si, bx
+; @035FD 0000:35FD original=a5 runtime CFG evidence
+    movsw
+; @035FE 0000:35FE original=a5 runtime CFG evidence
+    movsw
+; @035FF 0000:35FF original=a5 runtime CFG evidence
+    movsw
+; @03600 0000:3600 original=a5 runtime CFG evidence
+    movsw
+; @03601 0000:3601 original=03f3 runtime CFG evidence
+    add si, bx
+; @03603 0000:3603 original=a5 runtime CFG evidence
+    movsw
+; @03604 0000:3604 original=a5 runtime CFG evidence
+    movsw
+; @03605 0000:3605 original=a5 runtime CFG evidence
+    movsw
+; @03606 0000:3606 original=a5 runtime CFG evidence
+    movsw
+; @03607 0000:3607 original=03f3 runtime CFG evidence
+    add si, bx
+; @03609 0000:3609 original=a5 runtime CFG evidence
+    movsw
+; @0360A 0000:360A original=a5 runtime CFG evidence
+    movsw
+; @0360B 0000:360B original=a5 runtime CFG evidence
+    movsw
+; @0360C 0000:360C original=a5 runtime CFG evidence
+    movsw
+; @0360D 0000:360D original=03f3 runtime CFG evidence
+    add si, bx
+; @0360F 0000:360F original=a5 runtime CFG evidence
+    movsw
+; @03610 0000:3610 original=a5 runtime CFG evidence
+    movsw
+; @03611 0000:3611 original=a5 runtime CFG evidence
+    movsw
+; @03612 0000:3612 original=a5 runtime CFG evidence
+    movsw
+; @03613 0000:3613 original=03f3 runtime CFG evidence
+    add si, bx
+; @03615 0000:3615 original=a5 runtime CFG evidence
+    movsw
+; @03616 0000:3616 original=a5 runtime CFG evidence
+    movsw
+; @03617 0000:3617 original=a5 runtime CFG evidence
+    movsw
+; @03618 0000:3618 original=a5 runtime CFG evidence
+    movsw
+; @03619 0000:3619 original=03f3 runtime CFG evidence
+    add si, bx
+; @0361B 0000:361B original=a5 runtime CFG evidence
+    movsw
+; @0361C 0000:361C original=a5 runtime CFG evidence
+    movsw
+; @0361D 0000:361D original=a5 runtime CFG evidence
+    movsw
+; @0361E 0000:361E original=a5 runtime CFG evidence
+    movsw
+; @0361F 0000:361F original=03f3 runtime CFG evidence
+    add si, bx
+; @03621 0000:3621 original=a5 runtime CFG evidence
+    movsw
+; @03622 0000:3622 original=a5 runtime CFG evidence
+    movsw
+; @03623 0000:3623 original=a5 runtime CFG evidence
+    movsw
+; @03624 0000:3624 original=a5 runtime CFG evidence
+    movsw
+; @03625 0000:3625 original=03f3 runtime CFG evidence
+    add si, bx
+; @03627 0000:3627 original=a5 runtime CFG evidence
+    movsw
+; @03628 0000:3628 original=a5 runtime CFG evidence
+    movsw
+; @03629 0000:3629 original=a5 runtime CFG evidence
+    movsw
+; @0362A 0000:362A original=a5 runtime CFG evidence
+    movsw
+; @0362B 0000:362B original=03f3 runtime CFG evidence
+    add si, bx
+; @0362D 0000:362D original=a5 runtime CFG evidence
+    movsw
+; @0362E 0000:362E original=a5 runtime CFG evidence
+    movsw
+; @0362F 0000:362F original=a5 runtime CFG evidence
+    movsw
+; @03630 0000:3630 original=a5 runtime CFG evidence
+    movsw
+; @03631 0000:3631 original=03f3 runtime CFG evidence
+    add si, bx
+; @03633 0000:3633 original=a5 runtime CFG evidence
+    movsw
+; @03634 0000:3634 original=a5 runtime CFG evidence
+    movsw
+; @03635 0000:3635 original=a5 runtime CFG evidence
+    movsw
+; @03636 0000:3636 original=a5 runtime CFG evidence
+    movsw
+; @03637 0000:3637 original=03f3 runtime CFG evidence
+    add si, bx
+; @03639 0000:3639 original=a5 runtime CFG evidence
+    movsw
+; @0363A 0000:363A original=a5 runtime CFG evidence
+    movsw
+; @0363B 0000:363B original=a5 runtime CFG evidence
+    movsw
+; @0363C 0000:363C original=a5 runtime CFG evidence
+    movsw
+; @0363D 0000:363D original=03f3 runtime CFG evidence
+    add si, bx
+; @0363F 0000:363F original=a5 runtime CFG evidence
+    movsw
+; @03640 0000:3640 original=a5 runtime CFG evidence
+    movsw
+; @03641 0000:3641 original=a5 runtime CFG evidence
+    movsw
+; @03642 0000:3642 original=a5 runtime CFG evidence
+    movsw
+; @03643 0000:3643 original=03f3 runtime CFG evidence
+    add si, bx
+; @03645 0000:3645 original=a5 runtime CFG evidence
+    movsw
+; @03646 0000:3646 original=a5 runtime CFG evidence
+    movsw
+; @03647 0000:3647 original=a5 runtime CFG evidence
+    movsw
+; @03648 0000:3648 original=a5 runtime CFG evidence
+    movsw
+; @03649 0000:3649 original=03f3 runtime CFG evidence
+    add si, bx
+; @0364B 0000:364B original=a5 runtime CFG evidence
+    movsw
+; @0364C 0000:364C original=a5 runtime CFG evidence
+    movsw
+; @0364D 0000:364D original=a5 runtime CFG evidence
+    movsw
+; @0364E 0000:364E original=a5 runtime CFG evidence
+    movsw
+; @0364F 0000:364F original=03f3 runtime CFG evidence
+    add si, bx
+; @03651 0000:3651 original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @03656 0000:3656 original=c3 runtime CFG evidence
+    ret
+; @03657 0000:3657 original=e8dc23 runtime CFG evidence
+    CALL_NEAR loc_05A36
+; @0365A 0000:365A original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @0365D 0000:365D original=3dffff runtime CFG evidence
+    cmp ax, 0FFFFh
+; @03660 0000:3660 original=7501 runtime CFG evidence
+    JNE_SHORT loc_03663
+; @03662 0000:3662 original=c3 runtime CFG evidence
+    ret
+; @03663 0000:3663 original=03064c23 runtime CFG evidence
+    add ax, word ptr ds:[0234Ch]
+; @03667 0000:3667 original=89460c runtime CFG evidence
+    mov word ptr ss:[bp + 0Ch], ax
+; @0366A 0000:366A original=8bf0 runtime CFG evidence
+    mov si, ax
+; @0366C 0000:366C original=8b7e0e runtime CFG evidence
+    mov di, word ptr ss:[bp + 0Eh]
+; @0366F 0000:366F original=2e8e069695 runtime CFG evidence
+    mov es, word ptr cs:[09596h]
+; @03674 0000:3674 original=2e8e1e9895 runtime CFG evidence
+    mov ds, word ptr cs:[09598h]
+; @03679 0000:3679 original=bb6400 runtime CFG evidence
+    mov bx, 064h
+; @0367C 0000:367C original=a5 runtime CFG evidence
+    movsw
+; @0367D 0000:367D original=a5 runtime CFG evidence
+    movsw
+; @0367E 0000:367E original=03f3 runtime CFG evidence
+    add si, bx
+; @03680 0000:3680 original=a5 runtime CFG evidence
+    movsw
+; @03681 0000:3681 original=a5 runtime CFG evidence
+    movsw
+; @03682 0000:3682 original=03f3 runtime CFG evidence
+    add si, bx
+; @03684 0000:3684 original=a5 runtime CFG evidence
+    movsw
+; @03685 0000:3685 original=a5 runtime CFG evidence
+    movsw
+; @03686 0000:3686 original=03f3 runtime CFG evidence
+    add si, bx
+; @03688 0000:3688 original=a5 runtime CFG evidence
+    movsw
+; @03689 0000:3689 original=a5 runtime CFG evidence
+    movsw
+; @0368A 0000:368A original=03f3 runtime CFG evidence
+    add si, bx
+; @0368C 0000:368C original=a5 runtime CFG evidence
+    movsw
+; @0368D 0000:368D original=a5 runtime CFG evidence
+    movsw
+; @0368E 0000:368E original=03f3 runtime CFG evidence
+    add si, bx
+; @03690 0000:3690 original=a5 runtime CFG evidence
+    movsw
+; @03691 0000:3691 original=a5 runtime CFG evidence
+    movsw
+; @03692 0000:3692 original=03f3 runtime CFG evidence
+    add si, bx
+; @03694 0000:3694 original=a5 runtime CFG evidence
+    movsw
+; @03695 0000:3695 original=a5 runtime CFG evidence
+    movsw
+; @03696 0000:3696 original=03f3 runtime CFG evidence
+    add si, bx
+; @03698 0000:3698 original=a5 runtime CFG evidence
+    movsw
+; @03699 0000:3699 original=a5 runtime CFG evidence
+    movsw
+; @0369A 0000:369A original=03f3 runtime CFG evidence
+    add si, bx
+; @0369C 0000:369C original=2e8e1e9695 runtime CFG evidence
+    mov ds, word ptr cs:[09596h]
+; @036A1 0000:36A1 original=c3 runtime CFG evidence
+    ret
 ; sub_0000_36A2
 ; @036A2 0000:36A2 original=8bda
     mov bx, dx

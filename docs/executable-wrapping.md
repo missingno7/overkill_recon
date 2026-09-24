@@ -106,3 +106,17 @@ later executable bytes loaded or generated during gameplay.
 The legacy project's unpack notes were used as leads (notably the final entry and
 nested stubs). All image bytes, stage sizes, relocations and entry transfers above
 were independently derived from the copied originals and tested against their code.
+
+## Runtime materialization evidence (2026-09-24)
+
+The additional oracle is described in [runtime-materialization.md](runtime-materialization.md).
+Oracle A and its ordered relocation criterion are unchanged. Executing the packed
+original proves that the 217-byte probe window at 1010:5E42..5F1A inclusive occurs in EXEPACK before
+95C9, not after it. The actual writer instruction is 32FF:0099; 009B is its successor.
+
+After A, original startup decodes ADLIB.ENC or ROLAND.ENC into relative segment
+1022. The independently decoded SHADOW directory and ENC resources are in
+metadata/resource-directory.json and tools/resources.py. No original/legacy
+snapshot is an input. Runtime 9690 is a bounded candidate frontier; physical
+hardware equivalence, global stability and exact earliest-instruction minimality
+remain unproven. Both initial and materialized identities are retained.

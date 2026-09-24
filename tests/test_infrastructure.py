@@ -29,6 +29,17 @@ class InfrastructureTests(unittest.TestCase):
     def test_all_bytes_have_exclusive_source_owners(self):
         counts=audit_source();self.assertEqual(sum(counts.values()),143088)
         self.assertGreater(counts['opaque_unknown'],0)
+    def test_driver_data_accounting_rejects_misclassification(self):
+        from build_drivers import validate_record_kind
+        for name in ('adlib','roland'):
+            m=read_json(ROOT/'metadata/drivers'/f'{name}-source-map.json');cursor=0
+            for r in m['records']:
+                validate_record_kind(r);self.assertEqual(r['start'],cursor);cursor=r['end']
+            self.assertEqual(cursor,m['resource']['decoded_size'])
+        good=dict(start=0,end=2,kind='reconstructed_data',text='dw 07F40h',evidence='reviewed table')
+        validate_record_kind(good)
+        for changes in ({'kind':'instruction'},{'end':3},{'evidence':''},{'kind':'invented_kind'}):
+            with self.assertRaises(ValueError):validate_record_kind(dict(good,**changes))
     def test_real_omf_checksum_corruption_fails(self):
         p=ROOT/'build/asm/R00.OBJ'
         if not p.exists():self.skipTest('Run a fresh assembly first')

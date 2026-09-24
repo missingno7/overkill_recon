@@ -36,7 +36,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:C7FE | UppercaseAsciiAL | 0 | 13 | C_READY | True | 0 |
 | 0000:C9DD | sub_0000_C9DD | 0 | 13 | HARDWARE | True | 0 |
 | 0000:CA5B | LowercaseAsciiAL | 0 | 13 | C_READY | True | 0 |
-| 0000:3345 | sub_0000_3345 | 0 | 15 | UNKNOWN | True | 0 |
+| 0000:3345 | ClearTandy32K | 0 | 15 | C_READY_WITH_ENV | True | 0 |
 | 0000:446C | sub_0000_446C | 0 | 15 | UNKNOWN | True | 0 |
 | 0000:50BA | sub_0000_50BA | 0 | 15 | HARDWARE | True | 0 |
 | 0000:4DAF | sub_0000_4DAF | 0 | 16 | UNKNOWN | True | 0 |
@@ -59,9 +59,9 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:505B | sub_0000_505B | 0 | 20 | UNKNOWN | True | 0 |
 | 0000:54C0 | sub_0000_54C0 | 0 | 20 | UNKNOWN | True | 0 |
 | 0000:C665 | sub_0000_C665 | 0 | 20 | HARDWARE | True | 0 |
-| 0000:3103 | sub_0000_3103 | 0 | 21 | UNKNOWN | True | 0 |
-| 0000:3118 | sub_0000_3118 | 0 | 21 | UNKNOWN | True | 0 |
-| 0000:312D | sub_0000_312D | 0 | 21 | UNKNOWN | True | 0 |
+| 0000:3103 | TandyOffsetFromRow9EE8 | 0 | 21 | C_READY_WITH_ENV | True | 0 |
+| 0000:3118 | TandyOffsetFromRow9BC8 | 0 | 21 | C_READY_WITH_ENV | True | 0 |
+| 0000:312D | TandyOffsetFromRow9D58 | 0 | 21 | C_READY_WITH_ENV | True | 0 |
 | 0000:61C7 | sub_0000_61C7 | 0 | 21 | UNKNOWN | True | 0 |
 | 0F7F:01AD | sub_0F7F_01AD | 0 | 21 | HARDWARE | True | 0 |
 | 0000:291C | sub_0000_291C | 0 | 22 | UNKNOWN | True | 0 |
@@ -80,9 +80,9 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:41DA | sub_0000_41DA | 0 | 27 | UNKNOWN | True | 0 |
 | 0000:EDE9 | sub_0000_EDE9 | 0 | 27 | UNKNOWN | True | 0 |
 | 0000:0E51 | sub_0000_0E51 | 0 | 28 | HARDWARE | True | 0 |
-| 0000:3097 | sub_0000_3097 | 0 | 29 | UNKNOWN | True | 0 |
+| 0000:3097 | CopyPackedRowsStride104 | 0 | 29 | C_READY_WITH_ENV | True | 0 |
 | 0F7F:0190 | sub_0F7F_0190 | 0 | 29 | HARDWARE | True | 0 |
-| 0000:30B4 | sub_0000_30B4 | 0 | 30 | UNKNOWN | True | 0 |
+| 0000:30B4 | CopyPackedRowsStride160 | 0 | 30 | C_READY_WITH_ENV | True | 0 |
 | 0000:C591 | sub_0000_C591 | 0 | 31 | HARDWARE | True | 0 |
 | 0000:C83C | sub_0000_C83C | 0 | 31 | HARDWARE | True | 0 |
 | 0000:4E9F | sub_0000_4E9F | 0 | 32 | HARDWARE | True | 0 |
@@ -95,13 +95,13 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:3824 | sub_0000_3824 | 0 | 37 | UNKNOWN | True | 0 |
 | 0000:C640 | sub_0000_C640 | 0 | 37 | HARDWARE | True | 0 |
 | 0000:0E6D | sub_0000_0E6D | 0 | 38 | HARDWARE | True | 0 |
-| 0000:3389 | sub_0000_3389 | 0 | 38 | UNKNOWN | True | 0 |
+| 0000:3389 | ClearTandy104x200 | 0 | 38 | C_READY_WITH_ENV | True | 0 |
 | 0000:4199 | sub_0000_4199 | 0 | 38 | UNKNOWN | True | 0 |
 | 0000:44B0 | sub_0000_44B0 | 0 | 38 | UNKNOWN | True | 0 |
 | 0000:511F | sub_0000_511F | 0 | 38 | UNKNOWN | True | 0 |
 | 0000:06BC | sub_0000_06BC | 0 | 39 | HARDWARE | True | 0 |
 | 0000:A648 | sub_0000_A648 | 0 | 39 | UNKNOWN | True | 0 |
-| 0000:306F | sub_0000_306F | 0 | 40 | UNKNOWN | True | 0 |
+| 0000:306F | CopyPackedRowsToTandyBanks | 0 | 40 | C_READY_WITH_ENV | True | 0 |
 | 0000:00E8 | sub_0000_00E8 | 0 | 41 | HARDWARE | True | 0 |
 | 0000:5CB7 | sub_0000_5CB7 | 0 | 43 | HARDWARE | True | 0 |
 | 0000:5160 | sub_0000_5160 | 0 | 44 | HARDWARE | True | 0 |
@@ -114,7 +114,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:254C | sub_0000_254C | 0 | 52 | UNKNOWN | True | 0 |
 | 0000:44D7 | sub_0000_44D7 | 0 | 52 | UNKNOWN | True | 0 |
 | 153A:06CD | sub_153A_06CD | 0 | 52 | HARDWARE | True | 0 |
-| 0000:3354 | sub_0000_3354 | 0 | 53 | UNKNOWN | True | 0 |
+| 0000:3354 | CopyWorkspace104x192ToTandy | 0 | 53 | C_READY_WITH_ENV | True | 0 |
 | 0000:447B | sub_0000_447B | 0 | 53 | ASM_COUPLED | True | 0 |
 | 0F7F:0854 | sub_0F7F_0854 | 0 | 53 | UNKNOWN | True | 0 |
 | 0000:5F0D | sub_0000_5F0D | 0 | 54 | UNKNOWN | True | 0 |
@@ -131,7 +131,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:CA13 | sub_0000_CA13 | 0 | 71 | HARDWARE | True | 0 |
 | 0000:2750 | sub_0000_2750 | 0 | 82 | HARDWARE | True | 0 |
 | 0000:B15A | sub_0000_B15A | 0 | 86 | UNKNOWN | True | 0 |
-| 0000:0FE4 | sub_0000_0FE4 | 0 | 88 | UNKNOWN | True | 0 |
+| 0000:0FE4 | BuildByteToNibbleMaskTable | 0 | 88 | C_READY_WITH_ENV | True | 0 |
 | 0000:D566 | sub_0000_D566 | 0 | 89 | HARDWARE | True | 0 |
 | 0000:9CF1 | sub_0000_9CF1 | 0 | 92 | UNKNOWN | True | 0 |
 | 0000:2932 | sub_0000_2932 | 0 | 95 | UNKNOWN | True | 0 |
@@ -375,3 +375,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:CBE8 | sub_0000_CBE8 | 14 | 28 | UNKNOWN | False | 0 |
 | 0000:5559 | sub_0000_5559 | 15 | 732 | HARDWARE | False | 0 |
 | 0000:95C9 | sub_0000_95C9 | 16 | 981 | HARDWARE | False | 0 |
+
+## Runtime queue
+
+The active main queue is metadata/runtime/bottom-up-queue.json; optional driver queues are metadata/drivers/*-bottom-up-queue.json. Use `python tools/runtime_report.py main 0162` or `python tools/runtime_report.py adlib 0571`. Preserve the initial inventory above as provenance; the driver slot has separate cold/AdLib/Roland identities.

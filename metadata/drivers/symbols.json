@@ -1,0 +1,161 @@
+{
+  "symbols": [
+    {
+      "address": "0000:0571",
+      "category": "HARDWARE",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": true
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "PROVEN",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Read byte from port DS:[000E] into AL. Preserve AH, DX, other general registers and FLAGS. DS must address this driver header. Near RET.",
+      "evidence": [
+        "Original ADLIB.ENC contains 52 8B 16 0E 00 EC 5A C3 at0571",
+        "Port constant0388 at000E",
+        "tests/test_runtime.py checks original instructions, returned AL, preserved AH/DX/FLAGS and code bytes",
+        "Adjacent near routines delimit this eight-byte callable sequence. No original caller or gameplay invocation is currently known; contract tested in isolation."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "ReadOpl2Status"
+    },
+    {
+      "address": "0000:0579",
+      "category": "HARDWARE",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Preserve AX and all general/segment registers. BX is a signed comparison threshold; configure port43=B6, set port61 bits0/1, repeatedly write1FFFh to port42, issue43=86 thenB6, read two bytes from42 and repeat while signed AX>BX. Finally read61 and clear bit0. Changes flags; does not restore PIT configuration or original port61 state. Termination depends on hardware responses; no exact-duration claim.",
+      "evidence": [
+        "Only known caller0557 supplies1FFCh then1FECh.",
+        "Original signed JG at059F matters; do not rewrite as unsigned countdown.",
+        "tests/test_tandy_adlib.py drives repeat and exit paths with explicit read values and checks every IN/OUT plus preserved registers."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "DelayViaPit2Counter"
+    },
+    {
+      "address": "0000:0557",
+      "category": "HARDWARE",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "AL register index, AH data, DS points to driver header. OUT base=DS:[000E],AL; call DelayViaPit2Counter(BX=1FFC); AL=AH; OUT base+1,AL; delay(BX=1FEC). Preserves BX/DX and other general/segment registers except AL, which returns equal to AH. FLAGS changed. Inherits PIT/port61 side effects and hardware-dependent termination.",
+      "evidence": [
+        "Eight known caller routines; caller04E9 uses timer register commands6004,8004,FF02,2104.",
+        "0579 delay contract independently reviewed first.",
+        "Isolated tests check port order and AX/BX/DX contracts across three register/data pairs."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "WriteOpl2Register"
+    },
+    {
+      "address": "0000:04A4",
+      "category": "HARDWARE",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "DS must address driver; DF=0. Write first word at04B1 unconditionally using AL=index,AH=data; then read words and stop on zero before writing it. Original table has27 pairs plus zero terminator. Returns AX=0,SI=04E9; other general/segment registers preserved. Flags from OR AX,AX. Inherits PIT/port61 effects from WriteOpl2Register.",
+      "evidence": [
+        "04A7 first LODSW precedes any sentinel test; zero check follows04AB.",
+        "Original register list includes5Dh,B9h and omits4Dh,B5h; retain exact bytes, purpose UNKNOWN.",
+        "Isolated transcript test checks27 writes and a zero first word, which is still written."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "WriteOpl2Table04B1"
+    },
+    {
+      "address": "0000:024F",
+      "category": "HARDWARE",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "DS=driver,DI=record,DF=0. i=(byte[DI]+byte[DI+12h]) mod256; w=(word DS:[07A9+((2*i) mod256)]+word[DI+1Ah]) mod65536; h=high(w) OR byte DS:[0749+i]. Store w at+14h. Write (byte[DI+7] OR A0h,low(w)), then cache word (h<<8)|(byte[DI+7] OR B0h) at+8 and write its high byte OR20h to the B0-derived register. Copy+1Dh to+1Eh and return that byte in AL; AH=h OR20h. BX,SI,CX,DX,DI,BP and segments preserved, flags changed; inherits hardware effects. No index/channel/range validation.",
+      "evidence": [
+        "Calls reviewed0557 twice;0244 falls through into024F on its nonzero-step path.",
+        "025E doubles AL rather than AX, causing modulo256 byte-offset wrap.",
+        "Tests cover indices0,18,19,95,96,127,128,255, byte-sum wrap,16-bit word wrap, channels0/8 and exact cache fields."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "WriteRecordA0B0Pair"
+    },
+    {
+      "address": "0000:0244",
+      "category": "ASM_COUPLED",
+      "claim_axes": {
+        "BYTE_EXACT": true,
+        "HISTORICALLY_PROVEN": false,
+        "SEMANTICALLY_SUPPORTED": true,
+        "STRUCTURALLY_SUPPORTED": false
+      },
+      "confidence": {
+        "boundary": "STRONG",
+        "calling_convention": "STRONG",
+        "gameplay_role": "UNKNOWN",
+        "operation": "PROVEN",
+        "semantic_name": "STRONG"
+      },
+      "contract": "Load AL=byte DS:[DI+13h]. If zero, branch backward to shared RET0243, leaving AH unchanged and no writes/ports. Otherwise add byte[DI] modulo256, store it at[DI], and fall through into WriteRecordA0B0Pair. Inherits its outputs and hardware effects; must not insert an independent RET at024F.",
+      "evidence": [
+        "0249 JE0243;024D store ends immediately before024F push BX.",
+        "Static graph records024F as tail target, not an independent return.",
+        "Isolated tests cover zero step, positive wrap and FEh step with actual callee execution."
+      ],
+      "kind": "function",
+      "module": "adlib",
+      "name": "StepIndex13AndWriteA0B0"
+    }
+  ]
+}
