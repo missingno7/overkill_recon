@@ -428,6 +428,18 @@
   },
   "schema": 1,
   "structure_review": {
+    "attribute_table_source_vocabulary": {
+      "confidence": "SEMANTICALLY_SUPPORTED",
+      "historical_topology": "UNKNOWN: common state does not prove one ASM file or original include",
+      "physical_chunks": "R00/R02/R06 remain modern exact-build containers",
+      "shared_definitions": "include/MOVEMENT.INC modern shared vocabulary",
+      "sites": [
+        "0000:0B8E fill and sparse patches",
+        "0000:4BA5 XLAT consumer",
+        "0000:505B lookup helper",
+        "0000:CFDB reset"
+      ]
+    },
     "call_to_next": {
       "historical_macro": "SPECULATIVE; repeated bytes do not prove source macros",
       "interpretation": "Repeated concrete instruction convention. Reviewed coordinate double steps use call+fallthrough; other sites must retain individual semantics.",

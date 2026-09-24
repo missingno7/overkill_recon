@@ -261,3 +261,11 @@ states using the original helper bodies. It compares the full mapped memory,
 including near-call stack writes, register/segment effects, carry, IF/DF and SP.
 The synthetic domain uses disjoint record, scratch, stack and source memory.
 This proves the enumerated local cases, not a global caller-domain invariant.
+
+
+The attribute lifecycle is now expressed directly in ASM with BYTE_ATTRIBUTE_TABLE,
+BYTE_ATTRIBUTE_COUNT and named patch selector/pointer/sentinel constants. Local
+labels describe initialization, patch-index reading and completion. FF terminates
+before reading a value, so this patch format cannot modify table entry FF. Fill
+and reset use ES; patch writes and readers use DS. Their common-state interpretation
+requires the game-data segment relationship, with DF=0 for forward traversal.

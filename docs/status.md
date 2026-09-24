@@ -59,6 +59,8 @@ Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigne
 
 Main reviewed data: 72 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.
 
-Grid/response local verification: 90 AC56 cases and 120 composed AC3C cases PASS.
-Full verifier PASS (44 tests, exact main/ordered relocations, both audio modules,
-and bounded original startup at 9690). No additional decoded-byte coverage claimed.
+
+Matching-ASM refactor: unified attribute-table vocabulary across initialization,
+patch loop, reset and both readers. Normal exact verifier PASS for main, ordered
+relocations and both audio modules; no new tests, decoded bytes or historical
+module claims. Current work is source readability and evidenced relationships.

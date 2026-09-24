@@ -8,6 +8,16 @@
       "505B zero-extends byte source index; 4BA5 also uses XLAT"
     ],
     "extent_bytes": 256,
+    "patch_format": "Index,value byte pairs; FF index terminates before value. Thus index FF cannot be patched by this loop.",
+    "segment_contract": "Fill/reset use ES=CS:[MAIN_DATA_SEGMENT]; patch writes and readers use DS. Ordinary shared-table interpretation requires DS to name the same game-data segment; forward fill/stream traversal requires DF=0.",
+    "source_symbols": [
+      "BYTE_ATTRIBUTE_TABLE",
+      "BYTE_ATTRIBUTE_COUNT",
+      "ATTRIBUTE_SOURCE_SEGMENT",
+      "ATTRIBUTE_PATCH_POINTERS",
+      "ATTRIBUTE_PATCH_SELECTOR",
+      "ATTRIBUTE_PATCH_END"
+    ],
     "unknown": "Source resource identity, selected stream contents and gameplay meaning; no static data promotion"
   },
   "caller_insights": [

@@ -50,3 +50,12 @@ RECORD_Y_MAX equ 0C0h
 RECORD_Y_MIN equ 020h
 PLACEMENT_X_SIGNED_MAX equ 0C0h
 INPUT_MOVEMENT_MASK equ 00Fh
+
+; Shared grid-attribute state: fill/patch at 0B8E, reset at CFDB, readers 4BA5/505B.
+; Modern names; no historical include or resource identity is claimed.
+BYTE_ATTRIBUTE_TABLE equ 0C3AAh
+BYTE_ATTRIBUTE_COUNT equ 0100h
+ATTRIBUTE_SOURCE_SEGMENT equ 09592h
+ATTRIBUTE_PATCH_POINTERS equ 0C4AAh
+ATTRIBUTE_PATCH_SELECTOR equ 02356h
+ATTRIBUTE_PATCH_END equ 0FFh

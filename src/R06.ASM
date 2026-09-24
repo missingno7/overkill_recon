@@ -2944,12 +2944,14 @@ loc_0ECC9 equ 02CC9h
     mov word ptr ds:[02350h], 09Ch
 ; @0CFD8 0000:CFD8 original=e8e4c9
     CALL_NEAR InitPositionHistory_099BF
+; Clear the shared byte-attribute table before calling the setup path at 007EF.
+; Forward fill requires DF=0; this is state initialization, not static table contents.
 ; @0CFDB 0000:CFDB original=2e8e069695
-    mov es, word ptr cs:[09596h]
+    mov es, word ptr cs:[MAIN_DATA_SEGMENT]
 ; @0CFE0 0000:CFE0 original=bfaac3
-    mov di, 0C3AAh
+    mov di, BYTE_ATTRIBUTE_TABLE
 ; @0CFE3 0000:CFE3 original=b90001
-    mov cx, 0100h
+    mov cx, BYTE_ATTRIBUTE_COUNT
 ; @0CFE6 0000:CFE6 original=32c0
     xor al, al
 ; @0CFE8 0000:CFE8 original=f3aa

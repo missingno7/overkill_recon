@@ -404,3 +404,10 @@ padding is still UNKNOWN. Promotion is deferred until a synthetic whole-handler
 stack-contract test and guarded CFG edge are added; actual DOS-version stack
 compatibility must not be inferred from a synthetic test. No module boundary
 has been promoted from this observation.
+
+
+The byte-attribute lifecycle now shares symbolic definitions across R00/R02/R06:
+fill, sparse index/value patches, reset, XLAT and indexed lookup. These are
+SEMANTICALLY_SUPPORTED common state relationships. The shared definitions in
+MOVEMENT.INC are a modern source convenience; neither that filename nor an
+original shared include/module boundary is historically proven.

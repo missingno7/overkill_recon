@@ -5,8 +5,6 @@ part02 segment byte public 'CODE'
 assume cs:part02,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
 ; Modern grid-probe names; roles are local, broader map ownership unresolved.
-BYTE_ATTRIBUTE_TABLE equ 0C3AAh
-ATTRIBUTE_SOURCE_SEGMENT equ 09592h
 GRID_Y_SUM equ 0215Ah
 loc_025B2 equ 0E5B2h
 loc_04201 equ 0201h
@@ -1927,8 +1925,9 @@ loc_0CBE8 equ 08BE8h
     add si, ax
 ; @04B9F 0000:4B9F original=268a04
     mov al, byte ptr es:[si]
+; Same byte-attribute table as ReadIndexedByteAttribute; this consumer needs zero/nonzero.
 ; @04BA2 0000:4BA2 original=bbaac3
-    mov bx, 0C3AAh
+    mov bx, BYTE_ATTRIBUTE_TABLE
 ; @04BA5 0000:4BA5 original=d7
     xlat
 ; @04BA6 0000:4BA6 original=0ac0

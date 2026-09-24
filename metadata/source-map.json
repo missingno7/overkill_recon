@@ -6460,7 +6460,7 @@
           "end": 2953,
           "kind": "instruction",
           "start": 2951,
-          "text": "JE_SHORT loc_00B8E"
+          "text": "JE_SHORT InitializeByteAttributes_00B8E"
         },
         {
           "address": "0000:0B89",
@@ -6481,14 +6481,14 @@
           "end": 2963,
           "kind": "instruction",
           "start": 2958,
-          "text": "mov es, word ptr cs:[09596h]"
+          "text": "mov es, word ptr cs:[MAIN_DATA_SEGMENT]"
         },
         {
           "address": "0000:0B93",
           "end": 2966,
           "kind": "instruction",
           "start": 2963,
-          "text": "mov di, 0C3AAh"
+          "text": "mov di, BYTE_ATTRIBUTE_TABLE"
         },
         {
           "address": "0000:0B96",
@@ -6502,7 +6502,7 @@
           "end": 2970,
           "kind": "instruction",
           "start": 2967,
-          "text": "mov cx, 0100h"
+          "text": "mov cx, BYTE_ATTRIBUTE_COUNT"
         },
         {
           "address": "0000:0B9A",
@@ -6530,7 +6530,7 @@
           "end": 2979,
           "kind": "instruction",
           "start": 2975,
-          "text": "mov si, word ptr ds:[02356h]"
+          "text": "mov si, word ptr ds:[ATTRIBUTE_PATCH_SELECTOR]"
         },
         {
           "address": "0000:0BA3",
@@ -6544,7 +6544,7 @@
           "end": 2985,
           "kind": "instruction",
           "start": 2981,
-          "text": "add si, 0C4AAh"
+          "text": "add si, ATTRIBUTE_PATCH_POINTERS"
         },
         {
           "address": "0000:0BA9",
@@ -6565,14 +6565,14 @@
           "end": 2990,
           "kind": "instruction",
           "start": 2988,
-          "text": "cmp al, 0FFh"
+          "text": "cmp al, ATTRIBUTE_PATCH_END"
         },
         {
           "address": "0000:0BAE",
           "end": 2992,
           "kind": "instruction",
           "start": 2990,
-          "text": "JE_SHORT loc_00BB9"
+          "text": "JE_SHORT AttributePatchesDone_00BB9"
         },
         {
           "address": "0000:0BB0",
@@ -6607,14 +6607,14 @@
           "end": 3001,
           "kind": "instruction",
           "start": 2999,
-          "text": "JMP_SHORT loc_00BAB"
+          "text": "JMP_SHORT ReadAttributePatchIndex_00BAB"
         },
         {
           "address": "0000:0BB9",
           "end": 3006,
           "kind": "instruction",
           "start": 3001,
-          "text": "mov es, word ptr cs:[09592h]"
+          "text": "mov es, word ptr cs:[ATTRIBUTE_SOURCE_SEGMENT]"
         },
         {
           "address": "0000:0BBE",
@@ -30840,7 +30840,7 @@
           "end": 19365,
           "kind": "instruction",
           "start": 19362,
-          "text": "mov bx, 0C3AAh"
+          "text": "mov bx, BYTE_ATTRIBUTE_TABLE"
         },
         {
           "address": "0000:4BA5",
@@ -92139,21 +92139,21 @@
           "end": 53216,
           "kind": "instruction",
           "start": 53211,
-          "text": "mov es, word ptr cs:[09596h]"
+          "text": "mov es, word ptr cs:[MAIN_DATA_SEGMENT]"
         },
         {
           "address": "0000:CFE0",
           "end": 53219,
           "kind": "instruction",
           "start": 53216,
-          "text": "mov di, 0C3AAh"
+          "text": "mov di, BYTE_ATTRIBUTE_TABLE"
         },
         {
           "address": "0000:CFE3",
           "end": 53222,
           "kind": "instruction",
           "start": 53219,
-          "text": "mov cx, 0100h"
+          "text": "mov cx, BYTE_ATTRIBUTE_COUNT"
         },
         {
           "address": "0000:CFE6",

@@ -1,5 +1,6 @@
 ; Modern physical chunk, NOT an inferred original object boundary.
 include ENCODING.INC
+include MOVEMENT.INC
 part00 segment byte public 'CODE'
 assume cs:part00,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
@@ -102,9 +103,9 @@ loc_00AF1 equ 0AF1h
 loc_00B15 equ 0B15h
 loc_00B39 equ 0B39h
 loc_00B7F equ 0B7Fh
-loc_00B8E equ 0B8Eh
-loc_00BAB equ 0BABh
-loc_00BB9 equ 0BB9h
+InitializeByteAttributes_00B8E equ 0B8Eh
+ReadAttributePatchIndex_00BAB equ 0BABh
+AttributePatchesDone_00BB9 equ 0BB9h
 loc_00CB8 equ 0CB8h
 loc_00CC8 equ 0CC8h
 loc_00CD8 equ 0CD8h
@@ -2073,19 +2074,22 @@ loc_0D50E equ 0D50Eh
 ; @00B82 0000:0B82 original=833e80bb00
     cmp word ptr ds:[0BB80h], 0
 ; @00B87 0000:0B87 original=7405
-    JE_SHORT loc_00B8E
+    JE_SHORT InitializeByteAttributes_00B8E
 ; @00B89 0000:0B89 original=e8e942
     CALL_NEAR loc_04E75
 ; @00B8C 0000:0B8C original=ebf1
     JMP_SHORT loc_00B7F
+; Initialize shared byte attributes to 1, then apply a selected sparse patch stream.
+; ES uses MAIN_DATA_SEGMENT for fill; DS addresses the patch stream and table writes.
+; Forward traversal requires DF=0; do not infer the selector range from this loop.
 ; @00B8E 0000:0B8E original=2e8e069695
-    mov es, word ptr cs:[09596h]
+    mov es, word ptr cs:[MAIN_DATA_SEGMENT]
 ; @00B93 0000:0B93 original=bfaac3
-    mov di, 0C3AAh
+    mov di, BYTE_ATTRIBUTE_TABLE
 ; @00B96 0000:0B96 original=57
     push di
 ; @00B97 0000:0B97 original=b90001
-    mov cx, 0100h
+    mov cx, BYTE_ATTRIBUTE_COUNT
 ; @00B9A 0000:0B9A original=b001
     mov al, 1
 ; @00B9C 0000:0B9C original=f3aa
@@ -2093,19 +2097,21 @@ loc_0D50E equ 0D50Eh
 ; @00B9E 0000:0B9E original=5f
     pop di
 ; @00B9F 0000:0B9F original=8b365623
-    mov si, word ptr ds:[02356h]
+    mov si, word ptr ds:[ATTRIBUTE_PATCH_SELECTOR]
 ; @00BA3 0000:0BA3 original=d1e6
     shl si, 1
 ; @00BA5 0000:0BA5 original=81c6aac4
-    add si, 0C4AAh
+    add si, ATTRIBUTE_PATCH_POINTERS
 ; @00BA9 0000:0BA9 original=8b34
     mov si, word ptr ds:[si]
+; Each patch is index,value; FF terminates before a value is read.
+; Consequently entry FF is not patched by this format.
 ; @00BAB 0000:0BAB original=ac
     lodsb
 ; @00BAC 0000:0BAC original=3cff
-    cmp al, 0FFh
+    cmp al, ATTRIBUTE_PATCH_END
 ; @00BAE 0000:0BAE original=7409
-    JE_SHORT loc_00BB9
+    JE_SHORT AttributePatchesDone_00BB9
 ; @00BB0 0000:0BB0 original=32e4
     xor ah, ah
 ; @00BB2 0000:0BB2 original=8bd8
@@ -2115,9 +2121,9 @@ loc_0D50E equ 0D50Eh
 ; @00BB5 0000:0BB5 original=8801
     mov byte ptr ds:[bx + di], al
 ; @00BB7 0000:0BB7 original=ebf2
-    JMP_SHORT loc_00BAB
+    JMP_SHORT ReadAttributePatchIndex_00BAB
 ; @00BB9 0000:0BB9 original=2e8e069295
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[ATTRIBUTE_SOURCE_SEGMENT]
 ; @00BBE 0000:0BBE original=33ff
     xor di, di
 ; @00BC0 0000:0BC0 original=b91a00

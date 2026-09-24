@@ -102,3 +102,10 @@ These rules apply only inside overkill_recon.
   edits the smallest supported source batch and runs exact verification.
 - Do not infer entity roles, global index bounds or historical module ownership from
   attractive names or adjacent table data. Keep remaining uncertainty explicit.
+
+## Current focus clarification
+
+- Focus solely on matching ASM source refactoring toward an evidence-supported
+  conceptual project: shared names, local labels, fields, tables and relationships.
+- Do not expand synthetic tests or C/port/architecture research in this phase.
+  Existing tests remain preserved; normal exact rebuilds verify refactoring.
