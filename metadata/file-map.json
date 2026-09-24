@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "path": "assets/OVERKILL",
+      "regions": [
+        {
+          "end": 512,
+          "kind": "MZ_HEADER",
+          "start": 0
+        },
+        {
+          "end": 50555,
+          "kind": "NESTED_PACKED_LOAD_MODULE",
+          "start": 512
+        },
+        {
+          "end": 518204,
+          "kind": "APPENDED_DATA_UNKNOWN_INTERNAL_LAYOUT",
+          "start": 50555
+        }
+      ]
+    },
+    {
+      "path": "assets/OVERKILL.EXE",
+      "regions": [
+        {
+          "end": 512,
+          "kind": "MZ_HEADER",
+          "start": 0
+        },
+        {
+          "end": 42827,
+          "kind": "NESTED_PACKED_LOAD_MODULE",
+          "start": 512
+        },
+        {
+          "end": 42829,
+          "kind": "APPENDED_DATA_UNKNOWN_INTERNAL_LAYOUT",
+          "start": 42827
+        }
+      ]
+    }
+  ]
+}

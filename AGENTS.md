@@ -1,0 +1,35 @@
+# Reconstruction rules
+
+These rules apply only inside overkill_recon.
+
+- Preserve originals and metadata/inputs.json. Verify hashes before using inputs.
+- Never modify overkill_forged, legacy/overkill_port or empires_reconstruction for this work.
+- Deliver assembly. Do not begin a C port, SDL work or broad ASM-to-C conversion.
+- Keep build independent of neighboring projects. Use the local nmlgc MS-DOS Player
+  as the primary runner for DOS assembler compilation. The local upstream i86 player
+  is the measured TLINK runner.
+- Run `python tools/verify.py` after every reconstruction batch; use `--full` after
+  extractor, toolchain, graph-boundary or semantic-test changes. Never regenerate
+  source implicitly during acceptance. A successful build that includes raw bytes
+  is not a claim those bytes were reconstructed.
+- Unknown code/data remains UNKNOWN, not guessed data or guessed functions. Account
+  for every byte and expose every DB/bootstrap fallback. Do not use INCBIN to hide code.
+- Work from leaves and verified hardware/format facts upward. Review callers,
+  callees, flags, segment defaults, memory writes and shared/nonlocal tails.
+- Keep original relative segment:offset provenance. Load segment 1010h is one
+  verification configuration, never a universal physical address.
+- Keep BYTE_EXACT, STRUCTURALLY_SUPPORTED, SEMANTICALLY_SUPPORTED and
+  HISTORICALLY_PROVEN independent. Keep PROVEN/STRONG/INFERRED/SPECULATIVE/UNKNOWN
+  per evidence dimension. Matching instructions does not prove historical tools.
+- Use candidate assembler/linker experiments to test alignment, object ordering,
+  segment topology, relocations and probable module boundaries. Record models
+  that produce identical output too: non-uniqueness is evidence against certainty.
+- Modern source names, macros and physical chunks must not be presented as recovered
+  original names. Original-project reconstruction evolves with both semantic and
+  binary/build evidence; do not force either stream to fit an attractive architecture.
+- Update docs/original-project-reconstruction.md and metadata/project-model.json
+  with structural claims. Recurring patterns alone do not prove a historical macro.
+- Keep C_READY classifications conservative. Shared tails, asynchronous state,
+  interrupts and nonlocal stack unwinds must remain explicit. No statistics gaming.
+- `bootstrap_source.py --replace-bootstrap` overwrites source; it is never an
+  ordinary build step. Preserve manually recovered work when expanding coverage.

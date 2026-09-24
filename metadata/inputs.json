@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "path": "assets/OVERKILL",
+      "size": 518204,
+      "sha256": "d593788b3d3948e5d9733dc04e346bd2b9657b22e10a707937dda7beb686c4af",
+      "source": "overkill_forged/assets/OVERKILL"
+    },
+    {
+      "path": "assets/OVERKILL.DOC",
+      "size": 3202,
+      "sha256": "5bee490262bfa20ccfb6bd24aa3cd70debefd1a7e20011468386dc97d434a395",
+      "source": "overkill_forged/assets/OVERKILL.DOC"
+    },
+    {
+      "path": "assets/OVERKILL.EXE",
+      "size": 42829,
+      "sha256": "8a55f472942f5573b0789be159456e654e00fa6d418b633c3db425d08965e3e5",
+      "source": "overkill_forged/assets/OVERKILL.EXE"
+    }
+  ]
+}

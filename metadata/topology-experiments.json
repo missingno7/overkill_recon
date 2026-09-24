@@ -1,0 +1,106 @@
+{
+  "conclusions": [
+    {
+      "claim": "A single code object and two byte-aligned PUBLIC contributions can yield identical linked module bytes.",
+      "status": "PROVEN_FOR_PROBE"
+    },
+    {
+      "claim": "Word/paragraph contribution alignment and object order constrain output layout.",
+      "status": "PROVEN_FOR_PROBE"
+    },
+    {
+      "claim": "Overkill object boundaries cannot be uniquely recovered from instruction byte exactness.",
+      "status": "LIMITATION"
+    },
+    {
+      "claim": "This experiment does not establish that TASM/TLINK built Overkill.",
+      "status": "UNKNOWN_HISTORICAL_IDENTITY"
+    }
+  ],
+  "results": {
+    "combined": {
+      "alignment": "byte",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "image_sha256": "c62bd933641e7c3c17f558d829d376735df4181f946c86072d2b6eeebd8318da",
+      "module_hex": "b011c3b322c3",
+      "module_size": 6,
+      "object_order": [
+        "M0.OBJ"
+      ],
+      "relocations": [],
+      "source_files": [
+        "M0.ASM"
+      ]
+    },
+    "split_byte": {
+      "alignment": "byte",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "image_sha256": "c62bd933641e7c3c17f558d829d376735df4181f946c86072d2b6eeebd8318da",
+      "module_hex": "b011c3b322c3",
+      "module_size": 6,
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "relocations": [],
+      "source_files": [
+        "M0.ASM",
+        "M1.ASM"
+      ]
+    },
+    "split_para": {
+      "alignment": "para",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "image_sha256": "6603b4ebabcd84d48492f71e659bfb04054d432a56d47b0c11d75467116c0a10",
+      "module_hex": "b011c300000000000000000000000000b322c3",
+      "module_size": 19,
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "relocations": [],
+      "source_files": [
+        "M0.ASM",
+        "M1.ASM"
+      ]
+    },
+    "split_reverse": {
+      "alignment": "byte",
+      "entry_cs": 0,
+      "entry_ip": 3,
+      "image_sha256": "9decaca7b9582a70154b3008c53625fd1fecbdcec2208fa3719e67adada73a16",
+      "module_hex": "b322c3b011c3",
+      "module_size": 6,
+      "object_order": [
+        "M1.OBJ",
+        "M0.OBJ"
+      ],
+      "relocations": [],
+      "source_files": [
+        "M0.ASM",
+        "M1.ASM"
+      ]
+    },
+    "split_word": {
+      "alignment": "word",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "image_sha256": "76b7abf939795d696c50067322780224a6d8620c8477e27e99785cbc9028f075",
+      "module_hex": "b011c300b322c3",
+      "module_size": 7,
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "relocations": [],
+      "source_files": [
+        "M0.ASM",
+        "M1.ASM"
+      ]
+    }
+  },
+  "schema": 1
+}

@@ -1,0 +1,397 @@
+{
+  "claim_axes": [
+    "BYTE_EXACT",
+    "STRUCTURALLY_SUPPORTED",
+    "SEMANTICALLY_SUPPORTED",
+    "HISTORICALLY_PROVEN"
+  ],
+  "data_structures": [
+    {
+      "confidence": "SEMANTICALLY_SUPPORTED_FIELDS_ONLY",
+      "facts": [
+        "SS:[BP+2] and SS:[BP+4] independently updated at A5DB..A615",
+        "A571 reads those fields and writes DS:[BX+2/4] plus10",
+        "The two bases need not have the same segment",
+        "Record size, signed coordinate meaning and entity role UNKNOWN"
+      ],
+      "name": "word_fields_2_and_4"
+    },
+    {
+      "confidence": "SEMANTICALLY_SUPPORTED",
+      "facts": [
+        "DS:0410..060F is a 512-byte input buffer",
+        "DS:0610 cursor; DS:0612 BX scratch; DS:0614 byte scratch",
+        "DOS file handle at DS:0240",
+        "Error path restores SP from CS:0242"
+      ],
+      "name": "buffer_state_0610"
+    }
+  ],
+  "historical_filenames": [],
+  "modern_layout": "18 physical source chunks of approximately 8192 bytes (cuts avoid instructions) chosen to bound DOS assembler memory. Not original modules.",
+  "observed_code_frames": [
+    {
+      "linear_base": 0,
+      "max_reached_end": 63466,
+      "min_reached_offset": 1,
+      "relative_segment": 0,
+      "status": "OBSERVED_ADDRESS_FRAME_NOT_OBJECT_BOUNDARY"
+    },
+    {
+      "linear_base": 63472,
+      "max_reached_end": 2599,
+      "min_reached_offset": 0,
+      "relative_segment": 3967,
+      "status": "OBSERVED_ADDRESS_FRAME_NOT_OBJECT_BOUNDARY"
+    },
+    {
+      "linear_base": 66080,
+      "max_reached_end": 19,
+      "min_reached_offset": 0,
+      "relative_segment": 4130,
+      "status": "OBSERVED_ADDRESS_FRAME_NOT_OBJECT_BOUNDARY"
+    },
+    {
+      "linear_base": 86848,
+      "max_reached_end": 78,
+      "min_reached_offset": 60,
+      "relative_segment": 5428,
+      "status": "OBSERVED_ADDRESS_FRAME_NOT_OBJECT_BOUNDARY"
+    },
+    {
+      "linear_base": 86944,
+      "max_reached_end": 1850,
+      "min_reached_offset": 0,
+      "relative_segment": 5434,
+      "status": "OBSERVED_ADDRESS_FRAME_NOT_OBJECT_BOUNDARY"
+    }
+  ],
+  "original_object_boundaries": [],
+  "patterns": {
+    "field_accesses": [
+      {
+        "base": "si",
+        "displacement": 0,
+        "segment": "default",
+        "sites": 407
+      },
+      {
+        "base": "di",
+        "displacement": 0,
+        "segment": "es",
+        "sites": 304
+      },
+      {
+        "base": "bp",
+        "displacement": 24,
+        "segment": "default",
+        "sites": 42
+      },
+      {
+        "base": "bp",
+        "displacement": 0,
+        "segment": "default",
+        "sites": 40
+      },
+      {
+        "base": "bx",
+        "displacement": 0,
+        "segment": "default",
+        "sites": 38
+      },
+      {
+        "base": "bp",
+        "displacement": 2,
+        "segment": "default",
+        "sites": 30
+      },
+      {
+        "base": "bx",
+        "displacement": 4,
+        "segment": "default",
+        "sites": 30
+      },
+      {
+        "base": "bp",
+        "displacement": 4,
+        "segment": "default",
+        "sites": 28
+      },
+      {
+        "base": "bx",
+        "displacement": 2,
+        "segment": "default",
+        "sites": 26
+      },
+      {
+        "base": "bx",
+        "displacement": 24,
+        "segment": "default",
+        "sites": 26
+      },
+      {
+        "base": "si",
+        "displacement": 0,
+        "segment": "cs",
+        "sites": 22
+      },
+      {
+        "base": "di",
+        "displacement": 0,
+        "segment": "default",
+        "sites": 19
+      },
+      {
+        "base": "di",
+        "displacement": 26,
+        "segment": "es",
+        "sites": 17
+      },
+      {
+        "base": "di",
+        "displacement": 52,
+        "segment": "es",
+        "sites": 17
+      },
+      {
+        "base": "bx",
+        "displacement": 8,
+        "segment": "default",
+        "sites": 16
+      },
+      {
+        "base": "di",
+        "displacement": 2,
+        "segment": "es",
+        "sites": 13
+      },
+      {
+        "base": "bp",
+        "displacement": 8,
+        "segment": "default",
+        "sites": 12
+      },
+      {
+        "base": "si",
+        "displacement": 0,
+        "segment": "es",
+        "sites": 10
+      },
+      {
+        "base": "bp",
+        "displacement": 22,
+        "segment": "default",
+        "sites": 9
+      },
+      {
+        "base": "di",
+        "displacement": 1,
+        "segment": "es",
+        "sites": 8
+      },
+      {
+        "base": "si",
+        "displacement": 2,
+        "segment": "default",
+        "sites": 8
+      },
+      {
+        "base": "bx",
+        "displacement": 20,
+        "segment": "default",
+        "sites": 8
+      },
+      {
+        "base": "bx",
+        "displacement": 22,
+        "segment": "default",
+        "sites": 8
+      },
+      {
+        "base": "bx",
+        "displacement": 0,
+        "segment": "cs",
+        "sites": 7
+      },
+      {
+        "base": "bx",
+        "displacement": 6,
+        "segment": "default",
+        "sites": 7
+      },
+      {
+        "base": "bp",
+        "displacement": 1,
+        "segment": "default",
+        "sites": 6
+      },
+      {
+        "base": "bx",
+        "displacement": 0,
+        "segment": "es",
+        "sites": 6
+      },
+      {
+        "base": "bp",
+        "displacement": 20,
+        "segment": "default",
+        "sites": 6
+      },
+      {
+        "base": "di",
+        "displacement": 0,
+        "segment": "cs",
+        "sites": 5
+      },
+      {
+        "base": "bp",
+        "displacement": 6,
+        "segment": "default",
+        "sites": 5
+      },
+      {
+        "base": "bp",
+        "displacement": 10,
+        "segment": "default",
+        "sites": 5
+      },
+      {
+        "base": "bx",
+        "displacement": 32,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "di",
+        "displacement": 2,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "bp",
+        "displacement": 14,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "si",
+        "displacement": 1,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "si",
+        "displacement": 4,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "bp",
+        "displacement": 40,
+        "segment": "default",
+        "sites": 4
+      },
+      {
+        "base": "di",
+        "displacement": 40,
+        "segment": "es",
+        "sites": 3
+      },
+      {
+        "base": "bx",
+        "displacement": 40,
+        "segment": "default",
+        "sites": 3
+      },
+      {
+        "base": "bx",
+        "displacement": 10,
+        "segment": "default",
+        "sites": 3
+      }
+    ],
+    "selector_dispatch": {
+      "claim": "Recurring idiom PROVEN; shared historical macro SPECULATIVE; macro name UNKNOWN",
+      "count": 23,
+      "pattern": "MOV BX,CS:[95BC]; SHL BX,1; indirect CS:[BX+table]",
+      "sites": [
+        "0000:4C85",
+        "0000:5BF8",
+        "0000:582F",
+        "0000:5C7B",
+        "0000:5A2B",
+        "0000:51AD",
+        "0000:5C17",
+        "0000:5BBF",
+        "0000:0F72",
+        "0000:5A61",
+        "0000:5A07",
+        "0000:5A73",
+        "0000:5BD1",
+        "0000:58EC",
+        "0000:CC9E",
+        "0000:6145",
+        "0000:5BE3",
+        "0000:5A19",
+        "0000:5A87",
+        "0000:5A4F",
+        "0000:CD7E",
+        "0000:6161",
+        "0000:083E"
+      ]
+    }
+  },
+  "relocation_segment_words": [
+    {
+      "count": 51,
+      "value": 0
+    },
+    {
+      "count": 43,
+      "value": 3967
+    },
+    {
+      "count": 12,
+      "value": 4130
+    },
+    {
+      "count": 3,
+      "value": 5194
+    },
+    {
+      "count": 1,
+      "value": 5428
+    },
+    {
+      "count": 5,
+      "value": 5434
+    },
+    {
+      "count": 7,
+      "value": 5564
+    },
+    {
+      "count": 1,
+      "value": 8943
+    }
+  ],
+  "schema": 1,
+  "toolchain": {
+    "assembler_candidate": "TASM 1.0",
+    "candidate_compatibility": "MEASURED",
+    "cpu": "Decoded/assembled subset accepted by .8086; full game CPU requirement still unproven",
+    "historical_assembler": "UNKNOWN",
+    "historical_linker": "UNKNOWN",
+    "linker_candidate": "TLINK 2.0",
+    "memory_model": "Observed multiple real-mode code frames and mixed near/far calls; no standard C memory-model claim",
+    "object_format_candidate": "OMF; not preserved in packed asset"
+  },
+  "unresolved": [
+    "Original assembler/linker versions, flags and names",
+    "Original object ordering and module boundaries",
+    "Original pre-packing MZ header and relocation order",
+    "BSS ownership and maximum memory requirements",
+    "Remaining indirect call/jump tables and runtime-written code",
+    "Overlay directory and optional driver extraction"
+  ]
+}

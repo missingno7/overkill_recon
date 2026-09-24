@@ -1,0 +1,2 @@
+# Preserve exact file bytes across Windows/Linux checkouts and hash verification.
+* -text whitespace=cr-at-eol

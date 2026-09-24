@@ -1,0 +1,9 @@
+build/
+**/__pycache__/
+*.pyc
+# Private original inputs / historical tool installations are local task inputs.
+assets/OVERKILL
+assets/OVERKILL.EXE
+assets/OVERKILL.DOC
+toolchain/TASM.EXE
+toolchain/TLINK.EXE

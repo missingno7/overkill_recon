@@ -1,0 +1,1548 @@
+{
+  "asset": "OVERKILL",
+  "asset_sha256": "d593788b3d3948e5d9733dc04e346bd2b9657b22e10a707937dda7beb686c4af",
+  "entry_cs": 0,
+  "entry_ip": 38345,
+  "mz": {
+    "appended_bytes": 467649,
+    "checksum": 0,
+    "cs": 3106,
+    "executable_bytes": 50555,
+    "header_bytes": 512,
+    "header_paragraphs": 32,
+    "ip": 14,
+    "last_page": 379,
+    "magic": 23117,
+    "max_extra": 65535,
+    "min_extra": 7411,
+    "overlay_number": 0,
+    "pages": 99,
+    "relocation_offset": 28,
+    "relocations": 0,
+    "sp": 128,
+    "ss": 3145
+  },
+  "overlay_sha256": "805744afeed3253390f0c541a627420d6962e5e5996551312b5f62bdfd408fe4",
+  "program_bytes": 143088,
+  "program_sha256": "65a549e2202a467da966d4821bd937ba50cc61ce541836135898bb779e398714",
+  "relocations": [
+    65,
+    463,
+    610,
+    621,
+    696,
+    1789,
+    19148,
+    19468,
+    19482,
+    19496,
+    19510,
+    19524,
+    19538,
+    19552,
+    21154,
+    21159,
+    21167,
+    21196,
+    63476,
+    63524,
+    21200,
+    21228,
+    21275,
+    21280,
+    21590,
+    21865,
+    21873,
+    22055,
+    22066,
+    22347,
+    23927,
+    23979,
+    31737,
+    31836,
+    31956,
+    32280,
+    36159,
+    36170,
+    36178,
+    36186,
+    36194,
+    36214,
+    36222,
+    36230,
+    63817,
+    64103,
+    64133,
+    64206,
+    64268,
+    64359,
+    64417,
+    64486,
+    64557,
+    64598,
+    64666,
+    64674,
+    64682,
+    64690,
+    64715,
+    64728,
+    64741,
+    64822,
+    64830,
+    64838,
+    64846,
+    64854,
+    64876,
+    64903,
+    64944,
+    64952,
+    64960,
+    64968,
+    64976,
+    64989,
+    64999,
+    65009,
+    65019,
+    65043,
+    65051,
+    65059,
+    65067,
+    65075,
+    65088,
+    65098,
+    65108,
+    65118,
+    65179,
+    65288,
+    65370,
+    65524,
+    38290,
+    38294,
+    38374,
+    38384,
+    38533,
+    38989,
+    39320,
+    43451,
+    43560,
+    46327,
+    46354,
+    46386,
+    50846,
+    51897,
+    51904,
+    51931,
+    51938,
+    51965,
+    51972,
+    52009,
+    52039,
+    52077,
+    52099,
+    52132,
+    52161,
+    53035,
+    54069,
+    54933,
+    65725,
+    65751,
+    65919,
+    66025,
+    66060
+  ],
+  "stages": [
+    {
+      "entry_cs": 3106,
+      "entry_ip": 14,
+      "kind": "LZEXE_0.91_style",
+      "next_cs": 2884,
+      "next_ip": 14,
+      "output_bytes": 46491,
+      "relocation_stream_end": 50043,
+      "relocations": [],
+      "sha256": "ba4134c6fa648243bccb697f8638a5f4fa3c87b36f93fe708aa73315d5fcaa0c",
+      "sp": 128,
+      "ss": 2923,
+      "stream_end": 49689,
+      "stream_start": 0,
+      "stub_bytes": 347,
+      "stub_offset": 49696
+    },
+    {
+      "entry_cs": 2884,
+      "entry_ip": 14,
+      "kind": "LZEXE_0.91_style",
+      "next_cs": 2623,
+      "next_ip": 14,
+      "output_bytes": 42315,
+      "relocation_stream_end": 46491,
+      "relocations": [],
+      "sha256": "bed04b7b8e1fed3a71828e4df29eec67440b55ef994a5274ac899e018bb6abe2",
+      "sp": 128,
+      "ss": 5043,
+      "stream_end": 46139,
+      "stream_start": 0,
+      "stub_bytes": 347,
+      "stub_offset": 46144
+    },
+    {
+      "entry_cs": 2623,
+      "entry_ip": 14,
+      "kind": "LZEXE_0.91_style",
+      "next_cs": 4966,
+      "next_ip": 16,
+      "output_bytes": 80040,
+      "relocation_stream_end": 42315,
+      "relocations": [],
+      "sha256": "a689667dcf0df27d180f432050b8120119132034fe6ea75990945ba7d0cafad9",
+      "sp": 128,
+      "ss": 8980,
+      "stream_end": 41966,
+      "stream_start": 0,
+      "stub_bytes": 347,
+      "stub_offset": 41968
+    },
+    {
+      "commands": [
+        {
+          "command": 176,
+          "count": 4,
+          "output_end": 143088,
+          "output_start": 143084
+        },
+        {
+          "command": 178,
+          "count": 98,
+          "output_end": 143084,
+          "output_start": 142986
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 142986,
+          "output_start": 142977
+        },
+        {
+          "command": 178,
+          "count": 2752,
+          "output_end": 142977,
+          "output_start": 140225
+        },
+        {
+          "command": 176,
+          "count": 83,
+          "output_end": 140225,
+          "output_start": 140142
+        },
+        {
+          "command": 178,
+          "count": 772,
+          "output_end": 140142,
+          "output_start": 139370
+        },
+        {
+          "command": 176,
+          "count": 256,
+          "output_end": 139370,
+          "output_start": 139114
+        },
+        {
+          "command": 178,
+          "count": 174,
+          "output_end": 139114,
+          "output_start": 138940
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 138940,
+          "output_start": 138932
+        },
+        {
+          "command": 178,
+          "count": 806,
+          "output_end": 138932,
+          "output_start": 138126
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 138126,
+          "output_start": 138115
+        },
+        {
+          "command": 178,
+          "count": 3,
+          "output_end": 138115,
+          "output_start": 138112
+        },
+        {
+          "command": 176,
+          "count": 13,
+          "output_end": 138112,
+          "output_start": 138099
+        },
+        {
+          "command": 178,
+          "count": 215,
+          "output_end": 138099,
+          "output_start": 137884
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 137884,
+          "output_start": 137876
+        },
+        {
+          "command": 178,
+          "count": 306,
+          "output_end": 137876,
+          "output_start": 137570
+        },
+        {
+          "command": 176,
+          "count": 10,
+          "output_end": 137570,
+          "output_start": 137560
+        },
+        {
+          "command": 178,
+          "count": 211,
+          "output_end": 137560,
+          "output_start": 137349
+        },
+        {
+          "command": 176,
+          "count": 20,
+          "output_end": 137349,
+          "output_start": 137329
+        },
+        {
+          "command": 178,
+          "count": 2,
+          "output_end": 137329,
+          "output_start": 137327
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 137327,
+          "output_start": 137316
+        },
+        {
+          "command": 178,
+          "count": 13,
+          "output_end": 137316,
+          "output_start": 137303
+        },
+        {
+          "command": 176,
+          "count": 17,
+          "output_end": 137303,
+          "output_start": 137286
+        },
+        {
+          "command": 178,
+          "count": 26,
+          "output_end": 137286,
+          "output_start": 137260
+        },
+        {
+          "command": 176,
+          "count": 17,
+          "output_end": 137260,
+          "output_start": 137243
+        },
+        {
+          "command": 178,
+          "count": 26,
+          "output_end": 137243,
+          "output_start": 137217
+        },
+        {
+          "command": 176,
+          "count": 17,
+          "output_end": 137217,
+          "output_start": 137200
+        },
+        {
+          "command": 178,
+          "count": 2,
+          "output_end": 137200,
+          "output_start": 137198
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 137198,
+          "output_start": 137187
+        },
+        {
+          "command": 178,
+          "count": 163,
+          "output_end": 137187,
+          "output_start": 137024
+        },
+        {
+          "command": 176,
+          "count": 582,
+          "output_end": 137024,
+          "output_start": 136442
+        },
+        {
+          "command": 178,
+          "count": 2,
+          "output_end": 136442,
+          "output_start": 136440
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 136440,
+          "output_start": 136432
+        },
+        {
+          "command": 178,
+          "count": 4014,
+          "output_end": 136432,
+          "output_start": 132418
+        },
+        {
+          "command": 176,
+          "count": 18,
+          "output_end": 132418,
+          "output_start": 132400
+        },
+        {
+          "command": 176,
+          "count": 14,
+          "output_end": 132400,
+          "output_start": 132386
+        },
+        {
+          "command": 176,
+          "count": 10,
+          "output_end": 132386,
+          "output_start": 132376
+        },
+        {
+          "command": 178,
+          "count": 134,
+          "output_end": 132376,
+          "output_start": 132242
+        },
+        {
+          "command": 176,
+          "count": 33,
+          "output_end": 132242,
+          "output_start": 132209
+        },
+        {
+          "command": 178,
+          "count": 117,
+          "output_end": 132209,
+          "output_start": 132092
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 132092,
+          "output_start": 132083
+        },
+        {
+          "command": 178,
+          "count": 605,
+          "output_end": 132083,
+          "output_start": 131478
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 131478,
+          "output_start": 131469
+        },
+        {
+          "command": 178,
+          "count": 329,
+          "output_end": 131469,
+          "output_start": 131140
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 131140,
+          "output_start": 131131
+        },
+        {
+          "command": 178,
+          "count": 65,
+          "output_end": 131131,
+          "output_start": 131066
+        },
+        {
+          "command": 176,
+          "count": 15,
+          "output_end": 131066,
+          "output_start": 131051
+        },
+        {
+          "command": 178,
+          "count": 30,
+          "output_end": 131051,
+          "output_start": 131021
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 131021,
+          "output_start": 131013
+        },
+        {
+          "command": 178,
+          "count": 27,
+          "output_end": 131013,
+          "output_start": 130986
+        },
+        {
+          "command": 176,
+          "count": 54,
+          "output_end": 130986,
+          "output_start": 130932
+        },
+        {
+          "command": 178,
+          "count": 12,
+          "output_end": 130932,
+          "output_start": 130920
+        },
+        {
+          "command": 176,
+          "count": 17,
+          "output_end": 130920,
+          "output_start": 130903
+        },
+        {
+          "command": 178,
+          "count": 79,
+          "output_end": 130903,
+          "output_start": 130824
+        },
+        {
+          "command": 176,
+          "count": 2432,
+          "output_end": 130824,
+          "output_start": 128392
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 128392,
+          "output_start": 128388
+        },
+        {
+          "command": 176,
+          "count": 258,
+          "output_end": 128388,
+          "output_start": 128130
+        },
+        {
+          "command": 178,
+          "count": 2,
+          "output_end": 128130,
+          "output_start": 128128
+        },
+        {
+          "command": 176,
+          "count": 18,
+          "output_end": 128128,
+          "output_start": 128110
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 128110,
+          "output_start": 128106
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 128106,
+          "output_start": 128098
+        },
+        {
+          "command": 178,
+          "count": 272,
+          "output_end": 128098,
+          "output_start": 127826
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 127826,
+          "output_start": 127818
+        },
+        {
+          "command": 178,
+          "count": 206,
+          "output_end": 127818,
+          "output_start": 127612
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 127612,
+          "output_start": 127600
+        },
+        {
+          "command": 178,
+          "count": 180,
+          "output_end": 127600,
+          "output_start": 127420
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 127420,
+          "output_start": 127409
+        },
+        {
+          "command": 178,
+          "count": 25,
+          "output_end": 127409,
+          "output_start": 127384
+        },
+        {
+          "command": 176,
+          "count": 2176,
+          "output_end": 127384,
+          "output_start": 125208
+        },
+        {
+          "command": 178,
+          "count": 68,
+          "output_end": 125208,
+          "output_start": 125140
+        },
+        {
+          "command": 176,
+          "count": 23040,
+          "output_end": 125140,
+          "output_start": 102100
+        },
+        {
+          "command": 178,
+          "count": 72,
+          "output_end": 102100,
+          "output_start": 102028
+        },
+        {
+          "command": 176,
+          "count": 3926,
+          "output_end": 102028,
+          "output_start": 98102
+        },
+        {
+          "command": 178,
+          "count": 26,
+          "output_end": 98102,
+          "output_start": 98076
+        },
+        {
+          "command": 176,
+          "count": 56,
+          "output_end": 98076,
+          "output_start": 98020
+        },
+        {
+          "command": 178,
+          "count": 18,
+          "output_end": 98020,
+          "output_start": 98002
+        },
+        {
+          "command": 176,
+          "count": 14,
+          "output_end": 98002,
+          "output_start": 97988
+        },
+        {
+          "command": 178,
+          "count": 67,
+          "output_end": 97988,
+          "output_start": 97921
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 97921,
+          "output_start": 97910
+        },
+        {
+          "command": 178,
+          "count": 13,
+          "output_end": 97910,
+          "output_start": 97897
+        },
+        {
+          "command": 176,
+          "count": 13,
+          "output_end": 97897,
+          "output_start": 97884
+        },
+        {
+          "command": 178,
+          "count": 8,
+          "output_end": 97884,
+          "output_start": 97876
+        },
+        {
+          "command": 176,
+          "count": 10,
+          "output_end": 97876,
+          "output_start": 97866
+        },
+        {
+          "command": 178,
+          "count": 7,
+          "output_end": 97866,
+          "output_start": 97859
+        },
+        {
+          "command": 176,
+          "count": 32,
+          "output_end": 97859,
+          "output_start": 97827
+        },
+        {
+          "command": 178,
+          "count": 180,
+          "output_end": 97827,
+          "output_start": 97647
+        },
+        {
+          "command": 176,
+          "count": 79,
+          "output_end": 97647,
+          "output_start": 97568
+        },
+        {
+          "command": 178,
+          "count": 39,
+          "output_end": 97568,
+          "output_start": 97529
+        },
+        {
+          "command": 176,
+          "count": 24,
+          "output_end": 97529,
+          "output_start": 97505
+        },
+        {
+          "command": 178,
+          "count": 126,
+          "output_end": 97505,
+          "output_start": 97379
+        },
+        {
+          "command": 176,
+          "count": 55,
+          "output_end": 97379,
+          "output_start": 97324
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 97324,
+          "output_start": 97312
+        },
+        {
+          "command": 178,
+          "count": 47,
+          "output_end": 97312,
+          "output_start": 97265
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 97265,
+          "output_start": 97254
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 97254,
+          "output_start": 97250
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 97250,
+          "output_start": 97238
+        },
+        {
+          "command": 178,
+          "count": 47,
+          "output_end": 97238,
+          "output_start": 97191
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 97191,
+          "output_start": 97180
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 97180,
+          "output_start": 97176
+        },
+        {
+          "command": 176,
+          "count": 13,
+          "output_end": 97176,
+          "output_start": 97163
+        },
+        {
+          "command": 178,
+          "count": 45,
+          "output_end": 97163,
+          "output_start": 97118
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 97118,
+          "output_start": 97106
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 97106,
+          "output_start": 97102
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 97102,
+          "output_start": 97090
+        },
+        {
+          "command": 178,
+          "count": 46,
+          "output_end": 97090,
+          "output_start": 97044
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 97044,
+          "output_start": 97032
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 97032,
+          "output_start": 97028
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 97028,
+          "output_start": 97017
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 97017,
+          "output_start": 96969
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96969,
+          "output_start": 96958
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96958,
+          "output_start": 96954
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96954,
+          "output_start": 96943
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96943,
+          "output_start": 96895
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96895,
+          "output_start": 96884
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96884,
+          "output_start": 96880
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96880,
+          "output_start": 96869
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96869,
+          "output_start": 96821
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96821,
+          "output_start": 96810
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96810,
+          "output_start": 96806
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96806,
+          "output_start": 96794
+        },
+        {
+          "command": 178,
+          "count": 46,
+          "output_end": 96794,
+          "output_start": 96748
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96748,
+          "output_start": 96736
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96736,
+          "output_start": 96732
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96732,
+          "output_start": 96721
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96721,
+          "output_start": 96673
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96673,
+          "output_start": 96662
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96662,
+          "output_start": 96658
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96658,
+          "output_start": 96646
+        },
+        {
+          "command": 178,
+          "count": 47,
+          "output_end": 96646,
+          "output_start": 96599
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96599,
+          "output_start": 96588
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96588,
+          "output_start": 96584
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96584,
+          "output_start": 96573
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96573,
+          "output_start": 96525
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96525,
+          "output_start": 96514
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96514,
+          "output_start": 96510
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96510,
+          "output_start": 96499
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96499,
+          "output_start": 96451
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96451,
+          "output_start": 96440
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96440,
+          "output_start": 96436
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96436,
+          "output_start": 96425
+        },
+        {
+          "command": 178,
+          "count": 48,
+          "output_end": 96425,
+          "output_start": 96377
+        },
+        {
+          "command": 176,
+          "count": 11,
+          "output_end": 96377,
+          "output_start": 96366
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96366,
+          "output_start": 96362
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96362,
+          "output_start": 96350
+        },
+        {
+          "command": 178,
+          "count": 46,
+          "output_end": 96350,
+          "output_start": 96304
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96304,
+          "output_start": 96292
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96292,
+          "output_start": 96288
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96288,
+          "output_start": 96276
+        },
+        {
+          "command": 178,
+          "count": 46,
+          "output_end": 96276,
+          "output_start": 96230
+        },
+        {
+          "command": 176,
+          "count": 12,
+          "output_end": 96230,
+          "output_start": 96218
+        },
+        {
+          "command": 178,
+          "count": 4,
+          "output_end": 96218,
+          "output_start": 96214
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 96214,
+          "output_start": 96206
+        },
+        {
+          "command": 178,
+          "count": 249,
+          "output_end": 96206,
+          "output_start": 95957
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 95957,
+          "output_start": 95949
+        },
+        {
+          "command": 178,
+          "count": 386,
+          "output_end": 95949,
+          "output_start": 95563
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 95563,
+          "output_start": 95554
+        },
+        {
+          "command": 178,
+          "count": 99,
+          "output_end": 95554,
+          "output_start": 95455
+        },
+        {
+          "command": 176,
+          "count": 1035,
+          "output_end": 95455,
+          "output_start": 94420
+        },
+        {
+          "command": 178,
+          "count": 1186,
+          "output_end": 94420,
+          "output_start": 93234
+        },
+        {
+          "command": 176,
+          "count": 78,
+          "output_end": 93234,
+          "output_start": 93156
+        },
+        {
+          "command": 178,
+          "count": 4046,
+          "output_end": 93156,
+          "output_start": 89110
+        },
+        {
+          "command": 176,
+          "count": 24,
+          "output_end": 89110,
+          "output_start": 89086
+        },
+        {
+          "command": 178,
+          "count": 40,
+          "output_end": 89086,
+          "output_start": 89046
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 89046,
+          "output_start": 89038
+        },
+        {
+          "command": 176,
+          "count": 128,
+          "output_end": 89038,
+          "output_start": 88910
+        },
+        {
+          "command": 176,
+          "count": 82,
+          "output_end": 88910,
+          "output_start": 88828
+        },
+        {
+          "command": 178,
+          "count": 6,
+          "output_end": 88828,
+          "output_start": 88822
+        },
+        {
+          "command": 176,
+          "count": 20,
+          "output_end": 88822,
+          "output_start": 88802
+        },
+        {
+          "command": 178,
+          "count": 898,
+          "output_end": 88802,
+          "output_start": 87904
+        },
+        {
+          "command": 176,
+          "count": 131,
+          "output_end": 87904,
+          "output_start": 87773
+        },
+        {
+          "command": 178,
+          "count": 919,
+          "output_end": 87773,
+          "output_start": 86854
+        },
+        {
+          "command": 176,
+          "count": 20755,
+          "output_end": 86854,
+          "output_start": 66099
+        },
+        {
+          "command": 178,
+          "count": 19,
+          "output_end": 66099,
+          "output_start": 66080
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 66080,
+          "output_start": 66071
+        },
+        {
+          "command": 178,
+          "count": 167,
+          "output_end": 66071,
+          "output_start": 65904
+        },
+        {
+          "command": 176,
+          "count": 14,
+          "output_end": 65904,
+          "output_start": 65890
+        },
+        {
+          "command": 178,
+          "count": 5273,
+          "output_end": 65890,
+          "output_start": 60617
+        },
+        {
+          "command": 176,
+          "count": 5137,
+          "output_end": 60617,
+          "output_start": 55480
+        },
+        {
+          "command": 178,
+          "count": 592,
+          "output_end": 55480,
+          "output_start": 54888
+        },
+        {
+          "command": 176,
+          "count": 9,
+          "output_end": 54888,
+          "output_start": 54879
+        },
+        {
+          "command": 178,
+          "count": 719,
+          "output_end": 54879,
+          "output_start": 54160
+        },
+        {
+          "command": 176,
+          "count": 18,
+          "output_end": 54160,
+          "output_start": 54142
+        },
+        {
+          "command": 178,
+          "count": 2794,
+          "output_end": 54142,
+          "output_start": 51348
+        },
+        {
+          "command": 176,
+          "count": 10,
+          "output_end": 51348,
+          "output_start": 51338
+        },
+        {
+          "command": 178,
+          "count": 12993,
+          "output_end": 51338,
+          "output_start": 38345
+        },
+        {
+          "command": 176,
+          "count": 49,
+          "output_end": 38345,
+          "output_start": 38296
+        },
+        {
+          "command": 178,
+          "count": 6,
+          "output_end": 38296,
+          "output_start": 38290
+        },
+        {
+          "command": 176,
+          "count": 2048,
+          "output_end": 38290,
+          "output_start": 36242
+        },
+        {
+          "command": 178,
+          "count": 12774,
+          "output_end": 36242,
+          "output_start": 23468
+        },
+        {
+          "command": 176,
+          "count": 184,
+          "output_end": 23468,
+          "output_start": 23284
+        },
+        {
+          "command": 178,
+          "count": 489,
+          "output_end": 23284,
+          "output_start": 22795
+        },
+        {
+          "command": 176,
+          "count": 18,
+          "output_end": 22795,
+          "output_start": 22777
+        },
+        {
+          "command": 178,
+          "count": 9015,
+          "output_end": 22777,
+          "output_start": 13762
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 13762,
+          "output_start": 13754
+        },
+        {
+          "command": 178,
+          "count": 231,
+          "output_end": 13754,
+          "output_start": 13523
+        },
+        {
+          "command": 176,
+          "count": 8,
+          "output_end": 13523,
+          "output_start": 13515
+        },
+        {
+          "command": 178,
+          "count": 10259,
+          "output_end": 13515,
+          "output_start": 3256
+        },
+        {
+          "command": 176,
+          "count": 226,
+          "output_end": 3256,
+          "output_start": 3030
+        },
+        {
+          "command": 178,
+          "count": 1473,
+          "output_end": 3030,
+          "output_start": 1557
+        },
+        {
+          "command": 177,
+          "count": 517,
+          "output_end": 1557,
+          "output_start": 1040
+        }
+      ],
+      "entry_cs": 4966,
+      "entry_ip": 16,
+      "kind": "EXEPACK",
+      "literal_prefix_bytes": 1040,
+      "next_cs": 0,
+      "next_ip": 38345,
+      "output_bytes": 143088,
+      "relocation_stream_end": 80040,
+      "relocations": [
+        65,
+        463,
+        610,
+        621,
+        696,
+        1789,
+        19148,
+        19468,
+        19482,
+        19496,
+        19510,
+        19524,
+        19538,
+        19552,
+        21154,
+        21159,
+        21167,
+        21196,
+        63476,
+        63524,
+        21200,
+        21228,
+        21275,
+        21280,
+        21590,
+        21865,
+        21873,
+        22055,
+        22066,
+        22347,
+        23927,
+        23979,
+        31737,
+        31836,
+        31956,
+        32280,
+        36159,
+        36170,
+        36178,
+        36186,
+        36194,
+        36214,
+        36222,
+        36230,
+        63817,
+        64103,
+        64133,
+        64206,
+        64268,
+        64359,
+        64417,
+        64486,
+        64557,
+        64598,
+        64666,
+        64674,
+        64682,
+        64690,
+        64715,
+        64728,
+        64741,
+        64822,
+        64830,
+        64838,
+        64846,
+        64854,
+        64876,
+        64903,
+        64944,
+        64952,
+        64960,
+        64968,
+        64976,
+        64989,
+        64999,
+        65009,
+        65019,
+        65043,
+        65051,
+        65059,
+        65067,
+        65075,
+        65088,
+        65098,
+        65108,
+        65118,
+        65179,
+        65288,
+        65370,
+        65524,
+        38290,
+        38294,
+        38374,
+        38384,
+        38533,
+        38989,
+        39320,
+        43451,
+        43560,
+        46327,
+        46354,
+        46386,
+        50846,
+        51897,
+        51904,
+        51931,
+        51938,
+        51965,
+        51972,
+        52009,
+        52039,
+        52077,
+        52099,
+        52132,
+        52161,
+        53035,
+        54069,
+        54933,
+        65725,
+        65751,
+        65919,
+        66025,
+        66060
+      ],
+      "sha256": "65a549e2202a467da966d4821bd937ba50cc61ce541836135898bb779e398714",
+      "sp": 0,
+      "ss": 8943,
+      "stub_bytes": 584,
+      "stub_offset": 79456
+    }
+  ]
+}
