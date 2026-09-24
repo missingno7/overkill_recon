@@ -188,3 +188,37 @@ feedback -> count/input adjustment -> history advancement/store/application`
 
 The enclosing9B2E caller remains MIXED and partly unresolved; this dataflow chain
 is not a claim that its entire subsystem or all record lifetimes are understood.
+
+## Grid-probe dependencies in the enclosing update
+
+`ComputeRecordGridOffset` (5073, with sentinel tail506F) and
+`ReadIndexedByteAttribute` (505B) now have reviewed contracts and source names.
+They explain two dependencies of the still-anonymous4FF9 probe. The grid helper
+stores wrapped(Y + [234E]) at215A. A negative sign bit returns BX=FFFF; otherwise
+it computes `[2350] - 13*(sum>>4) + (X>>4)`, all with16-bit arithmetic. The shifts
+are unsigned, not signed division. The byte reader selects ES from CS:9592,
+reads ES:BX, then uses that unsigned byte to select an attribute at DS:C3AA.
+Its ZF is consumed immediately by the probe. The attribute's gameplay meaning
+and source-resource ownership are still unknown.
+
+4FF9 temporarily offsets record Y/X using field+8 and a pair table, probes one
+or two columns over one or two rows, restores the coordinates, and returns carry.
+It locally rejects field+8>=3. This does not impose that bound on9FEA's separate
+placement use. The9CB6 caller uses **carry set** to enter its repeated9E19 calls;
+carry clear returns immediately. Repetition depends onBEDC (2/3/4 calls), and
+9E19 has its own gates/countdown. Those are different counts from9C01's selected
+record counts; their state meanings and callees511F/61DC need review before a
+stronger name for9CB6.
+
+Local tests cover686 grid states (including sign/wrap boundaries), all256 byte
+indices/attribute values and live attribute flags. They distinguish SS record
+fields from DS state and check complete DS effects. This pass adds80 reviewed
+instruction bytes to the game-logic dependencies; the enclosing probe/scheduler
+is not claimed as a closed understood subsystem. The previously reviewed226-byte
+history/placement closure remains the largest closure measured in this cluster.
+
+The active graph also exposes grid calls atAC3C, ADB6 andB00D, plus numerous
+attribute reads in their surrounding R05 record-update paths. Their source calls
+now use the same names. This is broader reuse than the initial-entry graph alone
+shows; it strengthens a shared coordinate-to-grid/attribute concept without proving
+one historical module. AC3C is a useful next caller to close from these leaves.

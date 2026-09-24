@@ -170,3 +170,22 @@ Continue the named history/movement/placement cluster in maintained ASM:
   accumulator or mode bounds solely from equality guards.
 
 See position-history.md for the exact gate, feedback lifetimes and source changes.
+
+## Next discriminating work after frame review
+
+- Recover1534:004E's handler-selected continuation and exact saved stack relation;
+  do not treat1538E..1539F as padding. Vector installation is now reviewed.
+- Follow4FF9 from its newly named grid/attribute leaves; clarify CS:9592 source
+  resource and DS:C3AA attribute meaning before a collision/gameplay name.
+- Keep9CB6 unnamed until9E19's countdown/state and511F/61DC effects are clear.
+  Its call repetition is carry-set gated, distinct from9C01's presence counts.
+- Use the frame call/private-state evidence to test specific contributions, not
+  recover filenames. Stop at observationally indistinguishable BYTE objects.
+- The seven CALL-next sites share an encoding, not a proven common algorithm.
+  Review45CB/8528/AF60 individually; the four coordinate cases remain anchors.
+
+- Propagate per-call target evidence through the now-named8D8B/8D8E bridges.
+  Do not equate a known target at one site with a globally closed indirect domain.
+
+- Close AC3C's grid/attribute probe next, then revisit ADB6/B00D siblings. The
+  active graph exposes these callers beyond4FF9; do not rely on cold-only xrefs.

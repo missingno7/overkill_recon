@@ -33840,14 +33840,14 @@
           "end": 20492,
           "kind": "instruction",
           "start": 20489,
-          "text": "push word ptr ss:[bp + 2]"
+          "text": "push word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:500C",
           "end": 20495,
           "kind": "instruction",
           "start": 20492,
-          "text": "push word ptr ss:[bp + 4]"
+          "text": "push word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:500F",
@@ -33861,7 +33861,7 @@
           "end": 20499,
           "kind": "instruction",
           "start": 20496,
-          "text": "add word ptr ss:[bp + 2], ax"
+          "text": "add word ptr ss:[bp + REC_Y], ax"
         },
         {
           "address": "0000:5013",
@@ -33875,14 +33875,14 @@
           "end": 20503,
           "kind": "instruction",
           "start": 20500,
-          "text": "add word ptr ss:[bp + 4], ax"
+          "text": "add word ptr ss:[bp + REC_X], ax"
         },
         {
           "address": "0000:5017",
           "end": 20506,
           "kind": "instruction",
           "start": 20503,
-          "text": "CALL_NEAR loc_05073"
+          "text": "CALL_NEAR ComputeRecordGridOffset_05073"
         },
         {
           "address": "0000:501A",
@@ -33896,7 +33896,7 @@
           "end": 20512,
           "kind": "instruction",
           "start": 20509,
-          "text": "mov ax, word ptr ds:[0215Ah]"
+          "text": "mov ax, word ptr ds:[GRID_Y_SUM]"
         },
         {
           "address": "0000:5020",
@@ -33952,7 +33952,7 @@
           "end": 20531,
           "kind": "instruction",
           "start": 20528,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:5033",
@@ -33966,7 +33966,7 @@
           "end": 20538,
           "kind": "instruction",
           "start": 20533,
-          "text": "test word ptr ss:[bp + 4], 0Fh"
+          "text": "test word ptr ss:[bp + REC_X], 0Fh"
         },
         {
           "address": "0000:503A",
@@ -33987,7 +33987,7 @@
           "end": 20544,
           "kind": "instruction",
           "start": 20541,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:5040",
@@ -34029,14 +34029,14 @@
           "end": 20556,
           "kind": "instruction",
           "start": 20553,
-          "text": "pop word ptr ss:[bp + 4]"
+          "text": "pop word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:504C",
           "end": 20559,
           "kind": "instruction",
           "start": 20556,
-          "text": "pop word ptr ss:[bp + 2]"
+          "text": "pop word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:504F",
@@ -34071,14 +34071,14 @@
           "end": 20566,
           "kind": "instruction",
           "start": 20563,
-          "text": "pop word ptr ss:[bp + 4]"
+          "text": "pop word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:5056",
           "end": 20569,
           "kind": "instruction",
           "start": 20566,
-          "text": "pop word ptr ss:[bp + 2]"
+          "text": "pop word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:5059",
@@ -34099,14 +34099,14 @@
           "end": 20574,
           "kind": "instruction",
           "start": 20571,
-          "text": "mov si, 0C3AAh"
+          "text": "mov si, BYTE_ATTRIBUTE_TABLE"
         },
         {
           "address": "0000:505E",
           "end": 20579,
           "kind": "instruction",
           "start": 20574,
-          "text": "mov es, word ptr cs:[09592h]"
+          "text": "mov es, word ptr cs:[ATTRIBUTE_SOURCE_SEGMENT]"
         },
         {
           "address": "0000:5063",
@@ -34176,21 +34176,21 @@
           "end": 20601,
           "kind": "instruction",
           "start": 20598,
-          "text": "add ax, word ptr ss:[bp + 2]"
+          "text": "add ax, word ptr ss:[bp + REC_Y]"
         },
         {
           "address": "0000:5079",
           "end": 20604,
           "kind": "instruction",
           "start": 20601,
-          "text": "mov word ptr ds:[0215Ah], ax"
+          "text": "mov word ptr ds:[GRID_Y_SUM], ax"
         },
         {
           "address": "0000:507C",
           "end": 20606,
           "kind": "instruction",
           "start": 20604,
-          "text": "JS_SHORT loc_0506F"
+          "text": "JS_SHORT GridOffsetNegativeY_0506F"
         },
         {
           "address": "0000:507E",
@@ -34288,7 +34288,7 @@
           "end": 20637,
           "kind": "instruction",
           "start": 20634,
-          "text": "mov ax, word ptr ss:[bp + 4]"
+          "text": "mov ax, word ptr ss:[bp + REC_X]"
         },
         {
           "address": "0000:509D",
@@ -64372,7 +64372,7 @@
           "end": 38376,
           "kind": "instruction",
           "start": 38371,
-          "text": "CALL_FAR 01534h,03Ch"
+          "text": "CALL_FAR CRITICAL_ERROR_FRAME,CRITICAL_ERROR_INSTALL_ENTRY"
         },
         {
           "address": "0000:95E8",
@@ -75756,7 +75756,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44092,
-          "text": "CALL_NEAR loc_05073"
+          "text": "CALL_NEAR ComputeRecordGridOffset_05073"
         },
         {
           "address": "0000:AC3F",
@@ -75772,7 +75772,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44098,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:AC45",
@@ -75812,7 +75812,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44111,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:AC52",
@@ -76852,7 +76852,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44470,
-          "text": "CALL_NEAR loc_05073"
+          "text": "CALL_NEAR ComputeRecordGridOffset_05073"
         },
         {
           "address": "0000:ADB9",
@@ -76868,7 +76868,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 44476,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:ADBF",
@@ -77611,7 +77611,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45069,
-          "text": "CALL_NEAR loc_05073"
+          "text": "CALL_NEAR ComputeRecordGridOffset_05073"
         },
         {
           "address": "0000:B010",
@@ -77714,7 +77714,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45121,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B044",
@@ -77754,7 +77754,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45134,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B051",
@@ -77930,7 +77930,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45194,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B08D",
@@ -77970,7 +77970,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45207,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B09A",
@@ -78138,7 +78138,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45263,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B0D2",
@@ -78186,7 +78186,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45282,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B0E5",
@@ -78359,7 +78359,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45337,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B11C",
@@ -78407,7 +78407,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 45356,
-          "text": "CALL_NEAR loc_0505B"
+          "text": "CALL_NEAR ReadIndexedByteAttribute_0505B"
         },
         {
           "address": "0000:B12F",
@@ -100069,7 +100069,7 @@
           "end": 63819,
           "kind": "instruction",
           "start": 63814,
-          "text": "CALL_FAR 00h,08D8Eh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_BP_BRIDGE"
         },
         {
           "address": "0F7F:015B",
@@ -100680,7 +100680,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64130,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0297",
@@ -100864,7 +100864,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64203,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:02E0",
@@ -101016,7 +101016,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64265,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:031E",
@@ -101240,7 +101240,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64356,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0379",
@@ -101384,7 +101384,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64414,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:03B3",
@@ -101552,7 +101552,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64483,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:03F8",
@@ -101712,7 +101712,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64554,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:043F",
@@ -101808,7 +101808,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64595,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0468",
@@ -101984,7 +101984,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64663,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04AC",
@@ -102000,7 +102000,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64671,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04B4",
@@ -102016,7 +102016,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64679,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04BC",
@@ -102032,7 +102032,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64687,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04C4",
@@ -102088,7 +102088,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64712,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04DD",
@@ -102120,7 +102120,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64725,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04EA",
@@ -102152,7 +102152,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64738,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:04F7",
@@ -102344,7 +102344,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64819,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0548",
@@ -102360,7 +102360,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64827,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0550",
@@ -102376,7 +102376,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64835,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0558",
@@ -102392,7 +102392,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64843,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0560",
@@ -102408,7 +102408,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64851,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0568",
@@ -102464,7 +102464,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64873,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:057E",
@@ -102520,7 +102520,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64900,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0599",
@@ -102616,7 +102616,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64941,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05C2",
@@ -102632,7 +102632,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64949,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05CA",
@@ -102648,7 +102648,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64957,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05D2",
@@ -102664,7 +102664,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64965,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05DA",
@@ -102680,7 +102680,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64973,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05E2",
@@ -102704,7 +102704,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64986,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05EF",
@@ -102728,7 +102728,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 64996,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:05F9",
@@ -102752,7 +102752,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65006,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0603",
@@ -102776,7 +102776,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65016,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:060D",
@@ -102832,7 +102832,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65040,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0625",
@@ -102848,7 +102848,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65048,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:062D",
@@ -102864,7 +102864,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65056,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0635",
@@ -102880,7 +102880,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65064,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:063D",
@@ -102896,7 +102896,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65072,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0645",
@@ -102920,7 +102920,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65085,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0652",
@@ -102944,7 +102944,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65095,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:065C",
@@ -102968,7 +102968,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65105,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0666",
@@ -102992,7 +102992,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 65115,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0670",
@@ -103731,7 +103731,7 @@
           "end": 65921,
           "kind": "instruction",
           "start": 65916,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0991",
@@ -103948,7 +103948,7 @@
           "end": 66027,
           "kind": "instruction",
           "start": 66022,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:09FB",
@@ -104032,7 +104032,7 @@
           "end": 66062,
           "kind": "instruction",
           "start": 66057,
-          "text": "CALL_FAR 00h,08D8Bh"
+          "text": "CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE"
         },
         {
           "address": "0F7F:0A1E",
@@ -110600,9 +110600,25 @@
           "start": 86832
         },
         {
+          "end": 86850,
+          "evidence": "1534 handler pops into CS:0000; saved return offset. Original initialized word is zero.",
+          "kind": "reconstructed_data",
+          "start": 86848,
+          "text": "dw 00000h"
+        },
+        {
+          "end": 86852,
+          "evidence": "1534 handler pops into CS:0002; saved return segment. Original initialized word is zero.",
+          "kind": "reconstructed_data",
+          "start": 86850,
+          "text": "dw 00000h"
+        },
+        {
           "end": 86854,
-          "kind": "opaque_unknown",
-          "start": 86848
+          "evidence": "1534 handler pops into CS:0004; flags, later reused as IRET target offset. Original initialized word is zero.",
+          "kind": "reconstructed_data",
+          "start": 86852,
+          "text": "dw 00000h"
         },
         {
           "address": "1534:0006",
@@ -110698,7 +110714,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86868,
-          "text": "pop word ptr cs:[0]"
+          "text": "pop word ptr cs:[ERROR_RETURN_OFFSET]"
         },
         {
           "address": "1534:0019",
@@ -110706,7 +110722,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86873,
-          "text": "pop word ptr cs:[2]"
+          "text": "pop word ptr cs:[ERROR_RETURN_SEGMENT]"
         },
         {
           "address": "1534:001E",
@@ -110714,7 +110730,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86878,
-          "text": "pop word ptr cs:[4]"
+          "text": "pop word ptr cs:[ERROR_FLAGS_OR_TARGET]"
         },
         {
           "address": "1534:0023",
@@ -110722,7 +110738,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86883,
-          "text": "or word ptr cs:[4], 1"
+          "text": "or word ptr cs:[ERROR_FLAGS_OR_TARGET], 1"
         },
         {
           "address": "1534:0029",
@@ -110730,7 +110746,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86889,
-          "text": "push word ptr cs:[4]"
+          "text": "push word ptr cs:[ERROR_FLAGS_OR_TARGET]"
         },
         {
           "address": "1534:002E",
@@ -110746,7 +110762,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86895,
-          "text": "mov word ptr cs:[4], 04Eh"
+          "text": "mov word ptr cs:[ERROR_FLAGS_OR_TARGET], 04Eh"
         },
         {
           "address": "1534:0036",
@@ -110754,7 +110770,7 @@
           "kind": "instruction",
           "provenance": "unchanged runtime instruction; metadata/runtime/main-analysis.json",
           "start": 86902,
-          "text": "push word ptr cs:[4]"
+          "text": "push word ptr cs:[ERROR_FLAGS_OR_TARGET]"
         },
         {
           "address": "1534:003B",
@@ -110783,7 +110799,7 @@
           "end": 86916,
           "kind": "instruction",
           "start": 86913,
-          "text": "CALL_NEAR loc_15385"
+          "text": "CALL_NEAR SetInterruptVectorToCS_15385"
         },
         {
           "address": "1534:0044",

@@ -1,0 +1,263 @@
+{
+  "interpretation": {
+    "claim": "The variants constrain candidate TASM/TLINK placement behavior for these bytes; they do not establish Overkill historical objects or linker settings.",
+    "confidence": "PROBE_ONLY"
+  },
+  "pins_verified": {
+    "inputs": {
+      "assets/OVERKILL": {
+        "sha256": "d593788b3d3948e5d9733dc04e346bd2b9657b22e10a707937dda7beb686c4af",
+        "size": 518204
+      },
+      "assets/OVERKILL.DOC": {
+        "sha256": "5bee490262bfa20ccfb6bd24aa3cd70debefd1a7e20011468386dc97d434a395",
+        "size": 3202
+      },
+      "assets/OVERKILL.EXE": {
+        "sha256": "8a55f472942f5573b0789be159456e654e00fa6d418b633c3db425d08965e3e5",
+        "size": 42829
+      }
+    },
+    "tools": {
+      "toolchain/TASM.EXE": {
+        "sha256": "754b70821e4bac4997f398e3bdcee0f046a42cc3dad89cfbe0138f67d5b6142b",
+        "size": 97876
+      },
+      "toolchain/TLINK.EXE": {
+        "sha256": "997fcac6089fa88f3d868bdaf8bd65bd44c5aa83885a1d61e73f77808bd4f8f7",
+        "size": 21717
+      },
+      "toolchain/msdos-i86/msdos.exe": {
+        "sha256": "9a89681083c955304e80a6da6db481796947dd9698b297ffbab31061e1df96f5",
+        "size": 671232
+      },
+      "toolchain/nmlgcdos/msdos.exe": {
+        "sha256": "f7f6cb0a3e816c5edb13112d327c1bddbf7463fe7bf9a005ca1eb5317751bd02",
+        "size": 686592
+      }
+    }
+  },
+  "purpose": "Bounded candidate-link probe of a synthetic 60-byte prefix plus the measured 1534:003C wrapper and 0045 helper bytes.",
+  "results": {
+    "combined_byte": {
+      "alignment": "byte",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "expected_helper_offset": 69,
+      "expected_wrapper_offset": 60,
+      "helper_bytes_hex": "1e0e1fb425cd211fc3",
+      "helper_offset_by_bytes": 69,
+      "inter_contribution_padding": {
+        "end_exclusive": 69,
+        "hex": "",
+        "length": 0,
+        "start": 69
+      },
+      "map_note": "TLINK MAP reports the aggregate CODE start/stop/length and entry point; it omits these PUBLIC symbol rows. Offsets above are byte-derived from linked module output.",
+      "map_path": "build/critical-vector-topology/combined_byte/OUT.MAP",
+      "map_public_symbols": [],
+      "map_segment_rows": [
+        {
+          "class": "CODE",
+          "length": 78,
+          "name": "CODE",
+          "start": 0,
+          "stop_inclusive": 77
+        }
+      ],
+      "map_sha256": "87cf723e1a8bb865f7e11ed4d42279e645481a8a4a744415ce2d55231e40e6b6",
+      "map_text": "\n Start  Stop   Length Name               Class\n\n 00000H 0004DH 0004EH CODE               CODE\n\nProgram entry point at 0000:0000\nWarning: no stack\n\n",
+      "module_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b024ba0600e80100cb1e0e1fb425cd211fc3",
+      "module_sha256": "ae14ff8cf067fa9d27a8ba26a8c4c6c05e9d7facdb6535b884261093fc5963f1",
+      "module_size": 78,
+      "near_call": {
+        "instruction_offset": 65,
+        "next_ip": 68,
+        "resolved_target_offset": 69,
+        "signed_displacement": 1,
+        "target_matches_helper_offset": true
+      },
+      "object_order": [
+        "M0.OBJ"
+      ],
+      "overlay_bytes": 0,
+      "relocations": [],
+      "split": false,
+      "tail_at_003C_equals_original18": true,
+      "tail_at_003C_hex": "b024ba0600e80100cb1e0e1fb425cd211fc3",
+      "wrapper_bytes_hex": "b024ba0600e80100cb",
+      "wrapper_offset_by_bytes": 60
+    },
+    "comparisons": {
+      "combined_vs_split_byte_entire_module_equal": true,
+      "combined_vs_split_byte_tail_equal": true,
+      "split_para_tail_equal_original18": false,
+      "split_word_tail_equal_original18": false
+    },
+    "split_byte": {
+      "alignment": "byte",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "expected_helper_offset": 69,
+      "expected_wrapper_offset": 60,
+      "helper_bytes_hex": "1e0e1fb425cd211fc3",
+      "helper_offset_by_bytes": 69,
+      "inter_contribution_padding": {
+        "end_exclusive": 69,
+        "hex": "",
+        "length": 0,
+        "start": 69
+      },
+      "map_note": "TLINK MAP reports the aggregate CODE start/stop/length and entry point; it omits these PUBLIC symbol rows. Offsets above are byte-derived from linked module output.",
+      "map_path": "build/critical-vector-topology/split_byte/OUT.MAP",
+      "map_public_symbols": [],
+      "map_segment_rows": [
+        {
+          "class": "CODE",
+          "length": 78,
+          "name": "CODE",
+          "start": 0,
+          "stop_inclusive": 77
+        }
+      ],
+      "map_sha256": "87cf723e1a8bb865f7e11ed4d42279e645481a8a4a744415ce2d55231e40e6b6",
+      "map_text": "\n Start  Stop   Length Name               Class\n\n 00000H 0004DH 0004EH CODE               CODE\n\nProgram entry point at 0000:0000\nWarning: no stack\n\n",
+      "module_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b024ba0600e80100cb1e0e1fb425cd211fc3",
+      "module_sha256": "ae14ff8cf067fa9d27a8ba26a8c4c6c05e9d7facdb6535b884261093fc5963f1",
+      "module_size": 78,
+      "near_call": {
+        "instruction_offset": 65,
+        "next_ip": 68,
+        "resolved_target_offset": 69,
+        "signed_displacement": 1,
+        "target_matches_helper_offset": true
+      },
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "overlay_bytes": 0,
+      "relocations": [],
+      "split": true,
+      "tail_at_003C_equals_original18": true,
+      "tail_at_003C_hex": "b024ba0600e80100cb1e0e1fb425cd211fc3",
+      "wrapper_bytes_hex": "b024ba0600e80100cb",
+      "wrapper_offset_by_bytes": 60
+    },
+    "split_para": {
+      "alignment": "para",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "expected_helper_offset": 80,
+      "expected_wrapper_offset": 60,
+      "helper_bytes_hex": "1e0e1fb425cd211fc3",
+      "helper_offset_by_bytes": 80,
+      "inter_contribution_padding": {
+        "end_exclusive": 80,
+        "hex": "0000000000000000000000",
+        "length": 11,
+        "start": 69
+      },
+      "map_note": "TLINK MAP reports the aggregate CODE start/stop/length and entry point; it omits these PUBLIC symbol rows. Offsets above are byte-derived from linked module output.",
+      "map_path": "build/critical-vector-topology/split_para/OUT.MAP",
+      "map_public_symbols": [],
+      "map_segment_rows": [
+        {
+          "class": "CODE",
+          "length": 89,
+          "name": "CODE",
+          "start": 0,
+          "stop_inclusive": 88
+        }
+      ],
+      "map_sha256": "b3db54de8402d4055ea96b1df16ddc5e3d3755adbe12c00b271250b0aa31a5a9",
+      "map_text": "\n Start  Stop   Length Name               Class\n\n 00000H 00058H 00059H CODE               CODE\n\nProgram entry point at 0000:0000\nWarning: no stack\n\n",
+      "module_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b024ba0600e80c00cb00000000000000000000001e0e1fb425cd211fc3",
+      "module_sha256": "85ef01576b5b163bf58cca883a741cd82dace0e2e142f343762b48a6f773ff69",
+      "module_size": 89,
+      "near_call": {
+        "instruction_offset": 65,
+        "next_ip": 68,
+        "resolved_target_offset": 80,
+        "signed_displacement": 12,
+        "target_matches_helper_offset": true
+      },
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "overlay_bytes": 0,
+      "relocations": [],
+      "split": true,
+      "tail_at_003C_equals_original18": false,
+      "tail_at_003C_hex": "b024ba0600e80c00cb000000000000000000",
+      "wrapper_bytes_hex": "b024ba0600e80100cb",
+      "wrapper_offset_by_bytes": 60
+    },
+    "split_word": {
+      "alignment": "word",
+      "entry_cs": 0,
+      "entry_ip": 0,
+      "expected_helper_offset": 70,
+      "expected_wrapper_offset": 60,
+      "helper_bytes_hex": "1e0e1fb425cd211fc3",
+      "helper_offset_by_bytes": 70,
+      "inter_contribution_padding": {
+        "end_exclusive": 70,
+        "hex": "00",
+        "length": 1,
+        "start": 69
+      },
+      "map_note": "TLINK MAP reports the aggregate CODE start/stop/length and entry point; it omits these PUBLIC symbol rows. Offsets above are byte-derived from linked module output.",
+      "map_path": "build/critical-vector-topology/split_word/OUT.MAP",
+      "map_public_symbols": [],
+      "map_segment_rows": [
+        {
+          "class": "CODE",
+          "length": 79,
+          "name": "CODE",
+          "start": 0,
+          "stop_inclusive": 78
+        }
+      ],
+      "map_sha256": "e522cb68037f2b5d03126133de9563dbc35168f5cc4fc186d026a403595ab6e0",
+      "map_text": "\n Start  Stop   Length Name               Class\n\n 00000H 0004EH 0004FH CODE               CODE\n\nProgram entry point at 0000:0000\nWarning: no stack\n\n",
+      "module_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b024ba0600e80200cb001e0e1fb425cd211fc3",
+      "module_sha256": "9d0c62f7b1b32431ee8364db071823a5424978e00586017342e8d1834fd8b272",
+      "module_size": 79,
+      "near_call": {
+        "instruction_offset": 65,
+        "next_ip": 68,
+        "resolved_target_offset": 70,
+        "signed_displacement": 2,
+        "target_matches_helper_offset": true
+      },
+      "object_order": [
+        "M0.OBJ",
+        "M1.OBJ"
+      ],
+      "overlay_bytes": 0,
+      "relocations": [],
+      "split": true,
+      "tail_at_003C_equals_original18": false,
+      "tail_at_003C_hex": "b024ba0600e80200cb001e0e1fb425cd211f",
+      "wrapper_bytes_hex": "b024ba0600e80100cb",
+      "wrapper_offset_by_bytes": 60
+    }
+  },
+  "schema": 1,
+  "scope": "Four variants only: one combined BYTE object; split BYTE, WORD, and PARA helper contributions. No game execution.",
+  "target": {
+    "combined_target_sha256": "a09b99aa8a0285a79c1bca38c1a68279c505dba040a9747045c117377f6ad70d",
+    "helper_bytes": "1e0e1fb425cd211fc3",
+    "helper_original_offset": 69,
+    "original_image_sha256": "65a549e2202a467da966d4821bd937ba50cc61ce541836135898bb779e398714",
+    "original_linear_range": [
+      86908,
+      86926
+    ],
+    "synthetic_prefix_bytes": 60,
+    "wrapper_bytes": "b024ba0600e80100cb",
+    "wrapper_original_offset": 60
+  }
+}

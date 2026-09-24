@@ -4141,12 +4141,12 @@
     {
       "address": "0000:505B",
       "depth": 0,
-      "name": "sub_0000_505B"
+      "name": "ReadIndexedByteAttribute"
     },
     {
       "address": "0000:5073",
       "depth": 0,
-      "name": "sub_0000_5073"
+      "name": "ComputeRecordGridOffset"
     },
     {
       "address": "0000:50AB",
@@ -4601,12 +4601,12 @@
     {
       "address": "0000:8D8B",
       "depth": 0,
-      "name": "sub_0000_8D8B"
+      "name": "FarCallMainNearViaAX"
     },
     {
       "address": "0000:8D8E",
       "depth": 0,
-      "name": "sub_0000_8D8E"
+      "name": "FarCallMainNearViaBP"
     },
     {
       "address": "0000:95C9",
@@ -5396,12 +5396,12 @@
     {
       "address": "1534:003C",
       "depth": 1,
-      "name": "sub_1534_003C"
+      "name": "InstallCriticalErrorVector"
     },
     {
       "address": "1534:0045",
       "depth": 0,
-      "name": "sub_1534_0045"
+      "name": "SetInterruptVectorToCS"
     },
     {
       "address": "153A:0000",

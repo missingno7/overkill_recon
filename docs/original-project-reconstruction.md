@@ -281,3 +281,107 @@ modern source-maintenance choice, not evidence of an original include or module.
 The9FEA placement tail crosses R04/R05 atA000: one semantic body spans two modern
 containers. The exact verifier audits the include as literal EQU definitions and
 records its hash; segment topology and ordered relocations remain unchanged.
+
+## Focused observed-frame review
+
+The current code graph supports the following **address frames**, not five
+historical OBJ files. Counts are decoded call sites, not executions or function
+counts; unknown code can change them. See `structure_review` in the project model.
+
+| Frame | Near calls | Far calls out | Far calls in | Evidence-based description |
+|---|---:|---:|---:|---|
+|0000|741|41|44|Main code/state and shared services; several conceptual families|
+|0F7F|22|44|32|Additional code frame, substantial shared DS state and main callbacks|
+|1022|0|0|4|Active main graph excludes slot contents; optional modules counted separately|
+|1534|1|0|1|Critical-error handler/vector installer; CS scratch and nonlocal return|
+|153A|3|0|4|DOS/path/file-service family with private CS state and caller pointers|
+
+The cold1022 stubs and loaded ADLIB.ENC/ROLAND.ENC are separate address identities.
+Their surviving resource names, independent extraction, load destination and
+interfaces are stronger module evidence than proximity or semantic clustering.
+Main IRQ code calls offset0; selection/startup calls offset4; request fields at8
+andA are data. The recorded12 relocation words equal to1022 are not all assumed
+calls. The selected module has no observed ENC relocation/fixup pass. Original
+ASM/OMF source boundaries remain unknown even for these real executable modules.
+
+0F7F begins at linearF7F0 after six zero bytes atF7EA..F7EF; its reached end10217
+is followed by nine zero bytes before10220. These fit paragraph-fill hypotheses,
+but neither zero run is promoted to proven linker padding. The27 candidate
+functions are not27 proven source contributions. CS:0920 has a known write at
+0F7F:0918, while other routines use main DS state. Heavy far callbacks weaken a
+self-contained/private-module interpretation; they do not disprove a segment or
+source contribution.
+
+1534 begins at15340 and153A at153A0, only96 bytes later. The first six bytes of
+1534 are **writable CS scratch**, now represented as reviewed word data. The
+handler pops saved words there, sets a carry bit, then constructs an IRET to
+1534:004E. Consequently the18-byte interval1538E..1539F is not pure padding.
+The continuation contains code-like bytes and a CS-relative far handoff; its
+nonlocal DOS stack contract remains unreviewed, and it stays UNKNOWN source.
+The installer at003C and near helper0045 are now named and locally tested. The
+far call at95E3 has its segment relocation at95E6; source symbols retain that
+exact original relocation. Private state plus a far entry supports a platform
+family, not proof of one OBJ or an original filename.
+
+153A has CS-relative cells073A..0748 and buffer references such as07AE, while
+accepting caller DS:SI and ES:DI. Its far entries0000/04D7 and near helpers06CD/
+0701 support a DOS/path-service family. Large unreviewed regions prevent a full
+module contract or ownership partition. Full64KiB real-mode address windows can
+overlap even when currently reached physical instruction extents do not.
+
+Seven decoded `CALL next-instruction` sites are now recorded:45CB,8528,A5D8,
+A5EA,A5F9,A607,AF60. Only the four coordinate wrappers have reviewed double-step
+semantics. AF60 reaches an indirect dispatch, and the other sites require their
+own contracts. Repetition supports an author-level coding convention; historical
+macro/include names or even macro use remain SPECULATIVE. Likewise REC_Y/REC_X,
+record stride and history-pair width express supported shared concepts without
+proving historical STRUC or EQU syntax.
+
+Conceptually, current anchors are main startup/platform plumbing, input and
+record/update state, history/placement, coexisting renderer paths, resident sound
+service and resource handling, plus separate optional audio modules. These are
+unevenly understood semantic families, not a recovered historical source tree.
+The strongest next structural question is the1534 continuation/stack boundary;
+it can discriminate real code/state from apparent inter-frame fill.
+
+### Main-frame near-call bridges
+
+All44 decoded0F7F far callbacks use the two main bridges now named in source:
+`FarCallMainNearViaAX` at8D8B (`CALL AX; RETF`,43 sites) and
+`FarCallMainNearViaBP` at8D8E (`CALL BP; RETF`,one site). Their far-call operands
+now use symbolic bridge offsets in R07/R08. These are bridges to varying main-CS
+near procedures, not one fixed shared service. Examples set AX=5DB2,81F4,AFD8,
+D2B8,50C9 or BP=5401 before the crossing. The near callee returns to the bridge,
+whose RETF restores the0F7F caller; its register/flag effects pass through.
+
+This explains how near-call locality coexists with cross-frame dependencies.
+Synthetic execution through real original near callees confirms the nested stack
+return and callee side effects. Target domains are not yet closed: these two
+indirect call sites remain unresolved rather than being treated as fixed calls.
+This strengthens the connected-code-family model and weakens an execution-isolated
+0F7F module hypothesis, while leaving original source/OBJ boundaries unknown.
+
+### Concrete contribution-alignment experiment
+
+Run `python tools/critical_vector_topology.py`. It verifies pinned inputs/tools,
+extracts the original18-byte1534:003C..004D sequence, and assembles it as normal
+symbolic TASM/TLINK source. A synthetic60-byte prefix supplies the original start
+offset; it is explicitly not a reconstruction of the preceding handler. No probe
+executable is used as game code.
+
+| Candidate topology | Helper offset | Added padding | CALL displacement | Original18-byte sequence |
+|---|---:|---:|---:|---|
+|One BYTE object|0045|0|+1|exact|
+|Two BYTE contributions|0045|0|+1|exact|
+|WORD helper contribution|0046|1|+2|different|
+|PARA helper contribution|0050|11|+12|different|
+
+Thus a WORD/PARA contribution boundary at0045 does not fit this measured candidate
+layout, whereas one versus two BYTE contributions is observationally ambiguous.
+This is a constraint on the tested TASM1.0/TLINK2.0 arrangement, not proof of the
+historical assembler, segment declarations or source file count. No further search
+for an erased filename is warranted here. The MAP reports aggregate CODE extents;
+actual symbol offsets above are measured from linked instruction bytes. All four
+EXEs have zero load relocations; that does not mean the input OMF objects lack
+link-time fixups. Exact reports and tool pins are in
+`metadata/critical-vector-topology.json`.

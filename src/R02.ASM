@@ -1,8 +1,13 @@
 ; Modern physical chunk, NOT an inferred original object boundary.
 include ENCODING.INC
+include MOVEMENT.INC
 part02 segment byte public 'CODE'
 assume cs:part02,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Modern grid-probe names; roles are local, broader map ownership unresolved.
+BYTE_ATTRIBUTE_TABLE equ 0C3AAh
+ATTRIBUTE_SOURCE_SEGMENT equ 09592h
+GRID_Y_SUM equ 0215Ah
 loc_025B2 equ 0E5B2h
 loc_04201 equ 0201h
 loc_0420F equ 020Fh
@@ -146,9 +151,9 @@ loc_0502E equ 0102Eh
 loc_05042 equ 01042h
 loc_05051 equ 01051h
 loc_05059 equ 01059h
-loc_0505B equ 0105Bh
-loc_0506F equ 0106Fh
-loc_05073 equ 01073h
+ReadIndexedByteAttribute_0505B equ 0105Bh
+GridOffsetNegativeY_0506F equ 0106Fh
+ComputeRecordGridOffset_05073 equ 01073h
 loc_050AB equ 010ABh
 loc_050C9 equ 010C9h
 loc_05128 equ 01128h
@@ -2785,23 +2790,25 @@ loc_0CBE8 equ 08BE8h
 ; @05005 0000:5005 original=81c64e21
     add si, 0214Eh
 ; @05009 0000:5009 original=ff7602
-    push word ptr ss:[bp + 2]
+    push word ptr ss:[bp + REC_Y]
 ; @0500C 0000:500C original=ff7604
-    push word ptr ss:[bp + 4]
+    push word ptr ss:[bp + REC_X]
 ; @0500F 0000:500F original=ad
     lodsw
 ; @05010 0000:5010 original=014602
-    add word ptr ss:[bp + 2], ax
+    add word ptr ss:[bp + REC_Y], ax
 ; @05013 0000:5013 original=ad
     lodsw
 ; @05014 0000:5014 original=014604
-    add word ptr ss:[bp + 4], ax
+    add word ptr ss:[bp + REC_X], ax
+; Convert temporarily adjusted record coordinates to the13-byte-row grid.
+; The next ADD overwrites the grid helper flags; later attribute ZF is live.
 ; @05017 0000:5017 original=e85900
-    CALL_NEAR loc_05073
+    CALL_NEAR ComputeRecordGridOffset_05073
 ; @0501A 0000:501A original=83c30d
     add bx, 0Dh
 ; @0501D 0000:501D original=a15a21
-    mov ax, word ptr ds:[0215Ah]
+    mov ax, word ptr ds:[GRID_Y_SUM]
 ; @05020 0000:5020 original=250f00
     and ax, 0Fh
 ; @05023 0000:5023 original=3d0a00
@@ -2817,17 +2824,17 @@ loc_0CBE8 equ 08BE8h
 ; @0502F 0000:502F original=53
     push bx
 ; @05030 0000:5030 original=e82800
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @05033 0000:5033 original=751c
     JNE_SHORT loc_05051
 ; @05035 0000:5035 original=f746040f00
-    test word ptr ss:[bp + 4], 0Fh
+    test word ptr ss:[bp + REC_X], 0Fh
 ; @0503A 0000:503A original=7406
     JE_SHORT loc_05042
 ; @0503C 0000:503C original=43
     inc bx
 ; @0503D 0000:503D original=e81b00
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @05040 0000:5040 original=750f
     JNE_SHORT loc_05051
 ; @05042 0000:5042 original=5b
@@ -2839,9 +2846,9 @@ loc_0CBE8 equ 08BE8h
 ; @05047 0000:5047 original=e2e5
     LOOP_SHORT loc_0502E
 ; @05049 0000:5049 original=8f4604
-    pop word ptr ss:[bp + 4]
+    pop word ptr ss:[bp + REC_X]
 ; @0504C 0000:504C original=8f4602
-    pop word ptr ss:[bp + 2]
+    pop word ptr ss:[bp + REC_Y]
 ; @0504F 0000:504F original=f8
     clc
 ; @05050 0000:5050 original=c3
@@ -2851,18 +2858,25 @@ loc_0CBE8 equ 08BE8h
 ; @05052 0000:5052 original=59
     pop cx
 ; @05053 0000:5053 original=8f4604
-    pop word ptr ss:[bp + 4]
+    pop word ptr ss:[bp + REC_X]
 ; @05056 0000:5056 original=8f4602
-    pop word ptr ss:[bp + 2]
+    pop word ptr ss:[bp + REC_Y]
 ; @05059 0000:5059 original=f9
     stc
 ; @0505A 0000:505A original=c3
     ret
 ; sub_0000_505B
+; ReadIndexedByteAttribute (modern reconstruction name)
+; Near leaf. ES=word CS:9592. Read byte ES:BX as unsigned index; read byte DS:[C3AA+index]. Return AX=zero-
+; extended attribute, SI=C3AA+index, ES=selected segment. Final OR AL,AL sets ZF/SF/PF from attribute and clears
+; CF/OF (AF unspecified). Preserve BX,CX,DX,BP,DI,DS,SS and IF/DF. No memory writes except ordinary call stack.
+; Requires valid segment/lookup storage; no tile or entity identity asserted.
+; Evidence: metadata/symbols.json
+; Lookup chain: source byte -> attribute byte; callers consume zero/nonzero.
 ; @0505B 0000:505B original=beaac3
-    mov si, 0C3AAh
+    mov si, BYTE_ATTRIBUTE_TABLE
 ; @0505E 0000:505E original=2e8e069295
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[ATTRIBUTE_SOURCE_SEGMENT]
 ; @05063 0000:5063 original=268a07
     mov al, byte ptr es:[bx]
 ; @05066 0000:5066 original=32e4
@@ -2880,14 +2894,22 @@ loc_0CBE8 equ 08BE8h
 ; @05072 0000:5072 original=c3
     ret
 ; sub_0000_5073
+; ComputeRecordGridOffset (modern reconstruction name)
+; Near entry5073 plus shared return tail506F. AX=wrapped16-bit(DS:234E + SS:[BP+REC_Y]); store it to DS:215A. If
+; its sign bit is set, return BX=FFFF via506F, preserving CX/DX and leaving AX=sum. Otherwise row=AX>>4
+; unsigned; DX=row, CX=4*row, AX=SS:[BP+REC_X]>>4 unsigned; BX=DS:2350-13*row+AX modulo65536. Preserve
+; SI,DI,BP,DS,ES,SS and IF/DF. Flags on negative path come from Y ADD; normal path from final BX ADD.
+; Caller4FF9 needs no returned flags;4FF9 immediately overwrites them at501A. Memory writes only215A, apart
+; from stack. Ordinary record and state are disjoint; no silent saturation or signed division.
+; Evidence: metadata/symbols.json
 ; @05073 0000:5073 original=a14e23
     mov ax, word ptr ds:[0234Eh]
 ; @05076 0000:5076 original=034602
-    add ax, word ptr ss:[bp + 2]
+    add ax, word ptr ss:[bp + REC_Y]
 ; @05079 0000:5079 original=a35a21
-    mov word ptr ds:[0215Ah], ax
+    mov word ptr ds:[GRID_Y_SUM], ax
 ; @0507C 0000:507C original=78f1
-    JS_SHORT loc_0506F
+    JS_SHORT GridOffsetNegativeY_0506F
 ; @0507E 0000:507E original=d1e8
     shr ax, 1
 ; @05080 0000:5080 original=d1e8
@@ -2915,7 +2937,7 @@ loc_0CBE8 equ 08BE8h
 ; @05098 0000:5098 original=2bd8
     sub bx, ax
 ; @0509A 0000:509A original=8b4604
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
 ; @0509D 0000:509D original=25f0ff
     and ax, 0FFF0h
 ; @050A0 0000:50A0 original=d1e8

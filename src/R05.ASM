@@ -42,8 +42,8 @@ loc_0BE3A equ 01E3Ah
 loc_0C237 equ 02237h
 loc_04D95 equ 0AD95h
 loc_05059 equ 0B059h
-loc_0505B equ 0B05Bh
-loc_05073 equ 0B073h
+ReadIndexedByteAttribute_0505B equ 0B05Bh
+ComputeRecordGridOffset_05073 equ 0B073h
 loc_05DB2 equ 0BDB2h
 loc_05E42 equ 0BE42h
 loc_062F6 equ 0C2F6h
@@ -2318,11 +2318,11 @@ loc_0F797 equ 05797h
 ; @0AC39 0000:AC39 original=e908fe runtime CFG evidence
     JMP_NEAR loc_0AA44
 ; @0AC3C 0000:AC3C original=e834a4 runtime CFG evidence
-    CALL_NEAR loc_05073
+    CALL_NEAR ComputeRecordGridOffset_05073
 ; @0AC3F 0000:AC3F original=83c30d runtime CFG evidence
     add bx, 0Dh
 ; @0AC42 0000:AC42 original=e816a4 runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0AC45 0000:AC45 original=750f runtime CFG evidence
     JNE_SHORT loc_0AC56
 ; @0AC47 0000:AC47 original=f746040f00 runtime CFG evidence
@@ -2332,7 +2332,7 @@ loc_0F797 equ 05797h
 ; @0AC4E 0000:AC4E original=43 runtime CFG evidence
     inc bx
 ; @0AC4F 0000:AC4F original=e809a4 runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0AC52 0000:AC52 original=7502 runtime CFG evidence
     JNE_SHORT loc_0AC56
 ; @0AC54 0000:AC54 original=f8 runtime CFG evidence
@@ -2592,11 +2592,11 @@ loc_0F797 equ 05797h
 ; @0ADB4 0000:ADB4 original=7412 runtime CFG evidence
     JE_SHORT loc_0ADC8
 ; @0ADB6 0000:ADB6 original=e8baa2 runtime CFG evidence
-    CALL_NEAR loc_05073
+    CALL_NEAR ComputeRecordGridOffset_05073
 ; @0ADB9 0000:ADB9 original=83c30d runtime CFG evidence
     add bx, 0Dh
 ; @0ADBC 0000:ADBC original=e89ca2 runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0ADBF 0000:ADBF original=7407 runtime CFG evidence
     JE_SHORT loc_0ADC8
 ; @0ADC1 0000:ADC1 original=fec8 runtime CFG evidence
@@ -2802,7 +2802,7 @@ loc_0F797 equ 05797h
 ; @0B00C 0000:B00C original=c3 runtime CFG evidence
     ret
 ; @0B00D 0000:B00D original=e863a0 runtime CFG evidence
-    CALL_NEAR loc_05073
+    CALL_NEAR ComputeRecordGridOffset_05073
 ; @0B010 0000:B010 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0B013 0000:B013 original=741d runtime CFG evidence
@@ -2830,7 +2830,7 @@ loc_0F797 equ 05797h
 ; @0B03E 0000:B03E original=83eb0d runtime CFG evidence
     sub bx, 0Dh
 ; @0B041 0000:B041 original=e817a0 runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B044 0000:B044 original=75ec runtime CFG evidence
     JNE_SHORT loc_0B032
 ; @0B046 0000:B046 original=f746040f00 runtime CFG evidence
@@ -2840,7 +2840,7 @@ loc_0F797 equ 05797h
 ; @0B04D 0000:B04D original=43 runtime CFG evidence
     inc bx
 ; @0B04E 0000:B04E original=e80aa0 runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B051 0000:B051 original=75df runtime CFG evidence
     JNE_SHORT loc_0B032
 ; @0B053 0000:B053 original=ff4602 runtime CFG evidence
@@ -2884,7 +2884,7 @@ loc_0F797 equ 05797h
 ; @0B087 0000:B087 original=83c30d runtime CFG evidence
     add bx, 0Dh
 ; @0B08A 0000:B08A original=e8ce9f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B08D 0000:B08D original=75a3 runtime CFG evidence
     JNE_SHORT loc_0B032
 ; @0B08F 0000:B08F original=f746040f00 runtime CFG evidence
@@ -2894,7 +2894,7 @@ loc_0F797 equ 05797h
 ; @0B096 0000:B096 original=43 runtime CFG evidence
     inc bx
 ; @0B097 0000:B097 original=e8c19f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B09A 0000:B09A original=7596 runtime CFG evidence
     JNE_SHORT loc_0B032
 ; @0B09C 0000:B09C original=ff4e02 runtime CFG evidence
@@ -2936,7 +2936,7 @@ loc_0F797 equ 05797h
 ; @0B0CE 0000:B0CE original=43 runtime CFG evidence
     inc bx
 ; @0B0CF 0000:B0CF original=e8899f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B0D2 0000:B0D2 original=7403 runtime CFG evidence
     JE_SHORT loc_0B0D7
 ; @0B0D4 0000:B0D4 original=e95bff runtime CFG evidence
@@ -2948,7 +2948,7 @@ loc_0F797 equ 05797h
 ; @0B0DF 0000:B0DF original=83eb0d runtime CFG evidence
     sub bx, 0Dh
 ; @0B0E2 0000:B0E2 original=e8769f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B0E5 0000:B0E5 original=7403 runtime CFG evidence
     JE_SHORT loc_0B0EA
 ; @0B0E7 0000:B0E7 original=e948ff runtime CFG evidence
@@ -2992,7 +2992,7 @@ loc_0F797 equ 05797h
 ; @0B118 0000:B118 original=4b runtime CFG evidence
     dec bx
 ; @0B119 0000:B119 original=e83f9f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B11C 0000:B11C original=7403 runtime CFG evidence
     JE_SHORT loc_0B121
 ; @0B11E 0000:B11E original=e911ff runtime CFG evidence
@@ -3004,7 +3004,7 @@ loc_0F797 equ 05797h
 ; @0B129 0000:B129 original=83eb0d runtime CFG evidence
     sub bx, 0Dh
 ; @0B12C 0000:B12C original=e82c9f runtime CFG evidence
-    CALL_NEAR loc_0505B
+    CALL_NEAR ReadIndexedByteAttribute_0505B
 ; @0B12F 0000:B12F original=7403 runtime CFG evidence
     JE_SHORT loc_0B134
 ; @0B131 0000:B131 original=e9fefe runtime CFG evidence

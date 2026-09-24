@@ -98,6 +98,8 @@ def generate():
     previous_model=read_json(ROOT/'metadata/project-model.json')
     if 'reconstruction_worlds' in previous_model:
         model['reconstruction_worlds']=previous_model['reconstruction_worlds']
+    if 'structure_review' in previous_model:
+        model['structure_review']=previous_model['structure_review']
     model['current_phase']='Semantic exact ASM; all conversion/port research paused and retained as evidence.'
     write_json(ROOT/'metadata/project-model.json',model)
     write_json(ROOT/'metadata/file-map.json',dict(files=[dict(path='assets/'+name,regions=[dict(start=0,end=h['header_bytes'],kind='MZ_HEADER'),dict(start=h['header_bytes'],end=h['executable_bytes'],kind='NESTED_PACKED_LOAD_MODULE'),dict(start=h['executable_bytes'],end=h['executable_bytes']+h['appended_bytes'],kind='APPENDED_DATA_UNKNOWN_INTERNAL_LAYOUT')]) for name,h in [('OVERKILL',m['mz']),('OVERKILL.EXE',read_json(ROOT/'metadata/launcher-extraction.json')['mz'])]]))

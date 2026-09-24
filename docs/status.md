@@ -7,19 +7,19 @@ This is an exact, incomplete ASM bootstrap. Byte coverage and semantic understan
 | program_image_bytes_accounted | 143088 |
 | decoded_instruction_bytes | 36603 |
 | reconstructed_asm_bytes | 36603 |
-| reconstructed_data_bytes | 66 |
-| opaque_raw_fallback_bytes | 106419 |
+| reconstructed_data_bytes | 72 |
+| opaque_raw_fallback_bytes | 106413 |
 | identified_functions | 371 |
-| named_functions | 42 |
-| anonymous_functions | 329 |
+| named_functions | 48 |
+| anonymous_functions | 323 |
 | leaf_functions | 143 |
 | C_READY | 2 |
-| C_READY_WITH_ENV | 28 |
-| ASM_COUPLED | 22 |
-| HARDWARE | 62 |
-| STRUCTURAL | 92 |
-| UNKNOWN | 165 |
-| semantically_supported_unique_instruction_bytes | 1475 |
+| C_READY_WITH_ENV | 30 |
+| ASM_COUPLED | 24 |
+| HARDWARE | 63 |
+| STRUCTURAL | 90 |
+| UNKNOWN | 162 |
+| semantically_supported_unique_instruction_bytes | 1579 |
 | unresolved_indirect_sites | 44 |
 | decode_conflicts | 0 |
 
@@ -38,7 +38,7 @@ Next: resolve remaining indirect tables with bounded-index evidence; recover key
 
 The initial-entry inventory above retains 371 function candidates. The active main runtime graph has **421 candidates**, with **10987 additional identified instruction bytes**. This is reachability evidence, not a new main-code variant.
 
-Maintained main instruction source: **36603 bytes**; explicit main UNKNOWN DB: **106419 bytes**. Initial plus runtime discovery identifies 36603 instruction bytes. See metadata/runtime/observed-coverage.json for actual execution coverage.
+Maintained main instruction source: **36603 bytes**; explicit main UNKNOWN DB: **106413 bytes**. Initial plus runtime discovery identifies 36603 instruction bytes. See metadata/runtime/observed-coverage.json for actual execution coverage.
 
 | Module | Total bytes | Instruction ASM | Reviewed data | Opaque bytes | Functions | Named | Leaf |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -53,8 +53,8 @@ Active queues: metadata/runtime/bottom-up-queue.json and metadata/drivers/*-bott
 
 ## Reviewed semantics
 
-Main: 42 reviewed contracts/boundaries, 41 boundaries STRONG/PROVEN; 1475 unique instruction bytes with reviewed contracts and names. Optional drivers: 6 reviewed contracts.
+Main: 48 reviewed contracts/boundaries, 47 boundaries STRONG/PROVEN; 1579 unique instruction bytes with reviewed contracts and names. Optional drivers: 6 reviewed contracts.
 
-Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 14, 'UNKNOWN': 7, 'GAME_LOGIC': 21}.
+Main active graph: 57 unresolved indirect sites; 33434 instruction bytes assigned to function candidates. Assignment is not a proven partition. Main reviewed concern classes: {'PLATFORM_LOGIC': 16, 'UNKNOWN': 9, 'GAME_LOGIC': 23}.
 
-Main reviewed data: 66 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.
+Main reviewed data: 72 bytes; record-field relationships are documented separately and do not imply every byte in those records is understood.

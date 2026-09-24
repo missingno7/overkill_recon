@@ -100,6 +100,53 @@
       "width": 2
     }
   ],
+  "grid_probe_dependencies": {
+    "active_direct_call_sites": {
+      "0000:505B": [
+        "0000:5030",
+        "0000:503D",
+        "0000:AC42",
+        "0000:AC4F",
+        "0000:ADBC",
+        "0000:B041",
+        "0000:B04E",
+        "0000:B08A",
+        "0000:B097",
+        "0000:B0CF",
+        "0000:B0E2",
+        "0000:B119",
+        "0000:B12C"
+      ],
+      "0000:5073": [
+        "0000:5017",
+        "0000:AC3C",
+        "0000:ADB6",
+        "0000:B00D"
+      ]
+    },
+    "addressable_attribute_bytes": 256,
+    "caller": "0000:4FF9 (not yet fully reviewed)",
+    "dataflow": [
+      "SS recordY +DS234E -> wrapped sumDS215A",
+      "DS2350 -13*(sum>>4)+(recordX>>4) ->BX",
+      "CS9592 -> source segment; byteES:BX -> attributeDS:C3AA[index]",
+      "attributeZF ->4FF9 carry result ->9CB6 gate"
+    ],
+    "extent_caveat": "Byte index permits C3AA..C4A9; not all entries proven reachable or promoted to reviewed source data",
+    "parent": "0000:9CB6 (carry-set gates repeated9E19 calls; still unnamed)",
+    "reviewed_entries": {
+      "0000:505B": "ReadIndexedByteAttribute",
+      "0000:5073": "ComputeRecordGridOffset"
+    },
+    "scope_note": "Additional live-graph callers in AC3C/ADB6/B00D family use the same leaves; initial-entry graph alone is incomplete. Names propagated inR05. Their larger contracts remain unreviewed.",
+    "shared_tail": "0000:506F negative-Y sentinel return",
+    "tests": "tests/test_grid_vectors.py",
+    "unknown": [
+      "Meaning/resource ownership of CS9592 source bytes",
+      "Meaning of C3AA attributes",
+      "9E19 state/countdown and callees511F/61DC"
+    ]
+  },
   "liveness": [
     {
       "dead_at_reviewed_sites": "CMP BX,FFFF immediately follows most calls; atA6CA POP SI precedes CMP and does not inspect flags",

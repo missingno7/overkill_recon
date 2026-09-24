@@ -431,13 +431,23 @@
       "0F7F:0473",
       "0F7F:0980"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "exact full-image verification",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": true
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Structural bridge; semantic effects belong to dynamically selected near callees.",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "PROVEN",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Far entry in main code frame. CALL AX invokes a near target in the same CS, then RETF returns to the outer far caller. Requires AX to name valid main-frame near code that returns with a balanced stack. No register, segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.",
     "evidence": [
       "call from 0F7F:0292",
       "call from 0F7F:02DB",
@@ -491,14 +501,19 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_0000_8D8B",
-    "named": false,
+    "name": "FarCallMainNearViaAX",
+    "named": true,
     "registers_read": [
       "ax",
       "esp"
     ],
     "registers_written": [
       "esp"
+    ],
+    "semantic_evidence": [
+      "0F7F has43 far calls through8D8B and one through8D8E in current decoded graph.",
+      "Examples:0F7F:028F loadsAX=5DB2 before0292 crossing;0153 loadsBP=5401 before0156 crossing. Targets are not one fixed shared service.",
+      "tests/test_grid_vectors.py checks real near-callee effects, near return address, nested stack depth and far return."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -513,13 +528,23 @@
     "callers": [
       "0F7F:0142"
     ],
-    "category": "STRUCTURAL",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "ASM_COUPLED",
+    "claim_axes": {
+      "BYTE_EXACT": "exact full-image verification",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": true
     },
+    "concern": "UNKNOWN",
+    "concern_evidence": "Structural bridge; semantic effects belong to dynamically selected near callees.",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "PROVEN",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Far entry in main code frame. CALL BP invokes a near target in the same CS, then RETF returns to the outer far caller. Requires BP to name valid main-frame near code that returns with a balanced stack. No register, segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.",
     "evidence": [
       "call from 0F7F:0156"
     ],
@@ -531,14 +556,19 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_0000_8D8E",
-    "named": false,
+    "name": "FarCallMainNearViaBP",
+    "named": true,
     "registers_read": [
       "bp",
       "esp"
     ],
     "registers_written": [
       "esp"
+    ],
+    "semantic_evidence": [
+      "0F7F has43 far calls through8D8B and one through8D8E in current decoded graph.",
+      "Examples:0F7F:028F loadsAX=5DB2 before0292 crossing;0153 loadsBP=5401 before0156 crossing. Targets are not one fixed shared service.",
+      "tests/test_grid_vectors.py checks real near-callee effects, near return address, nested stack depth and far return."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -3720,12 +3750,22 @@
       "1534:003C"
     ],
     "category": "HARDWARE",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "claim_axes": {
+      "BYTE_EXACT": "verified by exact full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Explicit DOS interrupt-vector installation",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. Save DS; set DS=CS, AH=25h, invoke INT21h with caller AL(vector) and DX(handler offset); restore DS and RET. No algorithm beyond DOS vector installation request. Register/flag effects of DOS are passed through except restored DS. Valid DOS service and stack required; IF/DF not modified by surrounding instructions.",
     "evidence": [
       "call from 1534:0041"
     ],
@@ -3744,8 +3784,8 @@
     ],
     "leaf": true,
     "memory": [],
-    "name": "sub_1534_0045",
-    "named": false,
+    "name": "SetInterruptVectorToCS",
+    "named": true,
     "registers_read": [
       "sp"
     ],
@@ -3753,6 +3793,10 @@
       "ah",
       "ds",
       "sp"
+    ],
+    "semantic_evidence": [
+      "Only known direct caller1534:0041. No pretense this normal near helper shares the handler nonlocal stack boundary.",
+      "tests/test_grid_vectors.py checks three vector inputs and deliberate service scratch clobbers without assuming all registers preserved."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -4040,13 +4084,23 @@
       "0000:B07D",
       "0000:B10F"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by exact full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Coordinate-grid/attribute probe dependency",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near leaf. ES=word CS:9592. Read byte ES:BX as unsigned index; read byte DS:[C3AA+index]. Return AX=zero-extended attribute, SI=C3AA+index, ES=selected segment. Final OR AL,AL sets ZF/SF/PF from attribute and clears CF/OF (AF unspecified). Preserve BX,CX,DX,BP,DI,DS,SS and IF/DF. No memory writes except ordinary call stack. Requires valid segment/lookup storage; no tile or entity identity asserted.",
     "evidence": [
       "call from 0000:5030",
       "call from 0000:503D",
@@ -4107,8 +4161,8 @@
         "size": 1
       }
     ],
-    "name": "sub_0000_505B",
-    "named": false,
+    "name": "ReadIndexedByteAttribute",
+    "named": true,
     "registers_read": [
       "ah",
       "al",
@@ -4126,6 +4180,11 @@
       "flags",
       "si",
       "sp"
+    ],
+    "semantic_evidence": [
+      "4FF9 calls at5030/503D and consumes ZF immediately at5033/5040.",
+      "Byte index addresses C3AA..C4A9; this is the addressable lookup extent, not proof every entry is used in the game.",
+      "tests/test_grid_vectors.py checks all256 indices/attribute values, segment selection, preserved state and flags."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -15382,13 +15441,23 @@
       "0000:AC28",
       "0000:B00D"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "C_READY_WITH_ENV",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by exact full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "GAME_LOGIC",
+    "concern_evidence": "Coordinate-grid/attribute probe dependency",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Near entry5073 plus shared return tail506F. AX=wrapped16-bit(DS:234E + SS:[BP+REC_Y]); store it to DS:215A. If its sign bit is set, return BX=FFFF via506F, preserving CX/DX and leaving AX=sum. Otherwise row=AX>>4 unsigned; DX=row, CX=4*row, AX=SS:[BP+REC_X]>>4 unsigned; BX=DS:2350-13*row+AX modulo65536. Preserve SI,DI,BP,DS,ES,SS and IF/DF. Flags on negative path come from Y ADD; normal path from final BX ADD. Caller4FF9 needs no returned flags;4FF9 immediately overwrites them at501A. Memory writes only215A, apart from stack. Ordinary record and state are disjoint; no silent saturation or signed division.",
     "evidence": [
       "call from 0000:5017",
       "call from 0000:AC3C",
@@ -15479,8 +15548,8 @@
         "size": 2
       }
     ],
-    "name": "sub_0000_5073",
-    "named": false,
+    "name": "ComputeRecordGridOffset",
+    "named": true,
     "registers_read": [
       "ax",
       "bp",
@@ -15497,6 +15566,11 @@
       "dx",
       "flags",
       "sp"
+    ],
+    "semantic_evidence": [
+      "4FF9 calls5017 after temporary coordinate offsets; restores source coordinates at5049/5053 tails.",
+      "506F is a shared sentinel-return target, not a fresh independent algorithm.",
+      "tests/test_grid_vectors.py checks sign/wrap boundaries, grid arithmetic, full DS footprint and branch-dependent scratch outputs."
     ],
     "shared_instructions": [],
     "tail_targets": [],
@@ -28289,13 +28363,23 @@
     "callers": [
       "0000:95C9"
     ],
-    "category": "UNKNOWN",
-    "confidence": {
-      "boundary": "INFERRED",
-      "gameplay_role": "UNKNOWN",
-      "operation": "UNKNOWN",
-      "semantic_name": "UNKNOWN"
+    "category": "HARDWARE",
+    "claim_axes": {
+      "BYTE_EXACT": "verified by exact full-image build",
+      "HISTORICALLY_PROVEN": false,
+      "SEMANTICALLY_SUPPORTED": true,
+      "STRUCTURALLY_SUPPORTED": false
     },
+    "concern": "PLATFORM_LOGIC",
+    "concern_evidence": "Explicit DOS interrupt-vector installation",
+    "confidence": {
+      "boundary": "STRONG",
+      "calling_convention": "STRONG",
+      "gameplay_role": "UNKNOWN",
+      "operation": "PROVEN",
+      "semantic_name": "STRONG"
+    },
+    "contract": "Far entry. Set AL=24h and DX=0006h; near-call SetInterruptVectorToCS then RETF. Requests DOS INT21h/AH25h vector24h -> current CS:0006. DS restored by helper; AX/DX and DOS-visible effects are not hidden. Remaining register/flag guarantees are conditional on DOS service behavior. Normal far return; not a complete contract for the nonlocal handler at0006.",
     "evidence": [
       "call from 0000:95E3"
     ],
@@ -28309,8 +28393,8 @@
     ],
     "leaf": false,
     "memory": [],
-    "name": "sub_1534_003C",
-    "named": false,
+    "name": "InstallCriticalErrorVector",
+    "named": true,
     "registers_read": [
       "eip",
       "esp"
@@ -28319,6 +28403,11 @@
       "al",
       "dx",
       "esp"
+    ],
+    "semantic_evidence": [
+      "Startup0000:95E3 far-calls1534:003C; normalized segment word remains subject to original relocation.",
+      "Private handler0006 and CS scratch0..5 support a code/state family, not original OBJ ownership.",
+      "tests/test_grid_vectors.py intercepts only DOS service to check exact request, DS restoration and far return."
     ],
     "shared_instructions": [],
     "tail_targets": [],

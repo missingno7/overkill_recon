@@ -3,6 +3,8 @@ include ENCODING.INC
 part08 segment byte public 'CODE'
 assume cs:part08,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Main-frame near-call bridge offsets, not local chunk-relative labels.
+MAIN_NEAR_AX_BRIDGE equ 08D8Bh
 loc_10034 equ 034h
 loc_1003E equ 03Eh
 loc_10043 equ 043h
@@ -175,7 +177,7 @@ loc_10232 equ 0232h
 ; @10179 0F7F:0989 original=b8b8d2
     mov ax, 0D2B8h
 ; @1017C 0F7F:098C original=9a8b8d0000
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @10181 0F7F:0991 original=8b36d6be
     mov si, word ptr ds:[0BED6h]
 ; @10185 0F7F:0995 original=837cfe00
@@ -237,7 +239,7 @@ loc_10232 equ 0232h
 ; @101E3 0F7F:09F3 original=b8c950
     mov ax, 050C9h
 ; @101E6 0F7F:09F6 original=9a8b8d0000
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @101EB 0F7F:09FB original=e2f6
     LOOP_SHORT loc_101E3
 ; @101ED 0F7F:09FD original=ff0ed4be
@@ -261,7 +263,7 @@ loc_10232 equ 0232h
 ; @10206 0F7F:0A16 original=b8c950
     mov ax, 050C9h
 ; @10209 0F7F:0A19 original=9a8b8d0000
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @1020E 0F7F:0A1E original=e2f6
     LOOP_SHORT loc_10206
 ; @10210 0F7F:0A20 original=ff06d4be

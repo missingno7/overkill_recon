@@ -1,12 +1,12 @@
 {
-  "ASM_COUPLED": 22,
+  "ASM_COUPLED": 24,
   "C_READY": 2,
-  "C_READY_WITH_ENV": 28,
-  "HARDWARE": 62,
-  "STRUCTURAL": 92,
-  "UNKNOWN": 165,
+  "C_READY_WITH_ENV": 30,
+  "HARDWARE": 63,
+  "STRUCTURAL": 90,
+  "UNKNOWN": 162,
   "accounting_means": "Complete address/range coverage, including UNKNOWN; not semantic recovery.",
-  "anonymous_functions": 329,
+  "anonymous_functions": 323,
   "binary_match_status": "BYTE_EXACT_NORMALIZED_PROGRAM_IMAGE",
   "build_status": "PASS",
   "decode_conflicts": 0,
@@ -17,8 +17,8 @@
   "initial_cfg_instruction_bytes": 25616,
   "known_mismatching_ranges": [],
   "leaf_functions": 143,
-  "named_functions": 42,
-  "opaque_raw_fallback_bytes": 106419,
+  "named_functions": 48,
+  "opaque_raw_fallback_bytes": 106413,
   "optional_modules": [
     {
       "ASM_COUPLED": 4,
@@ -60,23 +60,23 @@
   "original_executable_bytes_accounted": 50555,
   "program_image_bytes_accounted": 143088,
   "reconstructed_asm_bytes": 36603,
-  "reconstructed_data_bytes": 66,
+  "reconstructed_data_bytes": 72,
   "runtime_main": {
     "additional_main_cfg_instruction_bytes": 10987,
-    "anonymous_functions": 379,
+    "anonymous_functions": 373,
     "categories": {
-      "ASM_COUPLED": 34,
+      "ASM_COUPLED": 36,
       "C_READY": 2,
-      "C_READY_WITH_ENV": 28,
-      "HARDWARE": 64,
-      "STRUCTURAL": 107,
-      "UNKNOWN": 186
+      "C_READY_WITH_ENV": 30,
+      "HARDWARE": 65,
+      "STRUCTURAL": 105,
+      "UNKNOWN": 183
     },
     "conflicts": [],
     "initial_function_candidates": 371,
     "main_cfg_instruction_bytes": 36594,
     "main_function_candidates": 421,
-    "named_functions": 42,
+    "named_functions": 48,
     "newly_discovered_main_bytes_are_assembled": true,
     "newly_discovered_main_bytes_remaining_opaque": 0,
     "observed_main_instruction_bytes": 21783,
@@ -308,21 +308,21 @@
   "semantic_review": {
     "driver_boundaries_strong_or_proven": 6,
     "driver_reviewed_contracts": 6,
-    "main_boundaries_strong_or_proven": 41,
+    "main_boundaries_strong_or_proven": 47,
     "main_function_candidate_owned_bytes": 33434,
-    "main_reviewed_boundaries": 42,
+    "main_reviewed_boundaries": 48,
     "main_reviewed_concerns": {
-      "GAME_LOGIC": 21,
-      "PLATFORM_LOGIC": 14,
-      "UNKNOWN": 7
+      "GAME_LOGIC": 23,
+      "PLATFORM_LOGIC": 16,
+      "UNKNOWN": 9
     },
-    "main_reviewed_contract_instruction_bytes": 1475,
-    "main_reviewed_contracts": 42,
-    "main_reviewed_named_instruction_bytes": 1475,
+    "main_reviewed_contract_instruction_bytes": 1579,
+    "main_reviewed_contracts": 48,
+    "main_reviewed_named_instruction_bytes": 1579,
     "main_unresolved_indirect_sites": 57,
     "ownership_caveat": "Function candidate ownership is not proven partitioning; shared tails are counted once. Reviewed-contract bytes count owned instructions, not a transitive claim about unknown callees."
   },
-  "semantically_supported_unique_instruction_bytes": 1475,
+  "semantically_supported_unique_instruction_bytes": 1579,
   "unresolved_indirect_sites": 44,
   "whole_file_match": "NOT_BUILT"
 }

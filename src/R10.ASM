@@ -3,8 +3,13 @@ include ENCODING.INC
 part10 segment byte public 'CODE'
 assume cs:part10,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Frame1534 private saved return words; not evidence of an original OBJ.
+ERROR_RETURN_OFFSET equ 00h
+ERROR_RETURN_SEGMENT equ 02h
+ERROR_FLAGS_OR_TARGET equ 04h
+InstallCriticalErrorVector_1537C equ 0137Ch
 
-loc_15385 equ 01385h
+SetInterruptVectorToCS_15385 equ 01385h
 loc_153AE equ 013AEh
 loc_153BB equ 013BBh
 loc_153C5 equ 013C5h
@@ -661,8 +666,13 @@ loc_15AD9 equ 01AD9h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 ; @15330 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-; @15340 UNKNOWN bootstrap bytes: not reconstructed code/data
-    db 00h,00h,00h,00h,00h,00h
+; Frame1534 six bytes of writable CS scratch, not alignment padding.
+; @15340 1534:0000 original=0000; 1534 handler pops into CS:0000; saved return offset. Original initialized word is zero.
+    dw 00000h
+; @15342 1534:0002 original=0000; 1534 handler pops into CS:0002; saved return segment. Original initialized word is zero.
+    dw 00000h
+; @15344 1534:0004 original=0000; 1534 handler pops into CS:0004; flags, later reused as IRET target offset. Original initialized word is zero.
+    dw 00000h
 ; @15346 1534:0006 original=83c406 runtime CFG evidence
     add sp, 6
 ; @15349 1534:0009 original=58 runtime CFG evidence
@@ -686,33 +696,44 @@ loc_15AD9 equ 01AD9h
 ; @15353 1534:0013 original=07 runtime CFG evidence
     pop es
 ; @15354 1534:0014 original=2e8f060000 runtime CFG evidence
-    pop word ptr cs:[0]
+    pop word ptr cs:[ERROR_RETURN_OFFSET]
 ; @15359 1534:0019 original=2e8f060200 runtime CFG evidence
-    pop word ptr cs:[2]
+    pop word ptr cs:[ERROR_RETURN_SEGMENT]
 ; @1535E 1534:001E original=2e8f060400 runtime CFG evidence
-    pop word ptr cs:[4]
+    pop word ptr cs:[ERROR_FLAGS_OR_TARGET]
 ; @15363 1534:0023 original=2e830e040001 runtime CFG evidence
-    or word ptr cs:[4], 1
+    or word ptr cs:[ERROR_FLAGS_OR_TARGET], 1
 ; @15369 1534:0029 original=2eff360400 runtime CFG evidence
-    push word ptr cs:[4]
+    push word ptr cs:[ERROR_FLAGS_OR_TARGET]
 ; @1536E 1534:002E original=0e runtime CFG evidence
     push cs
 ; @1536F 1534:002F original=2ec70604004e00 runtime CFG evidence
-    mov word ptr cs:[4], 04Eh
+    mov word ptr cs:[ERROR_FLAGS_OR_TARGET], 04Eh
 ; @15376 1534:0036 original=2eff360400 runtime CFG evidence
-    push word ptr cs:[4]
+    push word ptr cs:[ERROR_FLAGS_OR_TARGET]
 ; @1537B 1534:003B original=cf runtime CFG evidence
     iret
 ; sub_1534_003C
+; InstallCriticalErrorVector (modern reconstruction name)
+; Far entry. Set AL=24h and DX=0006h; near-call SetInterruptVectorToCS then RETF. Requests DOS INT21h/AH25h
+; vector24h -> current CS:0006. DS restored by helper; AX/DX and DOS-visible effects are not hidden. Remaining
+; register/flag guarantees are conditional on DOS service behavior. Normal far return; not a complete contract
+; for the nonlocal handler at0006.
+; Evidence: metadata/symbols.json
 ; @1537C 1534:003C original=b024
     mov al, 024h
 ; @1537E 1534:003E original=ba0600
     mov dx, 6
 ; @15381 1534:0041 original=e80100
-    CALL_NEAR loc_15385
+    CALL_NEAR SetInterruptVectorToCS_15385
 ; @15384 1534:0044 original=cb
     retf
 ; sub_1534_0045
+; SetInterruptVectorToCS (modern reconstruction name)
+; Near leaf. Save DS; set DS=CS, AH=25h, invoke INT21h with caller AL(vector) and DX(handler offset); restore DS
+; and RET. No algorithm beyond DOS vector installation request. Register/flag effects of DOS are passed through
+; except restored DS. Valid DOS service and stack required; IF/DF not modified by surrounding instructions.
+; Evidence: metadata/symbols.json
 ; @15385 1534:0045 original=1e
     push ds
 ; @15386 1534:0046 original=0e
@@ -727,11 +748,16 @@ loc_15AD9 equ 01AD9h
     pop ds
 ; @1538D 1534:004D original=c3
     ret
+; Handler1534:0006 constructs an IRET to this1534:004E continuation.
+; These UNKNOWN bytes must not be treated as inter-frame padding; the
+; nonlocal DOS stack contract and eventual far handoff still need review.
 ; @1538E UNKNOWN bootstrap bytes: not reconstructed code/data
     db 09Ch,050h,0B4h,019h,0CDh,021h,058h,09Dh,02Eh,0FFh,02Eh,00h,00h,00h,00h,00h
 ; @1539E UNKNOWN bootstrap bytes: not reconstructed code/data
     db 00h,00h
 ; sub_153A_0000
+; Observed frame153A: private CS state and DOS/file/path operations, with
+; caller segment pointers. Distinct address frame, historical OBJ count unknown.
 ; @153A0 153A:0000 original=a90080
     test ax, 08000h
 ; @153A3 153A:0003 original=7409

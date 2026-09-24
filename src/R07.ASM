@@ -3,6 +3,9 @@ include ENCODING.INC
 part07 segment byte public 'CODE'
 assume cs:part07,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+; Main-frame near-call bridge offsets, not local chunk-relative labels.
+MAIN_NEAR_AX_BRIDGE equ 08D8Bh
+MAIN_NEAR_BP_BRIDGE equ 08D8Eh
 loc_0FC62 equ 01C62h
 loc_0FC6E equ 01C6Eh
 loc_0FC7C equ 01C7Ch
@@ -1398,7 +1401,7 @@ loc_10108 equ 02108h
 ; @0F943 0F7F:0153 original=bd0154
     mov bp, 05401h
 ; @0F946 0F7F:0156 original=9a8e8d0000
-    CALL_FAR 00h,08D8Eh
+    CALL_FAR 00h,MAIN_NEAR_BP_BRIDGE
 ; @0F94B 0F7F:015B original=eb05
     JMP_SHORT loc_0F952
 ; @0F94D 0F7F:015D original=891f
@@ -1579,7 +1582,7 @@ loc_10108 equ 02108h
 ; @0FA7F 0F7F:028F original=b8b25d runtime CFG evidence
     mov ax, 05DB2h
 ; @0FA82 0F7F:0292 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FA87 0F7F:0297 original=833e0a2300 runtime CFG evidence
     cmp word ptr ds:[0230Ah], 0
 ; @0FA8C 0F7F:029C original=7503 runtime CFG evidence
@@ -1625,7 +1628,7 @@ loc_10108 equ 02108h
 ; @0FAC8 0F7F:02D8 original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FACB 0F7F:02DB original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FAD0 0F7F:02E0 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0FAD3 0F7F:02E3 original=7503 runtime CFG evidence
@@ -1663,7 +1666,7 @@ loc_10108 equ 02108h
 ; @0FB06 0F7F:0316 original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FB09 0F7F:0319 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FB0E 0F7F:031E original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0FB11 0F7F:0321 original=7503 runtime CFG evidence
@@ -1719,7 +1722,7 @@ loc_10108 equ 02108h
 ; @0FB61 0F7F:0371 original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FB64 0F7F:0374 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FB69 0F7F:0379 original=8b3642a8 runtime CFG evidence
     mov si, word ptr ds:[0A842h]
 ; @0FB6D 0F7F:037D original=830642a804 runtime CFG evidence
@@ -1755,7 +1758,7 @@ loc_10108 equ 02108h
 ; @0FB9B 0F7F:03AB original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FB9E 0F7F:03AE original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FBA3 0F7F:03B3 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0FBA6 0F7F:03B6 original=7503 runtime CFG evidence
@@ -1797,7 +1800,7 @@ loc_10108 equ 02108h
 ; @0FBE0 0F7F:03F0 original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FBE3 0F7F:03F3 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FBE8 0F7F:03F8 original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0FBEB 0F7F:03FB original=744b runtime CFG evidence
@@ -1837,7 +1840,7 @@ loc_10108 equ 02108h
 ; @0FC27 0F7F:0437 original=b8f481 runtime CFG evidence
     mov ax, 081F4h
 ; @0FC2A 0F7F:043A original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FC2F 0F7F:043F original=83fbff runtime CFG evidence
     cmp bx, -1
 ; @0FC32 0F7F:0442 original=7404 runtime CFG evidence
@@ -1861,7 +1864,7 @@ loc_10108 equ 02108h
 ; @0FC50 0F7F:0460 original=b829b7 runtime CFG evidence
     mov ax, 0B729h
 ; @0FC53 0F7F:0463 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FC58 0F7F:0468 original=8f4606 runtime CFG evidence
     pop word ptr ss:[bp + 6]
 ; @0FC5B 0F7F:046B original=7405 runtime CFG evidence
@@ -1905,19 +1908,19 @@ loc_10108 equ 02108h
 ; @0FC94 0F7F:04A4 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FC97 0F7F:04A7 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FC9C 0F7F:04AC original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FC9F 0F7F:04AF original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCA4 0F7F:04B4 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FCA7 0F7F:04B7 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCAC 0F7F:04BC original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FCAF 0F7F:04BF original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCB4 0F7F:04C4 original=750a runtime CFG evidence
     JNE_SHORT loc_0FCC0
 ; @0FCB6 0F7F:04C6 original=817e02d000 runtime CFG evidence
@@ -1931,7 +1934,7 @@ loc_10108 equ 02108h
 ; @0FCC5 0F7F:04D5 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FCC8 0F7F:04D8 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCCD 0F7F:04DD original=7403 runtime CFG evidence
     JE_SHORT loc_0FCD2
 ; @0FCCF 0F7F:04DF original=e8a401 runtime CFG evidence
@@ -1939,7 +1942,7 @@ loc_10108 equ 02108h
 ; @0FCD2 0F7F:04E2 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FCD5 0F7F:04E5 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCDA 0F7F:04EA original=7403 runtime CFG evidence
     JE_SHORT loc_0FCDF
 ; @0FCDC 0F7F:04EC original=e89701 runtime CFG evidence
@@ -1947,7 +1950,7 @@ loc_10108 equ 02108h
 ; @0FCDF 0F7F:04EF original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FCE2 0F7F:04F2 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FCE7 0F7F:04F7 original=7403 runtime CFG evidence
     JE_SHORT loc_0FCEC
 ; @0FCE9 0F7F:04F9 original=e88a01 runtime CFG evidence
@@ -1995,23 +1998,23 @@ loc_10108 equ 02108h
 ; @0FD30 0F7F:0540 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FD33 0F7F:0543 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD38 0F7F:0548 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FD3B 0F7F:054B original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD40 0F7F:0550 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FD43 0F7F:0553 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD48 0F7F:0558 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FD4B 0F7F:055B original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD50 0F7F:0560 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FD53 0F7F:0563 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD58 0F7F:0568 original=8f4606 runtime CFG evidence
     pop word ptr ss:[bp + 6]
 ; @0FD5B 0F7F:056B original=a14023 runtime CFG evidence
@@ -2025,7 +2028,7 @@ loc_10108 equ 02108h
 ; @0FD66 0F7F:0576 original=b8e1ba runtime CFG evidence
     mov ax, 0BAE1h
 ; @0FD69 0F7F:0579 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD6E 0F7F:057E original=ff064023 runtime CFG evidence
     inc word ptr ds:[02340h]
 ; @0FD72 0F7F:0582 original=833e402300 runtime CFG evidence
@@ -2039,7 +2042,7 @@ loc_10108 equ 02108h
 ; @0FD81 0F7F:0591 original=b87674 runtime CFG evidence
     mov ax, 07476h
 ; @0FD84 0F7F:0594 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FD89 0F7F:0599 original=ff064023 runtime CFG evidence
     inc word ptr ds:[02340h]
 ; @0FD8D 0F7F:059D original=837e0400 runtime CFG evidence
@@ -2063,47 +2066,47 @@ loc_10108 equ 02108h
 ; @0FDAA 0F7F:05BA original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDAD 0F7F:05BD original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDB2 0F7F:05C2 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDB5 0F7F:05C5 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDBA 0F7F:05CA original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDBD 0F7F:05CD original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDC2 0F7F:05D2 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDC5 0F7F:05D5 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDCA 0F7F:05DA original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDCD 0F7F:05DD original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDD2 0F7F:05E2 original=c746060600 runtime CFG evidence
     mov word ptr ss:[bp + 6], 6
 ; @0FDD7 0F7F:05E7 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDDA 0F7F:05EA original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDDF 0F7F:05EF original=7520 runtime CFG evidence
     JNE_SHORT loc_0FE01
 ; @0FDE1 0F7F:05F1 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDE4 0F7F:05F4 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDE9 0F7F:05F9 original=7516 runtime CFG evidence
     JNE_SHORT loc_0FE01
 ; @0FDEB 0F7F:05FB original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDEE 0F7F:05FE original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDF3 0F7F:0603 original=750c runtime CFG evidence
     JNE_SHORT loc_0FE01
 ; @0FDF5 0F7F:0605 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FDF8 0F7F:0608 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FDFD 0F7F:060D original=7502 runtime CFG evidence
     JNE_SHORT loc_0FE01
 ; @0FDFF 0F7F:060F original=eb68 runtime CFG evidence
@@ -2117,47 +2120,47 @@ loc_10108 equ 02108h
 ; @0FE0D 0F7F:061D original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE10 0F7F:0620 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE15 0F7F:0625 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE18 0F7F:0628 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE1D 0F7F:062D original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE20 0F7F:0630 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE25 0F7F:0635 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE28 0F7F:0638 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE2D 0F7F:063D original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE30 0F7F:0640 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE35 0F7F:0645 original=c746060200 runtime CFG evidence
     mov word ptr ss:[bp + 6], 2
 ; @0FE3A 0F7F:064A original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE3D 0F7F:064D original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE42 0F7F:0652 original=7520 runtime CFG evidence
     JNE_SHORT loc_0FE64
 ; @0FE44 0F7F:0654 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE47 0F7F:0657 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE4C 0F7F:065C original=7516 runtime CFG evidence
     JNE_SHORT loc_0FE64
 ; @0FE4E 0F7F:065E original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE51 0F7F:0661 original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE56 0F7F:0666 original=750c runtime CFG evidence
     JNE_SHORT loc_0FE64
 ; @0FE58 0F7F:0668 original=b8d8af runtime CFG evidence
     mov ax, 0AFD8h
 ; @0FE5B 0F7F:066B original=9a8b8d0000 runtime CFG evidence
-    CALL_FAR 00h,08D8Bh
+    CALL_FAR 00h,MAIN_NEAR_AX_BRIDGE
 ; @0FE60 0F7F:0670 original=7502 runtime CFG evidence
     JNE_SHORT loc_0FE64
 ; @0FE62 0F7F:0672 original=eb05 runtime CFG evidence

@@ -4,6 +4,10 @@ include MOVEMENT.INC
 part04 segment byte public 'CODE'
 assume cs:part04,ds:nothing,ss:nothing,es:nothing
 chunk_base label byte
+FarCallMainNearViaAX_08D8B equ 0D8Bh
+FarCallMainNearViaBP_08D8E equ 0D8Eh
+CRITICAL_ERROR_FRAME equ 01534h
+CRITICAL_ERROR_INSTALL_ENTRY equ 03Ch
 ; Offset-placement use of field+8 does not define its role in other record types.
 ; Modern position-history symbols; see metadata/position-history.json.
 CountXReturn equ 044AFh
@@ -1044,11 +1048,25 @@ loc_0D390 equ 05390h
 ; @08D83 UNKNOWN bootstrap bytes: not reconstructed code/data
     db 09Ah,0ACh,08h,07Fh,0Fh,0E9h,0C0h,02Eh
 ; sub_0000_8D8B
+; FarCallMainNearViaAX (modern reconstruction name)
+; Far entry in main code frame. CALL AX invokes a near target in the same CS, then RETF returns to the outer far
+; caller. Requires AX to name valid main-frame near code that returns with a balanced stack. No register,
+; segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below
+; bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on
+; callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+; Evidence: metadata/symbols.json
 ; @08D8B 0000:8D8B original=ffd0
     call ax
 ; @08D8D 0000:8D8D original=cb
     retf
 ; sub_0000_8D8E
+; FarCallMainNearViaBP (modern reconstruction name)
+; Far entry in main code frame. CALL BP invokes a near target in the same CS, then RETF returns to the outer far
+; caller. Requires BP to name valid main-frame near code that returns with a balanced stack. No register,
+; segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below
+; bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on
+; callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+; Evidence: metadata/symbols.json
 ; @08D8E 0000:8D8E original=ffd5
     call bp
 ; @08D90 0000:8D90 original=cb
@@ -1334,8 +1352,10 @@ loc_0D390 equ 05390h
     mov sp, 0A278h
 ; @095E2 0000:95E2 original=fb
     sti
+; InstallCriticalErrorVector: far code frame1534, entry003C. The handler
+; owns CS-private scratch; this crossing alone does not prove an OBJ boundary.
 ; @095E3 0000:95E3 original=9a3c003415
-    CALL_FAR 01534h,03Ch
+    CALL_FAR CRITICAL_ERROR_FRAME,CRITICAL_ERROR_INSTALL_ENTRY
 ; @095E8 0000:95E8 original=2e8e06c495
     mov es, word ptr cs:[095C4h]
 ; @095ED 0000:95ED original=8cc0

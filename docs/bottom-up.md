@@ -24,7 +24,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:A7E3 | sub_0000_A7E3 | 0 | 8 | UNKNOWN | True | 0 |
 | 0F7F:0918 | sub_0F7F_0918 | 0 | 8 | UNKNOWN | True | 0 |
 | 0000:0679 | WaitByteCS066B | 0 | 9 | ASM_COUPLED | True | 0 |
-| 1534:0045 | sub_1534_0045 | 0 | 9 | HARDWARE | True | 0 |
+| 1534:0045 | SetInterruptVectorToCS | 0 | 9 | HARDWARE | True | 0 |
 | 0000:C9D3 | XorCopy16BytesAA | 0 | 10 | C_READY_WITH_ENV | True | 0 |
 | 0000:A5DB | DecRecordYUnlessAtMin | 0 | 11 | C_READY_WITH_ENV | True | 0 |
 | 0000:A5FC | DecRecordXUnlessZero | 0 | 11 | C_READY_WITH_ENV | True | 0 |
@@ -56,7 +56,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:B5A9 | sub_0000_B5A9 | 0 | 19 | UNKNOWN | True | 0 |
 | 0000:0E27 | sub_0000_0E27 | 0 | 20 | HARDWARE | True | 0 |
 | 0000:4F8C | sub_0000_4F8C | 0 | 20 | HARDWARE | True | 0 |
-| 0000:505B | sub_0000_505B | 0 | 20 | UNKNOWN | True | 0 |
+| 0000:505B | ReadIndexedByteAttribute | 0 | 20 | C_READY_WITH_ENV | True | 0 |
 | 0000:54C0 | sub_0000_54C0 | 0 | 20 | UNKNOWN | True | 0 |
 | 0000:C665 | sub_0000_C665 | 0 | 20 | HARDWARE | True | 0 |
 | 0000:3103 | TandyOffsetFromRow9EE8 | 0 | 21 | C_READY_WITH_ENV | True | 0 |
@@ -122,7 +122,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0F7F:081D | sub_0F7F_081D | 0 | 55 | UNKNOWN | True | 0 |
 | 153A:0701 | sub_153A_0701 | 0 | 57 | UNKNOWN | True | 0 |
 | 0000:0682 | InstallTimerVector08 | 0 | 58 | HARDWARE | True | 0 |
-| 0000:5073 | sub_0000_5073 | 0 | 60 | UNKNOWN | True | 0 |
+| 0000:5073 | ComputeRecordGridOffset | 0 | 60 | C_READY_WITH_ENV | True | 0 |
 | 0000:24D7 | sub_0000_24D7 | 0 | 65 | HARDWARE | True | 0 |
 | 0000:2E2D | sub_0000_2E2D | 0 | 65 | HARDWARE | True | 0 |
 | 0000:ED97 | sub_0000_ED97 | 0 | 67 | HARDWARE | True | 0 |
@@ -147,8 +147,8 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:2B84 | sub_0000_2B84 | 0 | 425 | UNKNOWN | True | 0 |
 | 0000:3153 | sub_0000_3153 | 0 | 498 | UNKNOWN | True | 0 |
 | 0000:4277 | sub_0000_4277 | 0 | 501 | UNKNOWN | True | 0 |
-| 0000:8D8B | sub_0000_8D8B | 0 | 3 | STRUCTURAL | False | 1 |
-| 0000:8D8E | sub_0000_8D8E | 0 | 3 | STRUCTURAL | False | 1 |
+| 0000:8D8B | FarCallMainNearViaAX | 0 | 3 | ASM_COUPLED | False | 1 |
+| 0000:8D8E | FarCallMainNearViaBP | 0 | 3 | ASM_COUPLED | False | 1 |
 | 0000:7596 | sub_0000_7596 | 0 | 10 | STRUCTURAL | False | 1 |
 | 0000:AA2B | sub_0000_AA2B | 0 | 10 | STRUCTURAL | False | 1 |
 | 0000:A41A | sub_0000_A41A | 0 | 17 | STRUCTURAL | False | 1 |
@@ -172,7 +172,7 @@ Depth is the longest known path in the SCC-condensed call graph. Unknown edges r
 | 0000:A607 | IncRecordXTwice | 1 | 3 | ASM_COUPLED | False | 0 |
 | 1022:0000 | sub_1022_0000 | 1 | 4 | UNKNOWN | False | 0 |
 | 1022:0004 | sub_1022_0004 | 1 | 4 | UNKNOWN | False | 0 |
-| 1534:003C | sub_1534_003C | 1 | 9 | UNKNOWN | False | 0 |
+| 1534:003C | InstallCriticalErrorVector | 1 | 9 | HARDWARE | False | 0 |
 | 0000:0E1D | sub_0000_0E1D | 1 | 10 | ASM_COUPLED | False | 0 |
 | 0000:50C9 | sub_0000_50C9 | 1 | 10 | UNKNOWN | False | 0 |
 | 0000:5A00 | sub_0000_5A00 | 1 | 12 | STRUCTURAL | False | 1 |

@@ -241,6 +241,36 @@ Evidence:
 - Selector2 of wrapper5BCA targets3389.
 - Whole64KiB destination test checks exact cleared footprint and untouched bytes.
 
+## ReadIndexedByteAttribute (0000:505B)
+
+Near leaf. ES=word CS:9592. Read byte ES:BX as unsigned index; read byte DS:[C3AA+index]. Return AX=zero-extended attribute, SI=C3AA+index, ES=selected segment. Final OR AL,AL sets ZF/SF/PF from attribute and clears CF/OF (AF unspecified). Preserve BX,CX,DX,BP,DI,DS,SS and IF/DF. No memory writes except ordinary call stack. Requires valid segment/lookup storage; no tile or entity identity asserted.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:4FF9.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ah, al, ax, bx, cs, es, si, sp; write ah, al, es, flags, si, sp.
+
+Evidence:
+- 4FF9 calls at5030/503D and consumes ZF immediately at5033/5040.
+- Byte index addresses C3AA..C4A9; this is the addressable lookup extent, not proof every entry is used in the game.
+- tests/test_grid_vectors.py checks all256 indices/attribute values, segment selection, preserved state and flags.
+
+## ComputeRecordGridOffset (0000:5073)
+
+Near entry5073 plus shared return tail506F. AX=wrapped16-bit(DS:234E + SS:[BP+REC_Y]); store it to DS:215A. If its sign bit is set, return BX=FFFF via506F, preserving CX/DX and leaving AX=sum. Otherwise row=AX>>4 unsigned; DX=row, CX=4*row, AX=SS:[BP+REC_X]>>4 unsigned; BX=DS:2350-13*row+AX modulo65536. Preserve SI,DI,BP,DS,ES,SS and IF/DF. Flags on negative path come from Y ADD; normal path from final BX ADD. Caller4FF9 needs no returned flags;4FF9 immediately overwrites them at501A. Memory writes only215A, apart from stack. Ordinary record and state are disjoint; no silent saturation or signed division.
+
+Future C class: `C_READY_WITH_ENV`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:4FF9.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, bp, bx, cx, dx, flags, sp; write ax, bx, cx, dx, flags, sp.
+
+Evidence:
+- 4FF9 calls5017 after temporary coordinate offsets; restores source coordinates at5049/5053 tails.
+- 506F is a shared sentinel-return target, not a fresh independent algorithm.
+- tests/test_grid_vectors.py checks sign/wrap boundaries, grid arithmetic, full DS footprint and branch-dependent scratch outputs.
+
 ## FindFreeRecordPoolA (0000:7524)
 
 Near leaf. DS:95D8 supplies the first candidate. Inspect at most35 status words at stride38h in23B4..2B5B, wrapping BX after increment equals2B5C. Return BX=first zero-status record, CX=35-skipped; save BX to DS:95D8 without activating record. Full pool returns BX=FFFF,CX=0 and leaves cursor unchanged. Requires aligned in-pool cursor; unlike poolB, end cursor is not normalized before first read. AX,DX,SI,DI,BP,segments preserved; flags changed.
@@ -270,6 +300,36 @@ Evidence:
 - 757A wraps before reading, unlike7524;7591 only saves cursor.
 - tests/test_records.py exhausts cursor/free-slot positions and failure cases.
 - 7476 andC237 explicitly compare BX before writing selected records.
+
+## FarCallMainNearViaAX (0000:8D8B)
+
+Far entry in main code frame. CALL AX invokes a near target in the same CS, then RETF returns to the outer far caller. Requires AX to name valid main-frame near code that returns with a balanced stack. No register, segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "PROVEN", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0F7F:0980.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read ax, esp; write esp.
+
+Evidence:
+- 0F7F has43 far calls through8D8B and one through8D8E in current decoded graph.
+- Examples:0F7F:028F loadsAX=5DB2 before0292 crossing;0153 loadsBP=5401 before0156 crossing. Targets are not one fixed shared service.
+- tests/test_grid_vectors.py checks real near-callee effects, near return address, nested stack depth and far return.
+
+## FarCallMainNearViaBP (0000:8D8E)
+
+Far entry in main code frame. CALL BP invokes a near target in the same CS, then RETF returns to the outer far caller. Requires BP to name valid main-frame near code that returns with a balanced stack. No register, segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+
+Future C class: `ASM_COUPLED`. Confidence: `{"boundary": "STRONG", "calling_convention": "PROVEN", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0F7F:0142.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read bp, esp; write esp.
+
+Evidence:
+- 0F7F has43 far calls through8D8B and one through8D8E in current decoded graph.
+- Examples:0F7F:028F loadsAX=5DB2 before0292 crossing;0153 loadsBP=5401 before0156 crossing. Targets are not one fixed shared service.
+- tests/test_grid_vectors.py checks real near-callee effects, near return address, nested stack depth and far return.
 
 ## InitPositionHistory (0000:99BF)
 
@@ -608,3 +668,32 @@ Register access inventory (decoder-derived, not a proven ABI): read al, flags, s
 Evidence:
 - Unsigned bounds at CA5B/CA60; OR at CA65.
 - All 256 inputs checked in tests/test_semantics.py.
+
+## InstallCriticalErrorVector (1534:003C)
+
+Far entry. Set AL=24h and DX=0006h; near-call SetInterruptVectorToCS then RETF. Requests DOS INT21h/AH25h vector24h -> current CS:0006. DS restored by helper; AX/DX and DOS-visible effects are not hidden. Remaining register/flag guarantees are conditional on DOS service behavior. Normal far return; not a complete contract for the nonlocal handler at0006.
+
+Future C class: `HARDWARE`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 0000:95C9.
+Callees: 1534:0045.
+Register access inventory (decoder-derived, not a proven ABI): read eip, esp; write al, dx, esp.
+
+Evidence:
+- Startup0000:95E3 far-calls1534:003C; normalized segment word remains subject to original relocation.
+- Private handler0006 and CS scratch0..5 support a code/state family, not original OBJ ownership.
+- tests/test_grid_vectors.py intercepts only DOS service to check exact request, DS restoration and far return.
+
+## SetInterruptVectorToCS (1534:0045)
+
+Near leaf. Save DS; set DS=CS, AH=25h, invoke INT21h with caller AL(vector) and DX(handler offset); restore DS and RET. No algorithm beyond DOS vector installation request. Register/flag effects of DOS are passed through except restored DS. Valid DOS service and stack required; IF/DF not modified by surrounding instructions.
+
+Future C class: `HARDWARE`. Confidence: `{"boundary": "STRONG", "calling_convention": "STRONG", "gameplay_role": "UNKNOWN", "operation": "PROVEN", "semantic_name": "STRONG"}`.
+
+Callers: 1534:003C.
+Callees: .
+Register access inventory (decoder-derived, not a proven ABI): read sp; write ah, ds, sp.
+
+Evidence:
+- Only known direct caller1534:0041. No pretense this normal near helper shares the handler nonlocal stack boundary.
+- tests/test_grid_vectors.py checks three vector inputs and deliberate service scratch clobbers without assuming all registers preserved.
