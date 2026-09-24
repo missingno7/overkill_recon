@@ -72,3 +72,7 @@ exactly which paths and byte ranges were tested.
 Current policy: static bottom-up work first; original execution only for a specific
 question and never beyond first gameplay entry. Prior long-run evidence is retained,
 but exhaustive gameplay coverage is not an acceptance requirement.
+
+One native DOS swap-unit experiment is now available: [report](docs/swap-unit-experiment.md),
+[reproduction](research/swap_unit/README.md). It replaces only the reviewed position-history
+advance in an opt-in research executable; the production exact ASM build is unchanged.

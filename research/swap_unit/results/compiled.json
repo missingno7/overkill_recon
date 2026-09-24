@@ -1,0 +1,321 @@
+{
+  "abi": "near cdecl, explicit far data pointer, no CRT",
+  "body_bytes": 102,
+  "body_listing": [
+    {
+      "address": 64,
+      "hex": "55",
+      "instruction": "push bp"
+    },
+    {
+      "address": 65,
+      "hex": "8bec",
+      "instruction": "mov bp, sp"
+    },
+    {
+      "address": 67,
+      "hex": "f646080f",
+      "instruction": "test byte ptr [bp + 8], 0xf"
+    },
+    {
+      "address": 71,
+      "hex": "7506",
+      "instruction": "jne 0x4f"
+    },
+    {
+      "address": 73,
+      "hex": "837e0a00",
+      "instruction": "cmp word ptr [bp + 0xa], 0"
+    },
+    {
+      "address": 77,
+      "hex": "7455",
+      "instruction": "je 0xa4"
+    },
+    {
+      "address": 79,
+      "hex": "c45e04",
+      "instruction": "les bx, ptr [bp + 4]"
+    },
+    {
+      "address": 82,
+      "hex": "26830704",
+      "instruction": "add word ptr es:[bx], 4"
+    },
+    {
+      "address": 86,
+      "hex": "26813f3aa3",
+      "instruction": "cmp word ptr es:[bx], 0xa33a"
+    },
+    {
+      "address": 91,
+      "hex": "7505",
+      "instruction": "jne 0x62"
+    },
+    {
+      "address": 93,
+      "hex": "26c7077aa2",
+      "instruction": "mov word ptr es:[bx], 0xa27a"
+    },
+    {
+      "address": 98,
+      "hex": "c45e04",
+      "instruction": "les bx, ptr [bp + 4]"
+    },
+    {
+      "address": 101,
+      "hex": "2683470204",
+      "instruction": "add word ptr es:[bx + 2], 4"
+    },
+    {
+      "address": 106,
+      "hex": "26817f023aa3",
+      "instruction": "cmp word ptr es:[bx + 2], 0xa33a"
+    },
+    {
+      "address": 112,
+      "hex": "7506",
+      "instruction": "jne 0x78"
+    },
+    {
+      "address": 114,
+      "hex": "26c747027aa2",
+      "instruction": "mov word ptr es:[bx + 2], 0xa27a"
+    },
+    {
+      "address": 120,
+      "hex": "c45e04",
+      "instruction": "les bx, ptr [bp + 4]"
+    },
+    {
+      "address": 123,
+      "hex": "2683470404",
+      "instruction": "add word ptr es:[bx + 4], 4"
+    },
+    {
+      "address": 128,
+      "hex": "26817f043aa3",
+      "instruction": "cmp word ptr es:[bx + 4], 0xa33a"
+    },
+    {
+      "address": 134,
+      "hex": "7506",
+      "instruction": "jne 0x8e"
+    },
+    {
+      "address": 136,
+      "hex": "26c747047aa2",
+      "instruction": "mov word ptr es:[bx + 4], 0xa27a"
+    },
+    {
+      "address": 142,
+      "hex": "c45e04",
+      "instruction": "les bx, ptr [bp + 4]"
+    },
+    {
+      "address": 145,
+      "hex": "2683470604",
+      "instruction": "add word ptr es:[bx + 6], 4"
+    },
+    {
+      "address": 150,
+      "hex": "26817f063aa3",
+      "instruction": "cmp word ptr es:[bx + 6], 0xa33a"
+    },
+    {
+      "address": 156,
+      "hex": "7506",
+      "instruction": "jne 0xa4"
+    },
+    {
+      "address": 158,
+      "hex": "26c747067aa2",
+      "instruction": "mov word ptr es:[bx + 6], 0xa27a"
+    },
+    {
+      "address": 164,
+      "hex": "5d",
+      "instruction": "pop bp"
+    },
+    {
+      "address": 165,
+      "hex": "c3",
+      "instruction": "ret "
+    }
+  ],
+  "body_sha256": "d9d1abd5354a94acb70d45fe90c7564516a32cd5d83a057855285f0a80c60007",
+  "bridge_bytes": 42,
+  "bridge_listing": [
+    {
+      "address": 22,
+      "hex": "9c",
+      "instruction": "pushf "
+    },
+    {
+      "address": 23,
+      "hex": "50",
+      "instruction": "push ax"
+    },
+    {
+      "address": 24,
+      "hex": "53",
+      "instruction": "push bx"
+    },
+    {
+      "address": 25,
+      "hex": "51",
+      "instruction": "push cx"
+    },
+    {
+      "address": 26,
+      "hex": "52",
+      "instruction": "push dx"
+    },
+    {
+      "address": 27,
+      "hex": "56",
+      "instruction": "push si"
+    },
+    {
+      "address": 28,
+      "hex": "57",
+      "instruction": "push di"
+    },
+    {
+      "address": 29,
+      "hex": "55",
+      "instruction": "push bp"
+    },
+    {
+      "address": 30,
+      "hex": "1e",
+      "instruction": "push ds"
+    },
+    {
+      "address": 31,
+      "hex": "06",
+      "instruction": "push es"
+    },
+    {
+      "address": 32,
+      "hex": "ff3660a3",
+      "instruction": "push word ptr [0xa360]"
+    },
+    {
+      "address": 36,
+      "hex": "33c0",
+      "instruction": "xor ax, ax"
+    },
+    {
+      "address": 38,
+      "hex": "a0be98",
+      "instruction": "mov al, byte ptr [0x98be]"
+    },
+    {
+      "address": 41,
+      "hex": "50",
+      "instruction": "push ax"
+    },
+    {
+      "address": 42,
+      "hex": "1e",
+      "instruction": "push ds"
+    },
+    {
+      "address": 43,
+      "hex": "b83aa3",
+      "instruction": "mov ax, 0xa33a"
+    },
+    {
+      "address": 46,
+      "hex": "50",
+      "instruction": "push ax"
+    },
+    {
+      "address": 47,
+      "hex": "e80e00",
+      "instruction": "call 0x40"
+    },
+    {
+      "address": 50,
+      "hex": "83c408",
+      "instruction": "add sp, 8"
+    },
+    {
+      "address": 53,
+      "hex": "07",
+      "instruction": "pop es"
+    },
+    {
+      "address": 54,
+      "hex": "1f",
+      "instruction": "pop ds"
+    },
+    {
+      "address": 55,
+      "hex": "5d",
+      "instruction": "pop bp"
+    },
+    {
+      "address": 56,
+      "hex": "5f",
+      "instruction": "pop di"
+    },
+    {
+      "address": 57,
+      "hex": "5e",
+      "instruction": "pop si"
+    },
+    {
+      "address": 58,
+      "hex": "5a",
+      "instruction": "pop dx"
+    },
+    {
+      "address": 59,
+      "hex": "59",
+      "instruction": "pop cx"
+    },
+    {
+      "address": 60,
+      "hex": "5b",
+      "instruction": "pop bx"
+    },
+    {
+      "address": 61,
+      "hex": "58",
+      "instruction": "pop ax"
+    },
+    {
+      "address": 62,
+      "hex": "9d",
+      "instruction": "popf "
+    },
+    {
+      "address": 63,
+      "hex": "cb",
+      "instruction": "retf "
+    }
+  ],
+  "clean_source_sha256": "fb780bffb77963bbda4df8c58b3d9214b493bf0da37e39d9ddebb7b266aeda74",
+  "compiler": "Turbo C 2.0",
+  "flags": [
+    "-c",
+    "-ms",
+    "-1-",
+    "-f-",
+    "-N-",
+    "-O",
+    "-Z",
+    "-G-"
+  ],
+  "piece_bytes": 166,
+  "prefix_bytes": 512,
+  "publics": {
+    "advance_history": 64,
+    "bridge": 22,
+    "bridge_end": 64,
+    "launch": 0,
+    "main_segment": 20
+  }
+}

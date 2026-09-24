@@ -125,3 +125,13 @@ Do not generalize it into a compiler or production conversion: two GOOD and two
 BORDERLINE small exact demonstrations do not settle the remaining game. Return to
 the record/index/lifetime questions above. The research also corrected the AdLib0579
 contract: repeats reload the previous counter reading, not the initial1FFFh.
+
+## One native DOS swap unit completed
+
+The bounded [swap experiment](swap-unit-experiment.md) establishes a native C option
+for9CF1 under its reviewed caller contract, with104,544 synthetic comparisons and
+both native packages reaching9690. It does not expand production C scope or prove
+unknown call edges, all interrupt schedules, or unlimited stack capacity. Next
+consider the9CD9/A031 history store/application boundary: preserve sequential alias
+effects and review scratch outputs before deciding whether to combine the routines.
+The main exact-ASM queues and acceptance criteria above remain in force.

@@ -241,3 +241,14 @@ for this sample. This is not evidence identifying or excluding OVERKILL's histor
 compiler globally. ABI specialization explains much of the small-body mismatch;
 return-layout choices explain a few more bytes. No new original module or compiler
 claim, production C dependency or reconstruction architecture is adopted.
+
+## Modern research swap layout
+
+The [single-unit swap experiment](swap-unit-experiment.md) uses a512-byte prefix
+for native C and its mechanical ABI bridge. Adjusted MZ relocation targets retain
+that prefix through the original DOS resize without moving relative main addresses.
+This is a modern research packaging choice, not a historical module/layout claim.
+The original file integrity routine also independently establishes a final two-byte
+checksum outside the last resource. Its rule reproduces both pinned file trailers;
+research packages regenerate it rather than bypassing the original check.
+Machine-readable build/boundary evidence is in research/swap_unit/results.

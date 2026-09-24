@@ -1,0 +1,158 @@
+{
+  "bytes": 92,
+  "closure_scope": "All decoded incoming edges checked. Unknown executable bytes/unresolved indirect targets preclude a global closure theorem.",
+  "cursor_domain": "48 aligned ring values; equality-only wrap retained for every 16-bit input value, without invented bounds",
+  "dead_outputs": [
+    "CF PF AF ZF SF OF overwritten by 9CD9 ADD before any use on reviewed continuation"
+  ],
+  "domain": "GAME_LOGIC",
+  "end_exclusive": "0000:9D4D",
+  "entry": "0000:9CF1",
+  "exits": [
+    "near RET at 9CFF",
+    "near RET at 9D4C"
+  ],
+  "external_effects": [],
+  "graph_sha256": "c5ba6bf94d8fee6615411bd4c8b1929d6083006440b4104a00112cbdd05528d5",
+  "incoming": [
+    {
+      "kind": "calls",
+      "source": "0000:9BDF",
+      "target": "0000:9CF1"
+    }
+  ],
+  "instructions": 22,
+  "live_inputs": [
+    "DS:98BE low nibble",
+    "DS:A360 word",
+    "four DS:A33A..A340 word cursors",
+    "SS:SP near return address"
+  ],
+  "observable_outputs": [
+    "all general/segment registers preserved",
+    "SP +2 at near RET",
+    "same return continuation",
+    "ordered cursor writes",
+    "control flags preserved"
+  ],
+  "original_listing": [
+    {
+      "address": 40177,
+      "hex": "f606be980f",
+      "instruction": "test byte ptr [0x98be], 0xf"
+    },
+    {
+      "address": 40182,
+      "hex": "7508",
+      "instruction": "jne 0x9d00"
+    },
+    {
+      "address": 40184,
+      "hex": "833e60a300",
+      "instruction": "cmp word ptr [0xa360], 0"
+    },
+    {
+      "address": 40189,
+      "hex": "7501",
+      "instruction": "jne 0x9d00"
+    },
+    {
+      "address": 40191,
+      "hex": "c3",
+      "instruction": "ret "
+    },
+    {
+      "address": 40192,
+      "hex": "83063aa304",
+      "instruction": "add word ptr [0xa33a], 4"
+    },
+    {
+      "address": 40197,
+      "hex": "813e3aa33aa3",
+      "instruction": "cmp word ptr [0xa33a], 0xa33a"
+    },
+    {
+      "address": 40203,
+      "hex": "7506",
+      "instruction": "jne 0x9d13"
+    },
+    {
+      "address": 40205,
+      "hex": "c7063aa37aa2",
+      "instruction": "mov word ptr [0xa33a], 0xa27a"
+    },
+    {
+      "address": 40211,
+      "hex": "83063ca304",
+      "instruction": "add word ptr [0xa33c], 4"
+    },
+    {
+      "address": 40216,
+      "hex": "813e3ca33aa3",
+      "instruction": "cmp word ptr [0xa33c], 0xa33a"
+    },
+    {
+      "address": 40222,
+      "hex": "7506",
+      "instruction": "jne 0x9d26"
+    },
+    {
+      "address": 40224,
+      "hex": "c7063ca37aa2",
+      "instruction": "mov word ptr [0xa33c], 0xa27a"
+    },
+    {
+      "address": 40230,
+      "hex": "83063ea304",
+      "instruction": "add word ptr [0xa33e], 4"
+    },
+    {
+      "address": 40235,
+      "hex": "813e3ea33aa3",
+      "instruction": "cmp word ptr [0xa33e], 0xa33a"
+    },
+    {
+      "address": 40241,
+      "hex": "7506",
+      "instruction": "jne 0x9d39"
+    },
+    {
+      "address": 40243,
+      "hex": "c7063ea37aa2",
+      "instruction": "mov word ptr [0xa33e], 0xa27a"
+    },
+    {
+      "address": 40249,
+      "hex": "830640a304",
+      "instruction": "add word ptr [0xa340], 4"
+    },
+    {
+      "address": 40254,
+      "hex": "813e40a33aa3",
+      "instruction": "cmp word ptr [0xa340], 0xa33a"
+    },
+    {
+      "address": 40260,
+      "hex": "7506",
+      "instruction": "jne 0x9d4c"
+    },
+    {
+      "address": 40262,
+      "hex": "c70640a37aa2",
+      "instruction": "mov word ptr [0xa340], 0xa27a"
+    },
+    {
+      "address": 40268,
+      "hex": "c3",
+      "instruction": "ret "
+    }
+  ],
+  "original_sha256": "36ae000084d54f5f54c64df9790828fe78a18df4dc6c9fa60fe7306d1e2082be",
+  "preconditions": [
+    "normal entry via reviewed 9BDF caller",
+    "valid stack scratch disjoint from cursor/input/adjustment/code cells",
+    "replacement requires 64 free stack bytes; original caller stack capacity remains an explicit integration obligation",
+    "no asynchronous mutation of these cells during operation; interleaving coverage is not claimed"
+  ],
+  "unit": "AdvancePositionHistoryIfRequested"
+}
