@@ -1376,7 +1376,7 @@ RapidFireEnabled db 0
 AllCheatsFlag db 0
 ; Typed cheat codes: a cursor to the next expected scancode, then the scancodes,
 ; 0-terminated. MatchCheatKey compares KeyLastMakeCode with the cursor's byte.
-; WHATOILSHORTAGE: sets WhatOilShortageFlag (no reader found).
+; WHATOILSHORTAGE: sets WhatOilShortageFlag.
 CheatWhatOilShortage dw offset CheatWhatOilShortage + 2
     db SCAN_W, SCAN_H, SCAN_A, SCAN_T, SCAN_O, SCAN_I, SCAN_L, SCAN_S, SCAN_H, SCAN_O
     db SCAN_R, SCAN_T, SCAN_A, SCAN_G, SCAN_E, 0
