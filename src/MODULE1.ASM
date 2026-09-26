@@ -1068,8 +1068,8 @@ RestoreTimerVector08:
     and al, PPI_SPEAKER_OFF_MASK
     out PPI_PORT_B, al
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced zero bytes between routines.
+UnusedBeforeInt08 db 00h,00h
 ; Interrupt08Handler
 ; Entry installed by InstallTimerVector08. Calls counter/music helpers and can chain a
 ; previous vector; inspect full CFG and unresolved far calls before changing it.
@@ -8006,8 +8006,8 @@ ClearScreen104x200Cga:
     dec bp
     jne @@clearRow
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte between routines.
+UnusedAfterDecodeCga db 00h
 
 ; DS:SI = image header (rows, bytes per plane row): ZF at the 0,0 terminator; otherwise
 ; sets DecodeRows/DecodePlaneRowBytes and records the image when LoadRecordImages is
@@ -8035,8 +8035,8 @@ ReadDecodeImageHeader:
     mov word ptr cs:[DecodePlaneRowBytes], ax
     inc ax
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte between routines.
+UnusedAfterPackCga db 00h
 
 DecodeGraphicsImagesCga:
     call ReadDecodeImageHeader

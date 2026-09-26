@@ -572,8 +572,8 @@ Sprites1x1Segment dw 0
 Sprites2x2Segment dw 0
 Sprites2x2CSegment dw 0
 LevelSpritesSegment dw 0
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced CS word among the bank segment variables.
+UnusedSegmentWord1E db 00h,00h
 ; THEND.BIC.
 TheEndSegment dw 0
 ; Holds PANEL.ENC, the menu/HUD graphics drawn by DrawPanelGraphic.
@@ -581,8 +581,8 @@ PanelSegment dw 0
 ; The level plaque (plaqN.enc) and BLUEBITS.BIC.
 PlaqueSegment dw 0
 BlueBitsSegment dw 0
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced CS word among the bank segment variables.
+UnusedSegmentWord28 db 00h,00h
 ; 0 CGA, 1 EGA, 2 Tandy (from PSP:82h, values above 2 become 1). Indexes the BIOS
 ; mode table and many dispatch tables.
 VideoAdapter dw 0
@@ -5487,8 +5487,8 @@ ShotSfx18:
     ret
 ; Next background save buffer while REC_SAVE_BUFFER is assigned to each record.
 SaveBufferCursor dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced CS word.
+UnusedWordAfterSaveCursor db 00h,00h
 
 ; Life or demo start: clears the pools (pods keep their state), places the player and
 ; exhaust, and resets energy, shots, fuel and the level-end state.
@@ -6477,8 +6477,8 @@ WaitTimerInterruptIfModule:
     cmp al, byte ptr ds:[TimerTickPhase]
     je @@pollTick
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte between routines.
+UnusedByte3655 db 00h
 
 ; Title animation, then the bonus pages and demo unless a key ended it.
 RunAttractSequence:
@@ -7378,8 +7378,8 @@ DrawChooseScreen:
     call BlitPackedToScreen
     mov ds, word ptr cs:[MainDataSegment]
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte between routines.
+UnusedByte3F7B db 00h
 
 ; Called every timer tick. Starts a pending SfxRequest, advances both voices, then
 ; programs the speaker from voice A on even ticks and voice B on odd ones. A silent
@@ -7558,8 +7558,8 @@ SfxCmdSlide:
     inc bx
     mov byte ptr ds:[di + SFX_VOICE_SLIDE_TICKS], al
     jmp near ptr SfxStreamNextByte
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte before the payment-text variables.
+UnusedByte40CD db 00h
 ; Text screen segment for ShowPaymentText (B800h colour, B000h mono).
 TextScreenSegment dw 0
 ; First line shown and number of lines of the text file.
@@ -7868,8 +7868,9 @@ ProbeCrtcAtDX:
 EncReadBuffer db 0400h dup (0)
 ; LZSS ring buffer: 4096 bytes, first write at 0FEEh, its first 0FEEh bytes cleared.
 EncRingBuffer db 01000h dup (0)
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h
+; LZSS allocation slack: the ring is sized N + F - 1 (4096 + 18 - 1), but
+; DecodeEncFile wraps its index at 4096, so these 17 bytes are never touched.
+EncRingBufferSlack db 00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h
 
 ; Decode the ENC file open on EncFileHandle to EncDestSegment:EncDestOffset, then close

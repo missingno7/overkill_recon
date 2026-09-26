@@ -532,8 +532,8 @@ public WinScreenPageList
 public Word235A
 public XAdjustPathTaken
 StateData label byte
-; UNKNOWN: not yet classified as code or data
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
+; Unreferenced FFh bytes at DS:0000, the start of the state segment.
+UnusedStateStart db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
     db 0FFh,0FFh,0FFh,0FFh
 ; CalibrateJoystickWithAbort saves SP here; Esc during calibration
 ; (PollJoystickPrimaryOrAbort) restores it at AbortJoystickCalibration.
@@ -1100,13 +1100,13 @@ PlayerHitOffsets dw 7, 8,  0Ah, 8,  9, 8
 ; ComputeRecordGridOffset stores its wrapped Y sum here.
 GridYSum dw 00000h
 TextColor db 00h
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced byte among the text-printing state.
+UnusedTextByte db 00h
 TextColumn db 00h
     even
 TextRowOffset dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+; Unreferenced 64-byte zero area among the text-printing state.
+UnusedTextBuffer db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -1154,8 +1154,8 @@ HiscoreBlankLine db '          $'
 HiscoreRankPrefix db TEXT_MOVE_TO, 0h, 0Bh, TEXT_SET_COLOR, 0h, 0h
 ; Name typed for a new entry (10 characters and a 0).
 HiscoreNameBuffer db 0Dh, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h
+; Unreferenced bytes after HiscoreNameBuffer.
+HiscoreNameSlack db 00h,00h,00h
 HiscoreNamePrefix db TEXT_MOVE_TO, 0h, 0h, TEXT_SET_COLOR, 0Fh, 0h
     even
 ; Name-edit cursor.
@@ -1433,8 +1433,8 @@ Type93KilledPulse db 0
 MarchStepX dw 2
 ; Written FFFFh by ResetMarchState; no reader found.
 MarchWord98AC dw 0FFFFh
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced 16-byte zero area before the input state.
+UnusedInputArea db 00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 InputBits db 00h
 ; Cleared by the joystick calibration routines; no reader found.
@@ -1455,8 +1455,9 @@ KeyDownTable db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+; Upper half of a 256-entry key table: the handler masks scancodes to 7Fh
+; (key-release bit stripped), so these entries are never indexed.
+KeyDownTableHigh db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -1898,8 +1899,9 @@ BonusCaptionSmartBomb db TEXT_MOVE_TO, 14h, 6, 'Smart Bomb', 0
 DemoStep dw 0
 DemoStepTimer dw 0
 DemoFireCycle dw 0
-; UNKNOWN: not yet classified as code or data
-    db 10h,03h,11h,03h,1Fh,00h,11h,05h,1Fh,00h
+; Unreferenced: two empty text records (colour 3, move to row 3 column 1Fh;
+; move to row 5 column 1Fh), like the HUD print prefixes; nothing prints them.
+UnusedTextRecords db 10h,03h,11h,03h,1Fh,00h,11h,05h,1Fh,00h
 ; Status shown for the demo's selected upgrade slot (DrawUpgradeSlot while DemoActive).
 DemoUpgradeStatus dw 0
 ; Demo steps {caption PanelSegment image, upgrade slot or FFFFh, status}.
@@ -1944,8 +1946,8 @@ DifficultyPositions dw 0A514h, 0A519h, 0A51Eh
 ; Handlers for stream bytes 80h..85h: end, rest, step down, step up, slide, hold.
 SfxCommandTable dw offset SfxStopAll, offset SfxCmdRest, offset SfxCmdStepDown
     dw offset SfxCmdStepUp, offset SfxCmdSlide, offset SfxStreamStoreAndWait
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Unreferenced word after SfxCommandTable (commands 80h..85h have 6 entries).
+UnusedSfxWord db 00h,00h
 SfxActive db 00h
 ; Effect requested of SfxTimerTick (below 20h); lower IDs pre-empt higher ones.
 SfxRequest db 00h
@@ -2250,8 +2252,8 @@ SfxStream57 db SFX_DURATION_BIAS + 3, 24, SFX_REST, 29, SFX_REST, 31, SFX_REST, 
     db SFX_REST, 59, SFX_REST, SFX_REST, SFX_REST, 60, SFX_REST, 67, SFX_REST, 72
     db SFX_END
 SfxStream58 db SFX_DURATION_BIAS + 32, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_END
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Unreferenced zero byte after the last sound stream.
+UnusedByteC2FD db 00h
 PaymentFileName db 'payment.enc',0
 ; Help line of ShowPaymentText (text attribute 30h).
 PaymentHelpRow label word
@@ -2372,8 +2374,8 @@ GroupDropKinds db 3,1,0,0,0,2,0,4,1,0,1,0,0,0,1,4
     db 0,0,0,3,1,0,0,0,0,0,1,0,3,0,0,0
     db 2,3,1,0,0,2,0,1,1,0,1,3,0,1,0,0
     db 1,0,0,0,1,3,0,0,0,1,1,4,0,0,0,0
-; UNKNOWN: not yet classified as code or data
-    db 0h
+; Unreferenced byte after GroupDropKinds.
+UnusedByteC85A db 0h
     even
 ; Level scripts: events (trigger, [0FFFFh,] formation, x, y) ending with trigger
 ; 0FFFFh. An event fires when its trigger equals the scroll countdown at DS:A978; the
@@ -2682,8 +2684,9 @@ BossPath dw 0h, 0h,  80h, 0h,  50h, 40h,  30h, 30h
     dw 20h, 70h,  50h, 50h,  20h, 70h,  50h, 20h
     dw 20h, 10h,  0h, 0h
     dw 0FFFFh
-; UNKNOWN: not yet classified as code or data
-    db 0FFh,0FFh
+; Second FFFFh after BossPath's terminator; unreferenced (DATA ends here on a
+; paragraph boundary).
+BossPathSlack db 0FFh,0FFh
 DATA ends
 
 ; Empty segment marking the end of the program image (the DOS resize target).
