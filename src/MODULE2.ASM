@@ -85,6 +85,10 @@ extrn SoundOption:word
 extrn SoundOptionFlags:byte
 extrn Sprite32Bytes:word
 extrn StackTop:word
+extrn SteerArrived:word
+extrn SteerSpeed:word
+extrn SteerTargetX:word
+extrn SteerTargetY:word
 extrn SweepPath:word
 extrn SweepPathLeadIn:word
 extrn UpgradeHitX:word
@@ -120,6 +124,7 @@ public ShutdownGame
 public Sprite16Offsets
 public Sprite32Offsets
 public Sprite8Offsets
+public SteerTowardTarget
 public TypeHandler13
 public TypeHandler24
 public TypeHandler25
@@ -197,7 +202,6 @@ public loc_05C35
 public loc_05C9A
 public loc_05CB7
 public loc_05D0B
-public loc_05DB2
 public loc_05E1B
 public loc_05E42
 public loc_05F0D
@@ -296,6 +300,10 @@ extrn LevelSpritesSegment:word
 extrn LoadFileToBuffer:near
 extrn MainDataSegment:word
 extrn ManExplSegment:word
+extrn MoveInDirection1:near
+extrn MoveInDirection2:near
+extrn MoveInDirection4:near
+extrn MoveInDirection8:near
 extrn PanelImageOffsets:word
 extrn PanelSegment:word
 extrn PollInputBits:near
@@ -427,11 +435,7 @@ extrn loc_09EE4:near
 extrn loc_09F1A:near
 extrn loc_09F5F:near
 extrn loc_0A781:near
-extrn loc_0AEE4:near
 extrn loc_0AF22:near
-extrn loc_0AF60:near
-extrn loc_0AF63:near
-extrn loc_0AFA2:near
 extrn loc_0AFD8:near
 extrn loc_0B2AC:near
 extrn loc_0B2C8:near
@@ -1378,11 +1382,13 @@ loc_05D7E:
     mov ax, 04C00h
     int 021h
 
-loc_05DB2:
+; BP = record: point REC_DIRECTION at (SteerTargetX, SteerTargetY) and step that way by
+; SteerSpeed; exactly on target: direction kept, SteerArrived = 1, no step.
+SteerTowardTarget:
     mov word ptr ds:[AimQuadrantBits], 0
-    mov word ptr ds:[0230Ah], 0
+    mov word ptr ds:[SteerArrived], 0
     mov ax, word ptr ss:[bp + REC_X]
-    cmp ax, word ptr ds:[02304h]
+    cmp ax, word ptr ds:[SteerTargetX]
     jb loc_05DCB
     ja loc_05DD3
     jmp short loc_05DD9
@@ -1393,7 +1399,7 @@ loc_05DD3:
     mov word ptr ds:[AimQuadrantBits], 2
 loc_05DD9:
     mov ax, word ptr ss:[bp + REC_Y]
-    cmp ax, word ptr ds:[02306h]
+    cmp ax, word ptr ds:[SteerTargetY]
     jl loc_05DE6
     jg loc_05DED
     jmp short loc_05DF2
@@ -1409,15 +1415,15 @@ loc_05DF2:
     cmp al, 0FFh
     je loc_05E14
     mov word ptr ss:[bp + REC_DIRECTION], ax
-    mov bx, word ptr ds:[02308h]
+    mov bx, word ptr ds:[SteerSpeed]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05DF2Cases]
+    jmp word ptr cs:[bx + StepBySteerSpeed]
 ; UNKNOWN: not yet classified as code or data
     db 090h
-loc_05DF2Cases label word
-    dw offset loc_0AFA2, offset loc_0AF63, offset loc_0AF60, offset loc_0AEE4
+StepBySteerSpeed label word
+    dw offset MoveInDirection1, offset MoveInDirection2, offset MoveInDirection4, offset MoveInDirection8
 loc_05E14:
-    mov word ptr ds:[0230Ah], 1
+    mov word ptr ds:[SteerArrived], 1
     ret
 loc_05E1B:
     mov dx, 4
@@ -1486,7 +1492,7 @@ loc_05EA5:
     jne loc_05EB2
     jmp near ptr loc_0AF22
 loc_05EB2:
-    jmp near ptr loc_0AF63
+    jmp near ptr MoveInDirection2
 loc_05EB5:
     cmp word ptr ds:[0230Ch], 1
     je loc_05EC2
@@ -6082,7 +6088,7 @@ TypeHandler38:
 loc_08A15:
     mov ss:[bp + REC_DIRECTION], ax
     mov word ptr ss:[bp + REC_SPRITE], 6Eh
-    call loc_0AF63
+    call MoveInDirection2
     jmp near ptr loc_0BC45
 TypeHandler39:
     mov word ptr ss:[bp + REC_SPRITE], 6Eh
@@ -6094,7 +6100,7 @@ TypeHandler39:
     mov byte ptr ds:[SfxRequest], 0Bh
 loc_08A3D:
     mov word ptr ss:[bp + REC_DIRECTION], 2
-    call loc_0AF60
+    call MoveInDirection4
     cmp word ptr ss:[bp + REC_X], 0C0h
     ja loc_08A4F
     jmp near ptr loc_0BC45
@@ -6677,13 +6683,13 @@ loc_0FA6A:
     mov si, word ptr ds:[LeaderScriptCursor]
     lodsw
     add ax, 020h
-    mov word ptr ds:[02306h], ax
+    mov word ptr ds:[SteerTargetY], ax
     lodsw
-    mov word ptr ds:[02304h], ax
-    mov word ptr ds:[02308h], 3
-    mov ax, offset loc_05DB2
+    mov word ptr ds:[SteerTargetX], ax
+    mov word ptr ds:[SteerSpeed], 3
+    mov ax, offset SteerTowardTarget
     call far ptr FarCallMainNearViaAX
-    cmp word ptr ds:[0230Ah], 0
+    cmp word ptr ds:[SteerArrived], 0
     jne loc_0FA91
     jmp near ptr loc_0FC38
 loc_0FA91:
@@ -6842,7 +6848,7 @@ loc_0FC38:
     retf
 loc_0FC42:
     mov word ptr ss:[bp + REC_SPRITE], 016Ah
-    mov word ptr ds:[02308h], 1
+    mov word ptr ds:[SteerSpeed], 1
     push word ptr ss:[bp + REC_DIRECTION]
     mov ax, offset loc_0B729
     call far ptr FarCallMainNearViaAX

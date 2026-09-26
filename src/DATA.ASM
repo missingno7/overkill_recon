@@ -295,6 +295,10 @@ public StarMasksEga
 public StarMasksTandy
 public Stars
 public StateData
+public SteerArrived
+public SteerSpeed
+public SteerTargetX
+public SteerTargetY
 public SweepPath
 public SweepPathLeadIn
 public TargetSearchCursor
@@ -966,7 +970,15 @@ SoundOptionFlags db 01h,00h,00h,01h,01h,01h,00h,00h,090h,00h,090h,0Dh,0Ah,024h,0
     db 07h,049h,020h,063h,06Fh,075h,06Ch,064h,020h,06Eh,06Fh,074h,020h,066h,069h,06Eh
     db 064h,020h,074h,068h,065h,020h,066h,069h,06Ch,065h,020h,027h,024h,027h,020h,061h
     db 06Eh,079h,077h,068h,065h,072h,065h,02Ch,020h,073h,06Fh,072h,072h,079h,02Eh,0Dh
-    db 0Ah,0Dh,0Ah,024h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+    db 0Ah,0Dh,0Ah,024h
+; SteerTowardTarget: target position, step size index (0..3: 1, 2, 4 or 8 pixels,
+; see StepBySteerSpeed) and 1 once the record is exactly on the target.
+SteerTargetX dw 00000h
+SteerTargetY dw 00000h
+SteerSpeed dw 00000h
+SteerArrived dw 00000h
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h,00h,00h
     db 00h,00h,03h,00h
 ScoreBcd db 00h,00h,00h,00h,010h,0Ah,011h,0Dh,01Dh,00h,08h,01h
 ; UNKNOWN: not yet classified as code or data

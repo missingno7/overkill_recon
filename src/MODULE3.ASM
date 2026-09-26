@@ -155,6 +155,10 @@ extrn StarLayerTick2:word
 extrn StarLayerTick3:word
 extrn Stars:word
 extrn StateData:byte
+extrn SteerArrived:word
+extrn SteerSpeed:word
+extrn SteerTargetX:word
+extrn SteerTargetY:word
 extrn TargetSearchCursor:word
 extrn Type86Frames:word
 extrn Type86FramesDir6:word
@@ -176,6 +180,10 @@ public LevelSpritesSegment
 public LoadResourceFile
 public MainDataSegment
 public ManExplSegment
+public MoveInDirection1
+public MoveInDirection2
+public MoveInDirection4
+public MoveInDirection8
 public PanelSegment
 public PlaqueSegment
 public PlayfieldRowBytes
@@ -205,11 +213,7 @@ public loc_09EE4
 public loc_09F1A
 public loc_09F5F
 public loc_0A781
-public loc_0AEE4
 public loc_0AF22
-public loc_0AF60
-public loc_0AF63
-public loc_0AFA2
 public loc_0AFD8
 public loc_0B2AC
 public loc_0B2C8
@@ -267,6 +271,7 @@ extrn PollInputBits:near
 extrn ReadIndexedByteAttribute:near
 extrn RestartAtCheckpoint:near
 extrn ShowFatalErrorAndExit:near
+extrn SteerTowardTarget:near
 extrn TypeHandler13:near
 extrn TypeHandler24:near
 extrn TypeHandler25:near
@@ -361,7 +366,6 @@ extrn loc_05C22:near
 extrn loc_05C35:near
 extrn loc_05C9A:near
 extrn loc_05D0B:near
-extrn loc_05DB2:near
 extrn loc_05E1B:near
 extrn loc_05E42:near
 extrn loc_05F0D:near
@@ -3003,7 +3007,7 @@ TypeHandler0F:
     je loc_0ADC9
     mov ax, 0B250h
     push ax
-    jmp near ptr loc_0AF63
+    jmp near ptr MoveInDirection2
 TypeHandler0C:
     cmp word ptr ss:[bp + REC_FIELD_1C], 0
     je loc_0AE19
@@ -3075,13 +3079,13 @@ TypeHandler04:
     push ax
     cmp word ptr ds:[LevelIndex], 0
     je loc_0AECD
-    jmp near ptr loc_0AF60
+    jmp near ptr MoveInDirection4
 loc_0AECD:
     cmp word ptr ss:[bp + REC_DIRECTION], 4
     jne loc_0AED6
-    jmp near ptr loc_0AF60
+    jmp near ptr MoveInDirection4
 loc_0AED6:
-    jmp short loc_0AEE4
+    jmp short MoveInDirection8
 TypeHandler02:
     dec word ptr ss:[bp + REC_FIELD_1C]
     jne loc_0AEE0
@@ -3089,11 +3093,11 @@ TypeHandler02:
 loc_0AEE0:
     mov ax, 0B250h
     push ax
-loc_0AEE4:
+MoveInDirection8:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0AEE4Cases]
-loc_0AEE4Cases label word
+    jmp word ptr cs:[bx + Move8ByDirection]
+Move8ByDirection label word
     dw offset loc_0AF0B, offset loc_0AF10, offset loc_0AF14, offset loc_0AEFE
     dw offset loc_0AF02, offset loc_0AF19, offset loc_0AF1D, offset loc_0AF07
 loc_0AEFE:
@@ -3143,15 +3147,15 @@ loc_0AF57:
 loc_0AF5B:
     sub word ptr ss:[bp + REC_X], 3
     ret
-loc_0AF60:
-    call loc_0AF63
-loc_0AF63:
+MoveInDirection4:
+    call MoveInDirection2
+MoveInDirection2:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0AF63Cases]
+    jmp word ptr cs:[bx + Move2ByDirection]
 ; UNKNOWN: not yet classified as code or data
     db 090h
-loc_0AF63Cases label word
+Move2ByDirection label word
     dw offset loc_0AF8B, offset loc_0AF90, offset loc_0AF94, offset loc_0AF7E
     dw offset loc_0AF82, offset loc_0AF99, offset loc_0AF9D, offset loc_0AF87
 loc_0AF7E:
@@ -3174,10 +3178,11 @@ loc_0AF99:
 loc_0AF9D:
     sub word ptr ss:[bp + REC_X], 2
     ret
-loc_0AFA2:
+MoveInDirection1:
     mov bx, ss:[bp + REC_DIRECTION]
     shl bx, 1
-    jmp word ptr cs:[bx - 5054h]
+    jmp word ptr cs:[bx + Move1ByDirection]
+Move1ByDirection label word
     dw offset loc_0AFC6, offset loc_0AFCA, offset loc_0AFCD, offset loc_0AFBC
     dw offset loc_0AFBF, offset loc_0AFD1, offset loc_0AFD4, offset loc_0AFC3
 loc_0AFBC:
@@ -3418,7 +3423,7 @@ TypeHandler0A:
     and word ptr ds:[2306h], -4
     and word ptr ss:[bp + REC_X], -4
     and word ptr ss:[bp + REC_Y], -4
-    call loc_05DB2
+    call SteerTowardTarget
     cmp word ptr ds:[230Ah], 0
     jne loc_0B1F6
     jmp near ptr loc_0AD60
@@ -3522,7 +3527,7 @@ TypeHandler12:
 loc_0B2EF:
     mov word ptr ds:[2308h], 2
 loc_0B2F5:
-    call loc_05DB2
+    call SteerTowardTarget
     cmp word ptr ds:[230Ah], 0
     je loc_0B304
     mov ss:[bp + REC_FIELD_36], si
@@ -3911,11 +3916,11 @@ TypeHandler2C:
     jmp near ptr loc_0BC4B
 loc_0B729:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
-    mov word ptr ds:[02304h], ax
+    mov word ptr ds:[SteerTargetX], ax
     mov ax, word ptr ss:[bp + REC_SAVED_Y]
-    mov word ptr ds:[02306h], ax
-    call loc_05DB2
-    cmp word ptr ds:[0230Ah], 0
+    mov word ptr ds:[SteerTargetY], ax
+    call SteerTowardTarget
+    cmp word ptr ds:[SteerArrived], 0
     ret
 TypeHandler20:
     cmp word ptr ss:[bp + REC_FIELD_1C], -1
@@ -4027,7 +4032,7 @@ loc_0B83A:
 loc_0B859:
     jmp near ptr loc_0BC4B
 loc_0B85C:
-    mov word ptr ds:[02308h], 2
+    mov word ptr ds:[SteerSpeed], 2
     call loc_0B729
     mov word ptr ss:[bp + REC_DIRECTION], 4
     jmp near ptr loc_0BC4B
@@ -4152,7 +4157,7 @@ loc_0B99E:
     lodsw
     mov ds:[2304h], ax
     mov word ptr ds:[2308h], 3
-    call loc_05DB2
+    call SteerTowardTarget
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 10Dh
     mov ss:[bp + REC_SPRITE], ax
@@ -4232,7 +4237,7 @@ loc_0BA73:
     and word ptr ss:[bp + REC_Y], -2
     mov ds:[2306h], ax
     mov word ptr ds:[2308h], 1
-    call loc_05DB2
+    call SteerTowardTarget
     jmp near ptr loc_0BC4B
 loc_0BA99:
     mov ax, ss:[bp + REC_Y]
@@ -6790,13 +6795,13 @@ loc_0D269:
     ret
 TypeHandler50:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
-    mov word ptr ds:[02304h], ax
+    mov word ptr ds:[SteerTargetX], ax
     mov ax, word ptr ss:[bp + REC_SAVED_Y]
-    mov word ptr ds:[02306h], ax
-    mov word ptr ds:[02308h], 1
-    call loc_05DB2
-    mov word ptr ds:[02308h], 2
-    cmp word ptr ds:[0230Ah], 0
+    mov word ptr ds:[SteerTargetY], ax
+    mov word ptr ds:[SteerSpeed], 1
+    call SteerTowardTarget
+    mov word ptr ds:[SteerSpeed], 2
+    cmp word ptr ds:[SteerArrived], 0
     jne loc_0D2A4
     ret
 loc_0D2A4:
@@ -8001,7 +8006,7 @@ TypeHandler61:
     mov ax, ss:[bp + REC_SAVED_X]
     mov ds:[2304h], ax
     mov word ptr ds:[2308h], 3
-    call loc_05DB2
+    call SteerTowardTarget
     cmp word ptr ds:[230Ah], 0
     jne loc_0F3B3
     jmp near ptr loc_0BC45
@@ -8210,7 +8215,7 @@ TypeHandler70:
     shr ax, 1
     add ax, 133h
     mov ss:[bp + REC_SPRITE], ax
-    call loc_0AF63
+    call MoveInDirection2
     cmp word ptr ds:[2328h], 7
     jne loc_0F5D9
     call SpawnThrottledChild
@@ -8413,7 +8418,7 @@ loc_0F7BB:
     lodsw
     mov ds:[2304h], ax
     mov word ptr ds:[2308h], 2
-    call loc_05DB2
+    call SteerTowardTarget
     push word ptr ss:[bp + REC_X]
     pop word ptr ds:[SegBossX]
     push word ptr ss:[bp + REC_Y]

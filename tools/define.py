@@ -9,7 +9,7 @@ address must lie in a db/dw row. With a
 constant, its uses in segment blocks of the same segment (all files for DATA) are
 rewritten: inside [...] to the name, elsewhere to `offset Name`; the constant is dropped
 from its include when no code uses it any more. --apply rebuilds first. Afterwards run
-`python tools/externs.py --apply` and `python tools/verify.py`.
+`python tools/verify.py` (define.py recomputes extrn/public itself).
 """
 from common import *
 from where import resolve, layout, lines_by_offset
@@ -101,5 +101,7 @@ def main(argv):
                 t = inc.read_bytes().decode('latin-1').split('\r\n')
                 t2 = [l for l in t if not re.fullmatch(re.escape(const) + r' equ .*', l)]
                 if t2 != t: inc.write_bytes('\r\n'.join(t2).encode('latin-1')); print(f'removed {const} from {inc.name}')
+    if apply:   # new cross-file uses need extrn/public before the next build
+        import externs; externs.main(True)
 
 if __name__ == '__main__': main(sys.argv[1:])
