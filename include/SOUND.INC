@@ -40,3 +40,12 @@ SFX_VOICE_SLIDE_TICKS equ 0Eh
 MODULE_MUSIC_REQUEST equ 08h
 MODULE_MUSIC_CURRENT equ 09h
 MODULE_BYTE_0A equ 0Ah
+; Tunes requested from the sound module (RequestModuleMusic); LevelMusicTable gives
+; each level's first tune.
+MUSIC_TITLE equ 2
+; At the level start (MAP_START_POS).
+MUSIC_LEVEL_START equ 4
+; Near the level end (LevelScriptClock 4) and when a life restarts at MAP_END_POS.
+MUSIC_LEVEL_END equ 5
+; Level music from MAP_MUSIC_CHANGE_POS on.
+MUSIC_LATE_LEVEL equ 6

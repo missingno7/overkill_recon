@@ -712,7 +712,7 @@ StartupAfterOverrides:
 ; Options menu and choose screen, then reset level, lives and score and start the
 ; first level. GameOver returns here.
 StartNewGame:
-    mov al, 2
+    mov al, MUSIC_TITLE
     call RequestModuleMusic
     call CgaSelectBrightPalette1
     call ResetEgaPages
@@ -2447,7 +2447,7 @@ EnterNextMapRowForward:
 @@advanceMapRow:
     add word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     dec word ptr ds:[LevelScriptClock]
-    mov al, 5
+    mov al, MUSIC_LEVEL_END
     cmp word ptr ds:[LevelScriptClock], 4
     jne @@clearBackwardStep
     call RequestModuleMusic
@@ -6375,7 +6375,7 @@ LoadSoundModule:
     ret
 @@loaded:
     mov byte ptr ds:[SoundModuleLoaded], 1
-    mov al, 2
+    mov al, MUSIC_TITLE
 
 RequestModuleMusic:
     mov byte ptr ds:[ModuleSoundRequest], al

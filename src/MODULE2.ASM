@@ -999,7 +999,7 @@ RunOptionsMenu:
     jne @@restartMusic
     call StopModuleMusic
 @@restartMusic:
-    mov al, 2
+    mov al, MUSIC_TITLE
     call RequestModuleMusic
     cmp byte ptr ds:[SfxEnabled], 0
     je @@mRedraw
@@ -1831,13 +1831,13 @@ AddScoreBcd:
     pop bp
     ret
 
-; Music for the start of a life: 4 at MapScrollPos 9Ch, 5 at 0EA0h, else
-; LevelMusicTable[LevelIndex].
+; Music for the start of a life: MUSIC_LEVEL_START at MAP_START_POS, MUSIC_LEVEL_END
+; at MAP_END_POS, else LevelMusicTable[LevelIndex].
 RequestLifeStartMusic:
-    mov al, 4
+    mov al, MUSIC_LEVEL_START
     cmp word ptr ds:[MapScrollPos], MAP_START_POS
     je @@requestMusic
-    mov al, 5
+    mov al, MUSIC_LEVEL_END
     cmp word ptr ds:[MapScrollPos], MAP_END_POS
     je @@requestMusic
     mov bx, offset LevelMusicTable
@@ -1861,7 +1861,7 @@ TickFrameTimers:
     xlat
     cmp word ptr ds:[MapScrollPos], MAP_MUSIC_CHANGE_POS
     jb @@requestMusic
-    mov al, 6
+    mov al, MUSIC_LATE_LEVEL
 @@requestMusic:
     call RequestModuleMusic
 @@sway:
