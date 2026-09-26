@@ -829,9 +829,40 @@ def make_report(M, mets, wv, args):
                 'globals ' + ' '.join(g['globals'][:6]) + (' ...' if len(g['globals']) > 6 else '') if g['globals'] else '']))
             L.append(f'- {r.name} ({r.size_total}): {ev}{gs}')
         L.append('')
+    L += ['## Migration health', '', '| measure | value |', '|---|---|'] + \
+         [f'| {k} | {v:,} |' for k, v in health(M).items()] + ['']
     L += ['## C island', '', names(M, sorted((k for k, r in R.items() if r.owned), key=lambda k: R[k].addr), 200), '',
           'Platform globals (DS labels touched only by hardware routines): ' + ', '.join(sorted(M.platform_globals)), '']
     return '\n'.join(L) + '\n'
+
+def health(M):
+    """Migration health: what the C island owns, what it costs at the ASM boundary, and the
+    hybrid's segment sizes (from build/hybrid, when it has been built)."""
+    R = M.routines
+    owned = [k for k, r in R.items() if r.owned]
+    into = [(a, t) for a, r in R.items() if not r.owned for (t, kind), n in r.edges.items() if R[t].owned for _ in range(n)]
+    out_ = [(a, t) for a in owned for (t, kind), n in R[a].edges.items() if not R[t].owned for _ in range(n)]
+    h = {'oracle bytes owned by C': sum(R[k].size_total for k in owned),
+         'oracle routines owned by C': len(owned),
+         'OWNS labels': len(read_owned()),
+         'gameplay bytes still ASM': sum(r.size_total for r in R.values() if r.cls == 'gameplay' and not r.owned),
+         'ASM->C entry routines (bridge labels needed)': len({t for _, t in into}),
+         'ASM->C call sites': len(into),
+         'C->ASM call sites (oracle edges out of the island)': len(out_),
+         'C->ASM distinct targets': len({t for _, t in out_})}
+    mp = ROOT / 'build/hybrid/OVERKILL.MAP'
+    if mp.exists():
+        text = mp.read_text(errors='replace')
+        for m in re.finditer(r'^ [0-9A-F]{5}H [0-9A-F]{5}H ([0-9A-F]{5})H (MAIN|CGAME)\b', text, re.M):
+            h[f'hybrid segment {m[2]} bytes'] = int(m[1], 16)
+        mods = re.findall(r'^[0-9A-F]{4}:[0-9A-F]{4} ([0-9A-F]{4}) C=\w+ S=(\w+) .*M=([\w.]+)', text, re.M)
+        bridge = [(int(n, 16), s) for n, s, mod in mods if re.fullmatch(r'B\d\d\.ASM', mod)]
+        h['bridge bytes in MAIN (c/*.asm stubs)'] = sum(n for n, s in bridge if s == 'MAIN')
+        h['bridge bytes in CGAME (generated far entries)'] = sum(n for n, s in bridge if s != 'MAIN')
+        c = [(int(n, 16), mod) for n, s, mod in mods if '.' not in mod and int(n, 16)]
+        h['C code bytes'] = sum(n for n, _ in c)
+        h['C regions'] = len({mod for _, mod in c})
+    return h
 
 def show(M, name, regof):
     R = M.routines
