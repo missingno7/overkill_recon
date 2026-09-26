@@ -66,6 +66,7 @@ public AdapterGeometry
 public AimQuadrantBits
 public AllCheatsFlag
 public AttributePatchPointers
+public BlankMessage
 public BlockBytes
 public BonusKeysEnabled
 public BossKeyScreen
@@ -82,12 +83,16 @@ public CheatLifeInTheFastLane
 public CheatMyNameIsSmith
 public CheatRemindMe
 public CheatWhatOilShortage
+public CheckpointCursorPtrs
+public CheckpointScriptCursor
 public ChildSpawnThrottle
 public ChooseSlot
 public ChooseSlotPositions
 public ClampXHighSeen
 public ClampXLowSeen
 public CountGate2324
+public CreditRandomWords
+public DecimalToBuffer
 public DescentTargetX
 public DifficultyPositions
 public DifficultySetting
@@ -253,7 +258,9 @@ public PoolBPointers
 public PoolBSaveBuffers
 public PrimaryRecord
 public QuitAnswer
+public RandomWordCursor
 public RapidFireEnabled
+public ReadErrorMessage
 public RecordRowOffsets
 public RedefPageList
 public ResidentFiles
@@ -306,9 +313,14 @@ public SteerArrived
 public SteerSpeed
 public SteerTargetX
 public SteerTargetY
+public SwapDisksMessage
 public SweepPath
 public SweepPathLeadIn
 public TargetSearchCursor
+public TextColor
+public TextColumn
+public TextInGraphics
+public TextRowOffset
 public TimerVectorInstalled
 public Type86Frames
 public Type86FramesDir6
@@ -900,20 +912,21 @@ FormationType dw 00000h
     db 00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,090h
 EventTrigger dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 0A8h,020h,041h,06Eh,06Fh,074h,068h,065h,072h,020h
-    db 04Dh,065h,067h,061h,020h,053h,074h,065h,020h,043h,06Fh,072h,06Bh,020h,043h,072h
-    db 065h,061h,074h,069h,06Fh,06Eh,021h,090h,00h,00h,0F5h,0C5h,0F7h,0C5h,0F9h,0C5h
-    db 0FBh,0C5h,0FDh,0C5h,0FFh,0C5h
+; Pseudo-random words: RandomWordCursor steps through the 16 words of this credit
+; line (NextRandomWord returns the next one in BX).
+RandomWordCursor dw offset CreditRandomWords
+CreditRandomWords db 'Another Mega Ste Cork Creation!'
+    even
+; Script cursor of the checkpoint chosen by ReadCheckpoint.
+CheckpointScriptCursor dw 0
+; Per LevelIndex: its LevelScriptCursors entry (a second copy of LevelScriptCursorPtrs).
+CheckpointCursorPtrs dw offset LevelScriptCursors + 0, offset LevelScriptCursors + 2, offset LevelScriptCursors + 4, offset LevelScriptCursors + 6, offset LevelScriptCursors + 8, offset LevelScriptCursors + 10
 ; Per LevelIndex: the level's MapResetList (CS offsets).
 MapResetLists dw offset MapResetList0, offset MapResetList1, offset MapResetList2, offset MapResetList3, offset MapResetList4, offset MapResetList5
-; UNKNOWN: not yet classified as code or data
-    db 010h,03h,011h,0Ch,03h,020h,053h,057h,041h,050h,020h,044h,049h,053h
-    db 04Bh,053h,02Ch,020h,050h,052h,045h,053h,053h,020h,046h,049h,052h,045h,020h,00h
-    db 010h,02h,011h,0Ch,03h,020h,052h,045h,041h,044h,020h,045h,052h,052h,04Fh,052h
-    db 02Ch,020h,050h,052h,045h,053h,053h,020h,046h,049h,052h,045h,020h,00h,011h,0Ch
-    db 03h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h
-    db 020h,020h,020h,020h,020h,020h,020h,020h,020h,00h
+; Messages for PromptLoadErrorWaitFire (TEXT_* control codes, 0-terminated).
+SwapDisksMessage db TEXT_SET_COLOR, 3, TEXT_MOVE_TO, 12, 3, ' SWAP DISKS, PRESS FIRE ', 0
+ReadErrorMessage db TEXT_SET_COLOR, 2, TEXT_MOVE_TO, 12, 3, ' READ ERROR, PRESS FIRE ', 0
+BlankMessage db TEXT_MOVE_TO, 12, 3, '                        ', 0
 ; Previous INT 09h vector (segment word, then offset), saved by InstallKeyboardVector09.
 KbdSavedInt09 db 00h,00h,00h,00h
 ; Eight scancodes each, collected by RCL into InputBits bits 7..0 (slot n feeds bit
@@ -927,13 +940,20 @@ KeyBitScancodesB db 00h,00h,02Ch,077h,07Ch,07Bh,07Ah,079h,07h,00h
     db 08h,00h,0Ah,00h,08h,00h,09h,00h,08h,00h
 ; ComputeRecordGridOffset stores its wrapped Y sum here.
 GridYSum dw 00000h
+TextColor db 00h
 ; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,090h
+    db 00h
+TextColumn db 00h
+; UNKNOWN: not yet classified as code or data
+    db 090h
+TextRowOffset dw 00000h
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h
+    db 00h,00h
+TextInGraphics dw 00000h
 ; Shared DOS file descriptor used by LoadFileToBuffer and SaveBufferToFile.
 FileBufferSegment dw 00000h
 FileBufferOffset dw 00000h
@@ -943,7 +963,10 @@ FileHandle dw 00000h
 ; UNKNOWN: not yet classified as code or data
     db 00h,03h
     db 0Ch,0Fh,030h,033h,03Ch,03Fh,0C0h,0C3h,0CCh,0CFh,0F0h,0F3h,0FCh,0FFh,00h,055h
-    db 0AAh,0FFh,00h,00h,00h,00h
+    db 0AAh,0FFh
+DecimalToBuffer dw 00000h
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h
 HiscoreFileName db 'hiscore.dat',00h
 ; UNKNOWN: not yet classified as code or data
     db 011h,04h,00h,010h,0Ah,00h

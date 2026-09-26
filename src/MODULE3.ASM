@@ -21,6 +21,7 @@ extrn ChooseSlotPositions:word
 extrn ClampXHighSeen:byte
 extrn ClampXLowSeen:byte
 extrn CountGate2324:word
+extrn CreditRandomWords:byte
 extrn DescentTargetX:word
 extrn DifficultyPositions:word
 extrn DifficultySetting:word
@@ -120,6 +121,7 @@ extrn PoolBPointers:word
 extrn PoolBSaveBuffers:byte
 extrn PrimaryRecord:byte
 extrn QuitAnswer:byte
+extrn RandomWordCursor:word
 extrn RapidFireEnabled:byte
 extrn ResidentFiles:word
 extrn ScoreBcd:byte
@@ -160,6 +162,7 @@ extrn SteerSpeed:word
 extrn SteerTargetX:word
 extrn SteerTargetY:word
 extrn TargetSearchCursor:word
+extrn TextInGraphics:word
 extrn Type86Frames:word
 extrn Type86FramesDir6:word
 extrn Type88Frames:word
@@ -209,6 +212,7 @@ public SpawnThrottledChild
 public Sprites1x1Segment
 public Sprites2x2CSegment
 public Sprites2x2Segment
+public TextVideoSegment
 public TheEndSegment
 public VideoAdapter
 public WaitVerticalRetracePulse
@@ -267,6 +271,7 @@ extrn LoadHiscoreFile:near
 extrn LoadImageSlot:word
 extrn LoadNamePtr:word
 extrn LoadPackedFile:near
+extrn NextRandomWord:near
 extrn PackedDestOffset:word
 extrn PackedDestSegment:word
 extrn PackedNamePtr:word
@@ -274,6 +279,7 @@ extrn PackedOutputBytes:word
 extrn PanelImageOffsets:word
 extrn PlaqueImageOffset:word
 extrn PollInputBits:near
+extrn PrintMessageBP:near
 extrn ReadIndexedByteAttribute:near
 extrn RestartAtCheckpoint:near
 extrn SetMapTile1:near
@@ -350,7 +356,6 @@ extrn loc_00B3E:near
 extrn loc_00D42:near
 extrn loc_00E9C:near
 extrn loc_04A65:near
-extrn loc_04D95:near
 extrn loc_04F37:near
 extrn loc_04F57:near
 extrn loc_04FC3:near
@@ -359,7 +364,6 @@ extrn loc_05059:near
 extrn loc_0511F:near
 extrn loc_05145:near
 extrn loc_05160:near
-extrn loc_0518C:near
 extrn loc_0526A:near
 extrn loc_054C0:near
 extrn loc_05559:near
@@ -407,8 +411,8 @@ extrn loc_0878C:near
 extrn loc_08D83:near
 ; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer).
 LevelMapSegment dw seg SoundModuleSlot + SLOT_BUFFER_PARAGRAPH
-; B800h; its reader has not been reviewed.
-    dw 0B800h
+; Colour text-mode video segment, used when printing without graphics (TextInGraphics = 0).
+TextVideoSegment dw 0B800h
 ; CS word holding the state segment (seg StateData); entry loads DS/SS from it.
 MainDataSegment dw seg StateData
 ; Segments and geometry filled in at startup (AllocateBuffers, adapter geometry).
@@ -566,7 +570,7 @@ loc_096C5:
     mov bx, offset VideoBiosModeTable
     xlat
     int 010h
-    mov word ptr ds:[021A2h], 1
+    mov word ptr ds:[TextInGraphics], 1
     call loc_05BEE
     call loc_0CBE8
 ; Options menu and choose screen, then reset level, lives and score and start the
@@ -631,7 +635,7 @@ StartLife:
     mov bp, offset PrimaryRecord
     call StoreApplyHistoryAndConditionalPlacement
     call loc_0A940
-    mov word ptr ds:[020A6h], 020A8h
+    mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
     call loc_0C57C
     call loc_0B5A9
     mov word ptr ds:[SegBossActive], 0
@@ -4006,7 +4010,7 @@ loc_0B7F3:
     jb loc_0B80E
     cmp word ptr ds:[02340h], 02D0h
     ja loc_0B80E
-    call loc_04D95
+    call NextRandomWord
     and bx, 1
     jne loc_0B80E
     call loc_07476
@@ -4174,7 +4178,7 @@ loc_0B99E:
     jmp near ptr loc_0BC4B
 loc_0B9CD:
     mov ss:[bp + REC_FIELD_36], si
-    call loc_04D95
+    call NextRandomWord
     and bx, 7
     cmp bx, 2
     jne TypeHandler18
@@ -5284,7 +5288,7 @@ loc_0C41E:
     mov word ptr ds:[09788h], 0FFFFh
     call loc_09DB9
     mov word ptr ds:[0A980h], 0
-    mov word ptr ds:[020A6h], 020A8h
+    mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
     mov word ptr ds:[EncounterLiveCount], 0
     mov word ptr ds:[EncounterEndDelay], 0
     mov word ptr ds:[0A47Ch], 0
@@ -6537,7 +6541,7 @@ loc_0CF3E:
     call BlitPackedToScreen
     mov ds, word ptr cs:[MainDataSegment]
     pop bp
-    call loc_0518C
+    call PrintMessageBP
     mov cx, 064h
 loc_0CF78:
     call WaitVerticalRetrace
@@ -8080,7 +8084,7 @@ loc_0F446:
     mov ax, ds:[2380h]
     cmp ss:[bp + REC_X], ax
     jne loc_0F45D
-    call loc_04D95
+    call NextRandomWord
     and bx, 1Fh
     jne loc_0F45D
     mov word ptr ss:[bp + REC_TYPE], 65h

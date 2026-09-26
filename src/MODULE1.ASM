@@ -10,12 +10,17 @@ include MOVEMENT.INC
 locals
 extrn AdapterGeometry:word
 extrn AttributePatchPointers:word
+extrn BlankMessage:byte
 extrn BlockBytes:word
 extrn BossKeyScreen:word
 extrn ByteAttributeTable:byte
 extrn CalibPageList:word
 extrn CgaPanelPatch:byte
+extrn CheckpointCursorPtrs:word
+extrn CheckpointScriptCursor:word
 extrn ChooseSlot:word
+extrn CreditRandomWords:byte
+extrn DecimalToBuffer:word
 extrn DifficultySetting:word
 extrn EventTrigger:word
 extrn EventX:word
@@ -92,6 +97,8 @@ extrn OpenResourceFile:far
 extrn PendingSpriteFile:word
 extrn PlaqueFiles:word
 extrn PlayfieldRowOffsets:word
+extrn RandomWordCursor:word
+extrn ReadErrorMessage:byte
 extrn RecordRowOffsets:word
 extrn SavedSettings:byte
 extrn ScoreBcd:byte
@@ -113,6 +120,11 @@ extrn StarMasksEga:byte
 extrn StarMasksTandy:byte
 extrn Stars:word
 extrn StateData:byte
+extrn SwapDisksMessage:byte
+extrn TextColor:byte
+extrn TextColumn:byte
+extrn TextInGraphics:word
+extrn TextRowOffset:word
 extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
@@ -165,6 +177,7 @@ public LoadImageSlot
 public LoadNamePtr
 public LoadPackedFile
 public LoadSettingsFromHiscoreBlock
+public NextRandomWord
 public PackedDestOffset
 public PackedDestSegment
 public PackedNamePtr
@@ -172,6 +185,8 @@ public PackedOutputBytes
 public PanelImageOffsets
 public PlaqueImageOffset
 public PollInputBits
+public PrintMessageBP
+public PrintTextChar
 public ReadIndexedByteAttribute
 public RestartAtCheckpoint
 public RestoreKeyboardVector09
@@ -295,7 +310,6 @@ public loc_048E6
 public loc_0497A
 public loc_04A41
 public loc_04A65
-public loc_04D95
 public loc_04F37
 public loc_04F57
 public loc_04FC3
@@ -304,8 +318,6 @@ public loc_05059
 public loc_0511F
 public loc_05145
 public loc_05160
-public loc_0518C
-public loc_0519A
 public loc_0526A
 extrn AdapterDrawHandlers:word
 extrn BlockOffsets:word
@@ -333,6 +345,7 @@ extrn Sprite8Offsets:word
 extrn Sprites1x1Segment:word
 extrn Sprites2x2CSegment:word
 extrn Sprites2x2Segment:word
+extrn TextVideoSegment:word
 extrn TheEndSegment:word
 extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
@@ -4218,8 +4231,8 @@ loc_02613:
     mov si, ax
     mov es, word ptr cs:[ScreenSegment]
     xor ax, ax
-    mov al, byte ptr ds:[0215Eh]
-    add ax, word ptr ds:[02160h]
+    mov al, byte ptr ds:[TextColumn]
+    add ax, word ptr ds:[TextRowOffset]
     mov di, ax
     mov dx, 03C4h
     mov al, 2
@@ -4236,10 +4249,10 @@ loc_02613:
     mov byte ptr es:[di + 0C8h], al
     mov byte ptr es:[di + 0F0h], al
     mov byte ptr es:[di + 0118h], al
-    mov al, byte ptr ds:[0215Ch]
+    mov al, byte ptr ds:[TextColor]
     out dx, al
     mov word ptr ds:[FontPlaneRegs], 4
-    mov bl, byte ptr ds:[0215Ch]
+    mov bl, byte ptr ds:[TextColor]
     mov bh, 1
     mov cx, 4
 loc_02672:
@@ -4306,12 +4319,12 @@ loc_026FA:
 loc_026FD:
     mov al, 0Fh
     out dx, al
-    add byte ptr ds:[0215Eh], 1
-    cmp byte ptr ds:[0215Eh], 028h
+    add byte ptr ds:[TextColumn], 1
+    cmp byte ptr ds:[TextColumn], 028h
     jb loc_02717
 loc_0270C:
-    mov byte ptr ds:[0215Eh], 0
-    add word ptr ds:[02160h], 0140h
+    mov byte ptr ds:[TextColumn], 0
+    add word ptr ds:[TextRowOffset], 0140h
 loc_02717:
     ret
 loc_02718:
@@ -4319,15 +4332,15 @@ loc_02718:
     mov cx, 0140h
     xor ah, ah
     mul cx
-    mov word ptr ds:[02160h], ax
+    mov word ptr ds:[TextRowOffset], ax
     mov al, byte ptr ss:[bp + 2]
-    mov byte ptr ds:[0215Eh], al
+    mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
 loc_0272F:
     inc bp
     mov al, byte ptr ss:[bp]
-    mov byte ptr ds:[0215Ch], al
+    mov byte ptr ds:[TextColor], al
     ret
 
 loc_02737:
@@ -5589,15 +5602,15 @@ loc_03161:
     add si, offset Font8x8
     mov es, word ptr cs:[ScreenSegment]
     xor dx, dx
-    mov dl, byte ptr ds:[0215Eh]
-    add dx, word ptr ds:[02160h]
+    mov dl, byte ptr ds:[TextColumn]
+    add dx, word ptr ds:[TextRowOffset]
     mov di, dx
-    mov dl, byte ptr ds:[0215Ch]
+    mov dl, byte ptr ds:[TextColor]
     shl dl, 1
     shl dl, 1
     shl dl, 1
     shl dl, 1
-    or dl, byte ptr ds:[0215Ch]
+    or dl, byte ptr ds:[TextColor]
     mov dh, dl
     lodsb
     xor ah, ah
@@ -5751,11 +5764,11 @@ loc_032DB:
     je loc_0330A
     add di, 080A0h
 loc_0330A:
-    add byte ptr ds:[0215Eh], 4
-    cmp byte ptr ds:[0215Eh], 0A0h
+    add byte ptr ds:[TextColumn], 4
+    cmp byte ptr ds:[TextColumn], 0A0h
     jb loc_03321
-    mov byte ptr ds:[0215Eh], 0
-    add word ptr ds:[02160h], 0140h
+    mov byte ptr ds:[TextColumn], 0
+    add word ptr ds:[TextRowOffset], 0140h
 loc_03321:
     ret
 loc_03322:
@@ -5763,17 +5776,17 @@ loc_03322:
     mov cx, 0140h
     xor ah, ah
     mul cx
-    mov word ptr ds:[02160h], ax
+    mov word ptr ds:[TextRowOffset], ax
     mov al, byte ptr ss:[bp + 2]
     shl al, 1
     shl al, 1
-    mov byte ptr ds:[0215Eh], al
+    mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
 loc_0333D:
     inc bp
     mov al, byte ptr ss:[bp]
-    mov byte ptr ds:[0215Ch], al
+    mov byte ptr ds:[TextColor], al
     ret
 
 ; Zero the whole 32 KiB Tandy video buffer (ES=CS:95A4, left in ES). DF=0.
@@ -7607,8 +7620,8 @@ loc_0428C:
     mov si, ax
     mov es, word ptr cs:[ScreenSegment]
     xor bx, bx
-    mov bl, byte ptr ds:[0215Eh]
-    add bx, word ptr ds:[02160h]
+    mov bl, byte ptr ds:[TextColumn]
+    add bx, word ptr ds:[TextRowOffset]
     mov di, bx
     mov bx, 021AEh
     mov al, byte ptr ds:[si]
@@ -7618,13 +7631,13 @@ loc_0428C:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7638,13 +7651,13 @@ loc_042DD:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7658,13 +7671,13 @@ loc_0430D:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7678,13 +7691,13 @@ loc_0433D:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7698,13 +7711,13 @@ loc_0436D:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7718,13 +7731,13 @@ loc_0439D:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7738,13 +7751,13 @@ loc_043CD:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
@@ -7758,25 +7771,25 @@ loc_043FD:
     shr al, 1
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di], ah
     lodsb
     and al, 0Fh
     xlat
     mov ah, al
-    and ah, byte ptr ds:[0215Ch]
+    and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
     je loc_0442D
     add di, 0C050h
 loc_0442D:
-    add byte ptr ds:[0215Eh], 2
-    cmp byte ptr ds:[0215Eh], 050h
+    add byte ptr ds:[TextColumn], 2
+    cmp byte ptr ds:[TextColumn], 050h
     jb loc_04444
 loc_04439:
-    mov byte ptr ds:[0215Eh], 0
-    add word ptr ds:[02160h], 0140h
+    mov byte ptr ds:[TextColumn], 0
+    add word ptr ds:[TextRowOffset], 0140h
 loc_04444:
     ret
 loc_04445:
@@ -7784,10 +7797,10 @@ loc_04445:
     mov cx, 0140h
     xor ah, ah
     mul cx
-    mov word ptr ds:[02160h], ax
+    mov word ptr ds:[TextRowOffset], ax
     mov al, byte ptr ss:[bp + 2]
     add al, al
-    mov byte ptr ds:[0215Eh], al
+    mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
 loc_0445E:
@@ -7796,7 +7809,7 @@ loc_0445E:
     and al, 3
     mov bx, 021BEh
     xlat
-    mov byte ptr ds:[0215Ch], al
+    mov byte ptr ds:[TextColor], al
     ret
 
 loc_0446C:
@@ -8905,13 +8918,13 @@ loc_04D8E:
     loop loc_04D6F
 loc_04D94:
     ret
-loc_04D95:
-    add word ptr ds:[020A6h], 2
-    cmp word ptr ds:[020A6h], 020C7h
+NextRandomWord:
+    add word ptr ds:[RandomWordCursor], 2
+    cmp word ptr ds:[RandomWordCursor], offset CreditRandomWords + 31
     jb loc_04DA8
-    mov word ptr ds:[020A6h], 020A8h
+    mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
 loc_04DA8:
-    mov bx, word ptr ds:[020A6h]
+    mov bx, word ptr ds:[RandomWordCursor]
     mov bx, word ptr ds:[bx]
     ret
 
@@ -8921,7 +8934,7 @@ ReadCheckpoint:
     lodsw
     mov dx, ax
     lodsw
-    mov word ptr ds:[020C8h], ax
+    mov word ptr ds:[CheckpointScriptCursor], ax
     lodsw
     cmp word ptr ds:[MapScrollPos], ax
     ret
@@ -8954,9 +8967,9 @@ loc_04DD8:
     call loc_04E0D
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    add bx, 020CAh
+    add bx, offset CheckpointCursorPtrs
     mov bx, word ptr ds:[bx]
-    mov ax, word ptr ds:[020C8h]
+    mov ax, word ptr ds:[CheckpointScriptCursor]
     mov word ptr ds:[bx], ax
     ret
 
@@ -9026,12 +9039,12 @@ loc_04E69:
 ; Show "SWAP DISKS" or "READ ERROR" (by FileStatus), wait for a primary button press
 ; and release, then blank the message.
 PromptLoadErrorWaitFire:
-    mov bp, 020E2h
+    mov bp, offset SwapDisksMessage
     cmp word ptr ds:[FileStatus], FILE_STATUS_OPEN_FAILED
     je loc_04E82
-    mov bp, 02100h
+    mov bp, offset ReadErrorMessage
 loc_04E82:
-    call loc_0518C
+    call PrintMessageBP
 loc_04E85:
     call PollInputBits
     cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
@@ -9040,8 +9053,8 @@ loc_04E8F:
     call PollInputBits
     cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je loc_04E8F
-    mov bp, 0211Eh
-    jmp near ptr loc_0518C
+    mov bp, offset BlankMessage
+    jmp near ptr PrintMessageBP
 
 ; Save the current INT 09h vector in KbdSavedInt09 and install
 ; Interrupt09KeyboardHandler. The old handler is never chained to.
@@ -9345,13 +9358,55 @@ FlushBiosKeyboardBuffer:
 ; 200 after a fatal error, 25 between calibration samples.
 WaitVerticalRetrace:
     jmp near ptr WaitVerticalRetracePulse
-; UNKNOWN: not yet classified as code or data
-    db 01Eh,02Eh,08Eh,01Eh,096h,095h,0E8h,08Dh,0B0h,080h,03Eh,0BEh,098h,00h,075h,0F6h
-    db 01Fh,0C3h,01Eh,02Eh,08Eh,01Eh,096h,095h,0E8h,07Bh,0B0h,080h,03Eh,0BEh,098h,00h
-    db 074h,0F6h,01Fh,0C3h,0E8h,0EBh,0FFh,0EBh,0D7h,0B4h,00h,02Eh,083h,03Eh,0BCh,095h
-    db 02h,074h,011h,0BAh,0DAh,03h,0ECh,0BAh,0C0h,03h,0B0h,011h,0EEh,08Ah,0C4h,0EEh
-    db 0B0h,020h,0EEh,0C3h,0B4h,00h,0BAh,0DAh,03h,0B0h,02h,0EEh,0BAh,0DEh,03h,08Ah
-    db 0C4h,0EEh,0C3h
+; Input waits and border helpers; no callers found except each other.
+; Wait until no input bit is set.
+WaitInputReleased:
+    push ds
+    mov ds, cs:[MainDataSegment]
+loc_050D2:
+    call PollInputBits
+    cmp byte ptr ds:[InputBits], 0
+    jne loc_050D2
+    pop ds
+    ret
+; Wait until some input bit is set.
+WaitInputPressed:
+    push ds
+    mov ds, cs:[MainDataSegment]
+loc_050E4:
+    call PollInputBits
+    cmp byte ptr ds:[InputBits], 0
+    je loc_050E4
+    pop ds
+    ret
+; Wait for a press, then for the release.
+WaitInputClick:
+    call WaitInputPressed
+    jmp short WaitInputReleased
+; Black border: EGA attribute controller overscan, or the Tandy border register.
+SetBorderBlack:
+    mov ah, 0
+    cmp word ptr cs:[VideoAdapter], 2
+    je loc_05110
+    mov dx, 3DAh
+    in al, dx
+    mov dx, 3C0h
+    mov al, 11h
+    out dx, al
+    mov al, ah
+    out dx, al
+    mov al, 20h
+    out dx, al
+    ret
+loc_05110:
+    mov ah, 0
+    mov dx, 3DAh
+    mov al, 2
+    out dx, al
+    mov dx, 3DEh
+    mov al, ah
+    out dx, al
+    ret
 
 loc_0511F:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
@@ -9403,19 +9458,19 @@ loc_0517C:
     sti
     ret
 
-loc_0518C:
+PrintMessageBP:
     mov al, byte ptr ss:[bp]
     or al, al
     jne loc_05194
     ret
 loc_05194:
-    call loc_0519A
+    call PrintTextChar
     inc bp
-    jmp short loc_0518C
+    jmp short PrintMessageBP
 
-loc_0519A:
+PrintTextChar:
     mov es, word ptr cs:[MainDataSegment]
-    cmp word ptr ds:[021A2h], 0
+    cmp word ptr ds:[TextInGraphics], 0
     je loc_051B8
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
@@ -9427,11 +9482,11 @@ loc_051B8:
     je loc_051F3
     cmp al, 011h
     je loc_051D6
-    mov es, word ptr cs:[09594h]
-    mov di, word ptr ds:[02160h]
-    mov ah, byte ptr ds:[0215Ch]
+    mov es, word ptr cs:[TextVideoSegment]
+    mov di, word ptr ds:[TextRowOffset]
+    mov ah, byte ptr ds:[TextColor]
     mov word ptr es:[di], ax
-    add word ptr ds:[02160h], 2
+    add word ptr ds:[TextRowOffset], 2
     ret
 loc_051D6:
     mov al, byte ptr ss:[bp + 1]
@@ -9443,22 +9498,77 @@ loc_051D6:
     xor ah, ah
     shl ax, 1
     add bx, ax
-    mov word ptr ds:[02160h], bx
+    mov word ptr ds:[TextRowOffset], bx
     add bp, 2
     ret
 loc_051F3:
     inc bp
     mov al, byte ptr ss:[bp]
-    mov byte ptr ds:[0215Ch], al
+    mov byte ptr ds:[TextColor], al
     ret
-; UNKNOWN: not yet classified as code or data
-    db 032h,0C0h,08Ah,0F8h,0B4h,010h,0B0h,01h,0CDh,010h,0C3h,0C7h,06h,0C2h,021h,01h
-    db 00h,0E8h,07h,00h,0C7h,06h,0C2h,021h,00h,00h,0C3h,032h,0DBh,0B9h,0F0h,0D8h
-    db 0E8h,015h,00h,0B9h,018h,0FCh,0E8h,0Fh,00h,0B9h,09Ch,0FFh,0E8h,09h,00h,0B1h
-    db 0F6h,0E8h,04h,00h,08Ah,0C2h,0EBh,01Dh,032h,0C0h,03h,0D1h,0FEh,0C0h,072h,0FAh
-    db 02Bh,0D1h,0FEh,0C8h,075h,0Fh,083h,03Eh,0C2h,021h,01h,074h,06h,0Ah,0DBh,0B0h
-    db 020h,074h,06h,032h,0C0h,0FEh,0C3h,04h,030h,052h,051h,053h,083h,03Eh,0C2h,021h
-    db 01h,074h,07h,0E8h,039h,0FFh,05Bh,059h,05Ah,0C3h,088h,05h,047h,0EBh,0F7h
+; Black overscan through the BIOS (INT 10h AX=1001h); no caller found.
+BiosBorderBlack:
+    xor al, al
+    mov bh, al
+    mov ah, 10h
+    mov al, 1
+    int 10h
+    ret
+; DX as five zero-padded digits at DS:DI (DecimalToBuffer = 1); no caller found.
+FormatDecimalToBuffer:
+    mov word ptr ds:[DecimalToBuffer], 1
+    call PrintDecimalDX
+    mov word ptr ds:[DecimalToBuffer], 0
+    ret
+; Print DX in decimal through PrintTextChar (leading zeros as spaces), or store the
+; digits at DS:DI when DecimalToBuffer = 1.
+PrintDecimalDX:
+    xor bl, bl
+    mov cx, 0D8F0h
+    call loc_05233
+    mov cx, 0FC18h
+    call loc_05233
+    mov cx, 0FF9Ch
+    call loc_05233
+    mov cl, 0F6h
+    call loc_05233
+    mov al, dl
+    jmp short loc_05250
+loc_05233:
+    xor al, al
+loc_05235:
+    add dx, cx
+    inc al
+    jb loc_05235
+    sub dx, cx
+    dec al
+    jne loc_05250
+    cmp word ptr ds:[DecimalToBuffer], 1
+    je loc_0524E
+    or bl, bl
+    mov al, 20h
+    je loc_05254
+loc_0524E:
+    xor al, al
+loc_05250:
+    inc bl
+    add al, 30h
+loc_05254:
+    push dx
+    push cx
+    push bx
+    cmp word ptr ds:[DecimalToBuffer], 1
+    je loc_05265
+    call PrintTextChar
+loc_05261:
+    pop bx
+    pop cx
+    pop dx
+    ret
+loc_05265:
+    mov ds:[di], al
+    inc di
+    jmp short loc_05261
 
 loc_0526A:
     mov es, word ptr cs:[WorkspaceSegment]

@@ -55,3 +55,7 @@ CACHE_SEGMENT equ 2
 CACHE_BYTES equ 4
 CACHE_EMS_HANDLE equ 6
 CACHE_EMS_PAGES equ 8
+; Text control codes in printed messages: set colour (next byte), move to row and
+; column (next two bytes).
+TEXT_SET_COLOR equ 10h
+TEXT_MOVE_TO equ 11h

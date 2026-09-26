@@ -304,9 +304,12 @@ extrn MoveInDirection1:near
 extrn MoveInDirection2:near
 extrn MoveInDirection4:near
 extrn MoveInDirection8:near
+extrn NextRandomWord:near
 extrn PanelImageOffsets:word
 extrn PanelSegment:word
 extrn PollInputBits:near
+extrn PrintMessageBP:near
+extrn PrintTextChar:near
 extrn ReleaseEmsCache:near
 extrn RequestModuleMusic:near
 extrn RestoreKeyboardVector09:near
@@ -425,11 +428,8 @@ extrn loc_04896:near
 extrn loc_048E6:near
 extrn loc_0497A:near
 extrn loc_04A41:near
-extrn loc_04D95:near
 extrn loc_0511F:near
 extrn loc_05145:near
-extrn loc_0518C:near
-extrn loc_0519A:near
 extrn loc_09D91:near
 extrn loc_09EE4:near
 extrn loc_09F1A:near
@@ -538,7 +538,7 @@ loc_0536F:
     mov al, byte ptr ds:[02286h]
     mov byte ptr ds:[02296h], al
     mov bp, 02295h
-    call loc_0518C
+    call PrintMessageBP
     mov bp, offset ScoreBcd
     call loc_05EE4
     mov al, byte ptr ds:[02286h]
@@ -553,9 +553,9 @@ loc_0536F:
     stosb
 loc_053C9:
     mov bp, 022A9h
-    call loc_0518C
+    call PrintMessageBP
     mov bp, 0229Bh
-    call loc_0518C
+    call PrintMessageBP
     call loc_05497
     cmp al, 8
     je loc_05408
@@ -624,7 +624,7 @@ loc_05461:
     add al, 4
     mov byte ptr ds:[021D3h], al
     mov bp, 021D2h
-    call loc_0518C
+    call PrintMessageBP
     mov al, byte ptr cs:[0544Fh]
     xor ah, ah
     mov cx, 010h
@@ -632,7 +632,7 @@ loc_05461:
     mov bp, offset HiscoreBlock
     add bp, ax
     push bp
-    call loc_0518C
+    call PrintMessageBP
     pop bp
     lea bp, ss:[bp + 0Ch]
     call loc_05EE4
@@ -1512,7 +1512,7 @@ loc_05ED5:
 
 loc_05EDB:
     mov bp, 02318h
-    call loc_0518C
+    call PrintMessageBP
     mov bp, offset ScoreBcd
 
 loc_05EE4:
@@ -1536,7 +1536,7 @@ loc_05EF9:
 loc_05F06:
     and al, 0Fh
     add al, 030h
-    jmp near ptr loc_0519A
+    jmp near ptr PrintTextChar
 
 loc_05F0D:
     push bp
@@ -1720,11 +1720,11 @@ loc_060CE:
 
 loc_060E3:
     mov bp, 0235Ch
-    call loc_0518C
+    call PrintMessageBP
     mov bx, 02362h
     mov ax, word ptr ds:[LevelIndex]
     xlat
-    jmp near ptr loc_0519A
+    jmp near ptr PrintTextChar
 
 loc_060F3:
     mov al, 01Fh
@@ -5184,7 +5184,7 @@ loc_0813D:
 loc_08143:
     cmp word ptr ds:[LevelIndex], 5
     jne loc_0815A
-    call loc_04D95
+    call NextRandomWord
     and bx, 0Fh
     cmp bx, 0Fh
     jne loc_0815A
@@ -5877,7 +5877,7 @@ loc_087D3:
 TypeHandler2E:
     mov ax, ds:[StackTop]
     add ss:[bp + REC_SAVED_Y], ax
-    call loc_04D95
+    call NextRandomWord
     and bx, 3
     add bx, 0ADh
     mov ss:[bp + REC_SPRITE], bx
@@ -6124,7 +6124,7 @@ loc_08A72:
     call loc_05E42
     jmp near ptr loc_0BC45
 TypeHandler3B:
-    call loc_04D95
+    call NextRandomWord
     and bx, 3
     mov cx, 0A9h
     cmp word ptr ds:[LevelIndex], 6
@@ -6198,7 +6198,7 @@ TypeHandler40:
     add bx, 0CFh
     mov ss:[bp + REC_SPRITE], bx
 loc_08B4C:
-    call loc_04D95
+    call NextRandomWord
     and bx, 1
     shl bx, 1
     add bx, 96ECh
@@ -6230,7 +6230,7 @@ TypeHandler69:
 loc_08B96:
     add ax, bx
     mov ss:[bp + REC_SPRITE], ax
-    call loc_04D95
+    call NextRandomWord
     and bx, 1
     shl bx, 1
     add bx, 96ECh
