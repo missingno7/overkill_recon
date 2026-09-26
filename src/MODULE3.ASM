@@ -4868,7 +4868,7 @@ loc_0BEB9:
     jmp near ptr ScrollRecordThenFinish
 ; BX = player shot that hit BP. Types 7, 8, 0Ch and 9 pierce: they destroy BP outright
 ; (against the segmented boss they only damage it, and 7/8/0Ch are then used up).
-; Types 5 and 6 are used up and destroy BP; type 2 is used up and takes 1..4 hit points
+; Types 5 and 6 are used up and destroy BP; type 2 is used up and takes 1..5 hit points
 ; by sprite and DifficultySetting; any other shot only hits its REC_TARGET.
 ShotHitsRecord:
     cmp word ptr ds:[bx + REC_TYPE], 7
