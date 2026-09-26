@@ -52,8 +52,8 @@ KIND_PLAYER equ 3
 ; Runs its REC_TYPE handler; an enemy the smart bomb destroys.
 KIND_ENEMY equ 4
 KIND_PICKUP equ 5
-; One record created with the player: animated sprites 9..0Dh pinned under the ship,
-; no collision (UpdateExhaust); presumably the engine exhaust.
+; One record created with the player: the engine exhaust (2X2.BIC sprites 9..0Dh are
+; twin flames of growing length), pinned under the ship, no collision (UpdateExhaust).
 KIND_EXHAUST equ 6
 ; Detailed type, 0..94h; 1 marks a record being destroyed (old type kept in +1A).
 REC_TYPE equ 18h

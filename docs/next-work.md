@@ -25,7 +25,6 @@ layout argument appears (as the linker padding at far 10162 did).
 
 - Hard-coded row strides outside the EGA blitters (ClearScreen104x200Ega, stars, the
   CGA/Tandy blitters and background save/restore): per-adapter stride constants.
-- KIND_EXHAUST is inferred from placement and animation; confirm from sprites 9..0Dh.
 - Raw game constants: sprite numbers, sfx ids (shared by unrelated events), X 60h screen centre,
   music numbers.
 - Remaining `loc_XXXXX` labels are local control flow; name them region by region.
