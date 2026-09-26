@@ -1771,7 +1771,8 @@ EnergyTanks dw 0h
 EnergyPoints dw 0h
 ; Side-shot upgrade.
 SideShotsEnabled dw 0h
-; Missiles, +4 per pickup.
+; Missile launches left: ApplyMissiles sets 4 (offered only at 0), the demo sets 1;
+; FireMissile takes 1 per launch (relocking is free).
 MissileAmmo dw 0h
 ; Pod records (KIND_POD), FFFFh = none. Trailing pods follow the ship's position
 ; history (HistoryReadCursor15/31); side pods sit beside it (PlaceSidePods).

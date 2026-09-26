@@ -4167,6 +4167,7 @@ PlayerShotsMissed:
 
 ; Spawns the pickup DropKind at (DropX, DropY) in pool A (BX = FFFFh if none free);
 ; falls through into InitPickupRecord.
+; X above C0h (unsigned, so negative too) becomes C0h; Y gets ScrollDeltaY.
 SpawnItemDrop:
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -5844,8 +5845,9 @@ Type27SlowDescender:
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr ScrollRecordThenFinish
 
-; Moves the selected upgrade slot to the next list entry whose availability test passes
-; (NZ); after 10 failures shows the empty icon 24h. No-op when none is selected.
+; Selected slot only (no-op if FFFFh): from its current UPGRADE_SLOT_INDEX, the first entry
+; whose condition gives NZ sets the icon; the FFFFh end wraps to 0 (not counted as a try).
+; After 10 failed tries: index 0, icon 24h. Other slots keep stale icons.
 AdvanceToAvailableUpgrade:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne @@haveSelection
@@ -5884,8 +5886,10 @@ AdvanceToAvailableUpgrade:
 @@wrapList:
     mov word ptr ss:[bp + UPGRADE_SLOT_INDEX], 0
     jmp short @@tryEntry
-; Upgrade list condition routines: ZF = 0 when the entry can be offered; the apply
-; routines end in FinishUpgrade (SelectedUpgradeSlot = FFFFh).
+; Upgrade list condition routines: ZF = 0 when the entry can be offered (weapon, side
+; shot and form conditions: NZ = not the current value). The apply routines end in
+; FinishUpgrade (SelectedUpgradeSlot = FFFFh), except entry 0 (icon 24h), whose
+; ReturnNear keeps the selection and plays no sfx 9.
 UpgradeNeverAvailable:
     xor ax, ax
     ret
@@ -5937,6 +5941,7 @@ SideShotsAvailable:
 ApplySideShots:
     mov word ptr ds:[SideShotsEnabled], 1
     jmp short FinishUpgrade
+; Only at MissileAmmo = 0.
 MissilesAvailable:
     cmp word ptr ds:[MissileAmmo], 0
     je UpgradeAlwaysAvailable
@@ -5953,6 +5958,8 @@ FrontPodAvailable:
 ApplyFrontPod:
     call AddFrontPod
     jmp short FinishUpgrade
+; Offered while an inner slot is empty; with both inner pods present, only in forms 1/2
+; with an outer slot empty.
 SidePodsAvailable:
     cmp word ptr ds:[SidePodLeftInner], -1
     jne @@checkRightInner
@@ -5978,6 +5985,7 @@ SidePodsAvailable:
 ApplySidePods:
     call AddSidePods
     jmp short FinishUpgrade
+; Ship form 2 only.
 TrailingPodsAvailable:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je @@checkNearPod
@@ -6009,6 +6017,7 @@ ApplyShipForm1:
 @@setForm:
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 1
     jmp near ptr FinishUpgrade
+; Any form but 2 (form 0 can skip form 1).
 ShipForm2Available:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je @@unavailable
@@ -6047,6 +6056,8 @@ InitUpgradeSlotAtRow:
 
 ; Secondary button: runs the selected slot's apply routine, advances the slot and
 ; redraws; sfx 9 when bought. Preserves BX and BP.
+; Runs every frame while the secondary button is held past MAP_INTRO_END_POS; after a
+; purchase the slot re-advances past the bought entry and the selection becomes FFFFh.
 ApplySelectedUpgrade:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne @@haveSelection

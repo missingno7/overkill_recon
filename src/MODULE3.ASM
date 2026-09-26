@@ -1215,7 +1215,7 @@ UpdatePlayerFrame:
 
 ; Separate entry, also reached by fallthrough from the code above. BP = record.
 ; Record its position in the history, move the trailing pods along it, then place the
-; side pods unless the map has scrolled to MapScrollPos <= B6h outside the demo.
+; side pods unless the map has scrolled to MapScrollPos <= MAP_INTRO_END_POS outside the demo.
 StoreApplyHistoryAndConditionalPlacement:
     call StorePositionHistory
     call ApplyPositionHistoryToRecords
@@ -1373,7 +1373,8 @@ AdvancePositionHistoryIfRequested:
 @@done:
     ret
 
-; Item 1: advances SelectedUpgradeSlot (0..3) and refreshes the upgrade display.
+; Item 1: cursor = (SelectedUpgradeSlot + 1) & 3, so FFFFh -> 0; empty slots are not
+; skipped. With BonusKeysEnabled it first waits for key 3 to be released.
 PickupUpgradeSelector:
     cmp byte ptr ds:[BonusKeysEnabled], 0
     je @@nextSlot
@@ -1403,6 +1404,9 @@ PickupEnergy:
     je @@redrawGauge
     inc word ptr ds:[EnergyPoints]
     jmp short @@fillEnergy
+; No-op if a front pod exists. Pool A record (evicting if full), KIND_POD, sprite 0Fh (its
+; identity in UpdatePod), 20 HP. REC_TYPE/REC_DRAW_PASS/REC_SLOT_INDEX are not set: the
+; draw pass is inherited from the old occupant.
 AddFrontPod:
     cmp word ptr ds:[FrontPodRecord], -1
     je @@allocPod
@@ -1606,6 +1610,7 @@ AddSidePods:
     call FillSidePodSlotIfEmpty
 @@done:
     ret
+; Returns NZ when the slot was occupied, else ZF from SidePodsToAdd - 1 (ZF = both added).
 FillSidePodSlotIfEmpty:
     cmp word ptr ds:[bx], -1
     je @@fillSlot
@@ -1710,7 +1715,7 @@ ClearFireLatch:
     ret
 
 ; BP = PrimaryRecord. Fires when the primary button is newly pressed, held with rapid
-; fire, or every 16 frames while held. Early in the level (MapScrollPos <= B6h, not the
+; fire, or every 16 frames while held. Early in the level (MapScrollPos <= MAP_INTRO_END_POS, not the
 ; demo) only the main shot fires; otherwise the ShotsLive* snapshot is taken and
 ; missile, side shots, pod shots and the main weapon fire in turn. Demo: step 8 fires
 ; only FireFrontPodBurst; steps 10h..12h only the missile.
@@ -1835,7 +1840,8 @@ FireHeavyShot:
     mov byte ptr ds:[SfxRequest], 14h
 @@done:
     ret
-; WeaponMode 0: one type 2 shot straight up from the muzzle.
+; Modes 0..2 are uncounted: they fire on every accepted trigger. WeaponMode 0: one type 2
+; shot straight up from the muzzle.
 FireSingleShot:
     cmp byte ptr ds:[SfxEnabled], 0
     je SpawnShotAtMuzzle
@@ -1881,8 +1887,10 @@ FireForkShot:
 @@done:
     ret
 
-; Grows the beam (BeamList) by a link every other frame while it has room, raises the
-; head 4 px and lines the other links up beside it.
+; Each frame every link takes the head's Y (the head rises 4 px) and X = head X + 8 * i;
+; sprites 6Bh, tail 6Ch. On FrameParity = 1 it first grows: head X != 0 adds a link and
+; shifts the head 8 px left, plus one more unless the old tail X = C8h; head X = 0 adds
+; one. A full BeamList returns before aligning (no rise on those frames).
 UpdateBeam:
     cmp word ptr ds:[ShotsLiveType9], 0
     jne @@checkGrowFrame
@@ -2056,19 +2064,19 @@ SpawnSideShotFromSI:
     mov word ptr ds:[bx + REC_TYPE], 5
     ret
 
-; The WeaponMode pattern from the side pods; in fork mode left pods fire up-left, right
-; pods up-right (PodShotDirection).
+; Each side pod's FirePodWeapon; PodShotDirection (DIR_UP_LEFT left, DIR_UP_RIGHT right)
+; matters only to PodForkShot. Other modes fire straight up; beam mode fires nothing.
 FireSidePodShots:
-    mov word ptr ds:[PodShotDirection], 7
+    mov word ptr ds:[PodShotDirection], DIR_UP_LEFT
     mov si, word ptr ds:[SidePodLeftInner]
     call FirePodWeapon
-    mov word ptr ds:[PodShotDirection], 1
+    mov word ptr ds:[PodShotDirection], DIR_UP_RIGHT
     mov si, word ptr ds:[SidePodRightInner]
     call FirePodWeapon
-    mov word ptr ds:[PodShotDirection], 7
+    mov word ptr ds:[PodShotDirection], DIR_UP_LEFT
     mov si, word ptr ds:[SidePodLeftOuter]
     call FirePodWeapon
-    mov word ptr ds:[PodShotDirection], 1
+    mov word ptr ds:[PodShotDirection], DIR_UP_RIGHT
     mov si, word ptr ds:[SidePodRightOuter]
     call FirePodWeapon
     ret
@@ -2084,7 +2092,9 @@ FireTrailingPodShots:
     call FirePodSideShots
     ret
 
-; SI = pod record (FFFFh = none): its WeaponMode pattern (no beam).
+; SI = pod record (FFFFh = none): its WeaponMode pattern (no beam). Modes 0..2 are
+; uncounted and silent; twin modes add 2 to ShotsLiveMain per pod, gated by the same
+; ShotsAtFireMain snapshot, so every pod fires in the same salvo.
 FirePodWeapon:
     cmp si, -1
     jne @@dispatchPattern
@@ -2129,6 +2139,8 @@ PodHeavyShot:
     call SpawnShotAtPod
     mov word ptr ds:[bx + REC_SPRITE], 33h
     ret
+; One diagonal shot at pod (Y, X + 4). Trailing pods (FFFFh): up-left when pod X <= 58h
+; (unsigned), else up-right. Sprite 19h up-right, 1Fh otherwise.
 PodForkShot:
     call AllocPlayerShot
     mov ax, ds:[si + REC_Y]
@@ -2177,6 +2189,9 @@ AllocPlayerShot:
 ; Fires a homing missile (type 0Ah) at FindMissileTarget's record when missiles remain
 ; and none is live. Without a target the allocated record is left inactive.
 ; REC_DIRECTION and REC_SPRITE are not set.
+; Gate: MissilesLive must not be exactly 1. With no target the allocation may still have
+; evicted a live pool B shot; REC_STEP_ERROR is stale, so the first chase steps depend
+; on the old occupant.
 FireMissile:
     cmp word ptr ds:[MissileAmmo], 0
     jne @@checkLive
@@ -2850,6 +2865,8 @@ UpdatePickup:
 @@collect:
     call CollectPickup
     jmp near ptr ScrollRecordThenFinish
+; Only while the ship form < 3 (else the pickup stays): sfx 7, score 20h (BCD), then
+; PickupHandlers[REC_ITEM_INDEX] with BP = PrimaryRecord; kinds are 0..4 (0 = nothing).
 CollectPickup:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb @@collect
@@ -2923,9 +2940,7 @@ UpdateSidePodRightInner:
 UpdateSidePodLeftInner:
     mov word ptr ds:[CurrentSidePodSlot], offset SidePodLeftInner
 ; Side pods: animate, place (PlaceSidePods runs elsewhere), and lose the pod on terrain
-; or on an enemy collision that takes its last hit point. When the collision kills it,
-; DestroyRecordAtBX runs on the enemy a second time (original behaviour: score, sfx and
-; group count twice).
+; or on an enemy collision that takes its last hit point (see PodCollideRecords).
 UpdateSidePod:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jae @@losePod
@@ -3058,6 +3073,9 @@ PodLoseHitPoint:
 ; itself skipped): a pickup is collected (NC);
 ; an enemy is destroyed and the pod loses a hit point (CF when it was the last). Always
 ; NC in the demo.
+; On CF the caller (front, side or trailing pod) runs DestroyRecordAtBX on the enemy again:
+; score, sfx, ReleaseEncounterMember and GROUP_LIVE twice (no 26h wreck). Pool B is not
+; scanned: enemy shots never hit pods.
 PodCollideRecords:
     cmp word ptr ds:[DemoActive], 1
     jne @@scan
@@ -3235,6 +3253,8 @@ Type07RisingShot3:
     jmp near ptr ShotBoundsCheck
 ; A link of the player's beam (BeamList): UpdateBeam positions it; the handler only
 ; applies the shot bounds tail.
+; Removing any link (bounds or a wall) frees the whole beam; beam hits pierce (the boss
+; takes DamageTwo each frame of overlap).
 Type09BeamLink:
     jmp near ptr ShotBoundsCheck
 ; 2 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the player-hit test.
@@ -3297,6 +3317,9 @@ Type06SideShotUpRight:
     jmp near ptr ShotScrollAndBounds
 ; Rises 4 px per frame; every 16 px of X probes the map: a wall turns it straight up,
 ; otherwise it keeps drifting up-left.
+; The probe (attribute exactly 1) is redone each probe frame: the shot rises straight only
+; while the wall is there. Expiry at X = 0 / C8h is equality-only (X stays a multiple of
+; 4). Type 06h also animates its sprite; 05h does not.
 Type05SideShotUpLeft:
     cmp word ptr ss:[bp + REC_X], 0
     jne @@rise
@@ -3665,8 +3688,10 @@ FindMissileTarget:
     mov word ptr ds:[TargetSearchCursor], bx
     pop bx
     ret
-; Steers (speed 2) to the player, then locks the next live enemy (sfx 11h) or expires;
-; chases it by 3 px Bresenham steps; returns to the player when the target is lost.
+; Spawned locked. Locked: 3 px Bresenham chase of REC_TARGET (with scroll); a hit or a
+; lost target (freed, Y > DCh unsigned, type 1) unlocks it. Unlocked: speed-2 steer to
+; the player + (0Ah, 0Ch) on a 4-px grid, no scroll; on arrival relocks or expires. The
+; target test has no KIND check: a freed slot reused by a pickup is chased.
 Type0AHomingMissile:
     mov ax, ds:[FrameCount8]
     add ax, 6Dh
@@ -5018,9 +5043,11 @@ AnimateExplosion32:
     mov ss:[bp + REC_SPRITE], ax
     jmp near ptr ScrollRecordThenFinish
 ; BX = player shot that hit BP. Types 7, 8, 0Ch and 9 pierce: they destroy BP outright
-; (against the segmented boss they only damage it, and 7/8/0Ch are then used up).
-; Types 5 and 6 are used up and destroy BP; type 2 is used up and takes 1..5 hit points
-; by sprite and DifficultySetting; any other shot only hits its REC_TARGET.
+; (against the segmented boss they only damage it, and 7/8/0Ch are then used up). Types
+; 5 and 6 are used up and destroy BP. Type 2 is used up: 1 HP (+1 for sprite 33h) plus
+; 3/1/0 more at DifficultySetting 0/1/other; boss hits through DamageTwo take 5/3/2. Each
+; step tests zero only, so a type 21h left at 0 HP wraps to FFFFh on its next hit. Any
+; other shot only hits its REC_TARGET (the missile, which unlocks).
 ShotHitsRecord:
     cmp word ptr ds:[bx + REC_TYPE], 7
     jne @@checkType8
@@ -7049,6 +7076,8 @@ RunDemoScriptFrame:
     mov ds, word ptr cs:[PanelSegment]
     call BlitPackedToScreen
     pop ds
+; BP is not set here (left by RestoreRecordBackgrounds); new beam links get a stale muzzle
+; anchor, but UpdateBeam re-aligns every link to the head in the same call.
     call UpdateBeam
     cmp word ptr ds:[DemoStep], 8
     jb @@stepAction
