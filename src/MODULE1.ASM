@@ -9485,7 +9485,8 @@ GridOffsetNegativeY:
 ; BP = record. Map the record's position to a level-map cell (13-byte rows, 16-pixel
 ; cells): GridYSum = ScrollSubRow + REC_Y; returns BX = MapScrollPos - 13*(GridYSum>>4)
 ; + REC_X>>4, or BX = FFFFh via GridOffsetNegativeY when GridYSum is negative.
-; Some callers do not check FFFFh (see ProbeGridForRecordResponse).
+; Some callers do not check FFFFh (see ProbeGridForRecordResponse). Terrain callers use
+; BX + MAP_ROW_BYTES as the cell under the point. X is unsigned; flags are not a result.
 ComputeRecordGridOffset:
     mov ax, word ptr ds:[ScrollSubRow]
     add ax, word ptr ss:[bp + REC_Y]

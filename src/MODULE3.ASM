@@ -1123,8 +1123,10 @@ PlayerDyingTail:
     mov word ptr ds:[GameOverRequest], 1
     ret
 
-; Per frame: input (or the level-end autopilot), beam, movement, scroll, fire, pods and
-; position history; the dying animation once EnergyTanks is -1.
+; Per frame, in order: input (or the level-end autopilot), UpdateBeam; when dying
+; (EnergyTanks -1 or Fuel 0) only the dying animation, no scroll. Otherwise Y-, Y+, X+, X-
+; steps (opposite keys both apply), upgrade, one scroll line, fire, edge spread, terrain
+; damage, pod X nudge, position history, pod placement.
 UpdatePlayerFrame:
     mov word ptr ds:[LifeLostRequest], 0
     mov word ptr ds:[NextLevelRequest], 0
@@ -2402,8 +2404,8 @@ ScrollForwardAndCheckLevelEnd:
 @@done:
     ret
 
-; ScrollDeltaY + 1; moves ScrollWindowOffset up one row, entering a new map row every 16
-; lines. Preserves BP.
+; ScrollDeltaY + 1; moves ScrollWindowOffset up one pixel line, entering a new map row
+; every 16 lines. Preserves BP.
 ScrollForwardOneLine:
     push bp
     add word ptr ds:[ScrollDeltaY], 1
@@ -2436,7 +2438,7 @@ WrapScrollWindowForward:
     mov word ptr ds:[ScrollWindowOffset], ax
     ret
 
-; Draws the incoming map row, MapScrollPos + 0Dh, LevelScriptClock - 1.
+; Draws the map row at MapScrollPos, then MapScrollPos + 0Dh, LevelScriptClock - 1.
 EnterNextMapRowForward:
     call DrawMapRowIntoScrollBand
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
@@ -2484,7 +2486,8 @@ ScrollBackwardOneLine:
     pop bp
     ret
 
-; Draws the incoming map row, MapScrollPos - 0Dh, LevelScriptClock + 1.
+; Draws the map row at MapScrollPos - 0A9h (entering 13 rows down), then
+; MapScrollPos - 0Dh, LevelScriptClock + 1.
 EnterPreviousMapRowBackward:
     call DrawMapRowIntoScrollBand
     sub word ptr ds:[MapScrollPos], MAP_ROW_BYTES
@@ -2776,7 +2779,9 @@ SmallRecordHitsPlayer:
     add ax, word ptr ds:[PrimaryRecord + REC_X]
     mov word ptr ds:[PlayerHitX], ax
     jmp near ptr RecordNearPlayerHitPoint
-; BP = size class 2 record: CF when the player's box overlaps it.
+; BP = size class 2 record: CF when recX-14h <= player X <= recX+18h (signed) and
+; recY-14h <= player Y <= recY+18h (unsigned; recY-4..recY+8 while SegBossActive);
+; NC when REC_Y < 0. No ship-form check.
 LargeRecordHitsPlayer:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
@@ -3020,7 +3025,8 @@ StepRecordResponseCounter:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     stc
     ret
-; BP = pod: the first live size-1 pool A record within 10h: a pickup is collected (NC);
+; BP = pod: the first live size-1 enemy or pickup in pool A within 10h (type 1 and BP
+; itself skipped): a pickup is collected (NC);
 ; an enemy is destroyed and the pod loses a hit point (CF when it was the last). Always
 ; NC in the demo.
 PodCollideRecords:
@@ -3417,7 +3423,9 @@ Move1ByDirection label word
 @@moveLeft:
     dec word ptr ss:[bp + REC_X]
     ret
-; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and TerrainBlocked = 1) when blocked.
+; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and TerrainBlocked = 1)
+; when blocked. BP is a 16x16 box at (X, Y + ScrollDeltaY). Diagonals try both axis steps
+; separately, so one axis may move while NZ reports blocked; a walker overlap undoes it.
 TryTerrainStep:
     mov word ptr ds:[TerrainBlocked], 0
     mov ax, word ptr ss:[bp + REC_Y]
@@ -3679,6 +3687,8 @@ Type0AHomingMissile:
 Type0BAimedEnemyShot:
     call StepAlongDelta
 ; Damages the player and removes the shot on a hit; otherwise the scroll and bounds tail.
+; Hit: PY-2 <= shot Y <= PY+12h (signed), PX <= shot X <= PX+14h (unsigned), before this
+; frame's scroll. The shot is used up even when DamagePlayerEnergy ignores the hit.
 ShotHitPlayerCheck:
     cmp word ptr ss:[bp + REC_SIDE_FLAG], 1
     je @@missed
@@ -4663,8 +4673,9 @@ ClimbWalkerStep:
 ScrollRecordThenFinish:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
-; Clamp X, remove the record when it leaves the screen vertically (some types
-; exempt), then run the collision checks unless LevelEndPhase is set.
+; Clamp X; remove the record when REC_Y < -0C0h or >= 0F0h (signed; types 0, 26h, 28h,
+; 29h, 34h, 48h, 86h and all records during the level end use -14h as the top bound);
+; then the collision checks unless LevelEndPhase is set.
 FinishRecordUpdate:
     call ClampRecordX
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
@@ -4705,7 +4716,7 @@ FinishRecordUpdate:
 @@done:
     ret
 
-; Clamp REC_X to 0..0C0h.
+; Clamp REC_X to 0..0C0h (signed).
 ClampRecordX:
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jg @@clampRight
@@ -4853,7 +4864,8 @@ RemoveRecord:
     dec word ptr ds:[ShotsLiveSide]
 @@sideShotDone:
     ret
-; CF when TerrainProbeY/X is within 10h of another walker (enemy types 82h..94h).
+; CF when TerrainProbeY/X is strictly within 10h (signed) of another walker (enemy types
+; 82h..94h, pass 0, size 1; BP itself skipped by its REC_SAVE_BUFFER). NC for pass-1 BP.
 ProbeOverlapsWalker:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 1
     je @@noOverlap

@@ -1226,10 +1226,12 @@ SwayReversals dw 0h
 ; Toggled while the player sprite is 2: every other pass drains extra fuel.
 ThrustDrainToggle dw 0h
 ScrollWindowOffset dw 00000h
-; Pixel row within the current map tile row, 0..0Fh.
+; Screen Y 0 lies ScrollSubRow pixels into the map row at MapScrollPos (GridYSum = Y +
+; ScrollSubRow); counts down while scrolling forward and wraps 0 -> 0Fh as a row enters.
 ScrollSubRow dw 0h
-; View position in the level map, in map bytes (13 tiles per row); each scroll step
-; moves it by 0Dh and LevelScriptClock by one.
+; View position in the level map as a row start (13 cells per row). Map rows are stored
+; bottom-up: MapScrollPos grows as the level advances, rows lower on screen have
+; smaller offsets. Moves by MAP_ROW_BYTES per 16-line row, with LevelScriptClock.
 MapScrollPos dw 00000h
 ; 1 while scrolling backward (ScrollBackwardOneLine).
 ScrollingBackward dw 0h
@@ -1487,8 +1489,12 @@ ScreenRowOffsets dw 200 dup (0)
 ; The program stack (SS = DS); SP starts at StackTop.
 StackArea db STACK_BYTES dup (0)
 StackTop label word
-; Added to REC_Y of records that move with the scrolling playfield.
+; Lines scrolled this frame: 0 at the start of UpdatePlayerFrame, +1 forward, -1
+; backward; added to REC_Y of scrolling records. Records update after the scroll, so
+; terrain probes add it to REC_Y first.
 ScrollDeltaY dw 0
+; Ring of 48 ship (Y+8, X+8) points, advanced only on frames the ship moves; the
+; trailing pods read 15 and 31 entries back. HistoryCursor47 advances but is never read.
 HistoryPairs db 00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -2267,8 +2273,9 @@ PaymentFileName db 'payment.enc',0
 ; Help line of ShowPaymentText (text attribute 30h).
 PaymentHelpRow label word
     TEXTROW 30h, <Information:      (Keys:- Cursor Up & Down / Page Up & Down / Home / End / ESC) >
-; Byte attributes: filled and patched by InitializeByteAttributes, read by
-; ReadIndexedByteAttribute.
+; Terrain attribute per map tile number: 0 open, 1 wall (stops the ship, pods, walkers
+; and player shots), 2 solid to all but player shots. Level load fills 1, then patches
+; (InitializeByteAttributes); the demo clears every entry to 0.
 ByteAttributeTable db 00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h

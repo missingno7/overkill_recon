@@ -12,6 +12,9 @@ POOL_B_SAVE_BYTES equ 040h
 
 ; 0 = free slot.
 REC_STATUS equ 00h
+; Signed playfield pixels, Y growing downward, top-left of the sprite. The playfield is
+; 13 cells x 16 px = D0h wide (record X 0..PLAYFIELD_MAX_X). Scrolling records get
+; ScrollDeltaY added each frame; the player ship does not.
 REC_Y equ 02h
 REC_X equ 04h
 ; 0..7 clockwise from up (0 up, 2 right, 4 down, 6 left), see DirectionFromQuadrant.
@@ -60,7 +63,8 @@ REC_TYPE equ 18h
 REC_PREV_TYPE equ 1Ah
 ; Type-dependent.
 REC_FIELD_1C equ 1Ch
-; Pool B: 1 or 0 depending on the spawn site; tested against pool-A records.
+; Pool B: 1 = player shot (tested against pool A), 0 = enemy shot or child (tested
+; against the player).
 REC_SIDE_FLAG equ 1Eh
 ; Set at spawn, decremented per collision; zero destroys the record.
 REC_HIT_POINTS equ 20h

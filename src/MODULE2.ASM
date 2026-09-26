@@ -2236,7 +2236,8 @@ SmartBombRecord:
     jmp near ptr DestroyRecord
 ; BP = record: tests every live player shot in pool B (unrolled over all 34 records)
 ; against BP's 8-pixel cells (two columns and rows, four for size class 2) and hands
-; the first hit to ShotHitsRecord.
+; the first hit to ShotHitsRecord. Skips BP with REC_Y < 20h (signed), scenery and types
+; 0/1/26h; types 78h/79h get two rows even at size class 2.
 PlayerShotsHitRecord:
     cmp word ptr ss:[bp + REC_STATUS], 0
     jne @@checkY
@@ -5782,7 +5783,7 @@ Type26TurretRemnant:
     mov byte ptr ds:[SfxRequest], 1Eh
 @@done:
     jmp near ptr ScrollRecordThenFinish
-; CF when BP lies within 10h of PlayerHitY/X on both axes.
+; CF when |REC_Y - PlayerHitY| <= 10h and |REC_X - PlayerHitX| <= 10h (signed, inclusive).
 RecordNearPlayerHitPoint:
     mov si, word ptr ds:[PlayerHitY]
     add si, 010h
