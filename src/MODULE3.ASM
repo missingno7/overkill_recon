@@ -293,6 +293,7 @@ public MoveInDirection2
 public MoveInDirection4
 public MoveInDirection8
 public PanelSegment
+public PerFileFlagsEnabled
 public PlaqueSegment
 public PlayfieldRowBytes
 public ReleaseEmsCache
@@ -351,8 +352,8 @@ extrn BlueBitsImageOffsets:word
 extrn BuildByteToNibbleMaskTable:near
 extrn BuildRowTables:near
 extrn CgaColorMap:byte
-extrn ClearByteCS066B:near
 extrn ClearScreen104x200:near
+extrn ClearTimerTick:near
 extrn ComputeRecordGridOffset:near
 extrn CopyWorkspaceToScreen:near
 extrn CountXReturn:near
@@ -450,7 +451,7 @@ extrn TypeHandler90:near
 extrn TypeHandler91:near
 extrn TypeHandler93:near
 extrn UpdateHighScoreTable:near
-extrn WaitByteCS066B:near
+extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
 extrn loc_0073C:near
 extrn loc_00747:near
@@ -746,10 +747,10 @@ StartLife:
     cmp word ptr ds:[MapScrollPos], 09Ch
     jne GameFrame
     call RunTimedSequenceUntilPrimary
-; One game frame, paced by the timer (WaitByteCS066B): update and draw, act on the
+; One game frame, paced by the timer (WaitTimerTick): update and draw, act on the
 ; requests raised this frame, then F4 (level skip), F10 (pause) and Esc (quit prompt).
 GameFrame:
-    call ClearByteCS066B
+    call ClearTimerTick
     call loc_0511F
     call loc_0A846
     cmp word ptr ds:[Fuel], 0
@@ -788,7 +789,7 @@ GameFrame:
     je QuitPrompt
 ResumeGameFrame:
     call loc_05160
-    call WaitByteCS066B
+    call WaitTimerTick
     jmp short GameFrame
 
 loc_0981F:
@@ -978,8 +979,7 @@ loc_099F6:
     mov bx, word ptr ds:[0A47Ch]
     shl bx, 1
     jmp word ptr cs:[bx + loc_099F6Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_099F6Cases label word
     dw offset CountXReturn, offset loc_09A78, offset loc_09A3E, offset loc_09A16
     dw offset CountXReturn
@@ -1723,8 +1723,7 @@ loc_0A0FC:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0A0FCCases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0A0FCCases label word
     dw offset loc_0A19F, offset loc_0A18A, offset loc_0A1C8, offset loc_0A337
     dw offset loc_0A2F6, offset CountXReturn
@@ -2021,8 +2020,7 @@ loc_0A420:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0A420Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0A420Cases label word
     dw offset loc_0A4D7, offset loc_0A490, offset loc_0A499, offset loc_0A464
     dw offset loc_0A438, offset CountXReturn
@@ -2691,8 +2689,7 @@ loc_0AA2B:
     mov bx, word ptr ss:[bp + REC_KIND]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0AA2BCases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0AA2BCases label word
     dw offset loc_0BC45, offset loc_0AD04, offset loc_0EFAE, offset CountXReturn
     dw offset loc_0EFAE, offset loc_0AAC2, offset loc_0AB10
@@ -3268,8 +3265,7 @@ MoveInDirection2:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
     jmp word ptr cs:[bx + Move2ByDirection]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 Move2ByDirection label word
     dw offset loc_0AF8B, offset loc_0AF90, offset loc_0AF94, offset loc_0AF7E
     dw offset loc_0AF82, offset loc_0AF99, offset loc_0AF9D, offset loc_0AF87
@@ -3346,8 +3342,7 @@ loc_0B00D:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0B00DCases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0B00DCases label word
     dw offset loc_0B07D, offset loc_0B0C9, offset loc_0B0CC, offset loc_0B039
     dw offset loc_0B03C, offset loc_0B10C, offset loc_0B10F, offset loc_0B07A
@@ -4748,8 +4743,7 @@ loc_0BE46:
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0BE46Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0BE46Cases label word
     dw offset loc_0BC45, offset loc_0BE5A, offset loc_0BEB0
 loc_0BE5A:
@@ -4940,8 +4934,7 @@ loc_0C027:
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0C027Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0C027Cases label word
     dw offset CountXReturn, offset loc_0C048, offset loc_0C04E
 loc_0C048:
@@ -5468,13 +5461,13 @@ loc_0C59A:
     sti
     cmp al, 7
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; 1 enables the per-file flag bytes (DecodeFileFlags) while loading graphics.
+PerFileFlagsEnabled db 0
 
 loc_0C5B1:
     call loc_0C5BD
     jne loc_0C5BC
-    mov byte ptr cs:[0C5B0h], 1
+    mov byte ptr cs:[PerFileFlagsEnabled], 1
 loc_0C5BC:
     ret
 
@@ -6364,8 +6357,7 @@ loc_0CC7F:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0CC7FCases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0CC7FCases label word
     dw offset loc_0CCAA, offset loc_0CCF0, offset loc_0CCC4
 
@@ -6457,8 +6449,7 @@ loc_0CD68:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0CD68Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 loc_0CD68Cases label word
     dw offset loc_0CD8A, offset loc_0CDCC, offset loc_0CDA7
 
@@ -6733,7 +6724,7 @@ loc_0CF9C:
     mov word ptr ds:[DemoStepTimer], 064h
     mov byte ptr ds:[KeyLastMakeCode], 0
 loc_0D007:
-    call ClearByteCS066B
+    call ClearTimerTick
     call loc_0511F
     call loc_0A846
     call CopyWorkspaceToScreen
@@ -6743,7 +6734,7 @@ loc_0D007:
     call loc_05F61
     call loc_0073C
     call loc_05160
-    call WaitByteCS066B
+    call WaitTimerTick
     cmp word ptr ds:[DemoStep], 013h
     je loc_0D040
     call PollInputBits
@@ -6997,7 +6988,7 @@ RunTimedSequenceUntilPrimary:
     call CopyWorkspaceToScreen
     mov word ptr ds:[SequenceFrameCount], 0
 loc_0D318:
-    call ClearByteCS066B
+    call ClearTimerTick
     call loc_0511F
     call DrawStars
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
@@ -7010,7 +7001,7 @@ loc_0D32C:
     call loc_0073C
     call loc_060A2
     call loc_05160
-    call WaitByteCS066B
+    call WaitTimerTick
     call WaitVerticalRetrace
     inc word ptr ds:[SequenceFrameCount]
     cmp word ptr ds:[SequenceFrameCount], 0C8h
@@ -7063,7 +7054,7 @@ RunChooseScreen:
     mov byte ptr ds:[LoadIsEnc], 0
     mov word ptr cs:[LoadDestOffset], 0
 loc_0D406:
-    call ClearByteCS066B
+    call ClearTimerTick
     call loc_0511F
     call loc_0D4AA
     call loc_05160
@@ -7071,7 +7062,7 @@ loc_0D406:
     call ReadChooseScreenInput
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     jne loc_0D424
-    call WaitByteCS066B
+    call WaitTimerTick
     jmp short loc_0D406
 loc_0D424:
     mov ax, word ptr ds:[ChooseSlot]

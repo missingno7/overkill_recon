@@ -1056,8 +1056,7 @@ TextColor db 00h
 ; UNKNOWN: not yet classified as code or data
     db 00h
 TextColumn db 00h
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 TextRowOffset dw 00000h
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h

@@ -716,23 +716,23 @@ loc_05433:
     stosw
     call ClearKeyDownTable
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Row being drawn while listing the high scores.
+HiscoreRowIndex db 0
 
 loc_05450:
     mov ax, offset HiscorePageList
     call far ptr ShowPageList
-    mov byte ptr cs:[0544Fh], 0
+    mov byte ptr cs:[HiscoreRowIndex], 0
     mov cx, 8
 loc_05461:
     push cx
-    mov al, byte ptr cs:[0544Fh]
+    mov al, byte ptr cs:[HiscoreRowIndex]
     shl al, 1
     add al, 4
-    mov byte ptr ds:[021D3h], al
+    mov byte ptr ds:[HiscoreRowPrefix + 1], al
     mov bp, offset HiscoreRowPrefix
     call PrintMessageBP
-    mov al, byte ptr cs:[0544Fh]
+    mov al, byte ptr cs:[HiscoreRowIndex]
     xor ah, ah
     mov cx, 010h
     mul cx
@@ -744,7 +744,7 @@ loc_05461:
     lea bp, ss:[bp + 0Ch]
     call loc_05EE4
     pop cx
-    inc byte ptr cs:[0544Fh]
+    inc byte ptr cs:[HiscoreRowIndex]
     loop loc_05461
     ret
 
@@ -1359,8 +1359,8 @@ loc_05AC8:
     add bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_05AC8Cases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+; NOP filler (word alignment).
+    db 90h
 loc_05AC8Cases label word
     dw offset loc_04896, offset loc_0480E, offset loc_04740, offset loc_02AF9
     dw offset loc_02AB9, offset loc_02A4F, offset loc_03657, offset loc_035CC
@@ -1377,7 +1377,7 @@ DecodePlaneBits db 4 dup (0)
 DecodeDest dw 0
 ; Images decoded so far in this file; index into the per-file flag table.
 DecodeImageIndex dw 0
-; Per-file flag bytes (the word before the file name when CS:C5B0 = 1, else FFFFh).
+; Per-file flag bytes (the word before the file name when PerFileFlagsEnabled = 1, else FFFFh).
 DecodeFileFlags dw 0
 loc_05BAC:
     mov word ptr cs:[DecodeFileFlags], bp
@@ -1409,8 +1409,8 @@ loc_05BEE:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_05BEECases]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+; NOP filler (word alignment).
+    db 90h
 loc_05BEECases label word
     dw offset loc_0446C, offset loc_02737, offset ClearTandy32K
 
@@ -1630,8 +1630,8 @@ loc_05DF2:
     mov bx, word ptr ds:[SteerSpeed]
     shl bx, 1
     jmp word ptr cs:[bx + StepBySteerSpeed]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+; NOP filler (word alignment).
+    db 90h
 StepBySteerSpeed label word
     dw offset MoveInDirection1, offset MoveInDirection2, offset MoveInDirection4, offset MoveInDirection8
 loc_05E14:
@@ -4339,8 +4339,8 @@ loc_076D7:
     mov bp, 010h
     mov cx, bp
     jmp word ptr cs:[bx]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+; NOP filler (word alignment).
+    db 90h
 ; 16x16 sprite blitters, as Sprite32Blitters (VideoAdapter*8 + REC_PIXEL_PHASE);
 ; FlashSprite16Blitters while REC_FLASH_TIMER is nonzero.
 Sprite16Blitters label word
@@ -4845,7 +4845,7 @@ loc_07BE6:
     xor bh, bh
     shl bx, 1
     jmp word ptr cs:[bx + 7C08h]
-; UNKNOWN: not yet classified as code or data
+; NOP filler (word alignment).
     db 90h
     dw offset loc_07ED7, offset loc_07ED7, offset loc_08143, offset loc_08137
     dw offset loc_07F86, offset loc_07F86, offset loc_07F5D, offset loc_07F69
@@ -5240,10 +5240,8 @@ loc_07FF0:
 loc_07FFB:
     call loc_0819E
     jne loc_08001
-
+    ret
 ; Offset-placement use of field+8 does not define its role in other record types.
-; UNKNOWN: not yet classified as code or data
-    db 0C3h
 loc_08001:
     mov word ptr ds:[bx + 6], 4
     mov word ptr ds:[bx + 18h], 6Fh
@@ -6597,8 +6595,9 @@ TypeHandler53:
     add bx, ss:[bp + REC_FIELD_36]
     mov ss:[bp + REC_SPRITE], bx
     jmp near ptr loc_0BC45
-; UNKNOWN: not yet classified as code or data
-    db 0F8h,0C3h
+; CF = 0 and return; no caller found.
+    clc
+    ret
 TypeHandler48:
     call far ptr loc_0F9B2
     call loc_07476
@@ -6647,8 +6646,8 @@ FarCallMainNearViaAX:
 FarCallMainNearViaBP:
     call bp
     retf
-; UNKNOWN: not yet classified as code or data
-    db 090h
+; NOP filler (word alignment).
+    db 90h
 ; Built by BuildRowTables: offset of image n in its bank = n * its size, for level
 ; blocks (BlockBytes) and 8x8, 16x16 and 32x32 masked sprites (Sprite8Bytes ...).
 BlockOffsets dw 256 dup (0)

@@ -163,12 +163,12 @@ public BuildByteToNibbleMaskTable
 public BuildRowTables
 public CalibrateJoystickWithAbort
 public CgaColorMap
-public ClearByteCS066B
 public ClearKeyDownTable
 public ClearScreen104x200Cga
 public ClearScreen104x200Ega
 public ClearTandy104x200
 public ClearTandy32K
+public ClearTimerTick
 public ComputeRecordGridOffset
 public CopyPackedRowsStride104
 public CopyPackedRowsStride160
@@ -220,7 +220,7 @@ public TandyOffsetFromPlayfieldRow
 public TandyOffsetFromScreenRow
 public TandyOffsetFromWideRow
 public UpdateHighScoreTable
-public WaitByteCS066B
+public WaitTimerTick
 public WaitVerticalRetrace
 public XorCodeHiscoreBlock
 public loc_0073C
@@ -365,6 +365,7 @@ extrn LoadResourceFile:near
 extrn MainDataSegment:word
 extrn ManExplSegment:word
 extrn PanelSegment:word
+extrn PerFileFlagsEnabled:byte
 extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
 extrn RequestModuleMusic:near
@@ -856,8 +857,7 @@ DecodePackBitsStream:
     dec al
     jns @@copy_literal
     jmp short @@next_control
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 ; DecodeColumnPackBits header: only the width word is ever read.
 PackedColumnHeader0 dw 0 ; PackedColumnHeader0
 PackedColumnWidth dw 0 ; PackedColumnWidth
@@ -909,8 +909,7 @@ DecodeColumnPackBits:
     pop cx
     loop @@next_column
     jmp near ptr FinishPackedLoad
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 ; ReadBufferedByte state: a 512-byte read buffer, its cursor, the caller's BX and
 ; the low-byte scratch of ReadBufferedWordLE.
 PackedReadBuffer db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -992,22 +991,22 @@ ClosePackedFile:
     jmp near ptr FailPackedLoad
 @@closed:
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
-; Increment byte CS:066B modulo 256; INC preserves incoming CF. Near return.
-IncrementByteCS066B:
-    inc byte ptr cs:[066Bh]
+; Incremented by the timer interrupt (IncrementTimerTick); waited on by WaitTimerTick.
+TimerTickCount db 0
+; Increment TimerTickCount modulo 256; INC preserves incoming CF. Near return.
+IncrementTimerTick:
+    inc byte ptr cs:[TimerTickCount]
     ret
-; ClearByteCS066B
+; ClearTimerTick
 ; Write zero to CS:066B. Registers and flags unchanged; near return.
-ClearByteCS066B:
-    mov byte ptr cs:[066Bh], 0
+ClearTimerTick:
+    mov byte ptr cs:[TimerTickCount], 0
     ret
 ; Poll CS:066B until nonzero. Requires asynchronous mutation to terminate from zero; near
 ; return leaves CMP flags.
-WaitByteCS066B:
-    cmp byte ptr cs:[066Bh], 0
-    je WaitByteCS066B
+WaitTimerTick:
+    cmp byte ptr cs:[TimerTickCount], 0
+    je WaitTimerTick
     ret
 ; Once only: save the BIOS INT 08h vector in SavedInt08, speed the system timer up to
 ; TIMER_DIVISOR (about 72.8 Hz) and install Interrupt08Handler.
@@ -1088,7 +1087,7 @@ loc_00704:
     mov ds, word ptr cs:[MainDataSegment]
     test byte ptr ds:[TimerTickPhase], 1
     jne loc_00716
-    call IncrementByteCS066B
+    call IncrementTimerTick
 loc_00716:
     pop es
     pop bp
@@ -1110,8 +1109,7 @@ loc_0072F:
     pop ax
     sti
     jmp dword ptr cs:[SavedInt08]
-; UNKNOWN: not yet classified as code or data
-    db 090h
+    even
 ; Far pointer (offset, segment) to the BIOS INT 08h handler, saved by InstallTimerVector08,
 ; restored by RestoreTimerVector08 and chained by Interrupt08Handler.
 SavedInt08 db 00h,00h,00h,00h
@@ -1643,7 +1641,7 @@ loc_00D1D:
     dec bp
     dec bp
     mov bp, word ptr ss:[bp]
-    cmp byte ptr cs:[0C5B0h], 1
+    cmp byte ptr cs:[PerFileFlagsEnabled], 1
     je loc_00D2E
     mov bp, 0FFFFh
 loc_00D2E:
@@ -4552,7 +4550,7 @@ loc_0283F:
     jne loc_02863
     xor bl, bl
 loc_02863:
-    cmp byte ptr cs:[0C5B0h], 1
+    cmp byte ptr cs:[PerFileFlagsEnabled], 1
     jne loc_0289A
     mov bp, word ptr cs:[DecodeFileFlags]
     cmp bp, -1
@@ -9537,8 +9535,8 @@ loc_0511F:
     je loc_05128
     ret
 loc_05128:
-    inc word ptr cs:[0515Eh]
-    and word ptr cs:[0515Eh], 1
+    inc word ptr cs:[EgaPageToggle]
+    and word ptr cs:[EgaPageToggle], 1
     mov word ptr cs:[ScreenSegment], 0A000h
     jne loc_0513D
     ret
@@ -9551,11 +9549,11 @@ loc_05145:
     je loc_0514E
     ret
 loc_0514E:
-    mov word ptr cs:[0515Eh], 0
+    mov word ptr cs:[EgaPageToggle], 0
     mov word ptr cs:[ScreenSegment], 0A000h
     jmp short loc_05160
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; EGA page being drawn (0/1): ScreenSegment alternates between A000h and A200h.
+EgaPageToggle dw 0
 
 loc_05160:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
@@ -9563,7 +9561,7 @@ loc_05160:
     ret
 loc_05169:
     xor bx, bx
-    cmp word ptr cs:[0515Eh], 0
+    cmp word ptr cs:[EgaPageToggle], 0
     je loc_05176
     mov bx, 02000h
 loc_05176:
