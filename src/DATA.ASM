@@ -99,6 +99,10 @@ public CorruptMsgPressKey
 public CorruptMsgTail
 public CountGate2324
 public CreditRandomWords
+public DebugCodewordLine
+public DebugNonAsciiCodewordLine
+public DebugOldNonAsciiCodewordLine
+public DebugPasswordLine
 public DecimalToBuffer
 public DemoActive
 public DemoFireCycle
@@ -328,6 +332,9 @@ public SfxRequest
 public SfxTickPhase
 public SfxVoiceA
 public SfxVoiceB
+public SoundCardCaptionAdlib
+public SoundCardCaptionRoland
+public SoundCardCaptionTandy
 public SoundModuleLoaded
 public SoundModuleNameAdlib
 public SoundModuleNamePtr

@@ -28,6 +28,10 @@ extrn CorruptMsgPressKey:byte
 extrn CorruptMsgTail:byte
 extrn CountGate2324:word
 extrn CreditRandomWords:byte
+extrn DebugCodewordLine:byte
+extrn DebugNonAsciiCodewordLine:byte
+extrn DebugOldNonAsciiCodewordLine:byte
+extrn DebugPasswordLine:byte
 extrn DemoActive:word
 extrn DemoFireCycle:word
 extrn DemoScript:word
@@ -182,6 +186,9 @@ extrn SfxRequest:byte
 extrn SfxTickPhase:byte
 extrn SfxVoiceA:byte
 extrn SfxVoiceB:byte
+extrn SoundCardCaptionAdlib:byte
+extrn SoundCardCaptionRoland:byte
+extrn SoundCardCaptionTandy:byte
 extrn SoundModuleInitEntry:far
 extrn SoundModuleLoaded:byte
 extrn SoundModuleNameAdlib:byte
@@ -5798,13 +5805,29 @@ loc_0C86D:
 loc_0C886:
     xor al, al
     ret
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,0BDh,016h,0BCh,0E8h,0F2h
-    db 088h,0BDh,041h,0BCh,0E8h,0ECh,088h,0BDh,06Ch,0BCh,0E8h,0E6h,088h,0BDh,097h,0BCh
-    db 0E8h,0E0h,088h,0C3h
+    even
+; State of the startup file checksum (loc_0C8AD).
+; Only ever cleared; 1 would skip the check.
+IntegritySkip dw 0
+; Checksum of the whole file, bytes read by the last chunk, running checksum, buffer.
+IntegritySum dw 0
+IntegrityBytesRead dw 0
+IntegrityRunningSum dw 0
+IntegrityBufferSegment dw 0
+; Print the four DebugCodeword lines. No caller found in this image.
+PrintDebugCodewords:
+    mov bp, offset DebugCodewordLine
+    call PrintMessageBP
+    mov bp, offset DebugNonAsciiCodewordLine
+    call PrintMessageBP
+    mov bp, offset DebugOldNonAsciiCodewordLine
+    call PrintMessageBP
+    mov bp, offset DebugPasswordLine
+    call PrintMessageBP
+    ret
 
 loc_0C8AD:
-    mov word ptr cs:[0C88Ah], 0
+    mov word ptr cs:[IntegritySkip], 0
     mov dx, offset IntegrityFileExe
     call loc_0C8BD
     mov dx, offset IntegrityFileData
@@ -5814,16 +5837,16 @@ loc_0C8BD:
     mov bx, 0180h
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    mov word ptr cs:[0C892h], ax
+    mov word ptr cs:[IntegrityBufferSegment], ax
     xor al, al
     mov ah, DOS_OPEN_FILE
     int 021h
     mov word ptr ds:[FileHandle], ax
-    mov word ptr cs:[0C890h], 01234h
+    mov word ptr cs:[IntegrityRunningSum], 01234h
 loc_0C8DC:
     mov ds, word ptr cs:[MainDataSegment]
     mov bx, word ptr ds:[FileHandle]
-    mov ds, word ptr cs:[0C892h]
+    mov ds, word ptr cs:[IntegrityBufferSegment]
     mov cx, 042h
     xor di, di
     push si
@@ -5836,9 +5859,9 @@ loc_0C8DC:
     mov ah, DOS_READ_FILE
     int 021h
     pop si
-    mov word ptr cs:[0C88Eh], ax
-    mov ax, word ptr cs:[0C890h]
-    mov cx, word ptr cs:[0C88Eh]
+    mov word ptr cs:[IntegrityBytesRead], ax
+    mov ax, word ptr cs:[IntegrityRunningSum]
+    mov cx, word ptr cs:[IntegrityBytesRead]
     jcxz loc_0C925
     mov si, 042h
     mov dh, 0
@@ -5848,7 +5871,7 @@ loc_0C916:
     add ah, al
     inc si
     loop loc_0C916
-    mov word ptr cs:[0C890h], ax
+    mov word ptr cs:[IntegrityRunningSum], ax
     jmp short loc_0C8DC
 loc_0C925:
     push ax
@@ -5870,10 +5893,10 @@ loc_0C925:
     mov dl, byte ptr ds:[si]
     sub ah, al
     sub ax, dx
-    mov word ptr cs:[0C88Ch], ax
+    mov word ptr cs:[IntegritySum], ax
     cmp ax, word ptr ds:[si]
     pushf
-    cmp word ptr cs:[0C88Ah], 1
+    cmp word ptr cs:[IntegritySkip], 1
     je loc_0C980
     cmp word ptr ss:[021AAh], offset IntegrityFileExe
     jne loc_0C980
@@ -5888,7 +5911,7 @@ loc_0C925:
     mov di, offset Password
     call XorCopy16BytesAA
 loc_0C980:
-    mov es, word ptr cs:[0C892h]
+    mov es, word ptr cs:[IntegrityBufferSegment]
     mov ah, DOS_FREE_MEMORY
     int 021h
     popf
@@ -5896,7 +5919,7 @@ loc_0C980:
     jne loc_0C992
     ret
 loc_0C992:
-    cmp word ptr cs:[0C88Ah], 1
+    cmp word ptr cs:[IntegritySkip], 1
     jne loc_0C99B
     ret
 loc_0C99B:
@@ -6038,10 +6061,30 @@ loc_0CA60:
 loc_0CA65:
     or al, 020h
     ret
-; UNKNOWN: not yet classified as code or data
-    db 080h,03Eh,055h,00h,00h,074h,028h,0A1h,0C2h,0BCh,0BDh,0C5h,0BCh,03Dh,034h,0BDh
-    db 074h,012h,0BDh,0ECh,0BCh,03Dh,03Eh,0BDh,074h,0Ah,0BDh,011h,0BDh,03Dh,048h,0BDh
-    db 074h,02h,0EBh,0Bh,0E8h,0FDh,086h,0B9h,0AFh,00h,0E8h,034h,086h,0E2h,0FBh,0C3h
+; Print which sound module loaded (SoundCardCaption*) and wait 0AFh frames. No caller
+; found in this image.
+ShowSoundCardCaption:
+    cmp byte ptr ds:[SoundModuleLoaded], 0
+    je loc_0CA97
+    mov ax, ds:[SoundModuleNamePtr]
+    mov bp, offset SoundCardCaptionAdlib
+    cmp ax, offset SoundModuleNameAdlib
+    je loc_0CA8C
+    mov bp, offset SoundCardCaptionTandy
+    cmp ax, offset SoundModuleNameTandy
+    je loc_0CA8C
+    mov bp, offset SoundCardCaptionRoland
+    cmp ax, offset SoundModuleNameRoland
+    je loc_0CA8C
+    jmp short loc_0CA97
+loc_0CA8C:
+    call PrintMessageBP
+    mov cx, 0AFh
+loc_0CA92:
+    call WaitVerticalRetrace
+    loop loc_0CA92
+loc_0CA97:
+    ret
 
 ; Load and initialize the optional sound module named by SoundModuleSelect ('t', 'r',
 ; 'a'; FFh tries tandy, roland, then adlib) into SOUND_MODULE_SEGMENT. On success sets
