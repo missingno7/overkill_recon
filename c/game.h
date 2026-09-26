@@ -15,6 +15,19 @@
 #include "GAME_GEN.H"
 #pragma pack()
 
+/* Calls from C (segment CGAME) into ASM that stays in MAIN go through the oracle's own
+   trampoline FarCallMainNearViaAX (AX = near target; every other register and the flags
+   pass through). Declare one pragma per register contract, e.g.
+     word call_main_bx(main_routine target);
+     #pragma aux call_main_bx "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx]
+   and for routines taking BP (Watcom cannot pass BP):
+     void call_main_bp(main_routine target, Record *r);
+     #pragma aux call_main_bp = "push bp" "mov bp, si" "call far ptr FarCallMainNearViaAX" \
+         "pop bp" parm [ax] [si] modify exact [ax bx cx dx di es]
+   then call_main_bx(NextRandomWord). The callee must not take input in AX. */
+typedef void (__near *main_routine)(void);
+extern void __far FarCallMainNearViaAX(void);
+
 /* Typed views of the record storage (declared as bytes in DATA.ASM). */
 #define PRIMARY ((Record *)PrimaryRecord)
 #define POOL_A ((Record *)PoolA)

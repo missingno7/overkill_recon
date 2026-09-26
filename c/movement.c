@@ -3,6 +3,7 @@
    SetDeltaToward, StepAlongDelta and AimAtPlayer. Same state, same results; see the
    oracle comments at each routine for the original contracts.
 
+   SEGMENT: CGAME
    OWNS: SteerTowardTarget StepBySteerSpeed SetDeltaToward StepAlongDelta
    OWNS: SetChaseXQuadrantBit SetChaseYQuadrantBit AimAtPlayer SteerToSaved
    OWNS: MoveInDirection8 Move8ByDirection MoveInDirection3 MoveInDirection3Cases

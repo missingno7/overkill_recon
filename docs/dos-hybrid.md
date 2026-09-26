@@ -189,7 +189,6 @@ mutants pass. A spike region (Type3BFallRandomFlicker in CGAME: NextRandomWord t
 the trampoline, bridge tail to ScrollRecordThenFinish; also the call-and-return tail
 through `call_main_si_bp`) passed 3000 cases against the oracle.
 
-Rule: a region stays in MAIN while MAIN keeps room (at least 1 KiB free after the
-region). Large islands entered from few labels and calling few ASM routines, e.g. the
-record handler bodies, go to CGAME; write their ASM calls through the trampoline from
-the start so the placement stays a one-line switch.
+Rule: every C region is in CGAME (`SEGMENT: CGAME`), movement included, so the C island is
+one segment: calls between regions are near C calls, MAIN keeps only bridge stubs, and C
+reaches remaining ASM through the trampoline pragmas (patterns in c/game.h).
