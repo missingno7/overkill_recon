@@ -3,8 +3,9 @@
 A readable TASM source reconstruction of the DOS game Overkill that assembles to the
 exact original program. Its purpose is to make the program's state, structures,
 routine contracts and platform/game boundaries explicit enough that it can later be
-translated to C (and then ported) without guessing. It is incomplete: about a quarter of the image is decoded
-code; the rest is still marked `; UNKNOWN` bytes.
+translated to C (and then ported) without guessing. It is incomplete: bytes whose
+basic class (code or which kind of data) is not yet proven stay visible as `db` rows
+under `; UNKNOWN` markers; `python tools/verify.py` reports how many remain.
 
 ```powershell
 python tools/verify.py
@@ -23,9 +24,10 @@ python tools/where.py 9C01        # source line for an image address (after a bu
 ## Layout
 
 - `src/sources.txt` - main-program sources in link order.
-- `src/MODULE1.ASM` .. `MODULE3.ASM` - the three link modules implied by the original
-  relocation order; each holds part of the MAIN code segment and of the far code
-  segment at 0F7F (see docs/executable-wrapping.md). Names are modern.
+- `src/MODULE1.ASM` .. `MODULE3.ASM` - the main and far (0F7F) code, split where the
+  original relocation order proves link-module boundaries. The evidence shows at least
+  three modules and leaves some boundaries non-unique; these files are not claimed to
+  be the historical object modules (see docs/executable-wrapping.md).
 - `src/SLOT1022.ASM`, `SEG1534.ASM`, `SEG153A.ASM`, `DATA.ASM` - one file per remaining
   address frame: the sound-module slot, the critical-error and resource-file code, and
   the game's data segment.

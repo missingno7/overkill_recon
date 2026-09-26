@@ -29,17 +29,17 @@ def listing_entries(lst):
 
 def lines_by_offset(src, lst, segment=None):
     """[(offset, 1-based source line)] for byte-emitting lines of `segment`, in order."""
-    seen = {}; last = None; hits = []
-    for off, emits, depth, text, seg in listing_entries(lst):
-        if depth == 0:
-            key = text.strip()
-            if key: seen[key] = seen.get(key, 0) + 1; last = (key, seen[key])
-        if emits and off is not None and last and (segment is None or seg == segment) and (not hits or hits[-1][1] != last):
-            hits.append((off, last))
     counts = {}; where = {}
     for i, line in enumerate(src.read_text(encoding='latin-1').split('\n')):
-        key = line.split(';', 1)[0].strip()
+        key = line.split(';', 1)[0].strip()[:60]
         if key: counts[key] = counts.get(key, 0) + 1; where[(key, counts[key])] = i + 1
+    seen = {}; last = None; hits = []
+    for off, emits, depth, text, seg in listing_entries(lst):
+        key = text.strip()[:60]
+        if depth == 0 and key in counts:   # TASM splits very long lines in the listing
+            seen[key] = seen.get(key, 0) + 1; last = (key, seen[key])
+        if emits and off is not None and last and (segment is None or seg == segment) and (not hits or hits[-1][1] != last):
+            hits.append((off, last))
     return [(off, where[k]) for off, k in hits if k in where]
 
 def locate(src, lst, offset, segment=None):
@@ -130,4 +130,6 @@ def main(args):
     for i in range(max(0, n - 6), min(len(lines), n + 6)):
         print(('>' if i + 1 == n else ' '), lines[i].rstrip())
 
-if __name__ == '__main__': main(sys.argv[1:])
+if __name__ == '__main__':
+    sys.stdout.reconfigure(errors='replace')
+    main(sys.argv[1:])

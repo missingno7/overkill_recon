@@ -1,5 +1,6 @@
 # Sources in link order. MODULE1..3 each contribute to the MAIN and FAR0F7F
-# segments; the order reproduces the original relocation order. The other files
+# segments; the order reproduces the original relocation order, which proves at
+# least three link modules (not necessarily these exact ones). The other files
 # each hold one address frame.
 MODULE1.ASM
 MODULE2.ASM

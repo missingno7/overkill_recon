@@ -3,39 +3,19 @@
 Choose by: what would force a future C translator to guess? Addresses are main-image
 offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the source line.
 
-## Unclassified bytes (65876)
+## Unclassified bytes
 
-| File | UNKNOWN bytes | raw `[reg + N]` | `loc_` labels |
-|---|---:|---:|---:|
-| MODULE1 | 9387 | 146 | 349 |
-| MODULE2 | 5461 | 260 | 688 |
-| MODULE3 | 7716 | 193 | 842 |
-| SLOT1022 | 20759 | 0 | 1 |
-| SEG153A | 1414 | 4 | 41 |
-| SEG1534 | 18 | 0 | 0 |
-| DATA | 21121 | 0 | 0 |
-
-- The remaining large code runs have no proven entry yet: they are reached only
-  indirectly (e.g. the unrolled blit code in MODULE1 around 103C..2000 and 3849.., via
-  pointers such as the table used with CS:0BDE) or from other undecoded code. Find the
-  pointer tables (mostly in DATA) that reach them, then decode from those entries.
-  Decode only by recursive descent from proven entries; bytes nothing reaches stay
-  UNKNOWN.
-- DATA: the remaining zero runs need their readers/writers before classification.
-- SLOT1022: the initial contents of the sound-module slot (overwritten by ADLIB.ENC or
-  ROLAND.ENC at startup). Classify them without inheriting the loaded modules' roles.
+- Code still without a proven entry: MODULE1 1AEB..2193 and 3E12.. (blit code; find the
+  remaining pointer tables that reach them), MODULE2 83D7.., MODULE3 EE06.. (a table of
+  (value, 4E65h) word pairs), far code at 0F7F:FEA5.. and SEG153A 153E0... Decode only
+  by recursive descent from proven entries; bytes nothing reaches stay UNKNOWN.
+- The largest DATA runs: DS:1514.. (after PlaqueFiles), DS:A47E.., DS:C04A..
+  (8-byte records starting E7h 84h), DS:C601..C85C, DS:D1BC.. and DS:95EA...
+- 13 original relocations are still inside UNKNOWN db (far calls in undecoded code).
+- GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
 - `[bx + N]` in the decoded REC_TYPE handlers: where BX is a record (after
   FindFreeRecordPool*), write REC_* fields.
-
-## Undecoded code with known structure
-
-- 13 original relocations still fall in UNKNOWN db inside far calls in still
-  undecoded code; decoding those regions as code closes the relocation set.
-- The MAIN 2/3 and both far module splits are chosen inside evidence ranges; decoding
-  8D88..9592, F826..F949 and FFF6..100BD may narrow them.
-- 50CC..5122: decodes as small input-wait and border helpers with no known caller.
-- The one VIDEO_ADAPTER dispatch table left numeric (04711h, 046AAh, 04684h) points into
-  undecoded bytes in MODULE1.
+- Effects of WhatOilShortageFlag and AllCheatsFlag: no reader found yet.
 
 ## Data
 
@@ -44,10 +24,13 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
   strings, pointer tables (`dw offset X`), fixed-size numeric tables, then record
   arrays; only where the byte class is proven by a reader.
 - SFX tables at DS:BEF0..C2FC (command table, divisors, effect table, streams).
+- Level scripts and formations (LevelScript0..5, Formation00..52) are structured; name
+  the event state at DS:2070/209A..20A0 and the per-trigger table at DS:C81A.
 
 ## Open questions worth settling statically
 
-- 9A06 mode dispatch: five apparent words at 9A0C are not a proven bound on DS:A47C.
+- 9A06 mode dispatch: its table has five slots (code follows at 9A16); that DS:A47C
+  stays within 0..4 is not yet shown.
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - 1534:004E critical-error continuation and its saved stack relation.

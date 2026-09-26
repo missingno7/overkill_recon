@@ -45,3 +45,13 @@ DOS_ALLOC_STRATEGY equ 058h
 
 ; Size of LoadPackedFile's read buffer (PackedReadBuffer).
 PACKED_READ_BUFFER_BYTES equ 0200h
+
+; FileCache entries: file name pointer, buffer segment (FFFF = held in EMS), byte
+; count, and for EMS the handle and page count (16 KiB pages).
+FILE_CACHE_ENTRIES equ 58
+FILE_CACHE_ENTRY_BYTES equ 0Ah
+CACHE_NAME equ 0
+CACHE_SEGMENT equ 2
+CACHE_BYTES equ 4
+CACHE_EMS_HANDLE equ 6
+CACHE_EMS_PAGES equ 8

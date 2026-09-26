@@ -19,8 +19,8 @@ number zero. The MZ size, not EOF, defines the load module.
 The two launcher trailing bytes are preserved and hashed, but their meaning is
 UNKNOWN. Do not silently discard them. The large game suffix is a data container,
 not a second MZ image and not proved to be linker-managed executable overlays.
-Its internal resource directory and optional code-bearing driver blocks remain
-unrecovered in this project. The supplied documentation describes the game and
+tools/resources.py decodes its resource directory and the optional sound modules
+(ADLIB.ENC, ROLAND.ENC), which src/drivers/ reconstructs exactly. The supplied documentation describes the game and
 launcher options; it does not identify an assembler or original source layout.
 
 ## Four transformations for OVERKILL
@@ -117,7 +117,8 @@ it runs MAIN 0041..52CC, 0F7F F7F4..F824, MAIN 52D0..8D86, 0F7F F949..FFF4,
 MAIN 9592..D695, 0F7F 100BD..1020C. TLINK emits fixups per object module, in module
 order and segment order inside a module (confirmed by a two-module experiment), so
 this pattern is evidence for at least three link modules that each contribute to
-both MAIN and the 0F7F far segment. src/MODULE1..3.ASM reproduce that structure.
+both MAIN and the 0F7F far segment. src/MODULE1..3.ASM reproduce that minimum; the
+original may have had more modules (see the alignment evidence below).
 
 Boundaries: MAIN 52CF is exact (between SaveHiscoreFile and LoadHiscoreFile);
 the MAIN 2/3 split lies somewhere in 8D88..9592 (9592 chosen; the lone 00h at 9591

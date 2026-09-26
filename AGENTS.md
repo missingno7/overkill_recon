@@ -18,7 +18,9 @@ Intended later path (not this phase): exact ASM -> replace well-understood leaf
 routines by C one at a time, still on the original DOS platform model (memory layout,
 timer, framebuffer, input, sound interfaces), compared against the exact ASM ->
 complete C -> replace the platform layer. Game-logic translation and platform porting
-are validated separately. Shape the ASM so that such replacement is straightforward.
+are validated separately. Single-leaf replacement is an equivalence experiment, not
+the target architecture: coherent C regions should grow over the same state layout
+while ASM/C glue shrinks. Shape the ASM so that such replacement is straightforward.
 
 Priorities:
 
@@ -95,8 +97,9 @@ disassembly-dump look, no extra infrastructure needed to read it.
   routine does; local labels describe control flow.
 - CS-relative names (e.g. VIDEO_ADAPTER) are valid only in the main 0000 frame; DS
   names assume the game state segment. Check segment context before renaming.
-- File organization serves understanding. MODULE1..3 reflect the three link modules
-  implied by the original relocation order (each has a MAIN and a FAR0F7F part);
+- File organization serves understanding. MODULE1..3 reflect the minimum of three link
+  modules implied by the original relocation order (each has a MAIN and a FAR0F7F
+  part; some boundaries are non-unique, more modules are possible);
   SLOT1022, SEG1534, SEG153A and DATA each hold one address frame. Link order fixes
   physical order, so a file can only hold a contiguous range of a segment; split
   where a range is a coherent subsystem. Do not spend effort on module archaeology

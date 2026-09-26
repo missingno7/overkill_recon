@@ -8,15 +8,34 @@ include GAME.INC
 include RECORDS.INC
 include MOVEMENT.INC
 locals
-extrn AttributePatchPointers:byte
+extrn AdapterGeometry:word
+extrn AttributePatchPointers:word
+extrn BlockBytes:word
+extrn BossKeyScreen:word
 extrn ByteAttributeTable:byte
+extrn CalibPageList:word
+extrn ChooseSlot:word
 extrn DifficultySetting:word
+extrn EventTrigger:word
+extrn EventX:word
 extrn FileBufferOffset:word
 extrn FileBufferSegment:word
 extrn FileByteCount:word
 extrn FileHandle:word
 extrn FileNamePtr:word
 extrn FileStatus:word
+extrn File_1X1_BIC:byte
+extrn File_2X2C_BIC:byte
+extrn File_2X2_BIC:byte
+extrn File_BLUEBITS_BIC:byte
+extrn File_MANEXPL_BIC:byte
+extrn File_PANEL_ENC:byte
+extrn File_SHIP_BIC:byte
+extrn File_THEND_BIC:byte
+extrn FormationDrawPass:word
+extrn FormationSizeClass:word
+extrn FormationType:word
+extrn GeometryWords:word
 extrn GridYSum:word
 extrn HiscoreBlock:byte
 extrn HiscoreFileName:byte
@@ -39,29 +58,46 @@ extrn KeyBitScancodesA:byte
 extrn KeyBitScancodesB:byte
 extrn KeyDownTable:byte
 extrn KeyLastMakeCode:byte
+extrn LevelBankFiles:word
 extrn LevelIndex:word
+extrn LevelMapFiles:word
+extrn LevelScript0:word
+extrn LevelScript1:word
+extrn LevelScript2:word
+extrn LevelScript3:word
+extrn LevelScript4:word
+extrn LevelScript5:word
+extrn LevelScriptClock:word
+extrn LevelScriptCursorPtrs:word
+extrn LevelScriptCursors:word
+extrn LoadIsEnc:byte
 extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
 extrn MsgNotEnoughMemory:byte
 extrn OpenResourceFile:far
+extrn PendingSpriteFile:word
+extrn PlaqueFiles:word
 extrn PlayfieldRowOffsets:word
 extrn RecordRowOffsets:word
 extrn SavedSettings:byte
 extrn ScoreBcd:byte
 extrn ScreenRowOffsets:word
 extrn SfxEnabled:byte
+extrn ShowPageList:far
 extrn SoundModuleLoaded:byte
 extrn SoundModuleSelect:byte
 extrn SoundModuleTickEntry:far
 extrn SoundOption:word
 extrn SoundOptionFlags:byte
+extrn Sprite16Bytes:word
+extrn Sprite32Bytes:word
+extrn Sprite8Bytes:word
 extrn StateData:byte
 extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
 extrn loc_0F953:far
 extrn loc_0F9F9:far
-extrn loc_10170:far
 MAIN segment para public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AllocateBuffers
@@ -71,6 +107,7 @@ public BlitPackedStride160Cga
 public BlitPackedStride160Ega
 public BlitPackedToScreenCga
 public BlitPackedToScreenEga
+public BlueBitsImageOffsets
 public BuildByteToNibbleMaskTable
 public BuildRowTables
 public CalibrateJoystickWithAbort
@@ -79,6 +116,7 @@ public ClearKeyDownTable
 public ClearScreen104x200Cga
 public ClearScreen104x200Ega
 public ClearTandy104x200
+public ClearTandy32K
 public ComputeRecordGridOffset
 public CopyPackedRowsStride104
 public CopyPackedRowsStride160
@@ -96,18 +134,26 @@ public DrawOffsetFromWideRowEga
 public FlushBiosKeyboardBuffer
 public InstallKeyboardVector09
 public InstallTimerVector08
+public LoadDestOffset
+public LoadDestSegment
 public LoadFileToBuffer
+public LoadGraphicsRecordImages
+public LoadImageSlot
+public LoadNamePtr
 public LoadPackedFile
 public LoadSettingsFromHiscoreBlock
 public PackedDestOffset
 public PackedDestSegment
 public PackedNamePtr
 public PackedOutputBytes
+public PanelImageOffsets
+public PlaqueImageOffset
 public PollInputBits
 public ReadIndexedByteAttribute
 public RestoreKeyboardVector09
 public RestoreTimerVector08
 public SaveHiscoreFile
+public ShowBossKeyScreen
 public ShowFatalErrorAndExit
 public TandyOffsetFromPlayfieldRow
 public TandyOffsetFromScreenRow
@@ -118,23 +164,74 @@ public WaitVerticalRetrace
 public XorCodeHiscoreBlock
 public loc_0073C
 public loc_00747
-public loc_0075F
 public loc_007EF
 public loc_00B3E
-public loc_00CB8
 public loc_00D42
 public loc_00E9C
+public loc_0103C
+public loc_010B7
+public loc_010ED
+public loc_011B8
+public loc_012B6
+public loc_013E7
+public loc_0154B
+public loc_0167C
+public loc_0177A
+public loc_01845
+public loc_01899
+public loc_018F7
+public loc_0195F
+public loc_019D1
+public loc_01A39
+public loc_01A97
+public loc_02193
+public loc_021D6
+public loc_02223
+public loc_02285
+public loc_022FC
+public loc_0238D
+public loc_02410
+public loc_0247E
 public loc_02580
+public loc_02737
 public loc_027D9
+public loc_02A4F
+public loc_02AB9
+public loc_02AF9
 public loc_02B84
+public loc_02D2D
 public loc_02E2D
+public loc_02E6E
+public loc_02ECB
+public loc_02FB6
 public loc_030D2
 public loc_033AF
+public loc_0356C
+public loc_035CC
+public loc_03657
 public loc_036A2
+public loc_0375B
 public loc_03824
+public loc_03849
+public loc_0387C
+public loc_038F9
+public loc_03926
+public loc_039DF
+public loc_03AEE
+public loc_03C53
+public loc_03CBC
+public loc_03D52
+public loc_0409D
+public loc_040D7
+public loc_0412B
 public loc_041F5
+public loc_0446C
 public loc_0450C
+public loc_04740
+public loc_0480E
+public loc_04896
 public loc_048E6
+public loc_0497A
 public loc_04A41
 public loc_04A65
 public loc_04C76
@@ -142,6 +239,7 @@ public loc_04CED
 public loc_04D64
 public loc_04D95
 public loc_04DBF
+public loc_04F37
 public loc_04F57
 public loc_04FC3
 public loc_04FF9
@@ -152,16 +250,32 @@ public loc_05160
 public loc_0518C
 public loc_0519A
 public loc_0526A
-extrn AttributeSourceSegment:word
+extrn AdapterDrawHandlers:word
+extrn BlockOffsets:word
+extrn BlueBitsSegment:word
 extrn DrawOffsetFromScreenRow:near
 extrn DrawPanelGraphic:near
 extrn FindFreeRecordPoolA:near
+extrn LevelBlocksSegment:word
+extrn LevelMapSegment:word
+extrn LevelSpritesSegment:word
+extrn LoadResourceFile:near
 extrn MainDataSegment:word
+extrn ManExplSegment:word
 extrn PanelSegment:word
+extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
 extrn ScreenSegment:word
 extrn SfxTimerTick:near
+extrn ShipSegment:word
 extrn ShutdownGame:near
+extrn Sprite16Offsets:word
+extrn Sprite32Offsets:word
+extrn Sprite8Offsets:word
+extrn Sprites1x1Segment:word
+extrn Sprites2x2CSegment:word
+extrn Sprites2x2Segment:word
+extrn TheEndSegment:word
 extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
 extrn WideRowBytes:word
@@ -176,11 +290,10 @@ extrn loc_077DF:near
 extrn loc_0859E:near
 extrn loc_0A781:near
 extrn loc_0C57C:near
-extrn loc_0C679:near
 extrn loc_0CB1C:near
 extrn loc_0CB3E:near
-; UNKNOWN: not yet classified as code or data
-    db 05h
+; Palette index treated as transparent when sprites are loaded and drawn.
+TransparentColor db 05h
 ; Esc during calibration jumps here from PollJoystickPrimaryOrAbort. Reloading the SP
 ; saved by CalibrateJoystickWithAbort makes the RET return straight to that routine's
 ; caller, discarding every nested frame, and input falls back to key table A.
@@ -208,8 +321,8 @@ CalibrateJoystickWithAbort:
 CalibrateJoystickThresholds:
     mov word ptr ds:[JoyButtonSelect], JOY_BUTTONS_PORT_A
     mov byte ptr ds:[098BFh], 0
-    mov ax, 0BEBEh
-    call far ptr loc_10170
+    mov ax, offset CalibPageList
+    call far ptr ShowPageList
     call WaitJoystickPrimaryRelease
 @@wait_low_press:
     call PollJoystickPrimaryOrAbort
@@ -893,7 +1006,7 @@ loc_0073C:
     je loc_00744
     ret
 loc_00744:
-    call loc_0075F
+    call ShowBossKeyScreen
 
 loc_00747:
     call loc_007EF
@@ -907,7 +1020,10 @@ loc_00752:
     call loc_0C57C
     ret
 
-loc_0075F:
+; F9 boss key: loc_0CB3E (module word +8 = FFh, five module ticks), text mode and show BossKeyScreen (colouring its
+; rows), wait for F9 release, any key and F9 release again, then restore the game's
+; BIOS video mode.
+ShowBossKeyScreen:
     call loc_0CB3E
     mov ax, 3
     int 010h
@@ -915,7 +1031,7 @@ loc_0075F:
     mov ax, 0B800h
     mov es, ax
     xor di, di
-    mov si, 056h
+    mov si, offset BossKeyScreen
     call loc_00854
     mov di, 1
     mov al, 0Ch
@@ -972,7 +1088,7 @@ loc_007EF:
     call DrawOffsetFromScreenRow
     mov si, 025h
     shl si, 1
-    add si, 0BE4h
+    add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
     mov ds, word ptr cs:[PanelSegment]
     lodsw
@@ -987,7 +1103,7 @@ loc_007EF:
     mov es, word ptr cs:[ScreenSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    call word ptr cs:[bx + 0595Ah]
+    call word ptr cs:[bx + AdapterDrawHandlers]
     mov ds, word ptr cs:[MainDataSegment]
     call loc_05CB7
     ret
@@ -1042,9 +1158,9 @@ AllocateBuffers:
     mov ds, word ptr cs:[MainDataSegment]
     mov si, word ptr cs:[VideoAdapter]
     shl si, 1
-    add si, 0116Eh
+    add si, offset AdapterGeometry
     mov si, word ptr ds:[si]
-    mov di, 01024h
+    mov di, offset Sprite8Bytes
     mov cx, 027h
     rep movsw
     lodsw
@@ -1073,7 +1189,7 @@ AllocateBuffers:
 loc_008F1:
     mov word ptr cs:[WorkspaceSegment], ax
     mov ax, 075h
-    mul word ptr ds:[01024h]
+    mul word ptr ds:[Sprite8Bytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1086,9 +1202,9 @@ loc_008F1:
     jae loc_00915
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00915:
-    mov word ptr cs:[095A8h], ax
+    mov word ptr cs:[Sprites1x1Segment], ax
     mov ax, 0FFh
-    mul word ptr ds:[01026h]
+    mul word ptr ds:[Sprite16Bytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1101,9 +1217,9 @@ loc_00915:
     jae loc_00939
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00939:
-    mov word ptr cs:[095AAh], ax
+    mov word ptr cs:[Sprites2x2Segment], ax
     mov ax, 082h
-    mul word ptr ds:[01026h]
+    mul word ptr ds:[Sprite16Bytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1116,9 +1232,9 @@ loc_00939:
     jae loc_0095D
     jmp near ptr ShowOutOfMemoryAndExit
 loc_0095D:
-    mov word ptr cs:[095ACh], ax
+    mov word ptr cs:[Sprites2x2CSegment], ax
     mov ax, 0Dh
-    mul word ptr ds:[01028h]
+    mul word ptr ds:[Sprite32Bytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1131,9 +1247,9 @@ loc_0095D:
     jae loc_00981
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00981:
-    mov word ptr cs:[095AEh], ax
+    mov word ptr cs:[LevelSpritesSegment], ax
     mov ax, 01Ch
-    mul word ptr ds:[01028h]
+    mul word ptr ds:[Sprite32Bytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1146,8 +1262,8 @@ loc_00981:
     jae loc_009A5
     jmp near ptr ShowOutOfMemoryAndExit
 loc_009A5:
-    mov word ptr cs:[095A6h], ax
-    mov ax, word ptr ds:[0102Ch]
+    mov word ptr cs:[ManExplSegment], ax
+    mov ax, word ptr ds:[GeometryWords + 002h]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1160,58 +1276,58 @@ loc_009A5:
     jae loc_009C5
     jmp near ptr ShowOutOfMemoryAndExit
 loc_009C5:
-    mov word ptr cs:[095B2h], ax
-    mov bx, word ptr ds:[0102Eh]
+    mov word ptr cs:[TheEndSegment], ax
+    mov bx, word ptr ds:[GeometryWords + 004h]
     mov ax, 010h
-    mul word ptr ds:[01030h]
+    mul word ptr ds:[GeometryWords + 006h]
     add bx, ax
     mov ax, 8
-    mul word ptr ds:[01032h]
+    mul word ptr ds:[GeometryWords + 008h]
     add bx, ax
     mov ax, 7
-    mul word ptr ds:[01034h]
+    mul word ptr ds:[GeometryWords + 00Ah]
     add bx, ax
     mov ax, 6
-    mul word ptr ds:[01036h]
+    mul word ptr ds:[GeometryWords + 00Ch]
     add bx, ax
     mov ax, 4
-    mul word ptr ds:[01038h]
+    mul word ptr ds:[GeometryWords + 00Eh]
     add bx, ax
     mov ax, 4
-    mul word ptr ds:[0103Ah]
+    mul word ptr ds:[GeometryWords + 010h]
     add bx, ax
     mov ax, 012h
-    mul word ptr ds:[0103Ch]
+    mul word ptr ds:[GeometryWords + 012h]
     add bx, ax
-    mov ax, word ptr ds:[01058h]
+    mov ax, word ptr ds:[GeometryWords + 02Eh]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[0105Ah]
+    mov ax, word ptr ds:[GeometryWords + 030h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[0105Ch]
+    mov ax, word ptr ds:[GeometryWords + 032h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[0105Eh]
+    mov ax, word ptr ds:[GeometryWords + 034h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[01060h]
+    mov ax, word ptr ds:[GeometryWords + 036h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[01062h]
+    mov ax, word ptr ds:[GeometryWords + 038h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[01064h]
+    mov ax, word ptr ds:[GeometryWords + 03Ah]
     shl ax, 1
     add bx, ax
-    add bx, word ptr ds:[01066h]
-    add bx, word ptr ds:[01068h]
-    mov ax, word ptr ds:[0106Ah]
+    add bx, word ptr ds:[GeometryWords + 03Ch]
+    add bx, word ptr ds:[GeometryWords + 03Eh]
+    mov ax, word ptr ds:[GeometryWords + 040h]
     shl ax, 1
     add bx, ax
     shl ax, 1
     add bx, ax
-    add bx, word ptr ds:[0106Ch]
+    add bx, word ptr ds:[GeometryWords + 042h]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1224,7 +1340,7 @@ loc_009C5:
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00A6B:
     mov word ptr cs:[PanelSegment], ax
-    mov bx, word ptr ds:[0106Eh]
+    mov bx, word ptr ds:[GeometryWords + 044h]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1236,26 +1352,26 @@ loc_00A6B:
     jae loc_00A8A
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00A8A:
-    mov word ptr cs:[095B6h], ax
-    mov bx, word ptr ds:[0103Eh]
-    add bx, word ptr ds:[01040h]
-    add bx, word ptr ds:[01042h]
-    add bx, word ptr ds:[01044h]
-    add bx, word ptr ds:[01046h]
-    add bx, word ptr ds:[01048h]
-    add bx, word ptr ds:[0104Ah]
-    add bx, word ptr ds:[0104Ch]
-    add bx, word ptr ds:[0104Eh]
-    add bx, word ptr ds:[01050h]
-    add bx, word ptr ds:[01050h]
-    add bx, word ptr ds:[01050h]
-    add bx, word ptr ds:[01052h]
-    add bx, word ptr ds:[01052h]
-    add bx, word ptr ds:[01052h]
-    add bx, word ptr ds:[01054h]
-    add bx, word ptr ds:[01054h]
-    add bx, word ptr ds:[01054h]
-    add bx, word ptr ds:[01056h]
+    mov word ptr cs:[PlaqueSegment], ax
+    mov bx, word ptr ds:[GeometryWords + 014h]
+    add bx, word ptr ds:[GeometryWords + 016h]
+    add bx, word ptr ds:[GeometryWords + 018h]
+    add bx, word ptr ds:[GeometryWords + 01Ah]
+    add bx, word ptr ds:[GeometryWords + 01Ch]
+    add bx, word ptr ds:[GeometryWords + 01Eh]
+    add bx, word ptr ds:[GeometryWords + 020h]
+    add bx, word ptr ds:[GeometryWords + 022h]
+    add bx, word ptr ds:[GeometryWords + 024h]
+    add bx, word ptr ds:[GeometryWords + 026h]
+    add bx, word ptr ds:[GeometryWords + 026h]
+    add bx, word ptr ds:[GeometryWords + 026h]
+    add bx, word ptr ds:[GeometryWords + 028h]
+    add bx, word ptr ds:[GeometryWords + 028h]
+    add bx, word ptr ds:[GeometryWords + 028h]
+    add bx, word ptr ds:[GeometryWords + 02Ah]
+    add bx, word ptr ds:[GeometryWords + 02Ah]
+    add bx, word ptr ds:[GeometryWords + 02Ah]
+    add bx, word ptr ds:[GeometryWords + 02Ch]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1267,9 +1383,9 @@ loc_00A8A:
     jae loc_00AF1
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00AF1:
-    mov word ptr cs:[095B8h], ax
+    mov word ptr cs:[BlueBitsSegment], ax
     mov ax, 0100h
-    mul word ptr ds:[01070h]
+    mul word ptr ds:[BlockBytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1282,9 +1398,9 @@ loc_00AF1:
     jae loc_00B15
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00B15:
-    mov word ptr cs:[0959Ah], ax
+    mov word ptr cs:[LevelBlocksSegment], ax
     mov ax, 02Ch
-    mul word ptr ds:[01070h]
+    mul word ptr ds:[BlockBytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
@@ -1297,26 +1413,26 @@ loc_00B15:
     jae loc_00B39
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00B39:
-    mov word ptr cs:[0959Ch], ax
+    mov word ptr cs:[ShipSegment], ax
     ret
 
 loc_00B3E:
-    mov word ptr ds:[0C5F5h], 0C85Ch
-    mov word ptr ds:[0C5F7h], 0C8D6h
-    mov word ptr ds:[0C5F9h], 0CA02h
-    mov word ptr ds:[0C5FBh], 0CC36h
-    mov word ptr ds:[0C5FDh], 0CC80h
-    mov word ptr ds:[0C5FFh], 0CCAAh
+    mov word ptr ds:[LevelScriptCursors + 0], offset LevelScript0
+    mov word ptr ds:[LevelScriptCursors + 2], offset LevelScript1
+    mov word ptr ds:[LevelScriptCursors + 4], offset LevelScript2
+    mov word ptr ds:[LevelScriptCursors + 6], offset LevelScript3
+    mov word ptr ds:[LevelScriptCursors + 8], offset LevelScript4
+    mov word ptr ds:[LevelScriptCursors + 10], offset LevelScript5
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    add bx, 014C0h
+    add bx, offset LevelMapFiles
     mov bx, word ptr ds:[bx]
     mov word ptr ds:[FileNamePtr], bx
-    mov ax, word ptr cs:[09592h]
+    mov ax, word ptr cs:[LevelMapSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
 loc_00B7F:
-    call loc_0C679
+    call LoadResourceFile
     cmp word ptr ds:[FileStatus], FILE_STATUS_OK
     je InitializeByteAttributes
     call PromptLoadErrorWaitFire
@@ -1348,7 +1464,7 @@ ReadAttributePatchIndex:
     mov byte ptr ds:[bx + di], al
     jmp short ReadAttributePatchIndex
 AttributePatchesDone:
-    mov es, word ptr cs:[AttributeSourceSegment]
+    mov es, word ptr cs:[LevelMapSegment]
     xor di, di
     mov cx, 01Ah
     mov al, 1
@@ -1358,49 +1474,49 @@ AttributePatchesDone:
     mov cx, 041h
     rep movsb
     jmp near ptr ClearKeyDownTable
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h
+    even
+; Graphics file load parameters (LoadGraphicsFile and its entries) and the image
+; offset tables it fills. With LoadMakeMask set, pixels of TransparentColor become 0
+; and a mask is built; with LoadRecordImages set, each image's width/height header is
+; copied and its offset stored at LoadImageSlot, which then advances by one word.
+LoadMakeMask dw 0
+LoadRecordImages dw 0
+LoadDestOffset dw 0
+LoadDestSegment dw 0
+LoadNamePtr dw 0
+LoadImageSlot dw 0
+; Offsets of the images of the level plaque, PANEL.ENC and BLUEBITS.BIC in their
+; segments, indexed by image number (space as reserved in the image).
+PlaqueImageOffset dw 0
+PanelImageOffsets dw 87 dup (0)
+BlueBitsImageOffsets dw 19 dup (0)
 
-loc_00CB8:
-    mov word ptr cs:[0BD6h], 0
-    mov word ptr cs:[0BD8h], 1
-    jmp short loc_00CF6
+LoadGraphicsRecordImages:
+    mov word ptr cs:[LoadMakeMask], 0
+    mov word ptr cs:[LoadRecordImages], 1
+    jmp short LoadGraphicsFile
 
-loc_00CC8:
-    mov word ptr cs:[0BD6h], 0
-    mov word ptr cs:[0BD8h], 0
-    jmp short loc_00CF6
+LoadGraphicsPlain:
+    mov word ptr cs:[LoadMakeMask], 0
+    mov word ptr cs:[LoadRecordImages], 0
+    jmp short LoadGraphicsFile
 
-loc_00CD8:
-    mov word ptr cs:[0BD6h], 1
-    mov word ptr cs:[0BD8h], 0
-    jmp short loc_00CF6
+LoadGraphicsMasked:
+    mov word ptr cs:[LoadMakeMask], 1
+    mov word ptr cs:[LoadRecordImages], 0
+    jmp short LoadGraphicsFile
 ; UNKNOWN: not yet classified as code or data
     db 02Eh,0C7h,06h,0D6h,0Bh,01h,00h,02Eh,0C7h,06h,0D8h,0Bh,01h,00h
-loc_00CF6:
+LoadGraphicsFile:
     call loc_0526A
     mov ax, word ptr cs:[WorkspaceSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
-    mov ax, word ptr cs:[0BDEh]
+    mov ax, word ptr cs:[LoadNamePtr]
     mov word ptr ds:[FileNamePtr], ax
     push ax
 loc_00D0E:
-    call loc_0C679
+    call LoadResourceFile
     cmp word ptr ds:[FileStatus], FILE_STATUS_OK
     je loc_00D1D
     call PromptLoadErrorWaitFire
@@ -1415,59 +1531,59 @@ loc_00D1D:
     mov bp, 0FFFFh
 loc_00D2E:
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov es, word ptr cs:[0BDCh]
-    mov di, word ptr cs:[0BDAh]
+    mov es, word ptr cs:[LoadDestSegment]
+    mov di, word ptr cs:[LoadDestOffset]
     xor si, si
     jmp near ptr loc_05BAC
 
 loc_00D42:
-    mov word ptr cs:[0BDEh], 01298h
-    mov ax, word ptr cs:[095A8h]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CD8
-    mov word ptr cs:[0BDEh], 012A4h
-    mov ax, word ptr cs:[095AAh]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CD8
-    mov word ptr cs:[0BDEh], 012B0h
-    mov ax, word ptr cs:[095ACh]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CD8
-    mov word ptr cs:[0BDEh], 012BDh
-    mov ax, word ptr cs:[095A6h]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CD8
-    mov word ptr cs:[0BDEh], 012DAh
-    mov ax, word ptr cs:[095B2h]
-    mov word ptr cs:[0BDCh], ax
-    mov word ptr cs:[0BE0h], 0BE4h
-    call loc_00CB8
-    mov word ptr cs:[0BDEh], 012E8h
+    mov word ptr cs:[LoadNamePtr], offset File_1X1_BIC
+    mov ax, word ptr cs:[Sprites1x1Segment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsMasked
+    mov word ptr cs:[LoadNamePtr], offset File_2X2_BIC
+    mov ax, word ptr cs:[Sprites2x2Segment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsMasked
+    mov word ptr cs:[LoadNamePtr], offset File_2X2C_BIC
+    mov ax, word ptr cs:[Sprites2x2CSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsMasked
+    mov word ptr cs:[LoadNamePtr], offset File_MANEXPL_BIC
+    mov ax, word ptr cs:[ManExplSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsMasked
+    mov word ptr cs:[LoadNamePtr], offset File_THEND_BIC
+    mov ax, word ptr cs:[TheEndSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    mov word ptr cs:[LoadImageSlot], offset PanelImageOffsets
+    call LoadGraphicsRecordImages
+    mov word ptr cs:[LoadNamePtr], offset File_PANEL_ENC
     mov ax, word ptr cs:[PanelSegment]
-    mov word ptr cs:[0BDCh], ax
-    mov word ptr cs:[0BE0h], 0BE4h
-    mov byte ptr ds:[0BB84h], 1
-    call loc_00CB8
-    mov byte ptr ds:[0BB84h], 0
+    mov word ptr cs:[LoadDestSegment], ax
+    mov word ptr cs:[LoadImageSlot], offset PanelImageOffsets
+    mov byte ptr ds:[LoadIsEnc], 1
+    call LoadGraphicsRecordImages
+    mov byte ptr ds:[LoadIsEnc], 0
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     jne loc_00DE3
     mov es, word ptr cs:[PanelSegment]
     xor di, di
     mov ax, 0Fh
-    mul word ptr ds:[01030h]
+    mul word ptr ds:[GeometryWords + 006h]
     mov cx, ax
     mov si, 01C16h
     rep movsb
 loc_00DE3:
-    mov word ptr cs:[0BDEh], 01303h
-    mov ax, word ptr cs:[095B8h]
-    mov word ptr cs:[0BDCh], ax
-    mov word ptr cs:[0BE0h], 0C92h
-    call loc_00CB8
-    mov word ptr cs:[0BDEh], 012F6h
-    mov ax, word ptr cs:[0959Ch]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CC8
+    mov word ptr cs:[LoadNamePtr], offset File_BLUEBITS_BIC
+    mov ax, word ptr cs:[BlueBitsSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    mov word ptr cs:[LoadImageSlot], offset BlueBitsImageOffsets
+    call LoadGraphicsRecordImages
+    mov word ptr cs:[LoadNamePtr], offset File_SHIP_BIC
+    mov ax, word ptr cs:[ShipSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsPlain
     ret
 
 ; Read the whole file named by FileNamePtr into FileBufferSegment:FileBufferOffset.
@@ -1558,36 +1674,36 @@ CloseFileHandle:
     ret
 
 loc_00E9C:
-    mov ax, word ptr cs:[0959Ah]
+    mov ax, word ptr cs:[LevelBlocksSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
     mov si, word ptr ds:[LevelIndex]
     shl si, 1
     shl si, 1
-    add si, 014E8h
+    add si, offset LevelBankFiles
     lodsw
-    mov word ptr ds:[014E6h], ax
+    mov word ptr ds:[PendingSpriteFile], ax
     lodsw
     mov word ptr ds:[FileNamePtr], ax
-    mov word ptr cs:[0BDEh], ax
-    mov ax, word ptr cs:[0959Ah]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CC8
-    mov ax, word ptr ds:[014E6h]
-    mov word ptr cs:[0BDEh], ax
-    mov ax, word ptr cs:[095AEh]
-    mov word ptr cs:[0BDCh], ax
-    call loc_00CD8
+    mov word ptr cs:[LoadNamePtr], ax
+    mov ax, word ptr cs:[LevelBlocksSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsPlain
+    mov ax, word ptr ds:[PendingSpriteFile]
+    mov word ptr cs:[LoadNamePtr], ax
+    mov ax, word ptr cs:[LevelSpritesSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    call LoadGraphicsMasked
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    mov ax, word ptr ds:[bx + 01508h]
-    mov word ptr cs:[0BDEh], ax
-    mov ax, word ptr cs:[095B6h]
-    mov word ptr cs:[0BDCh], ax
-    mov word ptr cs:[0BE0h], 0BE2h
-    mov byte ptr ds:[0BB84h], 1
-    call loc_00CB8
-    mov byte ptr ds:[0BB84h], 0
+    mov ax, word ptr ds:[bx + PlaqueFiles]
+    mov word ptr cs:[LoadNamePtr], ax
+    mov ax, word ptr cs:[PlaqueSegment]
+    mov word ptr cs:[LoadDestSegment], ax
+    mov word ptr cs:[LoadImageSlot], offset PlaqueImageOffset
+    mov byte ptr ds:[LoadIsEnc], 1
+    call LoadGraphicsRecordImages
+    mov byte ptr ds:[LoadIsEnc], 0
     jmp near ptr ClearKeyDownTable
 
 BuildRowTables:
@@ -1633,10 +1749,11 @@ loc_00F69:
     xchg ax, di
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + 0F77h]
-; UNKNOWN: not yet classified as code or data
-    db 07Dh,0Fh,08Dh,0Fh,092h,0Fh
+    jmp word ptr cs:[bx + loc_00F69Cases]
+loc_00F69Cases label word
+    dw offset loc_00F7D, offset loc_00F8D, offset loc_00F92
 
+loc_00F7D:
     add di, 02000h
     test di, 04000h
     je loc_00F8B
@@ -1644,9 +1761,11 @@ loc_00F69:
 loc_00F8B:
     jmp short loc_00FA0
 
+loc_00F8D:
     add di, 028h
     jmp short loc_00FA0
 
+loc_00F92:
     add di, 02000h
     test di, 08000h
     je loc_00FA0
@@ -1656,33 +1775,33 @@ loc_00FA0:
     loop loc_00F69
     push cs
     pop es
-    mov di, 08D92h
+    mov di, offset BlockOffsets
     mov cx, 0100h
     xor ax, ax
 loc_00FAD:
     stosw
-    add ax, word ptr ds:[01070h]
+    add ax, word ptr ds:[BlockBytes]
     loop loc_00FAD
-    mov di, 08F92h
+    mov di, offset Sprite8Offsets
     mov cx, 0100h
     xor ax, ax
 loc_00FBC:
     stosw
-    add ax, word ptr ds:[01024h]
+    add ax, word ptr ds:[Sprite8Bytes]
     loop loc_00FBC
-    mov di, 09192h
+    mov di, offset Sprite16Offsets
     mov cx, 0100h
     xor ax, ax
 loc_00FCB:
     stosw
-    add ax, word ptr ds:[01026h]
+    add ax, word ptr ds:[Sprite16Bytes]
     loop loc_00FCB
-    mov di, 09392h
+    mov di, offset Sprite32Offsets
     mov cx, 0100h
     xor ax, ax
 loc_00FDA:
     stosw
-    add ax, word ptr ds:[01028h]
+    add ax, word ptr ds:[Sprite32Bytes]
     loop loc_00FDA
     jmp near ptr loc_0526A
 
@@ -1742,260 +1861,1155 @@ loc_01031:
     inc dh
     jne loc_00FEE
     ret
+loc_0103C:
+    mov ax, es:[di]
+    and ax, ds:[si]
+    or ax, ds:[si + 4]
+    mov es:[di], ax
+    mov ax, es:[di + 2]
+    and ax, ds:[si + 2]
+    or ax, ds:[si + 6]
+    mov es:[di + 2], ax
+    add di, 1Ah
+    mov ax, es:[di]
+    and ax, ds:[si]
+    or ax, ds:[si + 8]
+    mov es:[di], ax
+    mov ax, es:[di + 2]
+    and ax, ds:[si + 2]
+    or ax, ds:[si + 0Ah]
+    mov es:[di + 2], ax
+    add di, 1Ah
+    mov ax, es:[di]
+    and ax, ds:[si]
+    or ax, ds:[si + 0Ch]
+    mov es:[di], ax
+    mov ax, es:[di + 2]
+    and ax, ds:[si + 2]
+    or ax, ds:[si + 0Eh]
+    mov es:[di + 2], ax
+    add di, 1Ah
+    mov ax, es:[di]
+    and ax, ds:[si]
+    or ax, ds:[si + 10h]
+    mov es:[di], ax
+    mov ax, es:[di + 2]
+    and ax, ds:[si + 2]
+    or ax, ds:[si + 12h]
+    mov es:[di + 2], ax
+    add di, 1Ah
+    add si, 14h
+    loop loc_0103C
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_010B7:
+    mov ax, ds:[si]
+    not ax
+    or es:[di], ax
+    or es:[di + 1Ah], ax
+    or es:[di + 34h], ax
+    or es:[di + 4Eh], ax
+    mov ax, ds:[si + 2]
+    not ax
+    or es:[di + 2], ax
+    or es:[di + 1Ch], ax
+    or es:[di + 36h], ax
+    or es:[di + 50h], ax
+    add di, 68h
+    add si, 14h
+    loop loc_010B7
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_010ED:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], bx
+    and es:[di + 4], dl
+    and es:[di + 1Ah], ax
+    and es:[di + 1Ch], bx
+    and es:[di + 1Eh], dl
+    and es:[di + 34h], ax
+    and es:[di + 36h], bx
+    and es:[di + 38h], dl
+    and es:[di + 4Eh], ax
+    and es:[di + 50h], bx
+    and es:[di + 52h], dl
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_011AF
+    jmp short loc_011B2
+loc_011AF:
+    jmp near ptr loc_010ED
+loc_011B2:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_011B8:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], bx
+    and es:[di + 4], dl
+    and es:[di + 1Ah], ax
+    and es:[di + 1Ch], bx
+    and es:[di + 1Eh], dl
+    and es:[di + 34h], ax
+    and es:[di + 36h], bx
+    and es:[di + 38h], dl
+    and es:[di + 4Eh], ax
+    and es:[di + 50h], bx
+    and es:[di + 52h], dl
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_012AD
+    jmp short loc_012B0
+loc_012AD:
+    jmp near ptr loc_011B8
+loc_012B0:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_012B6:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], bx
+    and es:[di + 4], dl
+    and es:[di + 1Ah], ax
+    and es:[di + 1Ch], bx
+    and es:[di + 1Eh], dl
+    and es:[di + 34h], ax
+    and es:[di + 36h], bx
+    and es:[di + 38h], dl
+    and es:[di + 4Eh], ax
+    and es:[di + 50h], bx
+    and es:[di + 52h], dl
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_013DE
+    jmp short loc_013E1
+loc_013DE:
+    jmp near ptr loc_012B6
+loc_013E1:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_013E7:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], bx
+    and es:[di + 4], dl
+    and es:[di + 1Ah], ax
+    and es:[di + 1Ch], bx
+    and es:[di + 1Eh], dl
+    and es:[di + 34h], ax
+    and es:[di + 36h], bx
+    and es:[di + 38h], dl
+    and es:[di + 4Eh], ax
+    and es:[di + 50h], bx
+    and es:[di + 52h], dl
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_01542
+    jmp short loc_01545
+loc_01542:
+    jmp near ptr loc_013E7
+loc_01545:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0154B:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    and es:[di], dl
+    and es:[di + 1], ax
+    and es:[di + 3], bx
+    and es:[di + 1Ah], dl
+    and es:[di + 1Bh], ax
+    and es:[di + 1Dh], bx
+    and es:[di + 34h], dl
+    and es:[di + 35h], ax
+    and es:[di + 37h], bx
+    and es:[di + 4Eh], dl
+    and es:[di + 4Fh], ax
+    and es:[di + 51h], bx
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_01673
+    jmp short loc_01676
+loc_01673:
+    jmp near ptr loc_0154B
+loc_01676:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0167C:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    and es:[di], dl
+    and es:[di + 1], ax
+    and es:[di + 3], bx
+    and es:[di + 1Ah], dl
+    and es:[di + 1Bh], ax
+    and es:[di + 1Dh], bx
+    and es:[di + 34h], dl
+    and es:[di + 35h], ax
+    and es:[di + 37h], bx
+    and es:[di + 4Eh], dl
+    and es:[di + 4Fh], ax
+    and es:[di + 51h], bx
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_01771
+    jmp short loc_01774
+loc_01771:
+    jmp near ptr loc_0167C
+loc_01774:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0177A:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    stc
+    rcl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    and es:[di], dl
+    and es:[di + 1], ax
+    and es:[di + 3], bx
+    and es:[di + 1Ah], dl
+    and es:[di + 1Bh], ax
+    and es:[di + 1Dh], bx
+    and es:[di + 34h], dl
+    and es:[di + 35h], ax
+    and es:[di + 37h], bx
+    and es:[di + 4Eh], dl
+    and es:[di + 4Fh], ax
+    and es:[di + 51h], bx
+    mov ax, ds:[si + 4]
+    mov bx, ds:[si + 6]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    mov ax, ds:[si + 8]
+    mov bx, ds:[si + 0Ah]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    mov ax, ds:[si + 0Ch]
+    mov bx, ds:[si + 0Eh]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    mov ax, ds:[si + 10h]
+    mov bx, ds:[si + 12h]
+    xor dl, dl
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_0183C
+    jmp short loc_0183F
+loc_0183C:
+    jmp near ptr loc_0177A
+loc_0183F:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_01845:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    not ax
+    not bx
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_01845
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_01899:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    not ax
+    not bx
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_01899
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_018F7:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    not ax
+    not bx
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_018F7
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0195F:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    not ax
+    not bx
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], bx
+    or es:[di + 1Eh], dl
+    or es:[di + 34h], ax
+    or es:[di + 36h], bx
+    or es:[di + 38h], dl
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], bx
+    or es:[di + 52h], dl
+    add di, 68h
+    add si, 14h
+    loop loc_0195F
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_019D1:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    not dl
+    not ax
+    not bx
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_019D1
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_01A39:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    not dl
+    not ax
+    not bx
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_01A39
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_01A97:
+    mov dl, 0FFh
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    not dl
+    not ax
+    not bx
+    shl bh, 1
+    rcl bl, 1
+    rcl ah, 1
+    rcl al, 1
+    rcl dl, 1
+    or es:[di], dl
+    or es:[di + 1], ax
+    or es:[di + 3], bx
+    or es:[di + 1Ah], dl
+    or es:[di + 1Bh], ax
+    or es:[di + 1Dh], bx
+    or es:[di + 34h], dl
+    or es:[di + 35h], ax
+    or es:[di + 37h], bx
+    or es:[di + 4Eh], dl
+    or es:[di + 4Fh], ax
+    or es:[di + 51h], bx
+    add di, 68h
+    add si, 14h
+    loop loc_01A97
+    mov ds, cs:[MainDataSegment]
+    ret
 ; UNKNOWN: not yet classified as code or data
-    db 026h,08Bh,05h,023h,04h,0Bh,044h,04h,026h,089h,05h,026h,08Bh,045h,02h,023h
-    db 044h,02h,0Bh,044h,06h,026h,089h,045h,02h,083h,0C7h,01Ah,026h,08Bh,05h,023h
-    db 04h,0Bh,044h,08h,026h,089h,05h,026h,08Bh,045h,02h,023h,044h,02h,0Bh,044h
-    db 0Ah,026h,089h,045h,02h,083h,0C7h,01Ah,026h,08Bh,05h,023h,04h,0Bh,044h,0Ch
-    db 026h,089h,05h,026h,08Bh,045h,02h,023h,044h,02h,0Bh,044h,0Eh,026h,089h,045h
-    db 02h,083h,0C7h,01Ah,026h,08Bh,05h,023h,04h,0Bh,044h,010h,026h,089h,05h,026h
-    db 08Bh,045h,02h,023h,044h,02h,0Bh,044h,012h,026h,089h,045h,02h,083h,0C7h,01Ah
-    db 083h,0C6h,014h,0E2h,08Bh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,0F7h,0D0h,026h
-    db 09h,05h,026h,09h,045h,01Ah,026h,09h,045h,034h,026h,09h,045h,04Eh,08Bh,044h
-    db 02h,0F7h,0D0h,026h,09h,045h,02h,026h,09h,045h,01Ch,026h,09h,045h,036h,026h
-    db 09h,045h,050h,083h,0C7h,068h,083h,0C6h,014h,0E2h,0D0h,02Eh,08Eh,01Eh,096h,095h
-    db 0C3h,08Bh,04h,08Bh,05Ch,02h,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0DAh,026h,021h,05h,026h,021h,05Dh,02h,026h,020h,055h,04h,026h,021h
-    db 045h,01Ah,026h,021h,05Dh,01Ch,026h,020h,055h,01Eh,026h,021h,045h,034h,026h,021h
-    db 05Dh,036h,026h,020h,055h,038h,026h,021h,045h,04Eh,026h,021h,05Dh,050h,026h,020h
-    db 055h,052h,08Bh,044h,04h,08Bh,05Ch,06h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,026h,09h,05h,026h,09h,05Dh,02h,026h,08h,055h,04h,08Bh
-    db 044h,08h,08Bh,05Ch,0Ah,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h
-    db 0DAh,026h,09h,045h,01Ah,026h,09h,05Dh,01Ch,026h,08h,055h,01Eh,08Bh,044h,0Ch
-    db 08Bh,05Ch,0Eh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h
-    db 09h,045h,034h,026h,09h,05Dh,036h,026h,08h,055h,038h,08Bh,044h,010h,08Bh,05Ch
-    db 012h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h
-    db 04Eh,026h,09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h,083h,0C6h,014h,0E2h
-    db 02h,0EBh,03h,0E9h,03Bh,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh,05Ch
-    db 02h,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0F9h,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,021h,05h,026h,021h,05Dh,02h
-    db 026h,020h,055h,04h,026h,021h,045h,01Ah,026h,021h,05Dh,01Ch,026h,020h,055h,01Eh
-    db 026h,021h,045h,034h,026h,021h,05Dh,036h,026h,020h,055h,038h,026h,021h,045h,04Eh
-    db 026h,021h,05Dh,050h,026h,020h,055h,052h,08Bh,044h,04h,08Bh,05Ch,06h,032h,0D2h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,026h,09h,05h,026h,09h,05Dh,02h,026h,08h,055h,04h,08Bh
-    db 044h,08h,08Bh,05Ch,0Ah,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h
-    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,01Ah,026h
-    db 09h,05Dh,01Ch,026h,08h,055h,01Eh,08Bh,044h,0Ch,08Bh,05Ch,0Eh,032h,0D2h,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0DAh,026h,09h,045h,034h,026h,09h,05Dh,036h,026h,08h,055h,038h,08Bh
-    db 044h,010h,08Bh,05Ch,012h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h
-    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,04Eh,026h
-    db 09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h,083h,0C6h,014h,0E2h,02h,0EBh
-    db 03h,0E9h,08h,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh,05Ch,02h,0B2h
-    db 0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h
-    db 0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh
-    db 0D0h,0DAh,026h,021h,05h,026h,021h,05Dh,02h,026h,020h,055h,04h,026h,021h,045h
-    db 01Ah,026h,021h,05Dh,01Ch,026h,020h,055h,01Eh,026h,021h,045h,034h,026h,021h,05Dh
-    db 036h,026h,020h,055h,038h,026h,021h,045h,04Eh,026h,021h,05Dh,050h,026h,020h,055h
-    db 052h,08Bh,044h,04h,08Bh,05Ch,06h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h
-    db 0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,05h,026h,09h,05Dh,02h,026h,08h
-    db 055h,04h,08Bh,044h,08h,08Bh,05Ch,0Ah,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,01Ah,026h,09h,05Dh,01Ch
-    db 026h,08h,055h,01Eh,08Bh,044h,0Ch,08Bh,05Ch,0Eh,032h,0D2h,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,034h,026h,09h
-    db 05Dh,036h,026h,08h,055h,038h,08Bh,044h,010h,08Bh,05Ch,012h,032h,0D2h,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh
-    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,04Eh
-    db 026h,09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h,083h,0C6h,014h,0E2h,02h
-    db 0EBh,03h,0E9h,0D5h,0FEh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh,05Ch,02h
-    db 0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0F9h,0D0h,0D8h
-    db 0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,021h
-    db 05h,026h,021h,05Dh,02h,026h,020h,055h,04h,026h,021h,045h,01Ah,026h,021h,05Dh
-    db 01Ch,026h,020h,055h,01Eh,026h,021h,045h,034h,026h,021h,05Dh,036h,026h,020h,055h
-    db 038h,026h,021h,045h,04Eh,026h,021h,05Dh,050h,026h,020h,055h,052h,08Bh,044h,04h
-    db 08Bh,05Ch,06h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,05h
-    db 026h,09h,05Dh,02h,026h,08h,055h,04h,08Bh,044h,08h,08Bh,05Ch,0Ah,032h,0D2h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,045h,01Ah,026h,09h,05Dh,01Ch
-    db 026h,08h,055h,01Eh,08Bh,044h,0Ch,08Bh,05Ch,0Eh,032h,0D2h,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,026h,09h,045h,034h,026h,09h,05Dh,036h,026h,08h,055h,038h
-    db 08Bh,044h,010h,08Bh,05Ch,012h,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh
-    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh
-    db 026h,09h,045h,04Eh,026h,09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h,083h
-    db 0C6h,014h,0E2h,02h,0EBh,03h,0E9h,0A2h,0FEh,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h
-    db 0FFh,08Bh,04h,08Bh,05Ch,02h,0F9h,0D0h,0D7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h
-    db 0D2h,0F9h,0D0h,0D7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0F9h,0D0h,0D7h,0D0h
-    db 0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,020h,015h,026h,021h,045h,01h,026h,021h
-    db 05Dh,03h,026h,020h,055h,01Ah,026h,021h,045h,01Bh,026h,021h,05Dh,01Dh,026h,020h
-    db 055h,034h,026h,021h,045h,035h,026h,021h,05Dh,037h,026h,020h,055h,04Eh,026h,021h
-    db 045h,04Fh,026h,021h,05Dh,051h,08Bh,044h,04h,08Bh,05Ch,06h,032h,0D2h,0D0h,0E7h
-    db 0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h
-    db 0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,015h,026h
-    db 09h,045h,01h,026h,09h,05Dh,03h,08Bh,044h,08h,08Bh,05Ch,0Ah,032h,0D2h,0D0h
-    db 0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h
-    db 0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h
-    db 01Ah,026h,09h,045h,01Bh,026h,09h,05Dh,01Dh,08Bh,044h,0Ch,08Bh,05Ch,0Eh,032h
-    db 0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h
-    db 0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h
-    db 08h,055h,034h,026h,09h,045h,035h,026h,09h,05Dh,037h,08Bh,044h,010h,08Bh,05Ch
-    db 012h,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h
-    db 0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h
-    db 0D2h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,026h,09h,05Dh,051h,083h,0C7h,068h
-    db 083h,0C6h,014h,0E2h,02h,0EBh,03h,0E9h,0D5h,0FEh,02Eh,08Eh,01Eh,096h,095h,0C3h
-    db 0B2h,0FFh,08Bh,04h,08Bh,05Ch,02h,0F9h,0D0h,0D7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h
-    db 0D0h,0D2h,0F9h,0D0h,0D7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,020h,015h
-    db 026h,021h,045h,01h,026h,021h,05Dh,03h,026h,020h,055h,01Ah,026h,021h,045h,01Bh
-    db 026h,021h,05Dh,01Dh,026h,020h,055h,034h,026h,021h,045h,035h,026h,021h,05Dh,037h
-    db 026h,020h,055h,04Eh,026h,021h,045h,04Fh,026h,021h,05Dh,051h,08Bh,044h,04h,08Bh
-    db 05Ch,06h,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h
-    db 0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,015h,026h,09h,045h,01h,026h
-    db 09h,05Dh,03h,08Bh,044h,08h,08Bh,05Ch,0Ah,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h
-    db 0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h
-    db 08h,055h,01Ah,026h,09h,045h,01Bh,026h,09h,05Dh,01Dh,08Bh,044h,0Ch,08Bh,05Ch
-    db 0Eh,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h
-    db 0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,034h,026h,09h,045h,035h,026h
-    db 09h,05Dh,037h,08Bh,044h,010h,08Bh,05Ch,012h,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h
-    db 0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h
-    db 08h,055h,04Eh,026h,09h,045h,04Fh,026h,09h,05Dh,051h,083h,0C7h,068h,083h,0C6h
-    db 014h,0E2h,02h,0EBh,03h,0E9h,08h,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh
-    db 08Bh,04h,08Bh,05Ch,02h,0F9h,0D0h,0D7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h
-    db 026h,020h,015h,026h,021h,045h,01h,026h,021h,05Dh,03h,026h,020h,055h,01Ah,026h
-    db 021h,045h,01Bh,026h,021h,05Dh,01Dh,026h,020h,055h,034h,026h,021h,045h,035h,026h
-    db 021h,05Dh,037h,026h,020h,055h,04Eh,026h,021h,045h,04Fh,026h,021h,05Dh,051h,08Bh
-    db 044h,04h,08Bh,05Ch,06h,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h
-    db 0D2h,026h,08h,015h,026h,09h,045h,01h,026h,09h,05Dh,03h,08Bh,044h,08h,08Bh
-    db 05Ch,0Ah,032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h
-    db 055h,01Ah,026h,09h,045h,01Bh,026h,09h,05Dh,01Dh,08Bh,044h,0Ch,08Bh,05Ch,0Eh
-    db 032h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,034h
-    db 026h,09h,045h,035h,026h,09h,05Dh,037h,08Bh,044h,010h,08Bh,05Ch,012h,032h,0D2h
-    db 0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,04Eh,026h,09h
-    db 045h,04Fh,026h,09h,05Dh,051h,083h,0C7h,068h,083h,0C6h,014h,0E2h,02h,0EBh,03h
-    db 0E9h,03Bh,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh,05Ch,02h,0B2h,0FFh
-    db 0F7h,0D0h,0F7h,0D3h,0F6h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh
-    db 026h,09h,05h,026h,09h,05Dh,02h,026h,08h,055h,04h,026h,09h,045h,01Ah,026h
-    db 09h,05Dh,01Ch,026h,08h,055h,01Eh,026h,09h,045h,034h,026h,09h,05Dh,036h,026h
-    db 08h,055h,038h,026h,09h,045h,04Eh,026h,09h,05Dh,050h,026h,08h,055h,052h,083h
-    db 0C7h,068h,083h,0C6h,014h,0E2h,0B2h,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh
-    db 05Ch,02h,0B2h,0FFh,0F7h,0D0h,0F7h,0D3h,0F6h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h
-    db 05h,026h,09h,05Dh,02h,026h,08h,055h,04h,026h,09h,045h,01Ah,026h,09h,05Dh
-    db 01Ch,026h,08h,055h,01Eh,026h,09h,045h,034h,026h,09h,05Dh,036h,026h,08h,055h
-    db 038h,026h,09h,045h,04Eh,026h,09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h
-    db 083h,0C6h,014h,0E2h,0A8h,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,04h,08Bh,05Ch,02h
-    db 0B2h,0FFh,0F7h,0D0h,0F7h,0D3h,0F6h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh
-    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,05h,026h,09h,05Dh,02h,026h,08h,055h
-    db 04h,026h,09h,045h,01Ah,026h,09h,05Dh,01Ch,026h,08h,055h,01Eh,026h,09h,045h
-    db 034h,026h,09h,05Dh,036h,026h,08h,055h,038h,026h,09h,045h,04Eh,026h,09h,05Dh
-    db 050h,026h,08h,055h,052h,083h,0C7h,068h,083h,0C6h,014h,0E2h,09Eh,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,08Bh,04h,08Bh,05Ch,02h,0B2h,0FFh,0F7h,0D0h,0F7h,0D3h,0F6h,0D2h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DBh,0D0h,0DFh,0D0h,0DAh,026h,09h,05h,026h,09h,05Dh,02h,026h
-    db 08h,055h,04h,026h,09h,045h,01Ah,026h,09h,05Dh,01Ch,026h,08h,055h,01Eh,026h
-    db 09h,045h,034h,026h,09h,05Dh,036h,026h,08h,055h,038h,026h,09h,045h,04Eh,026h
-    db 09h,05Dh,050h,026h,08h,055h,052h,083h,0C7h,068h,083h,0C6h,014h,0E2h,094h,02Eh
-    db 08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh,08Bh,04h,08Bh,05Ch,02h,0F6h,0D2h,0F7h,0D0h
-    db 0F7h,0D3h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h
-    db 0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h
-    db 026h,08h,015h,026h,09h,045h,01h,026h,09h,05Dh,03h,026h,08h,055h,01Ah,026h
-    db 09h,045h,01Bh,026h,09h,05Dh,01Dh,026h,08h,055h,034h,026h,09h,045h,035h,026h
-    db 09h,05Dh,037h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,026h,09h,05Dh,051h,083h
-    db 0C7h,068h,083h,0C6h,014h,0E2h,09Eh,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh,08Bh
-    db 04h,08Bh,05Ch,02h,0F6h,0D2h,0F7h,0D0h,0F7h,0D3h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h
-    db 0D0h,0D0h,0D0h,0D2h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,08h
-    db 015h,026h,09h,045h,01h,026h,09h,05Dh,03h,026h,08h,055h,01Ah,026h,09h,045h
-    db 01Bh,026h,09h,05Dh,01Dh,026h,08h,055h,034h,026h,09h,045h,035h,026h,09h,05Dh
-    db 037h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,026h,09h,05Dh,051h,083h,0C7h,068h
-    db 083h,0C6h,014h,0E2h,0A8h,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh,08Bh,04h,08Bh
-    db 05Ch,02h,0F6h,0D2h,0F7h,0D0h,0F7h,0D3h,0D0h,0E7h,0D0h,0D3h,0D0h,0D4h,0D0h,0D0h
-    db 0D0h,0D2h,026h,08h,015h,026h,09h,045h,01h,026h,09h,05Dh,03h,026h,08h,055h
-    db 01Ah,026h,09h,045h,01Bh,026h,09h,05Dh,01Dh,026h,08h,055h,034h,026h,09h,045h
-    db 035h,026h,09h,05Dh,037h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,026h,09h,05Dh
-    db 051h,083h,0C7h,068h,083h,0C6h,014h,0E2h,0B2h,02Eh,08Eh,01Eh,096h,095h,0C3h,026h
-    db 08Bh,05h,023h,04h,0Bh,044h,02h,026h,089h,05h,083h,0C7h,01Ah,026h,08Bh,05h
-    db 023h,04h,0Bh,044h,04h,026h,089h,05h,083h,0C7h,01Ah,026h,08Bh,05h,023h,04h
-    db 0Bh,044h,06h,026h,089h,05h,083h,0C7h,01Ah,026h,08Bh,05h,023h,04h,0Bh,044h
-    db 08h,026h,089h,05h,083h,0C7h,01Ah,083h,0C6h,0Ah,0E2h,0C3h,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h,08Bh,04h,0F7h,0D0h,026h,09h,05h,026h,09h,045h,01Ah,026h,09h,045h
-    db 034h,026h,09h,045h,04Eh,083h,0C6h,0Ah,083h,0C7h,068h,0E2h,0E5h,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,05h
-    db 026h,020h,055h,02h,026h,021h,045h,01Ah,026h,020h,055h,01Ch,026h,021h,045h,034h
-    db 026h,020h,055h,036h,026h,021h,045h,04Eh,026h,020h,055h,050h,0ADh,032h,0D2h,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,0ADh,032h,0D2h,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,01Ah,026h,08h,055h,01Ch,0ADh,032h,0D2h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,034h,026h,08h,055h,036h,0ADh,032h
-    db 0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,04Eh,026h,08h,055h,050h,083h
-    db 0C7h,068h,0E2h,08Fh,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h
-    db 0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,05h,026h,020h
-    db 055h,02h,026h,021h,045h,01Ah,026h,020h,055h,01Ch,026h,021h,045h,034h,026h,020h
-    db 055h,036h,026h,021h,045h,04Eh,026h,020h,055h,050h,0ADh,032h,0D2h,0D0h,0E8h,0D0h
-    db 0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h
-    db 0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h
-    db 09h,045h,01Ah,026h,08h,055h,01Ch,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,034h,026h,08h,055h,036h,0ADh,032h
-    db 0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h
-    db 04Eh,026h,08h,055h,050h,083h,0C7h,068h,0E2h,02h,0EBh,03h,0E9h,06Bh,0FFh,02Eh
-    db 08Eh,01Eh,096h,095h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,05h
-    db 026h,020h,055h,02h,026h,021h,045h,01Ah,026h,020h,055h,01Ch,026h,021h,045h,034h
-    db 026h,020h,055h,036h,026h,021h,045h,04Eh,026h,020h,055h,050h,0ADh,032h,0D2h,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0DAh,026h,09h,05h,026h,08h,055h,02h,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h
-    db 01Ah,026h,08h,055h,01Ch,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,034h,026h,08h
-    db 055h,036h,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,04Eh,026h,08h,055h,050h,083h
-    db 0C7h,068h,0E2h,02h,0EBh,03h,0E9h,04Ch,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh
-    db 0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
-    db 0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h
-    db 05h,026h,020h,055h,02h,026h,021h,045h,01Ah,026h,020h,055h,01Ch,026h,021h,045h
-    db 034h,026h,020h,055h,036h,026h,021h,045h,04Eh,026h,020h,055h,050h,0ADh,032h,0D2h
+    db 26h,8Bh,05h,23h,04h,0Bh,44h,02h,26h,89h,05h,83h,0C7h,1Ah,26h,8Bh
+    db 05h,23h,04h,0Bh,44h,04h,26h,89h,05h,83h,0C7h,1Ah,26h,8Bh,05h,23h
+    db 04h,0Bh,44h,06h,26h,89h,05h,83h,0C7h,1Ah,26h,8Bh,05h,23h,04h,0Bh
+    db 44h,08h,26h,89h,05h,83h,0C7h,1Ah,83h,0C6h,0Ah,0E2h,0C3h,2Eh,8Eh,1Eh
+    db 96h,95h,0C3h,8Bh,04h,0F7h,0D0h,26h,09h,05h,26h,09h,45h,1Ah,26h,09h
+    db 45h,34h,26h,09h,45h,4Eh,83h,0C6h,0Ah,83h,0C7h,68h,0E2h,0E5h,2Eh,8Eh
+    db 1Eh,96h,95h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h,21h
+    db 05h,26h,20h,55h,02h,26h,21h,45h,1Ah,26h,20h,55h,1Ch,26h,21h,45h
+    db 34h,26h,20h,55h,36h,26h,21h,45h,4Eh,26h,20h,55h,50h,0ADh,32h,0D2h
+    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,05h,26h,08h,55h,02h,0ADh,32h,0D2h
+    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,1Ah,26h,08h,55h,1Ch,0ADh,32h
+    db 0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,34h,26h,08h,55h,36h,0ADh
+    db 32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,4Eh,26h,08h,55h,50h
+    db 83h,0C7h,68h,0E2h,8Fh,2Eh,8Eh,1Eh,96h,95h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h
+    db 0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h,21h,05h,26h
+    db 20h,55h,02h,26h,21h,45h,1Ah,26h,20h,55h,1Ch,26h,21h,45h,34h,26h
+    db 20h,55h,36h,26h,21h,45h,4Eh,26h,20h,55h,50h,0ADh,32h,0D2h,0D0h,0E8h
+    db 0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,05h,26h,08h,55h
+    db 02h,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh
+    db 26h,09h,45h,1Ah,26h,08h,55h,1Ch,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h
+    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,34h,26h,08h,55h,36h,0ADh
+    db 32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h
+    db 45h,4Eh,26h,08h,55h,50h,83h,0C7h,68h,0E2h,02h,0EBh,03h,0E9h,6Bh,0FFh
+    db 2Eh,8Eh,1Eh,96h,95h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
+    db 0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h,21h
+    db 05h,26h,20h,55h,02h,26h,21h,45h,1Ah,26h,20h,55h,1Ch,26h,21h,45h
+    db 34h,26h,20h,55h,36h,26h,21h,45h,4Eh,26h,20h,55h,50h,0ADh,32h,0D2h
     db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,0ADh
-    db 032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h,01Ah,026h,08h
-    db 055h,01Ch,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,045h
-    db 034h,026h,08h,055h,036h,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh
-    db 026h,09h,045h,04Eh,026h,08h,055h,050h,083h,0C7h,068h,0E2h,02h,0EBh,03h,0E9h
-    db 02Dh,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh,0ADh,0F9h,0D0h,0D4h,0D0h,0D0h
-    db 0D0h,0D2h,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h
-    db 026h,020h,015h,026h,021h,045h,01h,026h,020h,055h,01Ah,026h,021h,045h,01Bh,026h
-    db 020h,055h,034h,026h,021h,045h,035h,026h,020h,055h,04Eh,026h,021h,045h,04Fh,0ADh
-    db 032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h
-    db 0D0h,0D0h,0D0h,0D2h,026h,08h,015h,026h,09h,045h,01h,0ADh,032h,0D2h,0D0h,0E4h
-    db 0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h
-    db 026h,08h,055h,01Ah,026h,09h,045h,01Bh,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
-    db 0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h
-    db 034h,026h,09h,045h,035h,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h
-    db 0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,04Eh,026h,09h
-    db 045h,04Fh,083h,0C7h,068h,0E2h,02h,0EBh,03h,0E9h,04Ch,0FFh,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h,0B2h,0FFh,0ADh,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0F9h,0D0h,0D4h,0D0h
-    db 0D0h,0D0h,0D2h,026h,020h,015h,026h,021h,045h,01h,026h,020h,055h,01Ah,026h,021h
-    db 045h,01Bh,026h,020h,055h,034h,026h,021h,045h,035h,026h,020h,055h,04Eh,026h,021h
-    db 045h,04Fh,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
-    db 0D2h,026h,08h,015h,026h,09h,045h,01h,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
-    db 0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,01Ah,026h,09h,045h,01Bh,0ADh
-    db 032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h
-    db 055h,034h,026h,09h,045h,035h,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h
-    db 0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,083h,0C7h,068h
-    db 0E2h,02h,0EBh,03h,0E9h,06Bh,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,0B2h,0FFh,0ADh
-    db 0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,026h,020h,015h,026h,021h,045h,01h,026h,020h
-    db 055h,01Ah,026h,021h,045h,01Bh,026h,020h,055h,034h,026h,021h,045h,035h,026h,020h
-    db 055h,04Eh,026h,021h,045h,04Fh,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h
-    db 08h,015h,026h,09h,045h,01h,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h
-    db 08h,055h,01Ah,026h,09h,045h,01Bh,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h
-    db 026h,08h,055h,034h,026h,09h,045h,035h,0ADh,032h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
-    db 0D2h,026h,08h,055h,04Eh,026h,09h,045h,04Fh,083h,0C7h,068h,0E2h,08Fh,02Eh,08Eh
-    db 01Eh,096h,095h,0C3h,08Bh,04h,0B2h,0FFh,0F7h,0D0h,0F6h,0D2h,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,026h,09h,045h,01Ah,026h,08h,055h
-    db 01Ch,026h,09h,045h,034h,026h,08h,055h,036h,026h,09h,045h,04Eh,026h,08h,055h
-    db 050h,083h,0C7h,068h,083h,0C6h,0Ah,0E2h,0CBh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh
-    db 04h,0B2h,0FFh,0F7h
+    db 0D0h,0DAh,26h,09h,05h,26h,08h,55h,02h,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh
+    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h
+    db 45h,1Ah,26h,08h,55h,1Ch,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h
+    db 0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,34h,26h
+    db 08h,55h,36h,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
+    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,4Eh,26h,08h,55h,50h
+    db 83h,0C7h,68h,0E2h,02h,0EBh,03h,0E9h,4Ch,0FFh,2Eh,8Eh,1Eh,96h,95h,0C3h
+    db 0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h
+    db 0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h
+    db 21h,05h,26h,20h,55h,02h,26h,21h,45h,1Ah,26h,20h,55h,1Ch,26h,21h
+    db 45h,34h,26h,20h,55h,36h,26h,21h,45h,4Eh,26h,20h,55h,50h,0ADh,32h
+    db 0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h
+    db 0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,05h,26h,08h,55h,02h
+    db 0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h
+    db 0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h,45h,1Ah,26h
+    db 08h,55h,1Ch,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
+    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,26h,09h
+    db 45h,34h,26h,08h,55h,36h,0ADh,32h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h
+    db 0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h
+    db 0DAh,26h,09h,45h,4Eh,26h,08h,55h,50h,83h,0C7h,68h,0E2h,02h,0EBh,03h
+    db 0E9h,2Dh,0FFh,2Eh,8Eh,1Eh,96h,95h,0C3h,0B2h,0FFh,0ADh,0F9h,0D0h,0D4h,0D0h
+    db 0D0h,0D0h,0D2h,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h
+    db 0D2h,26h,20h,15h,26h,21h,45h,01h,26h,20h,55h,1Ah,26h,21h,45h,1Bh
+    db 26h,20h,55h,34h,26h,21h,45h,35h,26h,20h,55h,4Eh,26h,21h,45h,4Fh
+    db 0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h
+    db 0E4h,0D0h,0D0h,0D0h,0D2h,26h,08h,15h,26h,09h,45h,01h,0ADh,32h,0D2h,0D0h
+    db 0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
+    db 0D2h,26h,08h,55h,1Ah,26h,09h,45h,1Bh,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h
+    db 0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,26h,08h
+    db 55h,34h,26h,09h,45h,35h,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h
+    db 0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,26h,08h,55h,4Eh,26h
+    db 09h,45h,4Fh,83h,0C7h,68h,0E2h,02h,0EBh,03h,0E9h,4Ch,0FFh,2Eh,8Eh,1Eh
+    db 96h,95h,0C3h,0B2h,0FFh,0ADh,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,0F9h,0D0h,0D4h
+    db 0D0h,0D0h,0D0h,0D2h,26h,20h,15h,26h,21h,45h,01h,26h,20h,55h,1Ah,26h
+    db 21h,45h,1Bh,26h,20h,55h,34h,26h,21h,45h,35h,26h,20h,55h,4Eh,26h
+    db 21h,45h,4Fh,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h
+    db 0D0h,0D2h,26h,08h,15h,26h,09h,45h,01h,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h
+    db 0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,26h,08h,55h,1Ah,26h,09h,45h,1Bh
+    db 0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,26h
+    db 08h,55h,34h,26h,09h,45h,35h,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h
+    db 0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,26h,08h,55h,4Eh,26h,09h,45h,4Fh,83h,0C7h
+    db 68h,0E2h,02h,0EBh,03h,0E9h,6Bh,0FFh,2Eh,8Eh,1Eh,96h,95h,0C3h,0B2h,0FFh
+    db 0ADh,0F9h,0D0h,0D4h,0D0h,0D0h,0D0h,0D2h,26h,20h,15h,26h,21h,45h,01h,26h
+    db 20h,55h,1Ah,26h,21h,45h,1Bh,26h,20h,55h,34h,26h,21h,45h,35h,26h
+    db 20h,55h,4Eh,26h,21h,45h,4Fh,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h
+    db 26h,08h,15h,26h,09h,45h,01h,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h,0D2h
+    db 26h,08h,55h,1Ah,26h,09h,45h,1Bh,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h,0D0h
+    db 0D2h,26h,08h,55h,34h,26h,09h,45h,35h,0ADh,32h,0D2h,0D0h,0E4h,0D0h,0D0h
+    db 0D0h,0D2h,26h,08h,55h,4Eh,26h,09h,45h,4Fh,83h,0C7h,68h,0E2h,8Fh,2Eh
+    db 8Eh,1Eh,96h,95h,0C3h,8Bh,04h,0B2h,0FFh,0F7h,0D0h,0F6h,0D2h,0D0h,0E8h,0D0h
+    db 0DCh,0D0h,0DAh,26h,09h,05h,26h,08h,55h,02h,26h,09h,45h,1Ah,26h,08h
+    db 55h,1Ch,26h,09h,45h,34h,26h,08h,55h,36h,26h,09h,45h,4Eh,26h,08h
+    db 55h,50h,83h,0C7h,68h,83h,0C6h,0Ah,0E2h,0CBh,2Eh,8Eh,1Eh,96h,95h,0C3h
+    db 8Bh,04h,0B2h,0FFh,0F7h
 
 ; Modern record/state symbols.
 ; UNKNOWN: not yet classified as code or data
@@ -2024,59 +3038,376 @@ loc_01031:
     db 0D0h,0E4h,0D0h,0D0h,0D0h,0D2h,026h,08h,015h,026h,09h,045h,01h,026h,08h,055h
     db 01Ah,026h,09h,045h,01Bh,026h,08h,055h,034h,026h,09h,045h,035h,026h,08h,055h
     db 04Eh,026h,09h,045h,04Fh,083h,0C7h,068h,083h,0C6h,0Ah,0E2h,0CBh,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,026h,08Ah,05h,022h,04h,0Ah,044h,01h,026h,088h,05h,083h,0C7h
-    db 01Ah,026h,08Ah,05h,022h,04h,0Ah,044h,02h,026h,088h,05h,083h,0C7h,01Ah,026h
-    db 08Ah,05h,022h,04h,0Ah,044h,03h,026h,088h,05h,083h,0C7h,01Ah,026h,08Ah,05h
-    db 022h,04h,0Ah,044h,04h,026h,088h,05h,083h,0C7h,01Ah,083h,0C6h,05h,0E2h,0C3h
-    db 02Eh,08Eh,01Eh,096h,095h,0C3h,0ACh,0B4h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,026h,021h
-    db 05h,026h,021h,045h,01Ah,026h,021h,045h,034h,026h,021h,045h,04Eh,0ACh,032h,0E4h
-    db 0D0h,0E8h,0D0h,0DCh,026h,09h,05h,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,026h,09h
-    db 045h,01Ah,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,034h,0ACh,032h,0E4h
-    db 0D0h,0E8h,0D0h,0DCh,026h,09h,045h,04Eh,083h,0C7h,068h,0E2h,0B9h,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,0ACh,0B4h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0F9h,0D0h,0D8h,0D0h,0DCh
-    db 026h,021h,05h,026h,021h,045h,01Ah,026h,021h,045h,034h,026h,021h,045h,04Eh,0ACh
-    db 032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,05h,0ACh,032h,0E4h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,01Ah,0ACh,032h,0E4h,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,034h,0ACh,032h,0E4h,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,04Eh,083h,0C7h,068h,0E2h,0A4h,02Eh
-    db 08Eh,01Eh,096h,095h,0C3h,0ACh,0B4h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0F9h,0D0h,0D8h
-    db 0D0h,0DCh,0F9h,0D0h,0D8h,0D0h,0DCh,026h,021h,05h,026h,021h,045h,01Ah,026h,021h
-    db 045h,034h,026h,021h,045h,04Eh,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h
-    db 0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,05h,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,01Ah,0ACh,032h,0E4h,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,034h,0ACh,032h
-    db 0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h
-    db 04Eh,083h,0C7h,068h,0E2h,08Fh,02Eh,08Eh,01Eh,096h,095h,0C3h,0ACh,0B4h,0FFh,0F9h
-    db 0D0h,0D8h,0D0h,0DCh,0F9h,0D0h,0D8h,0D0h,0DCh,0F9h,0D0h,0D8h,0D0h,0DCh,0F9h,0D0h
-    db 0D8h,0D0h,0DCh,026h,021h,05h,026h,021h,045h,01Ah,026h,021h,045h,034h,026h,021h
-    db 045h,04Eh,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h
-    db 0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,05h,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h
-    db 0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,01Ah,0ACh
-    db 032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h
-    db 0D0h,0DCh,026h,09h,045h,034h,0ACh,032h,0E4h,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h
-    db 0DCh,0D0h,0E8h,0D0h,0DCh,0D0h,0E8h,0D0h,0DCh,026h,09h,045h,04Eh,083h,0C7h,068h
-    db 0E2h,02h,0EBh,03h,0E9h,075h,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Ah,024h,0B0h
-    db 0FFh,0F9h,0D0h,0D4h,0D0h,0D0h,0F9h,0D0h,0D4h,0D0h,0D0h,0F9h,0D0h,0D4h,0D0h,0D0h
-    db 026h,021h,05h,026h,021h,045h,01Ah,026h,021h,045h,034h,026h,021h,045h,04Eh,08Ah
-    db 064h,01h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h
-    db 026h,09h,05h,08Ah,064h,02h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h
-    db 0D0h,0E4h,0D0h,0D0h,026h,09h,045h,01Ah,08Ah,064h,03h,032h,0C0h,0D0h,0E4h,0D0h
-    db 0D0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,034h,08Ah,064h,04h
-    db 032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h
-    db 045h,04Eh,083h,0C7h,068h,083h,0C6h,05h,0E2h,083h,02Eh,08Eh,01Eh,096h,095h,0C3h
-    db 08Ah,024h,0B0h,0FFh,0F9h,0D0h,0D4h,0D0h,0D0h,0F9h,0D0h,0D4h,0D0h,0D0h,026h,021h
-    db 05h,026h,021h,045h,01Ah,026h,021h,045h,034h,026h,021h,045h,04Eh,08Ah,064h,01h
-    db 032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h,05h,08Ah,064h,02h
-    db 032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,01Ah,08Ah,064h
-    db 03h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,034h,08Ah
-    db 064h,04h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,04Eh
-    db 083h,0C7h,068h,083h,0C6h,05h,0E2h,098h,02Eh,08Eh,01Eh,096h,095h,0C3h,08Ah,024h
-    db 0B0h,0FFh,0F9h,0D0h,0D4h,0D0h,0D0h,026h,021h,05h,026h,021h,045h,01Ah,026h,021h
-    db 045h,034h,026h,021h,045h,04Eh,08Ah,064h,01h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,026h
-    db 09h,05h,08Ah,064h,02h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,01Ah,08Ah
-    db 064h,03h,032h,0C0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,034h,08Ah,064h,04h,032h
-    db 0C0h,0D0h,0E4h,0D0h,0D0h,026h,09h,045h,04Eh,083h,0C7h,068h,083h,0C6h,05h,0E2h
-    db 0ADh,02Eh,08Eh,01Eh,096h,095h,0C3h
+    db 096h,095h,0C3h
+loc_02193:
+    mov al, es:[di]
+    and al, ds:[si]
+    or al, ds:[si + 1]
+    mov es:[di], al
+    add di, 1Ah
+    mov al, es:[di]
+    and al, ds:[si]
+    or al, ds:[si + 2]
+    mov es:[di], al
+    add di, 1Ah
+    mov al, es:[di]
+    and al, ds:[si]
+    or al, ds:[si + 3]
+    mov es:[di], al
+    add di, 1Ah
+    mov al, es:[di]
+    and al, ds:[si]
+    or al, ds:[si + 4]
+    mov es:[di], al
+    add di, 1Ah
+    add si, 5
+    loop loc_02193
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_021D6:
+    lodsb
+    mov ah, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    or es:[di], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 1Ah], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 34h], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    loop loc_021D6
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_02223:
+    lodsb
+    mov ah, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 1Ah], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 34h], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    loop loc_02223
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_02285:
+    lodsb
+    mov ah, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 1Ah], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 34h], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    loop loc_02285
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_022FC:
+    lodsb
+    mov ah, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 1Ah], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 34h], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    loop loc_02384
+    jmp short loc_02387
+loc_02384:
+    jmp near ptr loc_022FC
+loc_02387:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0238D:
+    mov ah, ds:[si]
+    mov al, 0FFh
+    stc
+    rcl ah, 1
+    rcl al, 1
+    stc
+    rcl ah, 1
+    rcl al, 1
+    stc
+    rcl ah, 1
+    rcl al, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    mov ah, ds:[si + 1]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di], ax
+    mov ah, ds:[si + 2]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 1Ah], ax
+    mov ah, ds:[si + 3]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 34h], ax
+    mov ah, ds:[si + 4]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    add si, 5
+    loop loc_0238D
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_02410:
+    mov ah, ds:[si]
+    mov al, 0FFh
+    stc
+    rcl ah, 1
+    rcl al, 1
+    stc
+    rcl ah, 1
+    rcl al, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    mov ah, ds:[si + 1]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di], ax
+    mov ah, ds:[si + 2]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 1Ah], ax
+    mov ah, ds:[si + 3]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 34h], ax
+    mov ah, ds:[si + 4]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    add si, 5
+    loop loc_02410
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0247E:
+    mov ah, ds:[si]
+    mov al, 0FFh
+    stc
+    rcl ah, 1
+    rcl al, 1
+    and es:[di], ax
+    and es:[di + 1Ah], ax
+    and es:[di + 34h], ax
+    and es:[di + 4Eh], ax
+    mov ah, ds:[si + 1]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    or es:[di], ax
+    mov ah, ds:[si + 2]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 1Ah], ax
+    mov ah, ds:[si + 3]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 34h], ax
+    mov ah, ds:[si + 4]
+    xor al, al
+    shl ah, 1
+    rcl al, 1
+    or es:[di + 4Eh], ax
+    add di, 68h
+    add si, 5
+    loop loc_0247E
+    mov ds, cs:[MainDataSegment]
+    ret
 
 BlitPackedToScreenEga:
     lodsw
@@ -2364,6 +3695,7 @@ loc_0272F:
     mov byte ptr ds:[0215Ch], al
     ret
 
+loc_02737:
     mov es, word ptr cs:[ScreenSegment]
     mov dx, 03C4h
     mov al, 2
@@ -2454,7 +3786,7 @@ loc_027E6:
     mov cx, word ptr cs:[05B9Eh]
 loc_027EB:
     push cx
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_02802
     push si
     mov cx, word ptr cs:[05B9Ch]
@@ -2498,9 +3830,9 @@ loc_0283F:
     rol al, 1
     rcl bl, 1
     and bl, 0Fh
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_02863
-    cmp bl, byte ptr cs:[0]
+    cmp bl, byte ptr cs:[TransparentColor]
     jne loc_02863
     xor bl, bl
 loc_02863:
@@ -2606,7 +3938,7 @@ loc_0294F:
     rcl al, 1
     rcl byte ptr cs:[05BA1h],1
     and byte ptr cs:[05BA1h], 0Fh
-    mov cl, byte ptr cs:[0]
+    mov cl, byte ptr cs:[TransparentColor]
     cmp byte ptr cs:[05BA1h], cl
     jne loc_02981
     stc
@@ -2633,46 +3965,186 @@ loc_02982:
     db 0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh
     db 0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h
     db 03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h
-    db 0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0C3h,0E8h,0E4h
-    db 02Fh,089h,046h,0Ch,03Dh,0FFh,0FFh,074h,0Fh,03h,06h,04Ch,023h,089h,046h,0Ch
-    db 08Bh,0F0h,08Bh,07Eh,0Eh,0E8h,024h,00h,083h,046h,02h,010h,0E8h,0C6h,02Fh,089h
-    db 046h,010h,083h,06Eh,02h,010h,03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch,023h
-    db 089h,046h,010h,08Bh,0F0h,08Bh,07Eh,0Eh,081h,0C7h,040h,01h,02Eh,08Eh,06h,096h
-    db 095h,02Eh,08Eh,01Eh,098h,095h,0BBh,015h,00h,0B9h,010h,00h,0A4h,0A5h,0A5h,03h
-    db 0F3h,0A4h,0A5h,0A5h,03h,0F3h,0A4h,0A5h,0A5h,03h,0F3h,0A4h,0A5h,0A5h,03h,0F3h
-    db 0E2h,0EAh,02Eh,08Eh,01Eh,096h,095h,0C3h,0E8h,07Ah,02Fh,089h,046h,0Ch,03Dh,0FFh
-    db 0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h,046h,0Ch,08Bh,0F0h,08Bh,07Eh,0Eh
-    db 02Eh,08Eh,06h,096h,095h,02Eh,08Eh,01Eh,098h,095h,0BBh,017h,00h,0B9h,010h,00h
-    db 0A5h,0A4h,03h,0F3h,0A5h,0A4h,03h,0F3h,0A5h,0A4h,03h,0F3h,0A5h,0A4h,03h,0F3h
-    db 0E2h,0EEh,02Eh,08Eh,01Eh,096h,095h,0C3h,0E8h,03Ah,02Fh,089h,046h,0Ch,03Dh,0FFh
-    db 0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h,046h,0Ch,08Bh,0F0h,08Bh,07Eh,0Eh
-    db 02Eh,08Eh,06h,096h,095h,02Eh,08Eh,01Eh,098h,095h,0BBh,018h,00h,0A5h,03h,0F3h
-    db 0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h
-    db 03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h
-    db 0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h
-    db 0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h
-    db 03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h
-    db 0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,0A5h,03h,0F3h,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h
+    db 0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0A5h,03h,0FBh,0C3h
+loc_02A4F:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    je loc_02A69
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    call loc_02A8D
+loc_02A69:
+    add word ptr ss:[bp + REC_Y], 10h
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    sub word ptr ss:[bp + REC_Y], 10h
+    cmp ax, 0FFFFh
+    jne loc_02A7D
+    ret
+loc_02A7D:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    add di, 140h
+loc_02A8D:
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    mov bx, 15h
+    mov cx, 10h
+loc_02A9D:
+    movsb
+    movsw
+    movsw
+    add si, bx
+    movsb
+    movsw
+    movsw
+    add si, bx
+    movsb
+    movsw
+    movsw
+    add si, bx
+    movsb
+    movsw
+    movsw
+    add si, bx
+    loop loc_02A9D
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_02AB9:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    jne loc_02AC5
+    ret
+loc_02AC5:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    mov bx, 17h
+    mov cx, 10h
+loc_02AE1:
+    movsw
+    movsb
+    add si, bx
+    movsw
+    movsb
+    add si, bx
+    movsw
+    movsb
+    add si, bx
+    movsw
+    movsb
+    add si, bx
+    loop loc_02AE1
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_02AF9:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    jne loc_02B05
+    ret
+loc_02B05:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    mov bx, 18h
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    movsw
+    add si, bx
+    mov ds, cs:[MainDataSegment]
+    ret
 
 loc_02B84:
     mov bx, dx
     mov cx, 0Dh
-    mov ax, word ptr cs:[0959Ah]
+    mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[02350h], 0E5Fh
     jb loc_02B99
-    mov ax, word ptr cs:[0959Ch]
+    mov ax, word ptr cs:[ShipSegment]
 loc_02B99:
     mov ds, ax
 loc_02B9B:
     push cx
     push bx
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[LevelMapSegment]
     mov bl, byte ptr es:[bx]
     dec bl
     xor bh, bh
     shl bx, 1
-    add bx, 08D92h
+    add bx, offset BlockOffsets
     mov si, word ptr cs:[bx]
     mov es, word ptr cs:[WorkspaceSegment]
     lodsw
@@ -2831,6 +4303,7 @@ loc_02D27:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
+loc_02D2D:
     mov word ptr cs:[05903h], 0
     mov di, word ptr cs:[058F9h]
     mov si, word ptr cs:[058FBh]
@@ -3128,6 +4601,7 @@ loc_02F81:
     loop loc_02F81
     mov ds, word ptr cs:[MainDataSegment]
     ret
+loc_02FB6:
     mov bx, 064h
     lodsw
     and ax, word ptr es:[di]
@@ -3307,7 +4781,7 @@ loc_030FF:
     dec word ptr ss:[bp + 024h]
     ret
 
-; AX = DI = row offset table DS:9EE8[AH] + 4*AL (AL in 8-pixel units); BX = the table
+; AX = DI = ScreenRowOffsets[AH] + 4*AL (AL in 8-pixel units); BX = the table
 ; entry. No bounds check; the initializer fills 200 rows.
 TandyOffsetFromScreenRow:
     mov bl, ah
@@ -3321,7 +4795,7 @@ TandyOffsetFromScreenRow:
     mov di, ax
     ret
 
-; As TandyOffsetFromScreenRow with the row table at DS:9BC8.
+; As TandyOffsetFromScreenRow with PlayfieldRowOffsets.
 TandyOffsetFromPlayfieldRow:
     mov bl, ah
     xor bh, bh
@@ -3334,7 +4808,7 @@ TandyOffsetFromPlayfieldRow:
     mov di, ax
     ret
 
-; As TandyOffsetFromScreenRow with the row table at DS:9D58.
+; As TandyOffsetFromScreenRow with WideRowOffsets.
 TandyOffsetFromWideRow:
     mov bl, ah
     xor bh, bh
@@ -3648,14 +5122,14 @@ loc_033DD:
     mov byte ptr cs:[05B96h], cl
     mov byte ptr cs:[05B9Ah], ch
     inc si
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_03433
     mov ax, word ptr cs:[05B9Ah]
     stosw
 loc_03433:
     mov ax, word ptr cs:[05B96h]
     stosw
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_03445
     mov ax, word ptr cs:[05B98h]
     stosw
@@ -3685,7 +5159,7 @@ loc_0344B:
     ror cl, 1
     ror cl, 1
     ror cl, 1
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     jne loc_0347C
     ret
 loc_0347C:
@@ -3693,7 +5167,7 @@ loc_0347C:
     xor ch, ch
     mov al, cl
     and al, 0Fh
-    cmp al, byte ptr cs:[0]
+    cmp al, byte ptr cs:[TransparentColor]
     jne loc_03491
     or ch, 0Fh
     and cl, 0F0h
@@ -3704,7 +5178,7 @@ loc_03491:
     shr al, 1
     shr al, 1
     shr al, 1
-    cmp al, byte ptr cs:[0]
+    cmp al, byte ptr cs:[TransparentColor]
     jne loc_034AA
     or ch, 0F0h
     and cl, 0Fh
@@ -3852,6 +5326,7 @@ loc_03548:
     movsw
     add di, bx
     ret
+loc_0356C:
     call loc_05A36
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
@@ -3893,6 +5368,7 @@ loc_035BA:
     loop loc_035BA
     mov ds, word ptr cs:[MainDataSegment]
     ret
+loc_035CC:
     call loc_05A36
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
@@ -3988,6 +5464,7 @@ loc_035D8:
     add si, bx
     mov ds, word ptr cs:[MainDataSegment]
     ret
+loc_03657:
     call loc_05A36
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
@@ -4031,21 +5508,21 @@ loc_03663:
 loc_036A2:
     mov bx, dx
     mov cx, 0Dh
-    mov ax, word ptr cs:[0959Ah]
+    mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[02350h], 0E5Fh
     jb loc_036B7
-    mov ax, word ptr cs:[0959Ch]
+    mov ax, word ptr cs:[ShipSegment]
 loc_036B7:
     mov ds, ax
 loc_036B9:
     push cx
     push bx
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[LevelMapSegment]
     mov bl, byte ptr es:[bx]
     dec bl
     xor bh, bh
     shl bx, 1
-    add bx, 08D92h
+    add bx, offset BlockOffsets
     mov si, word ptr cs:[bx]
     mov es, word ptr cs:[WorkspaceSegment]
     movsw
@@ -4140,6 +5617,7 @@ loc_03755:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
+loc_0375B:
     mov word ptr cs:[05903h], 0
     mov di, word ptr cs:[058F9h]
     mov si, word ptr cs:[058FBh]
@@ -4239,131 +5717,606 @@ loc_03840:
     jne loc_03829
     mov ds, word ptr cs:[MainDataSegment]
     ret
+loc_03849:
+    lodsw
+    and ax, es:[di]
+    or ax, ds:[si]
+    add si, 2
+    stosw
+    lodsw
+    and ax, es:[di]
+    or ax, ds:[si]
+    add si, 2
+    stosw
+    lodsw
+    and ax, es:[di]
+    or ax, ds:[si]
+    add si, 2
+    stosw
+    lodsw
+    and ax, es:[di]
+    or ax, ds:[si]
+    add si, 2
+    stosw
+    add di, 2Ch
+    loop loc_03849
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0387C:
+    lodsw
+    not ax
+    or es:[di], ax
+    add si, 2
+    add di, 2
+    lodsw
+    not ax
+    or es:[di], ax
+    add si, 2
+    add di, 2
+    lodsw
+    not ax
+    or es:[di], ax
+    add si, 2
+    add di, 2
+    lodsw
+    not ax
+    or es:[di], ax
+    add si, 2
+    add di, 2
+    add di, 2Ch
+    loop loc_0387C
+    mov ds, cs:[MainDataSegment]
+    ret
 ; UNKNOWN: not yet classified as code or data
-    db 0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h
-    db 083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h
-    db 023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,083h,0C7h,02Ch,0E2h,0D3h,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,0ADh,0F7h,0D0h,026h,09h,05h,083h,0C6h,02h,083h,0C7h,02h,0ADh
-    db 0F7h,0D0h,026h,09h,05h,083h,0C6h,02h,083h,0C7h,02h,0ADh,0F7h,0D0h,026h,09h
-    db 05h,083h,0C6h,02h,083h,0C7h,02h,0ADh,0F7h,0D0h,026h,09h,05h,083h,0C6h,02h
-    db 083h,0C7h,02h,083h,0C7h,02Ch,0E2h,0CBh,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,026h
-    db 023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,0ADh,026h,023h,05h,0Bh,04h,083h,0C6h
-    db 02h,0ABh,083h,0C7h,030h,0E2h,0E7h,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,0F7h,0D0h
-    db 026h,09h,05h,083h,0C6h,02h,083h,0C7h,02h,0ADh,0F7h,0D0h,026h,09h,05h,083h
-    db 0C6h,02h,083h,0C7h,02h,083h,0C7h,030h,0E2h,0E3h,02Eh,08Eh,01Eh,096h,095h,0C3h
-    db 0ADh,026h,023h,05h,0Bh,04h,083h,0C6h,02h,0ABh,083h,0C7h,032h,0E2h,0F1h,02Eh
-    db 08Eh,01Eh,096h,095h,0C3h,0ADh,0F7h,0D0h,026h,09h,05h,083h,0C6h,02h,083h,0C7h
-    db 02h,083h,0C7h,032h,0E2h,0EFh,02Eh,08Eh,01Eh,096h,095h,0C3h,00h,08Bh,01Ch,08Bh
-    db 044h,04h,08Bh,04Ch,08h,08Bh,054h,0Ch,02Eh,0C6h,06h,025h,039h,0FFh,0F9h,0D0h
-    db 0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh
-    db 0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h
-    db 0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h,021h,01Dh,026h,021h,045h
-    db 02h,026h,021h,04Dh,04h,026h,021h,055h,06h,02Eh,0A0h,025h,039h,026h,020h,045h
-    db 08h,08Bh,05Ch,02h,08Bh,044h,06h,08Bh,04Ch,0Ah,08Bh,054h,0Eh,02Eh,0C6h,06h
-    db 025h,039h,00h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h
-    db 0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h,09h,01Dh
-    db 026h,09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h,02Eh,0A0h,025h,039h
-    db 026h,08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,074h,03h,0E9h,04Dh,0FFh
-    db 02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,08Bh,044h,04h,08Bh,04Ch,08h,08Bh,054h
-    db 0Ch,02Eh,0C6h,06h,025h,039h,0FFh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh
-    db 0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h
-    db 01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh
-    db 0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h
-    db 0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h
-    db 021h,01Dh,026h,021h,045h,02h,026h,021h,04Dh,04h,026h,021h,055h,06h,02Eh,0A0h
-    db 025h,039h,026h,020h,045h,08h,08Bh,05Ch,02h,08Bh,044h,06h,08Bh,04Ch,0Ah,08Bh
-    db 054h,0Eh,02Eh,0C6h,06h,025h,039h,00h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h
-    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh
-    db 025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh
-    db 0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h,09h,01Dh,026h
-    db 09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h,02Eh,0A0h,025h,039h,026h
-    db 08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,074h,03h,0E9h,0F7h,0FEh,02Eh
-    db 08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,08Bh,044h,04h,08Bh,04Ch,08h,08Bh,054h,0Ch
-    db 02Eh,0C6h,06h,025h,039h,0FFh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h
-    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh
-    db 025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h
-    db 0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h
-    db 0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0F9h,0D0h
-    db 0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh
-    db 0D0h,01Eh,025h,039h,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h
-    db 0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h,021h,01Dh,026h,021h,045h
-    db 02h,026h,021h,04Dh,04h,026h,021h,055h,06h,02Eh,0A0h,025h,039h,026h,020h,045h
-    db 08h,08Bh,05Ch,02h,08Bh,044h,06h,08Bh,04Ch,0Ah,08Bh,054h,0Eh,02Eh,0C6h,06h
-    db 025h,039h,00h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h
-    db 0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h
-    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh
-    db 025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh
-    db 0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h
-    db 039h,026h,09h,01Dh,026h,09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h
-    db 02Eh,0A0h,025h,039h,026h,08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,074h
-    db 03h,0E9h,0A1h,0FEh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,0F7h,0D3h,08Bh,044h
-    db 04h,0F7h,0D0h,08Bh,04Ch,08h,0F7h,0D1h,08Bh,054h,0Ch,0F7h,0D2h,02Eh,0C6h,06h
-    db 025h,039h,00h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h
-    db 0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,026h,09h,01Dh
-    db 026h,09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h,02Eh,0A0h,025h,039h
-    db 026h,08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,075h,09Dh,02Eh,08Eh,01Eh
-    db 096h,095h,0C3h,08Bh,01Ch,0F7h,0D3h,08Bh,044h,04h,0F7h,0D0h,08Bh,04Ch,08h,0F7h
-    db 0D1h,08Bh,054h,0Ch,0F7h,0D2h,02Eh,0C6h,06h,025h,039h,00h,0D0h,0EBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h
-    db 039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h
-    db 0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h
-    db 0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h
-    db 026h,09h,01Dh,026h,09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h,02Eh
-    db 0A0h,025h,039h,026h,08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,074h,03h
-    db 0E9h,070h,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,0F7h,0D3h,08Bh,044h,04h
-    db 0F7h,0D0h,08Bh,04Ch,08h,0F7h,0D1h,08Bh,054h,0Ch,0F7h,0D2h,02Eh,0C6h,06h,025h
-    db 039h,00h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh
-    db 0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h
-    db 039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h
-    db 0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0D9h
-    db 0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h,0D0h,0EBh,0D0h,0DFh,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0D9h,0D0h,0DDh,0D0h,0DAh,0D0h,0DEh,02Eh,0D0h,01Eh,025h,039h
-    db 026h,09h,01Dh,026h,09h,045h,02h,026h,09h,04Dh,04h,026h,09h,055h,06h,02Eh
-    db 0A0h,025h,039h,026h,08h,045h,08h,083h,0C6h,010h,083h,0C7h,034h,04Dh,074h,03h
-    db 0E9h,046h,0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,08Bh,044h,04h,0B2h,0FFh
+    db 0ADh,26h,23h,05h,0Bh,04h,83h,0C6h,02h,0ABh,0ADh,26h,23h,05h,0Bh,04h
+    db 83h,0C6h,02h,0ABh,83h,0C7h,30h,0E2h,0E7h,2Eh,8Eh,1Eh,96h,95h,0C3h,0ADh
+    db 0F7h,0D0h,26h,09h,05h,83h,0C6h,02h,83h,0C7h,02h,0ADh,0F7h,0D0h,26h,09h
+    db 05h,83h,0C6h,02h,83h,0C7h,02h,83h,0C7h,30h,0E2h,0E3h,2Eh,8Eh,1Eh,96h
+    db 95h,0C3h
+loc_038F9:
+    lodsw
+    and ax, es:[di]
+    or ax, ds:[si]
+    add si, 2
+    stosw
+    add di, 32h
+    loop loc_038F9
+    mov ds, cs:[MainDataSegment]
+    ret
+; UNKNOWN: not yet classified as code or data
+    db 0ADh,0F7h,0D0h,26h,09h,05h,83h,0C6h,02h,83h,0C7h,02h,83h,0C7h,32h,0E2h
+    db 0EFh,2Eh,8Eh,1Eh,96h,95h,0C3h,00h
+loc_03926:
+    mov bx, ds:[si]
+    mov ax, ds:[si + 4]
+    mov cx, ds:[si + 8]
+    mov dx, ds:[si + 0Ch]
+    mov byte ptr cs:[3925h], 0FFh
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    and es:[di], bx
+    and es:[di + 2], ax
+    and es:[di + 4], cx
+    and es:[di + 6], dx
+    mov al, cs:[3925h]
+    and es:[di + 8], al
+    mov bx, ds:[si + 2]
+    mov ax, ds:[si + 6]
+    mov cx, ds:[si + 0Ah]
+    mov dx, ds:[si + 0Eh]
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    je loc_039D9
+    jmp near ptr loc_03926
+loc_039D9:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_039DF:
+    mov bx, ds:[si]
+    mov ax, ds:[si + 4]
+    mov cx, ds:[si + 8]
+    mov dx, ds:[si + 0Ch]
+    mov byte ptr cs:[3925h], 0FFh
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    and es:[di], bx
+    and es:[di + 2], ax
+    and es:[di + 4], cx
+    and es:[di + 6], dx
+    mov al, cs:[3925h]
+    and es:[di + 8], al
+    mov bx, ds:[si + 2]
+    mov ax, ds:[si + 6]
+    mov cx, ds:[si + 0Ah]
+    mov dx, ds:[si + 0Eh]
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    je loc_03AE8
+    jmp near ptr loc_039DF
+loc_03AE8:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_03AEE:
+    mov bx, ds:[si]
+    mov ax, ds:[si + 4]
+    mov cx, ds:[si + 8]
+    mov dx, ds:[si + 0Ch]
+    mov byte ptr cs:[3925h], 0FFh
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    stc
+    rcr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    and es:[di], bx
+    and es:[di + 2], ax
+    and es:[di + 4], cx
+    and es:[di + 6], dx
+    mov al, cs:[3925h]
+    and es:[di + 8], al
+    mov bx, ds:[si + 2]
+    mov ax, ds:[si + 6]
+    mov cx, ds:[si + 0Ah]
+    mov dx, ds:[si + 0Eh]
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    je loc_03C4D
+    jmp near ptr loc_03AEE
+loc_03C4D:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_03C53:
+    mov bx, ds:[si]
+    not bx
+    mov ax, ds:[si + 4]
+    not ax
+    mov cx, ds:[si + 8]
+    not cx
+    mov dx, ds:[si + 0Ch]
+    not dx
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    jne loc_03C53
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_03CBC:
+    mov bx, ds:[si]
+    not bx
+    mov ax, ds:[si + 4]
+    not ax
+    mov cx, ds:[si + 8]
+    not cx
+    mov dx, ds:[si + 0Ch]
+    not dx
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    je loc_03D4C
+    jmp near ptr loc_03CBC
+loc_03D4C:
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_03D52:
+    mov bx, ds:[si]
+    not bx
+    mov ax, ds:[si + 4]
+    not ax
+    mov cx, ds:[si + 8]
+    not cx
+    mov dx, ds:[si + 0Ch]
+    not dx
+    mov byte ptr cs:[3925h], 0
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr cl, 1
+    rcr ch, 1
+    rcr dl, 1
+    rcr dh, 1
+    rcr byte ptr cs:[3925h], 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], cx
+    or es:[di + 6], dx
+    mov al, cs:[3925h]
+    or es:[di + 8], al
+    add si, 10h
+    add di, 34h
+    dec bp
+    je loc_03E0C
+    jmp near ptr loc_03D52
+loc_03E0C:
+    mov ds, cs:[MainDataSegment]
+    ret
+; UNKNOWN: not yet classified as code or data
+    db 8Bh,1Ch,8Bh,44h,04h,0B2h,0FFh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
+    db 0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h,21h,1Dh
+    db 26h,21h,45h,02h,26h,20h,55h,04h,8Bh,5Ch,02h,8Bh,44h,06h,32h,0D2h
+    db 0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h
+    db 0D0h,0DCh,0D0h,0DAh,26h,09h,1Dh,26h,09h,45h,02h,26h,08h,55h,04h,83h
+    db 0C6h,08h,83h,0C7h,34h,4Dh,75h,0A8h,2Eh,8Eh,1Eh,96h,95h,0C3h,8Bh,1Ch
+    db 8Bh,44h,04h,0B2h,0FFh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
     db 0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,01Dh,026h,021h,045h,02h,026h,020h,055h
-    db 04h,08Bh,05Ch,02h,08Bh,044h,06h,032h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h
-    db 0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,09h,01Dh
-    db 026h,09h,045h,02h,026h,08h,055h,04h,083h,0C6h,08h,083h,0C7h,034h,04Dh,075h
-    db 0A8h,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,08Bh,044h,04h,0B2h,0FFh,0F9h,0D0h
-    db 0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h
-    db 0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,01Dh,026h,021h,045h
-    db 02h,026h,020h,055h,04h,08Bh,05Ch,02h,08Bh,044h,06h,032h,0D2h,0D0h,0EBh,0D0h
-    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0DAh,026h,09h,01Dh,026h,09h,045h,02h,026h,08h,055h,04h
-    db 083h,0C6h,08h,083h,0C7h,034h,04Dh,074h,03h,0E9h,07Bh,0FFh,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h,08Bh,01Ch,08Bh,044h,04h,0B2h,0FFh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h
-    db 0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h
-    db 0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
-    db 0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,01Dh,026h,021h
-    db 045h,02h,026h,020h,055h,04h,08Bh,05Ch,02h,08Bh,044h,06h,032h,0D2h,0D0h,0EBh
+    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
+    db 0DAh,26h,21h,1Dh,26h,21h,45h,02h,26h,20h,55h,04h,8Bh,5Ch,02h,8Bh
+    db 44h,06h,32h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh
     db 0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
-    db 0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
-    db 0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,09h,01Dh,026h,09h,045h
-    db 02h,026h,08h,055h,04h,083h,0C6h,08h,083h,0C7h,034h,04Dh,074h,03h,0E9h,051h
-    db 0FFh,02Eh,08Eh,01Eh,096h,095h,0C3h,08Bh,01Ch,0F7h,0D3h,08Bh,044h,04h,0F7h,0D0h
-    db 0B2h,0FFh,0F6h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh
-    db 0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,09h,01Dh,026h,09h,045h,02h,026h
-    db 08h,055h,04h,083h,0C6h,08h,083h,0C7h,034h,04Dh,075h,0CBh,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h,08Bh,01Ch,0F7h,0D3h,08Bh,044h,04h,0F7h,0D0h,0B2h,0FFh,0F6h,0D2h,0D0h
-    db 0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
+    db 0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h,09h,1Dh,26h
+    db 09h,45h,02h,26h,08h,55h,04h,83h,0C6h,08h,83h,0C7h,34h,4Dh,74h,03h
+    db 0E9h,7Bh,0FFh,2Eh,8Eh,1Eh,96h,95h,0C3h,8Bh,1Ch,8Bh,44h,04h,0B2h,0FFh
+    db 0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh
+    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
+    db 0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h
+    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0DBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
+    db 0D0h,0DAh,26h,21h,1Dh,26h,21h,45h,02h,26h,20h,55h,04h,8Bh,5Ch,02h
+    db 8Bh,44h,06h,32h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h
+    db 0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h
+    db 0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h
+    db 0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h
+    db 0DAh,26h,09h,1Dh,26h,09h,45h,02h,26h,08h,55h,04h,83h,0C6h,08h,83h
+    db 0C7h,34h,4Dh,74h,03h,0E9h,51h,0FFh,2Eh,8Eh,1Eh,96h,95h,0C3h,8Bh,1Ch
+    db 0F7h,0D3h,8Bh,44h,04h,0F7h,0D0h,0B2h,0FFh,0F6h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h
+    db 0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,26h
+    db 09h,1Dh,26h,09h,45h,02h,26h,08h,55h,04h,83h,0C6h,08h,83h,0C7h,34h
+    db 4Dh,75h,0CBh,2Eh,8Eh,1Eh,96h,95h,0C3h,8Bh,1Ch,0F7h,0D3h,8Bh,44h,04h
+    db 0F7h,0D0h,0B2h,0FFh,0F6h,0D2h,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh
 
 ; Modern grid-probe names; roles are local, broader map ownership unresolved.
 ; UNKNOWN: not yet classified as code or data
@@ -4376,23 +6329,133 @@ loc_03840:
     db 0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h
     db 0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h
     db 0DCh,0D0h,0DAh,026h,09h,01Dh,026h,09h,045h,02h,026h,08h,055h,04h,083h,0C6h
-    db 08h,083h,0C7h,034h,04Dh,075h,0A3h,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,0B2h,0FFh
-    db 0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h
-    db 05h,026h,020h,055h,02h,0ADh,032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,083h,0C7h,034h,04Dh,075h
-    db 0CCh,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,05h,026h,020h,055h,02h,0ADh,032h,0D2h
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh
-    db 0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,083h
-    db 0C7h,034h,04Dh,075h,0B2h,02Eh,08Eh,01Eh,096h,095h,0C3h,0ADh,0B2h,0FFh,0F9h,0D0h
-    db 0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h
-    db 0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h
-    db 0DAh,0F9h,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,026h,021h,05h,026h,020h,055h,02h,0ADh
-    db 032h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h
-    db 0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh
-    db 0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h,09h,05h,026h,08h,055h,02h,083h,0C7h,034h
-    db 04Dh,075h,098h,02Eh,08Eh,01Eh,096h,095h,0C3h
+    db 08h,083h,0C7h,034h,04Dh,075h,0A3h,02Eh,08Eh,01Eh,096h,095h,0C3h
+loc_0409D:
+    lodsw
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], dl
+    lodsw
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    add di, 34h
+    dec bp
+    jne loc_0409D
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_040D7:
+    lodsw
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], dl
+    lodsw
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    add di, 34h
+    dec bp
+    jne loc_040D7
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0412B:
+    lodsw
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], dl
+    lodsw
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    add di, 34h
+    dec bp
+    jne loc_0412B
+    mov ds, cs:[MainDataSegment]
+    ret
 
 BlitPackedToScreenCga:
     lodsw
@@ -4723,6 +6786,7 @@ loc_0445E:
     mov byte ptr ds:[0215Ch], al
     ret
 
+loc_0446C:
     mov es, word ptr cs:[ScreenSegment]
     xor di, di
     mov ax, di
@@ -4779,17 +6843,17 @@ loc_044D7:
     jne loc_044DF
     ret
 loc_044DF:
-    mov bx, word ptr cs:[0BE0h]
-    add word ptr cs:[0BE0h], 2
+    mov bx, word ptr cs:[LoadImageSlot]
+    add word ptr cs:[LoadImageSlot], 2
     lodsw
-    cmp word ptr cs:[0BD8h], 0
+    cmp word ptr cs:[LoadRecordImages], 0
     je loc_044F7
     mov word ptr cs:[bx], di
     stosw
 loc_044F7:
     mov word ptr cs:[05B9Eh], ax
     lodsw
-    cmp word ptr cs:[0BD8h], 0
+    cmp word ptr cs:[LoadRecordImages], 0
     je loc_04505
     stosw
 loc_04505:
@@ -4839,7 +6903,7 @@ loc_04537:
     mov byte ptr cs:[05B96h], cl
     mov byte ptr cs:[05B9Ah], ch
     inc si
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_045A9
     mov al, byte ptr cs:[05B98h]
     call loc_045CB
@@ -4900,13 +6964,13 @@ loc_045F6:
     ror cl, 1
     ror cl, 1
     ror cl, 1
-    cmp word ptr cs:[0BD6h], 0
+    cmp word ptr cs:[LoadMakeMask], 0
     je loc_04656
     mov bx, ax
     xor ch, ch
     mov al, cl
     and al, 0Fh
-    cmp al, byte ptr cs:[0]
+    cmp al, byte ptr cs:[TransparentColor]
     jne loc_0463B
     or ch, 0Fh
     and cl, 0F0h
@@ -4917,7 +6981,7 @@ loc_0463B:
     shr al, 1
     shr al, 1
     shr al, 1
-    cmp al, byte ptr cs:[0]
+    cmp al, byte ptr cs:[TransparentColor]
     jne loc_04654
     or ch, 0F0h
     and cl, 0Fh
@@ -4959,53 +7023,269 @@ loc_04656:
     db 0A5h,0A5h,0A4h,083h,0C7h,02Fh,0A5h,0A5h,0A4h,083h,0C7h,02Fh,0C3h,083h,0FFh,0FFh
     db 075h,01h,0C3h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h
     db 0C7h,031h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h,0C7h
-    db 031h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h,0C7h,031h,0C3h,0E8h,0F3h,012h,089h
-    db 046h,0Ch,03Dh,0FFh,0FFh,074h,0Fh,03h,06h,04Ch,023h,089h,046h,0Ch,08Bh,0F0h
-    db 08Bh,07Eh,0Eh,0E8h,024h,00h,083h,046h,02h,010h,0E8h,0D5h,012h,089h,046h,010h
-    db 083h,06Eh,02h,010h,03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h,046h
-    db 010h,08Bh,0F0h,08Bh,07Eh,0Eh,081h,0C7h,040h,01h,02Eh,08Eh,06h,096h,095h,02Eh
-    db 08Eh,01Eh,098h,095h,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h,0A4h,083h,0C6h,02Bh,0A5h,0A5h,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Bh,02Eh,08Eh,01Eh,096h,095h,0C3h,0E8h,025h,012h,089h,046h,0Ch
-    db 03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h,04Ch,023h,089h,046h,0Ch,08Bh,0F0h,08Bh
-    db 07Eh,0Eh,02Eh,08Eh,06h,096h,095h,02Eh,08Eh,01Eh,098h,095h,0A5h,0A5h,0A4h,083h
-    db 0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh
-    db 0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h
-    db 0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h
-    db 0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh
-    db 0A5h,0A5h,0A4h,083h,0C6h,02Fh,0A5h,0A5h,0A4h,083h,0C6h,02Fh,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h,0E8h,09Dh,011h,089h,046h,0Ch,03Dh,0FFh,0FFh,075h,01h,0C3h,03h,06h
-    db 04Ch,023h,089h,046h,0Ch,08Bh,0F0h,08Bh,07Eh,0Eh,02Eh,08Eh,06h,096h,095h,02Eh
-    db 08Eh,01Eh,098h,095h,0A5h,0A4h,083h,0C6h,031h,0A5h,0A4h,083h,0C6h,031h,0A5h,0A4h
-    db 083h,0C6h,031h,0A5h,0A4h,083h,0C6h,031h,0A5h,0A4h,083h,0C6h,031h,0A5h,0A4h,083h
-    db 0C6h,031h,0A5h,0A4h,083h,0C6h,031h,0A5h,0A4h,083h,0C6h,031h,02Eh,08Eh,01Eh,096h
-    db 095h,0C3h
+    db 031h,0A5h,0A4h,083h,0C7h,031h,0A5h,0A4h,083h,0C7h,031h,0C3h
+loc_04740:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    je loc_0475A
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    call loc_0477E
+loc_0475A:
+    add word ptr ss:[bp + REC_Y], 10h
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    sub word ptr ss:[bp + REC_Y], 10h
+    cmp ax, 0FFFFh
+    jne loc_0476E
+    ret
+loc_0476E:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    add di, 140h
+loc_0477E:
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    movsw
+    movsw
+    movsw
+    movsw
+    movsb
+    add si, 2Bh
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_0480E:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    jne loc_0481A
+    ret
+loc_0481A:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    movsw
+    movsw
+    movsb
+    add si, 2Fh
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_04896:
+    call loc_05A36
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    cmp ax, 0FFFFh
+    jne loc_048A2
+    ret
+loc_048A2:
+    add ax, ds:[234Ch]
+    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov si, ax
+    mov di, ss:[bp + REC_SAVE_BUFFER]
+    mov es, cs:[MainDataSegment]
+    mov ds, cs:[WorkspaceSegment]
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    movsw
+    movsb
+    add si, 31h
+    mov ds, cs:[MainDataSegment]
+    ret
 
 loc_048E6:
     mov bx, dx
     mov cx, 0Dh
-    mov ax, word ptr cs:[0959Ah]
+    mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[02350h], 0E5Fh
     jb loc_048FB
-    mov ax, word ptr cs:[0959Ch]
+    mov ax, word ptr cs:[ShipSegment]
 loc_048FB:
     mov ds, ax
 loc_048FD:
     push cx
     push bx
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[LevelMapSegment]
     mov bl, byte ptr es:[bx]
     dec bl
     xor bh, bh
     shl bx, 1
-    add bx, 08D92h
+    add bx, offset BlockOffsets
     mov si, word ptr cs:[bx]
     mov es, word ptr cs:[WorkspaceSegment]
     movsw
@@ -5064,6 +7344,7 @@ loc_048FD:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
+loc_0497A:
     mov word ptr cs:[05903h], 0
     mov di, word ptr cs:[058F9h]
     mov si, word ptr cs:[058FBh]
@@ -5165,18 +7446,18 @@ loc_04A5C:
 
 loc_04A65:
     push di
-loc_04A66:
+ProcessLevelScript:
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    mov bx, word ptr ds:[bx - 03A17h]
+    mov bx, word ptr ds:[bx + LevelScriptCursorPtrs]
     mov si, word ptr ds:[bx]
     lodsw
-    mov word ptr ds:[020A4h], ax
+    mov word ptr ds:[EventTrigger], ax
     cmp ax, 0FFFFh
     jne loc_04A7E
     jmp near ptr loc_04C74
 loc_04A7E:
-    cmp ax, word ptr ds:[0A978h]
+    cmp ax, word ptr ds:[LevelScriptClock]
     je loc_04A87
     jmp near ptr loc_04C74
 loc_04A87:
@@ -5189,11 +7470,11 @@ loc_04A87:
 loc_04A98:
     mov cx, ax
     lodsw
-    mov word ptr ds:[0206Ch], ax
+    mov word ptr ds:[EventX], ax
     lodsw
     mov word ptr ds:[0206Eh], ax
     push bx
-    mov bx, word ptr ds:[020A4h]
+    mov bx, word ptr ds:[EventTrigger]
     and bx, 03Fh
     mov bl, byte ptr ds:[bx - 037E6h]
     xor bh, bh
@@ -5203,11 +7484,11 @@ loc_04A98:
     mov word ptr ds:[bx], si
     mov si, cx
     lodsw
-    mov word ptr ds:[02072h], ax
+    mov word ptr ds:[FormationSizeClass], ax
     lodsw
-    mov word ptr ds:[02074h], ax
+    mov word ptr ds:[FormationDrawPass], ax
     lodsw
-    mov word ptr ds:[02076h], ax
+    mov word ptr ds:[FormationType], ax
     lodsw
     mov cx, ax
     call far ptr loc_0F953
@@ -5231,22 +7512,22 @@ loc_04ADA:
 loc_04AF5:
     mov word ptr ds:[bx + REC_SLOT_INDEX], ax
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov ax, word ptr ds:[02074h]
+    mov ax, word ptr ds:[FormationDrawPass]
     mov word ptr ds:[bx + REC_DRAW_PASS], ax
     mov word ptr ds:[bx + REC_SPRITE], 0
     mov ax, word ptr ds:[si + 2]
     add ax, word ptr ds:[0206Eh]
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ds:[si]
-    add ax, word ptr ds:[0206Ch]
+    add ax, word ptr ds:[EventX]
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_SAVED_Y], 0
     mov word ptr ds:[bx + REC_DIRECTION], 4
-    mov ax, word ptr ds:[02072h]
+    mov ax, word ptr ds:[FormationSizeClass]
     mov word ptr ds:[bx + REC_SIZE_CLASS], ax
     mov word ptr ds:[bx + REC_KIND], 4
-    mov ax, word ptr ds:[02076h]
+    mov ax, word ptr ds:[FormationType]
     mov word ptr ds:[bx + REC_TYPE], ax
     cmp word ptr ds:[bx + REC_DRAW_PASS], 1
     jne loc_04B41
@@ -5267,7 +7548,7 @@ loc_04B4A:
     mov word ptr ds:[0209Ch], ax
     push si
     push bx
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[LevelMapSegment]
     mov ax, word ptr ds:[bx + REC_Y]
     mov bx, word ptr ds:[02350h]
     add bx, 0Dh
@@ -5372,10 +7653,10 @@ loc_04C62:
 loc_04C6A:
     jmp near ptr loc_04ACE
 loc_04C6D:
-    jmp near ptr loc_04A66
+    jmp near ptr ProcessLevelScript
 loc_04C70:
     pop cx
-    jmp near ptr loc_04A66
+    jmp near ptr ProcessLevelScript
 loc_04C74:
     pop di
     ret
@@ -5388,7 +7669,8 @@ loc_04C7C:
     lodsw
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + 04C8Ah]
+    jmp word ptr cs:[bx + loc_04C7CCases]
+loc_04C7CCases label word
     dw loc_04C90, loc_04CA6, loc_04CBE    ; per VideoAdapter: CGA, EGA, Tandy
 
 loc_04C90:
@@ -5437,10 +7719,10 @@ loc_04CED:
     mov es, word ptr cs:[WorkspaceSegment]
     mov si, 0C6C1h
     mov di, 0C7B1h
-    mov bp, 04D4Dh
+    mov bp, offset loc_04D4D
     mov cx, 014h
     call loc_04D15
-    mov bp, 04D51h
+    mov bp, offset loc_04D51
     mov cx, 0Ah
     call loc_04D15
     mov cx, 0Ah
@@ -5469,8 +7751,11 @@ loc_04D15:
     cmp byte ptr es:[bx + 04Eh], 0
     jne loc_04D61
     jmp bp
-; UNKNOWN: not yet classified as code or data
-    db 026h,088h,047h,04Eh,026h,088h,047h,034h,026h,088h,047h,01Ah
+loc_04D4D:
+    mov es:[bx + 4Eh], al
+loc_04D51:
+    mov es:[bx + 34h], al
+    mov es:[bx + 1Ah], al
 loc_04D59:
     mov byte ptr es:[bx], al
     mov word ptr ds:[di], bx
@@ -5534,9 +7819,9 @@ loc_04DD8:
     mov si, dx
     push si
     push di
-    push word ptr ds:[0A978h]
+    push word ptr ds:[LevelScriptClock]
     call loc_00B3E
-    pop word ptr ds:[0A978h]
+    pop word ptr ds:[LevelScriptClock]
     pop di
     mov word ptr ds:[02350h], di
     push di
@@ -5563,7 +7848,7 @@ loc_04E0D:
     ja loc_04E0D
     cmp word ptr ds:[0234Eh], 0
     jne loc_04E0D
-    mov word ptr ds:[0A978h], si
+    mov word ptr ds:[LevelScriptClock], si
     ret
 
 loc_04E26:
@@ -5576,7 +7861,7 @@ loc_04E26:
     push bp
     push es
     push ds
-    mov es, word ptr cs:[09592h]
+    mov es, word ptr cs:[LevelMapSegment]
     mov si, word ptr ds:[02350h]
     mov cx, 09Ch
 loc_04E3B:
@@ -5729,9 +8014,20 @@ Interrupt09KeyboardHandler:
     pop bx
     pop ax
     iret
-; UNKNOWN: not yet classified as code or data
-    db 02Eh,083h,03Eh,0BCh,095h,00h,074h,01h,0C3h,0E8h,080h,00h,0B8h,040h,00h,08Eh
-    db 0C0h,026h,0A0h,065h,00h,0Ch,04h,0BAh,0D8h,03h,0EEh,026h,0A2h,065h,00h,0C3h
+loc_04F37:
+    cmp word ptr cs:[VideoAdapter], 0
+    je loc_04F40
+    ret
+loc_04F40:
+    call loc_04FC3
+    mov ax, 40h
+    mov es, ax
+    mov al, es:[65h]
+    or al, 4
+    mov dx, 3D8h
+    out dx, al
+    mov es:[65h], al
+    ret
 
 loc_04F57:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
@@ -5854,7 +8150,7 @@ loc_05059:
 ; Lookup chain: source byte -> attribute byte; callers consume zero/nonzero.
 ReadIndexedByteAttribute:
     mov si, offset ByteAttributeTable
-    mov es, word ptr cs:[AttributeSourceSegment]
+    mov es, word ptr cs:[LevelMapSegment]
     mov al, byte ptr es:[bx]
     xor ah, ah
     add si, ax
@@ -5995,7 +8291,8 @@ loc_0519A:
     je loc_051B8
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + 051B2h]
+    jmp word ptr cs:[bx + loc_0519ACases]
+loc_0519ACases label word
     dw loc_04277, loc_025FE, loc_03153    ; per VideoAdapter: CGA, EGA, Tandy
 loc_051B8:
     cmp al, 010h
@@ -6097,7 +8394,7 @@ SaveSettingsToHiscoreBlock:
     stosw
     mov al, byte ptr ds:[SoundModuleSelect]
     stosb
-    mov ax, word ptr ds:[0BEDAh]
+    mov ax, word ptr ds:[ChooseSlot]
     stosw
     mov ax, word ptr ds:[DifficultySetting]
     stosw
@@ -6132,7 +8429,7 @@ LoadSettingsFromHiscoreBlock:
     lodsb
     mov byte ptr ds:[SoundModuleSelect], al
     lodsw
-    mov word ptr ds:[0BEDAh], ax
+    mov word ptr ds:[ChooseSlot], ax
     lodsw
     mov word ptr ds:[DifficultySetting], ax
     retf

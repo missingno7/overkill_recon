@@ -8,13 +8,14 @@ of N bytes. If the bytes were in an UNKNOWN run, the rest of the run stays marke
 address must lie in a db/dw row. With a
 constant, its uses in segment blocks of the same segment (all files for DATA) are
 rewritten: inside [...] to the name, elsewhere to `offset Name`; the constant is dropped
-from its include when no code uses it any more. Needs a fresh build. Afterwards run
+from its include when no code uses it any more. --apply rebuilds first. Afterwards run
 `python tools/externs.py --apply` and `python tools/verify.py`.
 """
 from common import *
 from where import resolve, layout, lines_by_offset
 import re, sys
 
+MARK = '; UNKNOWN: not yet classified as code or data'
 SEGLINE = re.compile(r'(\w+) segment \w+ public .*')
 
 def segment_of_lines(L):
@@ -36,6 +37,8 @@ def rewrite(line, const, name):
 def main(argv):
     apply = '--apply' in argv; argv = [a for a in argv if a != '--apply']
     addr, name, kind = argv[:3]; const = argv[3] if len(argv) > 3 else None
+    if apply:   # listing offsets must match the current source
+        from build import assemble; assemble()
     src, lst, seg, off, lin = resolve(addr); start = lin - off
     L = src.read_bytes().decode('latin-1').split('\r\n')
     rows = [(start + o, n - 1) for o, n in lines_by_offset(src, lst, seg)]
@@ -69,15 +72,17 @@ def main(argv):
     while j >= 0 and re.fullmatch(r'\s+d[bw] .*', L[j].split(';', 1)[0]): j -= 1
     unknown = j >= 0 and L[j].startswith('; UNKNOWN')
     if unknown and after:   # keep the rest of an UNKNOWN run marked
-        new.insert(len(new) - 1, L[j])
+        new.insert(len(new) - 1, MARK)
     L[i:i+1] = new
+    if unknown and not before and j == i - 1:   # the named item now heads the run
+        del L[j]; i -= 1; j = -1
     if unknown and length is not None:   # re-mark the run after the named N bytes
         left = length - len(item) * width; r = i + len(new)
         while left > 0 and r < len(L) and re.fullmatch(r'\s+db .*', L[r].split(';', 1)[0]):
             v = [x.strip() for x in L[r].split(';', 1)[0].strip()[3:].split(',')]
             if len(v) <= left: left -= len(v); r += 1; continue
-            L[r:r+1] = ['    db ' + ','.join(v[:left]), L[j], '    db ' + ','.join(v[left:])]; left = 0; r = None; break
-        if r is not None and r < len(L) and re.fullmatch(r'\s+db .*', L[r].split(';', 1)[0]): L.insert(r, L[j])
+            L[r:r+1] = ['    db ' + ','.join(v[:left]), MARK, '    db ' + ','.join(v[left:])]; left = 0; r = None; break
+        if r is not None and r < len(L) and re.fullmatch(r'\s+db .*', L[r].split(';', 1)[0]): L.insert(r, MARK)
     edits = {src: L}
     if const:
         own_seg = segment_of_lines(L)[i]

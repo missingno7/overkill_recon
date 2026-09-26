@@ -52,9 +52,8 @@ def main(apply):
             if kind != 'code':
                 target = oseg if any(s == oseg for s in segs) else None
                 (near.setdefault(target, []) if target else outside).append(f'extrn {x}:{kind}')
-            elif segs == {oseg}: near.setdefault(oseg, []).append(f'extrn {x}:near')
-            elif oseg not in segs: outside.append(f'extrn {x}:far')
-            else: raise SystemExit(f'{n}: {x} is used both near and far')
+            elif oseg in segs: near.setdefault(oseg, []).append(f'extrn {x}:near')   # other segments may use its offset
+            else: outside.append(f'extrn {x}:far')
         pub = sorted(x for x, (f, _, _) in owner.items() if f == n and any(x in idents[m] for m in texts if m != n))
         out = []; first = True
         for i, seg in blocks(t):

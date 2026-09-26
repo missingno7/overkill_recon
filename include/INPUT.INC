@@ -57,6 +57,21 @@ SCAN_LEFT equ 04Bh
 SCAN_RIGHT equ 04Dh
 SCAN_DOWN equ 050h
 SCAN_PGDN equ 051h
+SCAN_B equ 30h
+SCAN_C equ 2Eh
+SCAN_E equ 12h
+SCAN_F equ 21h
+SCAN_G equ 22h
+SCAN_H equ 23h
+SCAN_L equ 26h
+SCAN_P equ 19h
+SCAN_Q equ 10h
+SCAN_S equ 1Fh
+SCAN_T equ 14h
+SCAN_U equ 16h
+SCAN_V equ 2Fh
+SCAN_W equ 11h
+SCAN_Z equ 2Ch
 SCAN_RELEASE_BIT equ 080h
 SCAN_CODE_MASK equ 07Fh
 
