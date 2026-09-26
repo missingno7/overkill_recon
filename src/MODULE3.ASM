@@ -3178,7 +3178,8 @@ ShotBoundsCheck:
 ExpireShot:
     mov word ptr ss:[bp + REC_Y], 0FFFFh
     jmp short ShotBoundsCheck
-@@descendAndCheckPlayerHit:
+; No reference found: moves the shot 2 px down, then the player-hit test.
+UnusedDescendShot:
     inc word ptr ss:[bp + REC_Y]
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr ShotHitPlayerCheck
@@ -4812,6 +4813,8 @@ RemoveRecord:
     cmp word ptr ds:[ShotsLiveType9], 0
     jne @@clearBeamList
     ret
+; Frees every record listed in BeamList. Each entry is written back unchanged (the
+; list itself is not cleared) and CX is loaded but never used.
 @@clearBeamList:
     mov cx, 01Ah
     mov si, offset BeamList
@@ -4823,7 +4826,7 @@ RemoveRecord:
 @@clearBeamSegment:
     mov word ptr ds:[si - 2], ax
     mov bx, ax
-    mov word ptr ds:[bx], 0
+    mov word ptr ds:[bx + REC_STATUS], 0
     dec word ptr ds:[ShotsLiveType9]
     jmp short @@nextBeam
 @@missileFreed:
@@ -5258,9 +5261,9 @@ ExplodeRecordAtBX:
     mov word ptr ds:[bx + REC_ANIM_COUNTER], 0
     mov word ptr ds:[bx + REC_SPRITE], 3
     ret
-; BP = record: turn it toward the primary (REC_DIRECTION from AimQuadrantBits;
-; unchanged when aligned, then return) and continue in TryTerrainStep.
-@@turnTowardPlayerStep:
+; No reference found. BP = record: turn it toward the primary (REC_DIRECTION from
+; AimQuadrantBits; unchanged when aligned, then return) and continue in TryTerrainStep.
+UnusedTurnTowardPlayerStep:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
     jns @@aimX
@@ -8244,6 +8247,7 @@ Type57ScrollToY80ThenCrawl:
     jmp near ptr ScrollRecordThenFinish
 @@blocked:
     jmp near ptr DestroyRecord
+; Unreachable: no reference to this jump was found.
     jmp near ptr HorizontalTerrainPatrol
 IncrementRecordSprite:
     inc word ptr ss:[bp + REC_SPRITE]
