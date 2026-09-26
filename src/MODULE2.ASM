@@ -133,6 +133,16 @@ public BlockOffsets
 public CheckCheatCodes
 public ClearScreen104x200
 public CopyWorkspaceToScreen
+public DecodeByte5BA0
+public DecodeByte5BA1
+public DecodeDest
+public DecodeFileFlags
+public DecodeImageIndex
+public DecodePixelBytes
+public DecodePlaneBits
+public DecodePlaneRowBytes
+public DecodeRowBuffer
+public DecodeRows
 public DrawOffsetFromPlayfieldRow
 public DrawOffsetFromScreenRow
 public DrawOffsetFromWideRow
@@ -206,6 +216,14 @@ public TypeHandler8F
 public TypeHandler90
 public TypeHandler91
 public TypeHandler93
+public WipeDest
+public WipeFlagA
+public WipeFlagB
+public WipeHeight
+public WipeProgress
+public WipeSource
+public WipeStep
+public WipeWidth
 public loc_0532D
 public loc_054C0
 public loc_05559
@@ -391,6 +409,7 @@ extrn loc_0238D:near
 extrn loc_02410:near
 extrn loc_0247E:near
 extrn loc_02580:near
+extrn loc_025E9:near
 extrn loc_02737:near
 extrn loc_027D9:near
 extrn loc_02991:near
@@ -408,6 +427,7 @@ extrn loc_02F40:near
 extrn loc_02F81:near
 extrn loc_02FB6:near
 extrn loc_030D2:near
+extrn loc_03142:near
 extrn loc_033AF:near
 extrn loc_034AD:near
 extrn loc_034D8:near
@@ -439,6 +459,7 @@ extrn loc_0409D:near
 extrn loc_040D7:near
 extrn loc_0412B:near
 extrn loc_041F5:near
+extrn loc_04264:near
 extrn loc_0446C:near
 extrn loc_0450C:near
 extrn loc_04684:near
@@ -1064,19 +1085,19 @@ loc_058A4:
     xor si, si
     mov cx, 1
     lodsw
-    mov word ptr cs:[058FDh], ax
+    mov word ptr cs:[WipeWidth], ax
     lodsw
-    mov word ptr cs:[058FFh], ax
-    mov word ptr cs:[058FBh], si
-    mov word ptr cs:[058F9h], di
-    mov word ptr cs:[05905h], 0
-    mov word ptr cs:[05907h], 0
+    mov word ptr cs:[WipeHeight], ax
+    mov word ptr cs:[WipeSource], si
+    mov word ptr cs:[WipeDest], di
+    mov word ptr cs:[WipeFlagA], 0
+    mov word ptr cs:[WipeFlagB], 0
     mov es, word ptr cs:[ScreenSegment]
-    mov cx, word ptr cs:[058FDh]
+    mov cx, word ptr cs:[WipeWidth]
     sub cx, 2
 loc_058DF:
     push cx
-    mov word ptr cs:[05901h], cx
+    mov word ptr cs:[WipeStep], cx
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
@@ -1085,28 +1106,110 @@ loc_058DF:
     dec cx
     loop loc_058DF
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,36h,0C6h,06h,0C3h,98h,00h,0ADh,2Eh,0A3h,0FDh,58h,0ADh,2Eh,0A3h
-    db 0FFh,58h,2Eh,89h,36h,0FBh,58h,2Eh,89h,3Eh,0F9h,58h,2Eh,0C7h,06h,05h
-    db 59h,00h,00h,2Eh,0C7h,06h,07h,59h,00h,00h,2Eh,0C7h,06h,09h,59h,00h
-    db 00h,2Eh,8Eh,06h,0A4h,95h,51h,0E8h,1Dh,00h,75h,0Eh,0E8h,18h,00h,75h
-    db 09h,59h,0E2h,0F2h,2Eh,8Eh,1Eh,96h,95h,0C3h,59h,2Eh,8Eh,1Eh,96h,95h
-    db 0C3h
+; State of the progressive packed-image drawers (loc_058DF and the adapter variants):
+; destination, source, width and height from the image header, step, progress, two
+; alternating flags, and a word used only by the uncalled variant below.
+WipeDest dw 0
+WipeSource dw 0
+WipeWidth dw 0
+WipeHeight dw 0
+WipeStep dw 0
+WipeProgress dw 0
+WipeFlagA dw 0
+WipeFlagB dw 0
+WipeWord5909 dw 0
+; Uncalled variant of the progressive drawer.
+loc_0590B:
+loc_0590B:
+    mov byte ptr ss:[KeyLastMakeCode], 0
+    lodsw
+    mov cs:[WipeWidth], ax
+    lodsw
+    mov cs:[WipeHeight], ax
+    mov cs:[WipeSource], si
+    mov cs:[WipeDest], di
+    mov word ptr cs:[WipeFlagA], 0
+    mov word ptr cs:[WipeFlagB], 0
+    mov word ptr cs:[WipeWord5909], 0
+    mov es, cs:[ScreenSegment]
+loc_0593F:
+    push cx
+    call loc_05960
+    jne loc_05953
+    call loc_05960
+    jne loc_05953
+    pop cx
+    loop loc_0593F
+    mov ds, cs:[MainDataSegment]
+    ret
+loc_05953:
+    pop cx
+    mov ds, cs:[MainDataSegment]
+    ret
 ; Per VideoAdapter: CGA, EGA and Tandy versions of the same draw routine.
 AdapterDrawHandlers label word
     dw offset loc_0497A, offset loc_02D2D, offset loc_0375B
-; UNKNOWN: not yet classified as code or data
-    db 02Eh,08Bh,0Eh,0FDh,58h,83h,0E9h,02h,51h,2Eh,89h,0Eh,01h,59h,2Eh,8Bh,1Eh,0BCh
-    db 95h,0D1h,0E3h,2Eh,0FFh,97h,5Ah,59h,1Eh,2Eh,8Eh,1Eh,96h,95h,80h,3Eh
-    db 0C3h,98h,00h,75h,60h,0E8h,0D8h,0A7h,80h,3Eh,0BEh,98h,10h,74h,56h,1Fh
-    db 0E8h,34h,0F7h,0E8h,31h,0F7h,59h,49h,0E2h,0CCh,2Eh,83h,36h,05h,59h,01h
-    db 2Eh,83h,36h,07h,59h,01h,2Eh,8Bh,0Eh,0FDh,58h,83h,0E9h,02h,2Eh,83h
-    db 06h,01h,59h,02h,51h,2Eh,83h,06h,01h,59h,02h,2Eh,8Bh,1Eh,0BCh,95h
-    db 0D1h,0E3h,2Eh,0FFh,97h,5Ah,59h,1Eh,2Eh,8Eh,1Eh,96h,95h,0E8h,90h,0A7h
-    db 80h,3Eh,0BEh,98h,10h,74h,0Eh,1Fh,0E8h,0ECh,0F6h,0E8h,0E9h,0F6h,59h,49h
-    db 0E2h,0D2h,33h,0C0h,0C3h,1Fh,59h,33h,0C0h,40h,0C3h,2Eh,8Bh,1Eh,0BCh,95h
-    db 0D1h,0E3h,2Eh,0FFh,0A7h,0FAh,59h,90h,64h,42h,0E9h,25h,42h,31h
+loc_05960:
+    mov cx, cs:[WipeWidth]
+    sub cx, 2
+loc_05968:
+    push cx
+    mov cs:[WipeStep], cx
+    mov bx, cs:[VideoAdapter]
+    shl bx, 1
+    call word ptr cs:[bx + 595Ah]
+    push ds
+    mov ds, cs:[MainDataSegment]
+    cmp byte ptr ds:[KeyLastMakeCode], 0
+    jne loc_059E7
+    call PollInputBits
+    cmp byte ptr ds:[InputBits], 10h
+    je loc_059E7
+    pop ds
+    call WaitVerticalRetrace
+    call WaitVerticalRetrace
+    pop cx
+    dec cx
+    loop loc_05968
+    xor word ptr cs:[WipeFlagA], 1
+    xor word ptr cs:[WipeFlagB], 1
+    mov cx, cs:[WipeWidth]
+    sub cx, 2
+    add word ptr cs:[WipeStep], 2
+loc_059B6:
+    push cx
+    add word ptr cs:[WipeStep], 2
+    mov bx, cs:[VideoAdapter]
+    shl bx, 1
+    call word ptr cs:[bx + 595Ah]
+    push ds
+    mov ds, cs:[MainDataSegment]
+    call PollInputBits
+    cmp byte ptr ds:[InputBits], 10h
+    je loc_059E7
+    pop ds
+    call WaitVerticalRetrace
+    call WaitVerticalRetrace
+    pop cx
+    dec cx
+    loop loc_059B6
+    xor ax, ax
+    ret
+loc_059E7:
+    pop ds
+    pop cx
+    xor ax, ax
+    inc ax
+    ret
+; Per-adapter dispatch; no caller found in this image.
+loc_059ED:
+    mov bx, word ptr cs:[VideoAdapter]
+    shl bx, 1
+    jmp word ptr cs:[bx + loc_059EDCases]
+; NOP filler: word-aligns the table.
+    db 90h
+loc_059EDCases label word
+    dw offset loc_04264, offset loc_025E9, offset loc_03142
 
 ; Per-adapter screen offset for row AH and 8-pixel column AL (ScreenRowOffsets on Tandy).
 DrawOffsetFromScreenRow:
@@ -1198,22 +1301,23 @@ loc_05AC8Cases label word
     dw offset loc_04896, offset loc_0480E, offset loc_04740, offset loc_02AF9
     dw offset loc_02AB9, offset loc_02A4F, offset loc_03657, offset loc_035CC
     dw offset loc_0356C
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+; Graphics decoder (LoadGraphicsFile): one 4-plane row (4 * 28h bytes), per-pixel
+; plane bytes, the image header (rows, bytes per plane row) and progress state.
+DecodeRowBuffer db 0A0h dup (0)
+DecodePixelBytes db 8 dup (0)
+DecodePlaneRowBytes dw 0
+DecodeRows dw 0
+DecodeByte5BA0 db 0
+DecodeByte5BA1 db 0
+DecodePlaneBits db 4 dup (0)
+DecodeDest dw 0
+; Images decoded so far in this file; index into the per-file flag table.
+DecodeImageIndex dw 0
+; Per-file flag bytes (the word before the file name when CS:C5B0 = 1, else FFFFh).
+DecodeFileFlags dw 0
 loc_05BAC:
-    mov word ptr cs:[05BAAh], bp
-    mov word ptr cs:[05BA8h], 0FFFFh
+    mov word ptr cs:[DecodeFileFlags], bp
+    mov word ptr cs:[DecodeImageIndex], 0FFFFh
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_05BACCases]
@@ -1277,23 +1381,23 @@ loc_05C35:
 
 loc_05C46:
     lodsw
-    mov word ptr cs:[058FDh], ax
+    mov word ptr cs:[WipeWidth], ax
     lodsw
-    mov word ptr cs:[058FFh], ax
-    mov word ptr cs:[058FBh], si
-    mov word ptr cs:[058F9h], di
-    mov word ptr cs:[05905h], 0
-    mov word ptr cs:[05907h], 0
-    mov word ptr cs:[05901h], 6
+    mov word ptr cs:[WipeHeight], ax
+    mov word ptr cs:[WipeSource], si
+    mov word ptr cs:[WipeDest], di
+    mov word ptr cs:[WipeFlagA], 0
+    mov word ptr cs:[WipeFlagB], 0
+    mov word ptr cs:[WipeStep], 6
     mov es, word ptr cs:[ScreenSegment]
 loc_05C74:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
     call WaitVerticalRetrace
-    add word ptr cs:[05901h], 2
-    mov ax, word ptr cs:[05901h]
-    cmp ax, word ptr cs:[058FDh]
+    add word ptr cs:[WipeStep], 2
+    mov ax, word ptr cs:[WipeStep]
+    cmp ax, word ptr cs:[WipeWidth]
     jne loc_05C74
     mov ds, word ptr cs:[MainDataSegment]
     ret

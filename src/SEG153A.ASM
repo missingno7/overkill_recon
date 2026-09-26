@@ -50,55 +50,318 @@ loc_153D0:
     mov word ptr cs:[073Ch], di
 loc_153DF:
     retf
+; Further resource-library routines (far entries ending in RETF). The game only calls
+; 153A:0000 (loc_153A0) and OpenResourceFile; no caller of these was found.
+loc_153E0:
+    push di
+    push es
+    push cs
+    call OpenResourceFile
+    pop es
+    pop di
+    jb loc_153FC
+    push bx
+    push cx
+    push dx
+    push cs
+    call loc_15760
+    pop dx
+    pop cx
+    pop bx
+    pushf
+    push ax
+    push cs
+    call loc_15A64
+    pop ax
+    popf
+loc_153FC:
+    retf
+loc_153FD:
+    push ds
+    push cs
+    pop es
+    mov si, dx
+    mov di, 345h
+    cld
+loc_15406:
+    movsb
+    cmp byte ptr ds:[si - 1h], 0
+    je loc_15413
+    cmp byte ptr ds:[si - 1h], 20h
+    jne loc_15406
+loc_15413:
+    mov byte ptr es:[di - 1h], 0
+    dec si
+    mov cs:[385h], si
+    mov cs:[387h], ds
+    push cs
+    pop ds
+    mov word ptr ds:[389h], 0
+    mov byte ptr ds:[344h], 1
+    mov dx, 345h
+    push cs
+    call OpenResourceFile
+    jae loc_1543C
+    jmp near ptr loc_15698
+loc_1543C:
+    mov cx, 1Bh
+    xor dx, dx
+    mov di, 3A5h
+    push cs
+    pop es
+    push cs
+    call loc_15760
+    mov byte ptr ds:[344h], 2
+    jae loc_15454
+    jmp near ptr loc_15698
+loc_15454:
+    mov di, 3A5h
+    cmp word ptr ds:[3A5h], 5A4Dh
+    mov byte ptr ds:[344h], 4
+    je loc_15467
+    jmp near ptr loc_15698
+loc_15467:
+    mov bx, ds:[3ADh]
+    xor cx, cx
+    add bx, bx
+    adc cx, 0
+    add bx, bx
+    adc cx, 0
+    add bx, bx
+    adc cx, 0
+    add bx, bx
+    adc cx, 0
+    mov ds:[391h], bx
+    mov ds:[393h], cx
+    mov ax, ds:[3A9h]
+    dec ax
+    add ax, ax
+    mov dh, 0
+    mov dl, ah
+    mov ah, al
+    mov al, dh
+    add ax, ds:[3A7h]
+    adc dx, 0
+    sub ax, bx
+    sbb dx, cx
+    mov ds:[395h], ax
+    mov ds:[397h], dx
+    shr dx, 1
+    rcr ax, 1
+    shr dx, 1
+    rcr ax, 1
+    shr dx, 1
+    rcr ax, 1
+    shr dx, 1
+    rcr ax, 1
+    add ax, 11h
+    add ds:[3AFh], ax
+    mov word ptr ds:[389h], 0
+    mov bx, 0FFFFh
+    mov ah, 48h
+    int 21h
+    mov ah, 48h
+    int 21h
+    mov byte ptr ds:[344h], 3
+    jae loc_154DB
+    jmp near ptr loc_15698
+loc_154DB:
+    mov ds:[389h], ax
+    mov ah, 2Fh
+    int 21h
+    mov ds:[38Dh], bx
+    mov ds:[38Fh], es
+    mov ah, 51h
+    int 21h
+    mov ds:[38Bh], bx
+    mov es, ds:[389h]
+    mov ds, ds:[38Bh]
+    xor si, si
+    mov di, si
+    mov cx, 100h
+    cld
+    rep movsb
+    push cs
+    pop ds
+    mov es, ds:[389h]
+    mov di, 81h
+    lds si, ds:[385h]
+loc_15511:
+    movsb
+    cmp byte ptr ds:[si - 1h], 0
+    jne loc_15511
+    dec si
+    mov byte ptr es:[di - 1h], 0Dh
+    mov byte ptr es:[di], 0
+    push cs
+    pop ds
+    sub si, ds:[385h]
+    mov ax, si
+    mov es:[80h], al
+    mov cx, ds:[391h]
+    mov dx, ds:[393h]
+    sub cx, 1Bh
+    sbb dx, 0
+    mov bx, ds:[744h]
+    xchg cx, dx
+    mov ax, 4201h
+    int 21h
+    mov byte ptr ds:[344h], 2
+    jae loc_15551
+    jmp near ptr loc_15698
+loc_15551:
+    mov cx, ds:[395h]
+    mov dx, ds:[397h]
+    mov ax, ds:[389h]
+    add ax, 10h
+    mov es, ax
+    xor di, di
+    mov bx, ds:[744h]
+    push cs
+    call loc_15760
+    mov byte ptr ds:[344h], 2
+    jae loc_15575
+    jmp near ptr loc_15698
+loc_15575:
+    mov si, 75Ch
+    mov cx, ds:[si + 5]
+    mov dx, ds:[si + 7]
+    add cx, ds:[7AAh]
+    adc dx, ds:[7ACh]
+    add cx, ds:[3BDh]
+    adc dx, 0
+    xchg cx, dx
+    mov bx, ds:[744h]
+    mov ax, 4200h
+    int 21h
+    mov byte ptr ds:[344h], 2
+    jae loc_155A2
+    jmp near ptr loc_15698
+loc_155A2:
+    cmp word ptr ds:[3ABh], 0
+    je loc_155F3
+    mov cx, 4
+    mov di, 399h
+    push cs
+    pop es
+    mov bx, ds:[744h]
+    push cs
+    call loc_15760
+    mov byte ptr ds:[344h], 2
+    jae loc_155C3
+    jmp near ptr loc_15698
+loc_155C3:
+    mov ax, ds:[399h]
+    mov bx, ds:[39Bh]
+    mov si, ax
+    and si, 0Fh
+    shr bx, 1
+    rcr ax, 1
+    shr bx, 1
+    rcr ax, 1
+    shr bx, 1
+    rcr ax, 1
+    shr bx, 1
+    rcr ax, 1
+    mov cx, ds:[389h]
+    add cx, 10h
+    add ax, cx
+    mov es, ax
+    add es:[si], cx
+    dec word ptr ds:[3ABh]
+    jmp short loc_155A2
+loc_155F3:
+    mov bx, ds:[744h]
+    push cs
+    call loc_15A64
+    mov word ptr ds:[744h], 0
+    mov ax, ds:[3BBh]
+    add ax, ds:[389h]
+    add ax, 10h
+    mov ds:[39Fh], ax
+    mov ax, ds:[3B9h]
+    mov ds:[39Dh], ax
+    mov ax, ds:[3B3h]
+    add ax, ds:[389h]
+    add ax, 10h
+    mov ds:[3B3h], ax
+    mov ax, 3521h
+    int 21h
+    mov ds:[33Dh], bx
+    mov ds:[33Fh], es
+    mov dx, 31Ah
+    mov ax, 2521h
+    int 21h
+    mov ds, ds:[389h]
+    mov dx, 80h
+    mov ah, 1Ah
+    int 21h
+    push cs
+    pop ds
+    cli
+    mov ds:[3A1h], sp
+    mov ds:[3A3h], ss
+    mov ss, ds:[3B3h]
+    mov sp, ds:[3B5h]
+    sti
+    mov ax, ds:[389h]
+    mov es, ax
+    mov ds, ax
+    xor ax, ax
+    mov bx, ax
+    mov cx, ax
+    mov dx, ax
+    mov si, ax
+    mov di, ax
+    mov bp, ax
+    jmp dword ptr cs:[39Dh]
+loc_1566F:
+    push cs
+    pop ds
+    mov ds:[343h], al
+    cli
+    mov sp, ds:[3A1h]
+    mov ss, ds:[3A3h]
+    sti
+    mov ax, 2521h
+    lds dx, ds:[33Dh]
+    int 21h
+    push cs
+    pop ds
+    lds dx, ds:[38Dh]
+    mov ah, 1Ah
+    int 21h
+    push cs
+    pop ds
+    mov byte ptr ds:[344h], 0
+loc_15698:
+    cmp word ptr ds:[389h], 0
+    je loc_156AD
+    mov es, ds:[389h]
+    mov ah, 49h
+    int 21h
+    mov word ptr ds:[389h], 0
+loc_156AD:
+    mov bx, ds:[744h]
+    push cs
+    call loc_15A64
+    mov ax, ds:[343h]
+    pop ds
+    retf
+loc_156BA:
+    cmp ah, 4Ch
+    jne loc_156CE
+    cmp word ptr cs:[341h], 0
+    je loc_1566F
+    dec word ptr cs:[341h]
+    jmp short loc_156D8
+loc_156CE:
+    cmp ah, 4Bh
+    jne loc_156D8
+    inc word ptr cs:[341h]
+loc_156D8:
+    jmp dword ptr cs:[33Dh]
 ; UNKNOWN: not yet classified as code or data
-    db 057h,06h,0Eh,0E8h,091h,04h,07h,05Fh,072h,012h,053h,051h,052h,0Eh,0E8h,06Fh
-    db 03h,05Ah,059h,05Bh,09Ch,050h,0Eh,0E8h,06Ah,06h,058h,09Dh,0CBh,01Eh,0Eh,07h
-    db 08Bh,0F2h,0BFh,045h,03h,0FCh,0A4h,080h,07Ch,0FFh,00h,074h,06h,080h,07Ch,0FFh
-    db 020h,075h,0F3h,026h,0C6h,045h,0FFh,00h,04Eh,02Eh,089h,036h,085h,03h,02Eh,08Ch
-    db 01Eh,087h,03h,0Eh,01Fh,0C7h,06h,089h,03h,00h,00h,0C6h,06h,044h,03h,01h
-    db 0BAh,045h,03h,0Eh,0E8h,040h,04h,073h,03h,0E9h,05Ch,02h,0B9h,01Bh,00h,033h
-    db 0D2h,0BFh,0A5h,03h,0Eh,07h,0Eh,0E8h,016h,03h,0C6h,06h,044h,03h,02h,073h
-    db 03h,0E9h,044h,02h,0BFh,0A5h,03h,081h,03Eh,0A5h,03h,04Dh,05Ah,0C6h,06h,044h
-    db 03h,04h,074h,03h,0E9h,031h,02h,08Bh,01Eh,0ADh,03h,033h,0C9h,03h,0DBh,083h
-    db 0D1h,00h,03h,0DBh,083h,0D1h,00h,03h,0DBh,083h,0D1h,00h,03h,0DBh,083h,0D1h
-    db 00h,089h,01Eh,091h,03h,089h,0Eh,093h,03h,0A1h,0A9h,03h,048h,03h,0C0h,0B6h
-    db 00h,08Ah,0D4h,08Ah,0E0h,08Ah,0C6h,03h,06h,0A7h,03h,083h,0D2h,00h,02Bh,0C3h
-    db 01Bh,0D1h,0A3h,095h,03h,089h,016h,097h,03h,0D1h,0EAh,0D1h,0D8h,0D1h,0EAh,0D1h
-    db 0D8h,0D1h,0EAh,0D1h,0D8h,0D1h,0EAh,0D1h,0D8h,05h,011h,00h,01h,06h,0AFh,03h
-    db 0C7h,06h,089h,03h,00h,00h,0BBh,0FFh,0FFh,0B4h,048h,0CDh,021h,0B4h,048h,0CDh
-    db 021h,0C6h,06h,044h,03h,03h,073h,03h,0E9h,0BDh,01h,0A3h,089h,03h,0B4h,02Fh
-    db 0CDh,021h,089h,01Eh,08Dh,03h,08Ch,06h,08Fh,03h,0B4h,051h,0CDh,021h,089h,01Eh
-    db 08Bh,03h,08Eh,06h,089h,03h,08Eh,01Eh,08Bh,03h,033h,0F6h,08Bh,0FEh,0B9h,00h
-    db 01h,0FCh,0F3h,0A4h,0Eh,01Fh,08Eh,06h,089h,03h,0BFh,081h,00h,0C5h,036h,085h
-    db 03h,0A4h,080h,07Ch,0FFh,00h,075h,0F9h,04Eh,026h,0C6h,045h,0FFh,0Dh,026h,0C6h
-    db 05h,00h,0Eh,01Fh,02Bh,036h,085h,03h,08Bh,0C6h,026h,0A2h,080h,00h,08Bh,0Eh
-    db 091h,03h,08Bh,016h,093h,03h,083h,0E9h,01Bh,083h,0DAh,00h,08Bh,01Eh,044h,07h
-    db 087h,0CAh,0B8h,01h,042h,0CDh,021h,0C6h,06h,044h,03h,02h,073h,03h,0E9h,047h
-    db 01h,08Bh,0Eh,095h,03h,08Bh,016h,097h,03h,0A1h,089h,03h,05h,010h,00h,08Eh
-    db 0C0h,033h,0FFh,08Bh,01Eh,044h,07h,0Eh,0E8h,0F5h,01h,0C6h,06h,044h,03h,02h
-    db 073h,03h,0E9h,023h,01h,0BEh,05Ch,07h,08Bh,04Ch,05h,08Bh,054h,07h,03h,0Eh
-    db 0AAh,07h,013h,016h,0ACh,07h,03h,0Eh,0BDh,03h,083h,0D2h,00h,087h,0CAh,08Bh
-    db 01Eh,044h,07h,0B8h,00h,042h,0CDh,021h,0C6h,06h,044h,03h,02h,073h,03h,0E9h
-    db 0F6h,00h,083h,03Eh,0ABh,03h,00h,074h,04Ah,0B9h,04h,00h,0BFh,099h,03h,0Eh
-    db 07h,08Bh,01Eh,044h,07h,0Eh,0E8h,0A7h,01h,0C6h,06h,044h,03h,02h,073h,03h
-    db 0E9h,0D5h,00h,0A1h,099h,03h,08Bh,01Eh,09Bh,03h,08Bh,0F0h,083h,0E6h,0Fh,0D1h
-    db 0EBh,0D1h,0D8h,0D1h,0EBh,0D1h,0D8h,0D1h,0EBh,0D1h,0D8h,0D1h,0EBh,0D1h,0D8h,08Bh
-    db 0Eh,089h,03h,083h,0C1h,010h,03h,0C1h,08Eh,0C0h,026h,01h,0Ch,0FFh,0Eh,0ABh
-    db 03h,0EBh,0AFh,08Bh,01Eh,044h,07h,0Eh,0E8h,069h,04h,0C7h,06h,044h,07h,00h
-    db 00h,0A1h,0BBh,03h,03h,06h,089h,03h,05h,010h,00h,0A3h,09Fh,03h,0A1h,0B9h
-    db 03h,0A3h,09Dh,03h,0A1h,0B3h,03h,03h,06h,089h,03h,05h,010h,00h,0A3h,0B3h
-    db 03h,0B8h,021h,035h,0CDh,021h,089h,01Eh,03Dh,03h,08Ch,06h,03Fh,03h,0BAh,01Ah
-    db 03h,0B8h,021h,025h,0CDh,021h,08Eh,01Eh,089h,03h,0BAh,080h,00h,0B4h,01Ah,0CDh
-    db 021h,0Eh,01Fh,0FAh,089h,026h,0A1h,03h,08Ch,016h,0A3h,03h,08Eh,016h,0B3h,03h
-    db 08Bh,026h,0B5h,03h,0FBh,0A1h,089h,03h,08Eh,0C0h,08Eh,0D8h,033h,0C0h,08Bh,0D8h
-    db 08Bh,0C8h,08Bh,0D0h,08Bh,0F0h,08Bh,0F8h,08Bh,0E8h,02Eh,0FFh,02Eh,09Dh,03h,0Eh
-    db 01Fh,0A2h,043h,03h,0FAh,08Bh,026h,0A1h,03h,08Eh,016h,0A3h,03h,0FBh,0B8h,021h
-    db 025h,0C5h,016h,03Dh,03h,0CDh,021h,0Eh,01Fh,0C5h,016h,08Dh,03h,0B4h,01Ah,0CDh
-    db 021h,0Eh,01Fh,0C6h,06h,044h,03h,00h,083h,03Eh,089h,03h,00h,074h,0Eh,08Eh
-    db 06h,089h,03h,0B4h,049h,0CDh,021h,0C7h,06h,089h,03h,00h,00h,08Bh,01Eh,044h
-    db 07h,0Eh,0E8h,0AFh,03h,0A1h,043h,03h,01Fh,0CBh,080h,0FCh,04Ch,075h,0Fh,02Eh
-    db 083h,03Eh,041h,03h,00h,074h,0A8h,02Eh,0FFh,0Eh,041h,03h,0EBh,0Ah,080h,0FCh
-    db 04Bh,075h,05h,02Eh,0FFh,06h,041h,03h,02Eh,0FFh,02Eh,03Dh,03h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -107,24 +370,178 @@ loc_153DF:
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 02Eh,089h,01Eh,0Ch,04h,08Bh,0C1h,0Bh,0C2h,074h,038h,01Eh,06h,01Fh,053h,051h
-    db 052h,057h,0Bh,0D2h,075h,05h,083h,0F9h,0FFh,072h,03h,0B9h,0FFh,0FFh,08Bh,0D7h
-    db 0B4h,03Fh,051h,0CDh,021h,05Dh,072h,01Eh,05Fh,05Ah,059h,05Bh,02Bh,0CDh,083h,0DAh
-    db 00h,03h,0FDh,073h,07h,08Ch,0D8h,05h,00h,010h,08Eh,0D8h,08Bh,0C1h,0Bh,0C2h
-    db 075h,0CCh,01Fh,033h,0C0h,0CBh,05Fh,05Ah,059h,05Bh,01Fh,0CBh,00h,00h,02Eh,089h
-    db 01Eh,05Ch,04h,08Bh,0C1h,0Bh,0C2h,074h,03Ah,08Bh,0FEh,01Eh,06h,01Fh,053h,051h
-    db 052h,057h,0Bh,0D2h,075h,05h,083h,0F9h,0FFh,072h,03h,0B9h,0FFh,0FFh,08Bh,0D7h
-    db 0B4h,040h,051h,0CDh,021h,072h,01Fh,05Dh,05Fh,05Ah,059h,05Bh,02Bh,0CDh,083h,0DAh
-    db 00h,03h,0FDh,073h,07h,08Ch,0D8h,05h,00h,010h,08Eh,0D8h,08Bh,0C1h,0Bh,0C2h
-    db 075h,0CCh,01Fh,033h,0C0h,0CBh,05Fh,05Ah,059h,05Bh,01Fh,0CBh,00h,00h,02Eh,089h
-    db 01Eh,0D3h,04h,02Eh,0A3h,0D5h,04h,02Eh,0F7h,06h,03Ah,07h,04h,00h,074h,0Ah
-    db 02Eh,08Eh,06h,03Eh,07h,02Eh,08Bh,03Eh,03Ch,07h,02Eh,089h,03Eh,03Ch,07h,08Bh
-    db 0C1h,0Bh,0C2h,074h,043h,033h,0FFh,01Eh,06h,01Fh,053h,051h,052h,057h,0Bh,0D2h
-    db 075h,07h,02Eh,03Bh,0Eh,0D1h,04h,072h,05h,02Eh,08Bh,0Eh,0D1h,04h,08Bh,0D7h
-    db 0B4h,03Fh,051h,0CDh,021h,072h,024h,02Eh,08Bh,01Eh,0D5h,04h,0B8h,00h,040h,0CDh
-    db 021h,05Dh,072h,017h,03Bh,0C5h,075h,013h,05Fh,05Ah,059h,05Bh,02Bh,0CDh,083h,0DAh
-    db 00h,08Bh,0C1h,0Bh,0C2h,075h,0C3h,01Fh,033h,0C0h,0CBh,05Fh,05Ah,059h,05Bh,01Fh
-    db 0CBh,00h,00h,00h,00h,00h,00h
+    db 00h,00h,00h
+loc_15760:
+    mov cs:[40Ch], bx
+    mov ax, cx
+    or ax, dx
+    je loc_157A3
+    push ds
+    push es
+    pop ds
+loc_1576E:
+    push bx
+    push cx
+    push dx
+    push di
+    or dx, dx
+    jne loc_1577B
+    cmp cx, -1
+    jb loc_1577E
+loc_1577B:
+    mov cx, 0FFFFh
+loc_1577E:
+    mov dx, di
+    mov ah, 3Fh
+    push cx
+    int 21h
+    pop bp
+    jb loc_157A6
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    sub cx, bp
+    sbb dx, 0
+    add di, bp
+    jae loc_1579C
+    mov ax, ds
+    add ax, 1000h
+    mov ds, ax
+loc_1579C:
+    mov ax, cx
+    or ax, dx
+    jne loc_1576E
+    pop ds
+loc_157A3:
+    xor ax, ax
+    retf
+loc_157A6:
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ds
+    retf
+loc_157AC:
+    add ds:[bx + si], al
+    mov cs:[45Ch], bx
+    mov ax, cx
+    or ax, dx
+    je loc_157F3
+    mov di, si
+    push ds
+    push es
+    pop ds
+loc_157BE:
+    push bx
+    push cx
+    push dx
+    push di
+    or dx, dx
+    jne loc_157CB
+    cmp cx, -1
+    jb loc_157CE
+loc_157CB:
+    mov cx, 0FFFFh
+loc_157CE:
+    mov dx, di
+    mov ah, 40h
+    push cx
+    int 21h
+    jb loc_157F6
+    pop bp
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    sub cx, bp
+    sbb dx, 0
+    add di, bp
+    jae loc_157EC
+    mov ax, ds
+    add ax, 1000h
+    mov ds, ax
+loc_157EC:
+    mov ax, cx
+    or ax, dx
+    jne loc_157BE
+    pop ds
+loc_157F3:
+    xor ax, ax
+    retf
+loc_157F6:
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ds
+    retf
+loc_157FC:
+    add ds:[bx + si], al
+    mov cs:[4D3h], bx
+    mov cs:[4D5h], ax
+    test word ptr cs:[73Ah], 4
+    je loc_1581A
+    mov es, cs:[73Eh]
+    mov di, cs:[73Ch]
+loc_1581A:
+    mov cs:[73Ch], di
+    mov ax, cx
+    or ax, dx
+    je loc_15868
+    xor di, di
+    push ds
+    push es
+    pop ds
+loc_1582A:
+    push bx
+    push cx
+    push dx
+    push di
+    or dx, dx
+    jne loc_15839
+    cmp cx, cs:[4D1h]
+    jb loc_1583E
+loc_15839:
+    mov cx, cs:[4D1h]
+loc_1583E:
+    mov dx, di
+    mov ah, 3Fh
+    push cx
+    int 21h
+    jb loc_1586B
+    mov bx, cs:[4D5h]
+    mov ax, 4000h
+    int 21h
+    pop bp
+    jb loc_1586B
+    cmp ax, bp
+    jne loc_1586B
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    sub cx, bp
+    sbb dx, 0
+    mov ax, cx
+    or ax, dx
+    jne loc_1582A
+    pop ds
+loc_15868:
+    xor ax, ax
+    retf
+loc_1586B:
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ds
+    retf
+loc_15871:
+    add ds:[bx + si], al
+    add ds:[bx + si], al
+    add ds:[bx + si], al
 
 OpenResourceFile:
     push si
@@ -351,8 +768,13 @@ loc_15A21:
     pop cx
     jb loc_15A0C
     jmp near ptr loc_159CC
-; UNKNOWN: not yet classified as code or data
-    db 0Bh,0DBh,074h,04h,0B4h,03Eh,0CDh,021h,0CBh
+loc_15A64:
+    or bx, bx
+    je loc_15A6C
+    mov ah, 3Eh
+    int 21h
+loc_15A6C:
+    retf
 
 loc_15A6D:
     mov ah, DOS_GET_PSP

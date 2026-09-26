@@ -253,6 +253,7 @@ public loc_0238D
 public loc_02410
 public loc_0247E
 public loc_02580
+public loc_025E9
 public loc_02737
 public loc_027D9
 public loc_02991
@@ -270,6 +271,7 @@ public loc_02F40
 public loc_02F81
 public loc_02FB6
 public loc_030D2
+public loc_03142
 public loc_033AF
 public loc_034AD
 public loc_034D8
@@ -301,6 +303,7 @@ public loc_0409D
 public loc_040D7
 public loc_0412B
 public loc_041F5
+public loc_04264
 public loc_0446C
 public loc_0450C
 public loc_04684
@@ -325,6 +328,16 @@ public loc_0526A
 extrn AdapterDrawHandlers:word
 extrn BlockOffsets:word
 extrn BlueBitsSegment:word
+extrn DecodeByte5BA0:byte
+extrn DecodeByte5BA1:byte
+extrn DecodeDest:word
+extrn DecodeFileFlags:word
+extrn DecodeImageIndex:word
+extrn DecodePixelBytes:byte
+extrn DecodePlaneBits:byte
+extrn DecodePlaneRowBytes:word
+extrn DecodeRowBuffer:byte
+extrn DecodeRows:word
 extrn DrawOffsetFromScreenRow:near
 extrn DrawPanelGraphic:near
 extrn FindFreeRecordPoolA:near
@@ -357,6 +370,14 @@ extrn TheEndSegment:word
 extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
 extrn WideRowBytes:word
+extrn WipeDest:word
+extrn WipeFlagA:word
+extrn WipeFlagB:word
+extrn WipeHeight:word
+extrn WipeProgress:word
+extrn WipeSource:word
+extrn WipeStep:word
+extrn WipeWidth:word
 extrn WorkspaceSegment:word
 extrn loc_0532D:near
 extrn loc_05A36:near
@@ -1169,14 +1190,14 @@ loc_007EF:
     mov si, word ptr cs:[si]
     mov ds, word ptr cs:[PanelSegment]
     lodsw
-    mov word ptr cs:[058FDh], ax
+    mov word ptr cs:[WipeWidth], ax
     lodsw
-    mov word ptr cs:[058FFh], ax
-    mov word ptr cs:[058FBh], si
-    mov word ptr cs:[058F9h], di
-    mov word ptr cs:[05905h], 0
-    mov word ptr cs:[05907h], 0
-    mov word ptr cs:[05901h], 0C6h
+    mov word ptr cs:[WipeHeight], ax
+    mov word ptr cs:[WipeSource], si
+    mov word ptr cs:[WipeDest], di
+    mov word ptr cs:[WipeFlagA], 0
+    mov word ptr cs:[WipeFlagB], 0
+    mov word ptr cs:[WipeStep], 0C6h
     mov es, word ptr cs:[ScreenSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
@@ -4213,9 +4234,16 @@ DrawOffsetFromWideRowEga:
     add ax, bx
     mov di, ax
     ret
-; UNKNOWN: not yet classified as code or data
-    db 08Bh,05Eh,02h,0D1h,0E3h,08Bh,09Fh,0E8h,09Eh,08Bh,046h,04h,0D1h,0E8h,0D1h,0E8h
-    db 0D1h,0E8h,03h,0C3h,0C3h
+loc_025E9:
+    mov bx, ss:[bp + REC_Y]
+    shl bx, 1
+    mov bx, ds:[bx - 6118h]
+    mov ax, ss:[bp + REC_X]
+    shr ax, 1
+    shr ax, 1
+    shr ax, 1
+    add ax, bx
+    ret
 
 loc_025FE:
     cmp al, 010h
@@ -4433,18 +4461,18 @@ loc_027CB:
     ret
 
 loc_027D9:
-    inc word ptr cs:[05BA8h]
+    inc word ptr cs:[DecodeImageIndex]
     call loc_044D7
     jne loc_027E6
     jmp near ptr loc_044AA
 loc_027E6:
-    mov cx, word ptr cs:[05B9Eh]
+    mov cx, word ptr cs:[DecodeRows]
 loc_027EB:
     push cx
     cmp word ptr cs:[LoadMakeMask], 0
     je loc_02802
     push si
-    mov cx, word ptr cs:[05B9Ch]
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_027FA:
     push cx
     call loc_02932
@@ -4452,22 +4480,22 @@ loc_027FA:
     loop loc_027FA
     pop si
 loc_02802:
-    mov word ptr cs:[05BA6h], di
-    mov di, 05AF4h
+    mov word ptr cs:[DecodeDest], di
+    mov di, offset DecodeRowBuffer
     mov bp, 4
 loc_0280D:
-    mov cx, word ptr cs:[05B9Ch]
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_02812:
     lodsb
     mov byte ptr cs:[di], al
     inc di
     loop loc_02812
-    sub di, word ptr cs:[05B9Ch]
+    sub di, word ptr cs:[DecodePlaneRowBytes]
     add di, 028h
     dec bp
     jne loc_0280D
-    mov di, 05AF4h
-    mov cx, word ptr cs:[05B9Ch]
+    mov di, offset DecodeRowBuffer
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_0282C:
     push cx
     mov al, byte ptr cs:[di]
@@ -4493,10 +4521,10 @@ loc_0283F:
 loc_02863:
     cmp byte ptr cs:[0C5B0h], 1
     jne loc_0289A
-    mov bp, word ptr cs:[05BAAh]
+    mov bp, word ptr cs:[DecodeFileFlags]
     cmp bp, -1
     je loc_0289A
-    add bp, word ptr cs:[05BA8h]
+    add bp, word ptr cs:[DecodeImageIndex]
     cmp byte ptr ss:[bp], 1
     je loc_0288A
     cmp byte ptr ss:[bp], 2
@@ -4515,21 +4543,21 @@ loc_02898:
     mov bl, 0Ch
 loc_0289A:
     shr bl, 1
-    rcl byte ptr cs:[05BA2h],1
+    rcl byte ptr cs:[DecodePlaneBits + 0],1
     shr bl, 1
-    rcl byte ptr cs:[05BA3h],1
+    rcl byte ptr cs:[DecodePlaneBits + 1],1
     shr bl, 1
-    rcl byte ptr cs:[05BA4h],1
+    rcl byte ptr cs:[DecodePlaneBits + 2],1
     shr bl, 1
-    rcl byte ptr cs:[05BA5h],1
+    rcl byte ptr cs:[DecodePlaneBits + 3],1
     loop loc_0283F
-    mov al, byte ptr cs:[05BA2h]
+    mov al, byte ptr cs:[DecodePlaneBits + 0]
     mov byte ptr cs:[di], al
-    mov al, byte ptr cs:[05BA3h]
+    mov al, byte ptr cs:[DecodePlaneBits + 1]
     mov byte ptr cs:[di + 028h], al
-    mov al, byte ptr cs:[05BA4h]
+    mov al, byte ptr cs:[DecodePlaneBits + 2]
     mov byte ptr cs:[di + 050h], al
-    mov al, byte ptr cs:[05BA5h]
+    mov al, byte ptr cs:[DecodePlaneBits + 3]
     mov byte ptr cs:[di + 078h], al
     inc di
     pop cx
@@ -4538,19 +4566,19 @@ loc_0289A:
 loc_028DD:
     jmp near ptr loc_0282C
 loc_028E0:
-    mov di, 05AF4h
-    mov cx, word ptr cs:[05B9Ch]
+    mov di, offset DecodeRowBuffer
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
     call loc_0291C
-    mov di, 05B1Ch
-    mov cx, word ptr cs:[05B9Ch]
+    mov di, offset DecodeRowBuffer + 28h
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
     call loc_0291C
-    mov di, 05B44h
-    mov cx, word ptr cs:[05B9Ch]
+    mov di, offset DecodeRowBuffer + 50h
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
     call loc_0291C
-    mov di, 05B6Ch
-    mov cx, word ptr cs:[05B9Ch]
+    mov di, offset DecodeRowBuffer + 78h
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
     call loc_0291C
-    mov di, word ptr cs:[05BA6h]
+    mov di, word ptr cs:[DecodeDest]
     pop cx
     loop loc_02916
     jmp short loc_02919
@@ -4564,47 +4592,47 @@ loc_0291C:
     mov al, byte ptr cs:[di]
     inc di
     push di
-    mov di, word ptr cs:[05BA6h]
+    mov di, word ptr cs:[DecodeDest]
     stosb
-    mov word ptr cs:[05BA6h], di
+    mov word ptr cs:[DecodeDest], di
     pop di
     pop cx
     loop loc_0291C
     ret
 
 loc_02932:
-    mov byte ptr cs:[05BA0h], 0
-    mov bx, word ptr cs:[05B9Ch]
+    mov byte ptr cs:[DecodeByte5BA0], 0
+    mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
     shl bx, 1
     mov dl, byte ptr ds:[bx + si]
-    add bx, word ptr cs:[05B9Ch]
+    add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
     mov cx, 8
 loc_0294F:
     push cx
     rcl dh, 1
-    rcl byte ptr cs:[05BA1h],1
+    rcl byte ptr cs:[DecodeByte5BA1],1
     rcl dl, 1
-    rcl byte ptr cs:[05BA1h],1
+    rcl byte ptr cs:[DecodeByte5BA1],1
     rcl ah, 1
-    rcl byte ptr cs:[05BA1h],1
+    rcl byte ptr cs:[DecodeByte5BA1],1
     rcl al, 1
-    rcl byte ptr cs:[05BA1h],1
-    and byte ptr cs:[05BA1h], 0Fh
+    rcl byte ptr cs:[DecodeByte5BA1],1
+    and byte ptr cs:[DecodeByte5BA1], 0Fh
     mov cl, byte ptr cs:[TransparentColor]
-    cmp byte ptr cs:[05BA1h], cl
+    cmp byte ptr cs:[DecodeByte5BA1], cl
     jne loc_02981
     stc
     jmp short loc_02982
 loc_02981:
     clc
 loc_02982:
-    rcl byte ptr cs:[05BA0h],1
+    rcl byte ptr cs:[DecodeByte5BA0],1
     pop cx
     loop loc_0294F
-    mov al, byte ptr cs:[05BA0h]
+    mov al, byte ptr cs:[DecodeByte5BA0]
     stosb
     inc si
     ret
@@ -5072,12 +5100,12 @@ loc_02D27:
     ret
 
 loc_02D2D:
-    mov word ptr cs:[05903h], 0
-    mov di, word ptr cs:[058F9h]
-    mov si, word ptr cs:[058FBh]
-    mov cx, word ptr cs:[058FDh]
-    mov bp, word ptr cs:[058FFh]
-    cmp word ptr cs:[05905h], 0
+    mov word ptr cs:[WipeProgress], 0
+    mov di, word ptr cs:[WipeDest]
+    mov si, word ptr cs:[WipeSource]
+    mov cx, word ptr cs:[WipeWidth]
+    mov bp, word ptr cs:[WipeHeight]
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_02D5C
     mov ax, bp
     shl ax, 1
@@ -5092,8 +5120,8 @@ loc_02D5C:
     out dx, al
     inc dx
     push cx
-    mov cx, word ptr cs:[058FDh]
-    sub cx, word ptr cs:[05901h]
+    mov cx, word ptr cs:[WipeWidth]
+    sub cx, word ptr cs:[WipeStep]
     or cx, cx
     js loc_02D8C
     shr cx, 1
@@ -5114,14 +5142,14 @@ loc_02D81:
 loc_02D8C:
     pop cx
 loc_02D8D:
-    mov ax, word ptr cs:[05901h]
-    cmp ax, word ptr cs:[058FDh]
+    mov ax, word ptr cs:[WipeStep]
+    cmp ax, word ptr cs:[WipeWidth]
     je loc_02DCB
-    add word ptr cs:[05903h], ax
-    mov ax, word ptr cs:[058FDh]
-    cmp ax, word ptr cs:[05903h]
+    add word ptr cs:[WipeProgress], ax
+    mov ax, word ptr cs:[WipeWidth]
+    cmp ax, word ptr cs:[WipeProgress]
     ja loc_02DC6
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_02DBA
     sub si, bp
     sub si, bp
@@ -5137,7 +5165,7 @@ loc_02DC2:
     loop loc_02D8D
     jmp short loc_02E23
 loc_02DC6:
-    sub word ptr cs:[05903h], ax
+    sub word ptr cs:[WipeProgress], ax
 loc_02DCB:
     push cx
     mov al, 1
@@ -5158,7 +5186,7 @@ loc_02DCB:
     shl al, 1
     out dx, al
     mov cx, bp
-    cmp word ptr cs:[05907h], 1
+    cmp word ptr cs:[WipeFlagB], 1
     je loc_02DF8
     rep movsb
     jmp short loc_02DFE
@@ -5169,7 +5197,7 @@ loc_02DF8:
 loc_02DFE:
     sub di, bp
     add di, 028h
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_02E1B
     sub si, bp
     sub si, bp
@@ -5588,9 +5616,14 @@ TandyOffsetFromWideRow:
     add ax, bx
     mov di, ax
     ret
-; UNKNOWN: not yet classified as code or data
-    db 08Bh,05Eh,02h,0D1h,0E3h,08Bh,09Fh,0E8h,09Eh,08Bh,046h,04h,0D1h,0E8h,03h,0C3h
-    db 0C3h
+loc_03142:
+    mov bx, ss:[bp + REC_Y]
+    shl bx, 1
+    mov bx, ds:[bx - 6118h]
+    mov ax, ss:[bp + REC_X]
+    shr ax, 1
+    add ax, bx
+    ret
 
 loc_03153:
     cmp al, 010h
@@ -5853,56 +5886,56 @@ loc_033AF:
     jne loc_033B7
     jmp near ptr loc_044AA
 loc_033B7:
-    mov cx, word ptr cs:[05B9Eh]
+    mov cx, word ptr cs:[DecodeRows]
 loc_033BC:
     push cx
-    mov cx, word ptr cs:[05B9Ch]
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_033C2:
     push cx
     call loc_033DD
     pop cx
     loop loc_033C2
-    add si, word ptr cs:[05B9Ch]
-    add si, word ptr cs:[05B9Ch]
-    add si, word ptr cs:[05B9Ch]
+    add si, word ptr cs:[DecodePlaneRowBytes]
+    add si, word ptr cs:[DecodePlaneRowBytes]
+    add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
     loop loc_033BC
     jmp short loc_033AF
 
 loc_033DD:
-    mov bx, word ptr cs:[05B9Ch]
+    mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
     shl bx, 1
     mov dl, byte ptr ds:[bx + si]
-    add bx, word ptr cs:[05B9Ch]
+    add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
     call loc_0344B
-    mov byte ptr cs:[05B95h], cl
-    mov byte ptr cs:[05B99h], ch
+    mov byte ptr cs:[DecodePixelBytes + 1], cl
+    mov byte ptr cs:[DecodePixelBytes + 5], ch
     call loc_0344B
-    mov byte ptr cs:[05B94h], cl
-    mov byte ptr cs:[05B98h], ch
+    mov byte ptr cs:[DecodePixelBytes + 0], cl
+    mov byte ptr cs:[DecodePixelBytes + 4], ch
     call loc_0344B
-    mov byte ptr cs:[05B97h], cl
-    mov byte ptr cs:[05B9Bh], ch
+    mov byte ptr cs:[DecodePixelBytes + 3], cl
+    mov byte ptr cs:[DecodePixelBytes + 7], ch
     call loc_0344B
-    mov byte ptr cs:[05B96h], cl
-    mov byte ptr cs:[05B9Ah], ch
+    mov byte ptr cs:[DecodePixelBytes + 2], cl
+    mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
     cmp word ptr cs:[LoadMakeMask], 0
     je loc_03433
-    mov ax, word ptr cs:[05B9Ah]
+    mov ax, word ptr cs:[DecodePixelBytes + 6]
     stosw
 loc_03433:
-    mov ax, word ptr cs:[05B96h]
+    mov ax, word ptr cs:[DecodePixelBytes + 2]
     stosw
     cmp word ptr cs:[LoadMakeMask], 0
     je loc_03445
-    mov ax, word ptr cs:[05B98h]
+    mov ax, word ptr cs:[DecodePixelBytes + 4]
     stosw
 loc_03445:
-    mov ax, word ptr cs:[05B94h]
+    mov ax, word ptr cs:[DecodePixelBytes + 0]
     stosw
     ret
 
@@ -6389,14 +6422,14 @@ loc_03755:
     ret
 
 loc_0375B:
-    mov word ptr cs:[05903h], 0
-    mov di, word ptr cs:[058F9h]
-    mov si, word ptr cs:[058FBh]
-    mov cx, word ptr cs:[058FDh]
-    mov bp, word ptr cs:[058FFh]
+    mov word ptr cs:[WipeProgress], 0
+    mov di, word ptr cs:[WipeDest]
+    mov si, word ptr cs:[WipeSource]
+    mov cx, word ptr cs:[WipeWidth]
+    mov bp, word ptr cs:[WipeHeight]
     shl bp, 1
     shl bp, 1
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_0378A
     mov ax, bp
     dec cx
@@ -6405,8 +6438,8 @@ loc_0375B:
     add si, ax
 loc_0378A:
     push cx
-    mov cx, word ptr cs:[058FDh]
-    sub cx, word ptr cs:[05901h]
+    mov cx, word ptr cs:[WipeWidth]
+    sub cx, word ptr cs:[WipeStep]
     or cx, cx
     js loc_037C6
     shr cx, 1
@@ -6432,14 +6465,14 @@ loc_037B0:
 loc_037C6:
     pop cx
 loc_037C7:
-    mov ax, word ptr cs:[05901h]
-    cmp ax, word ptr cs:[058FDh]
+    mov ax, word ptr cs:[WipeStep]
+    cmp ax, word ptr cs:[WipeWidth]
     je loc_037F9
-    add word ptr cs:[05903h], ax
-    mov ax, word ptr cs:[058FDh]
-    cmp ax, word ptr cs:[05903h]
+    add word ptr cs:[WipeProgress], ax
+    mov ax, word ptr cs:[WipeWidth]
+    cmp ax, word ptr cs:[WipeProgress]
     ja loc_037F4
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_037EE
     sub si, bp
     jmp short loc_037F0
@@ -6449,7 +6482,7 @@ loc_037F0:
     loop loc_037C7
     jmp short loc_0381D
 loc_037F4:
-    sub word ptr cs:[05903h], ax
+    sub word ptr cs:[WipeProgress], ax
 loc_037F9:
     push cx
     mov cx, bp
@@ -6460,7 +6493,7 @@ loc_037F9:
     je loc_0380E
     add di, 080A0h
 loc_0380E:
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_0381A
     sub si, bp
     sub si, bp
@@ -7602,9 +7635,15 @@ DrawOffsetFromWideRowCga:
     add ax, bx
     mov di, ax
     ret
-; UNKNOWN: not yet classified as code or data
-    db 08Bh,05Eh,02h,0D1h,0E3h,08Bh,09Fh,0E8h,09Eh,08Bh,046h,04h,0D1h,0E8h,0D1h,0E8h
-    db 03h,0C3h,0C3h
+loc_04264:
+    mov bx, ss:[bp + REC_Y]
+    shl bx, 1
+    mov bx, ds:[bx - 6118h]
+    mov ax, ss:[bp + REC_X]
+    shr ax, 1
+    shr ax, 1
+    add ax, bx
+    ret
 
 loc_04277:
     cmp al, 010h
@@ -7884,13 +7923,13 @@ loc_044DF:
     mov word ptr cs:[bx], di
     stosw
 loc_044F7:
-    mov word ptr cs:[05B9Eh], ax
+    mov word ptr cs:[DecodeRows], ax
     lodsw
     cmp word ptr cs:[LoadRecordImages], 0
     je loc_04505
     stosw
 loc_04505:
-    mov word ptr cs:[05B9Ch], ax
+    mov word ptr cs:[DecodePlaneRowBytes], ax
     inc ax
     ret
 ; UNKNOWN: not yet classified as code or data
@@ -7899,63 +7938,63 @@ loc_04505:
 loc_0450C:
     call loc_044D7
     je loc_044AA
-    mov cx, word ptr cs:[05B9Eh]
+    mov cx, word ptr cs:[DecodeRows]
 loc_04516:
     push cx
-    mov cx, word ptr cs:[05B9Ch]
+    mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_0451C:
     push cx
     call loc_04537
     pop cx
     loop loc_0451C
-    add si, word ptr cs:[05B9Ch]
-    add si, word ptr cs:[05B9Ch]
-    add si, word ptr cs:[05B9Ch]
+    add si, word ptr cs:[DecodePlaneRowBytes]
+    add si, word ptr cs:[DecodePlaneRowBytes]
+    add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
     loop loc_04516
     jmp short loc_0450C
 
 loc_04537:
-    mov bx, word ptr cs:[05B9Ch]
+    mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
     shl bx, 1
     mov dl, byte ptr ds:[bx + si]
-    add bx, word ptr cs:[05B9Ch]
+    add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
     call loc_045F6
-    mov byte ptr cs:[05B95h], cl
-    mov byte ptr cs:[05B99h], ch
+    mov byte ptr cs:[DecodePixelBytes + 1], cl
+    mov byte ptr cs:[DecodePixelBytes + 5], ch
     call loc_045F6
-    mov byte ptr cs:[05B94h], cl
-    mov byte ptr cs:[05B98h], ch
+    mov byte ptr cs:[DecodePixelBytes + 0], cl
+    mov byte ptr cs:[DecodePixelBytes + 4], ch
     call loc_045F6
-    mov byte ptr cs:[05B97h], cl
-    mov byte ptr cs:[05B9Bh], ch
+    mov byte ptr cs:[DecodePixelBytes + 3], cl
+    mov byte ptr cs:[DecodePixelBytes + 7], ch
     call loc_045F6
-    mov byte ptr cs:[05B96h], cl
-    mov byte ptr cs:[05B9Ah], ch
+    mov byte ptr cs:[DecodePixelBytes + 2], cl
+    mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
     cmp word ptr cs:[LoadMakeMask], 0
     je loc_045A9
-    mov al, byte ptr cs:[05B98h]
+    mov al, byte ptr cs:[DecodePixelBytes + 4]
     call loc_045CB
-    mov al, byte ptr cs:[05B99h]
+    mov al, byte ptr cs:[DecodePixelBytes + 5]
     call loc_045CB
-    mov al, byte ptr cs:[05B9Ah]
+    mov al, byte ptr cs:[DecodePixelBytes + 6]
     call loc_045CB
-    mov al, byte ptr cs:[05B9Bh]
+    mov al, byte ptr cs:[DecodePixelBytes + 7]
     call loc_045CB
     mov ax, word ptr cs:[045E4h]
     stosw
 loc_045A9:
-    mov al, byte ptr cs:[05B94h]
+    mov al, byte ptr cs:[DecodePixelBytes + 0]
     call loc_045CB
-    mov al, byte ptr cs:[05B95h]
+    mov al, byte ptr cs:[DecodePixelBytes + 1]
     call loc_045CB
-    mov al, byte ptr cs:[05B96h]
+    mov al, byte ptr cs:[DecodePixelBytes + 2]
     call loc_045CB
-    mov al, byte ptr cs:[05B97h]
+    mov al, byte ptr cs:[DecodePixelBytes + 3]
     call loc_045CB
     mov ax, word ptr cs:[045E4h]
     stosw
@@ -8487,13 +8526,13 @@ loc_048FD:
     ret
 
 loc_0497A:
-    mov word ptr cs:[05903h], 0
-    mov di, word ptr cs:[058F9h]
-    mov si, word ptr cs:[058FBh]
-    mov cx, word ptr cs:[058FDh]
-    mov bp, word ptr cs:[058FFh]
+    mov word ptr cs:[WipeProgress], 0
+    mov di, word ptr cs:[WipeDest]
+    mov si, word ptr cs:[WipeSource]
+    mov cx, word ptr cs:[WipeWidth]
+    mov bp, word ptr cs:[WipeHeight]
     shl bp, 1
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_049A7
     mov ax, bp
     dec cx
@@ -8502,8 +8541,8 @@ loc_0497A:
     add si, ax
 loc_049A7:
     push cx
-    mov cx, word ptr cs:[058FDh]
-    sub cx, word ptr cs:[05901h]
+    mov cx, word ptr cs:[WipeWidth]
+    sub cx, word ptr cs:[WipeStep]
     or cx, cx
     js loc_049E3
     shr cx, 1
@@ -8529,14 +8568,14 @@ loc_049CD:
 loc_049E3:
     pop cx
 loc_049E4:
-    mov ax, word ptr cs:[05901h]
-    cmp ax, word ptr cs:[058FDh]
+    mov ax, word ptr cs:[WipeStep]
+    cmp ax, word ptr cs:[WipeWidth]
     je loc_04A16
-    add word ptr cs:[05903h], ax
-    mov ax, word ptr cs:[058FDh]
-    cmp ax, word ptr cs:[05903h]
+    add word ptr cs:[WipeProgress], ax
+    mov ax, word ptr cs:[WipeWidth]
+    cmp ax, word ptr cs:[WipeProgress]
     ja loc_04A11
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_04A0B
     sub si, bp
     jmp short loc_04A0D
@@ -8546,7 +8585,7 @@ loc_04A0D:
     loop loc_049E4
     jmp short loc_04A3A
 loc_04A11:
-    sub word ptr cs:[05903h], ax
+    sub word ptr cs:[WipeProgress], ax
 loc_04A16:
     push cx
     mov cx, bp
@@ -8557,7 +8596,7 @@ loc_04A16:
     je loc_04A2B
     add di, 0C050h
 loc_04A2B:
-    cmp word ptr cs:[05905h], 0
+    cmp word ptr cs:[WipeFlagA], 0
     je loc_04A37
     sub si, bp
     sub si, bp
