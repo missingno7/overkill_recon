@@ -184,6 +184,7 @@ extrn RandomWordCursor:word
 extrn RapidFireEnabled:byte
 extrn RecordTickCounter:word
 extrn RefuelActive:word
+extrn ResLibSetup:far
 extrn ResidentFiles:word
 extrn ResourceArchiveList:byte
 extrn RevealCellOffset:word
@@ -271,7 +272,6 @@ extrn WinScreenPageList:word
 extrn Word235A:word
 extrn XAdjustPathTaken:word
 extrn loc_0F980:far
-extrn loc_153A0:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public BlueBitsSegment
@@ -6649,7 +6649,7 @@ loc_0CEBD:
 loc_0CF22:
     mov ax, 04000h
     mov si, offset ResourceArchiveList
-    call far ptr loc_153A0
+    call far ptr ResLibSetup
     ret
 
 ; Build the bonus intro screen one BonusIntroItems entry at a time (100 frames apart),

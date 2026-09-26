@@ -30,10 +30,14 @@ def main(apply):
     order = [l.strip() for l in (ROOT/'src/sources.txt').read_text().splitlines() if l.strip() and not l.startswith('#')]
     texts = {n: [l for l in (ROOT/'src'/n).read_bytes().decode('latin-1').split('\r\n') if not l.startswith(('public ', 'extrn '))] for n in order}
     owner = {}   # label -> (file, segment, kind)
+    seen = {}    # upper-case label -> defining file (TASM names are case-insensitive)
     for n, t in texts.items():
         for i, seg in blocks(t):
             m = DEF.fullmatch(t[i].split(';', 1)[0].rstrip())
             if m and not t[i].startswith(' '):
+                if m[1].upper() in seen and seen[m[1].upper()] != n:
+                    raise SystemExit(f'{m[1]} is defined in both {seen[m[1].upper()]} and {n}')
+                seen[m[1].upper()] = n
                 owner[m[1]] = (n, seg, {'db': 'byte', 'dw': 'word', 'byte': 'byte', 'word': 'word'}.get(m[4] or m[3], 'code'))
     idents = {n: {x for l in t for x in IDENT.findall(l.split(';', 1)[0])} for n, t in texts.items()}
     for n, t in texts.items():

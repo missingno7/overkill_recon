@@ -20,8 +20,10 @@ SoundModuleTickEntry:
 SoundModuleInitEntry:
     call loc_10232
     retf
-; UNKNOWN: not yet classified as code or data
-    db 02h,00h,00h,00h,00h,00h,088h,03h,00h,00h
+; Header fields at +8 as in a loaded module: MODULE_MUSIC_REQUEST (with the current
+; music in its high byte), two unused words here, the OPL2 base port 388h at +0Eh, and a
+; final word; the stub keeps these defaults.
+    dw 2, 0, 0, 388h, 0
 
 loc_10232:
     ret

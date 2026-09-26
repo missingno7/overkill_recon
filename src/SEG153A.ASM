@@ -10,15 +10,18 @@ locals
 SEG153A segment para public 'CODE'
 assume cs:SEG153A,ds:nothing,ss:nothing,es:nothing
 public OpenResourceFile
-public loc_153A0
+public ResLibSetup
 ; Observed frame153A: private CS state and DOS/file/path operations, with
 ; caller segment pointers. Distinct address frame, historical OBJ count unknown.
-loc_153A0:
+; Far. AX option bits: 8000h ResOptions = AL; 4000h copy the DS:SI archive name list
+; (0FFh-terminated) to ResArchiveList; 2000h use the program's own EXE as the archive;
+; 1000h ResBufferPtr = ES:DI. The game calls it with 4000h and ResourceArchiveList.
+ResLibSetup:
     test ax, 08000h
     je loc_153AE
     push ax
     and ax, 0FFh
-    mov word ptr cs:[073Ah], ax
+    mov word ptr cs:[ResOptions], ax
     pop ax
 loc_153AE:
     test ax, 04000h
@@ -28,7 +31,7 @@ loc_153AE:
     push es
     push cs
     pop es
-    mov di, 07AEh
+    mov di, offset ResArchiveList
 loc_153BB:
     movsb
     cmp byte ptr ds:[si - 1], 0FFh
@@ -41,18 +44,19 @@ loc_153C5:
     je loc_153D0
     push ax
     push cs
-    call loc_15A6D
+    call UseOwnExeAsArchive
     pop ax
 loc_153D0:
     test ax, 01000h
     je loc_153DF
-    mov word ptr cs:[073Eh], es
-    mov word ptr cs:[073Ch], di
+    mov word ptr cs:[ResBufferPtr + 2], es
+    mov word ptr cs:[ResBufferPtr], di
 loc_153DF:
     retf
 ; Further resource-library routines (far entries ending in RETF). The game only calls
-; 153A:0000 (loc_153A0) and OpenResourceFile; no caller of these was found.
-loc_153E0:
+; 153A:0000 (ResLibSetup) and OpenResourceFile; no caller of these was found.
+; Far. Open the resource named at DS:DX and read all of it to ES:DI. No caller found.
+ResLoadWholeFile:
     push di
     push es
     push cs
@@ -64,24 +68,26 @@ loc_153E0:
     push cx
     push dx
     push cs
-    call loc_15760
+    call ReadHuge
     pop dx
     pop cx
     pop bx
     pushf
     push ax
     push cs
-    call loc_15A64
+    call CloseHandleIfOpen
     pop ax
     popf
 loc_153FC:
     retf
-loc_153FD:
+; Far. Load and run an MZ program stored in the archive (DS:DX = "NAME args"),
+; hooking INT 21h to catch its exit; AX = ExecStatus:ExecExitCode. No caller found.
+ExecResourceProgram:
     push ds
     push cs
     pop es
     mov si, dx
-    mov di, 345h
+    mov di, offset ExecProgramName
     cld
 loc_15406:
     movsb
@@ -92,36 +98,36 @@ loc_15406:
 loc_15413:
     mov byte ptr es:[di - 1h], 0
     dec si
-    mov cs:[385h], si
-    mov cs:[387h], ds
+    mov word ptr cs:[ExecTailPtr], si
+    mov word ptr cs:[ExecTailPtr + 2], ds
     push cs
     pop ds
-    mov word ptr ds:[389h], 0
-    mov byte ptr ds:[344h], 1
-    mov dx, 345h
+    mov word ptr ds:[ExecChildSeg], 0
+    mov byte ptr ds:[ExecStatus], 1
+    mov dx, offset ExecProgramName
     push cs
     call OpenResourceFile
     jae loc_1543C
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_1543C:
     mov cx, 1Bh
     xor dx, dx
-    mov di, 3A5h
+    mov di, offset ExecMzHeader
     push cs
     pop es
     push cs
-    call loc_15760
-    mov byte ptr ds:[344h], 2
+    call ReadHuge
+    mov byte ptr ds:[ExecStatus], 2
     jae loc_15454
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_15454:
-    mov di, 3A5h
-    cmp word ptr ds:[3A5h], 5A4Dh
-    mov byte ptr ds:[344h], 4
+    mov di, offset ExecMzHeader
+    cmp word ptr ds:[ExecMzHeader], 5A4Dh
+    mov byte ptr ds:[ExecStatus], 4
     je loc_15467
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_15467:
-    mov bx, ds:[3ADh]
+    mov bx, word ptr ds:[ExecMzHeader + 8]
     xor cx, cx
     add bx, bx
     adc cx, 0
@@ -131,21 +137,21 @@ loc_15467:
     adc cx, 0
     add bx, bx
     adc cx, 0
-    mov ds:[391h], bx
-    mov ds:[393h], cx
-    mov ax, ds:[3A9h]
+    mov word ptr ds:[ExecHeaderBytes], bx
+    mov word ptr ds:[ExecHeaderBytes + 2], cx
+    mov ax, word ptr ds:[ExecMzHeader + 4]
     dec ax
     add ax, ax
     mov dh, 0
     mov dl, ah
     mov ah, al
     mov al, dh
-    add ax, ds:[3A7h]
+    add ax, word ptr ds:[ExecMzHeader + 2]
     adc dx, 0
     sub ax, bx
     sbb dx, cx
-    mov ds:[395h], ax
-    mov ds:[397h], dx
+    mov word ptr ds:[ExecImageBytes], ax
+    mov word ptr ds:[ExecImageBytes + 2], dx
     shr dx, 1
     rcr ax, 1
     shr dx, 1
@@ -155,27 +161,27 @@ loc_15467:
     shr dx, 1
     rcr ax, 1
     add ax, 11h
-    add ds:[3AFh], ax
-    mov word ptr ds:[389h], 0
+    add word ptr ds:[ExecMzHeader + 0Ah], ax
+    mov word ptr ds:[ExecChildSeg], 0
     mov bx, 0FFFFh
     mov ah, 48h
     int 21h
     mov ah, 48h
     int 21h
-    mov byte ptr ds:[344h], 3
+    mov byte ptr ds:[ExecStatus], 3
     jae loc_154DB
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_154DB:
-    mov ds:[389h], ax
+    mov ds:[ExecChildSeg], ax
     mov ah, 2Fh
     int 21h
-    mov ds:[38Dh], bx
-    mov ds:[38Fh], es
+    mov word ptr ds:[ExecSavedDta], bx
+    mov word ptr ds:[ExecSavedDta + 2], es
     mov ah, 51h
     int 21h
-    mov ds:[38Bh], bx
-    mov es, ds:[389h]
-    mov ds, ds:[38Bh]
+    mov ds:[ExecParentPsp], bx
+    mov es, ds:[ExecChildSeg]
+    mov ds, ds:[ExecParentPsp]
     xor si, si
     mov di, si
     mov cx, 100h
@@ -183,9 +189,9 @@ loc_154DB:
     rep movsb
     push cs
     pop ds
-    mov es, ds:[389h]
+    mov es, ds:[ExecChildSeg]
     mov di, 81h
-    lds si, ds:[385h]
+    lds si, dword ptr ds:[ExecTailPtr]
 loc_15511:
     movsb
     cmp byte ptr ds:[si - 1h], 0
@@ -195,64 +201,64 @@ loc_15511:
     mov byte ptr es:[di], 0
     push cs
     pop ds
-    sub si, ds:[385h]
+    sub si, word ptr ds:[ExecTailPtr]
     mov ax, si
     mov es:[80h], al
-    mov cx, ds:[391h]
-    mov dx, ds:[393h]
+    mov cx, word ptr ds:[ExecHeaderBytes]
+    mov dx, word ptr ds:[ExecHeaderBytes + 2]
     sub cx, 1Bh
     sbb dx, 0
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     xchg cx, dx
     mov ax, 4201h
     int 21h
-    mov byte ptr ds:[344h], 2
+    mov byte ptr ds:[ExecStatus], 2
     jae loc_15551
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_15551:
-    mov cx, ds:[395h]
-    mov dx, ds:[397h]
-    mov ax, ds:[389h]
+    mov cx, word ptr ds:[ExecImageBytes]
+    mov dx, word ptr ds:[ExecImageBytes + 2]
+    mov ax, ds:[ExecChildSeg]
     add ax, 10h
     mov es, ax
     xor di, di
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     push cs
-    call loc_15760
-    mov byte ptr ds:[344h], 2
+    call ReadHuge
+    mov byte ptr ds:[ExecStatus], 2
     jae loc_15575
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_15575:
-    mov si, 75Ch
+    mov si, offset ResEntryBuf
     mov cx, ds:[si + 5]
     mov dx, ds:[si + 7]
-    add cx, ds:[7AAh]
-    adc dx, ds:[7ACh]
-    add cx, ds:[3BDh]
+    add cx, word ptr ds:[ResArchiveBase]
+    adc dx, word ptr ds:[ResArchiveBase + 2]
+    add cx, word ptr ds:[ExecMzHeader + 18h]
     adc dx, 0
     xchg cx, dx
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     mov ax, 4200h
     int 21h
-    mov byte ptr ds:[344h], 2
+    mov byte ptr ds:[ExecStatus], 2
     jae loc_155A2
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_155A2:
-    cmp word ptr ds:[3ABh], 0
+    cmp word ptr ds:[ExecMzHeader + 6], 0
     je loc_155F3
     mov cx, 4
-    mov di, 399h
+    mov di, offset ExecRelocEntry
     push cs
     pop es
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     push cs
-    call loc_15760
-    mov byte ptr ds:[344h], 2
+    call ReadHuge
+    mov byte ptr ds:[ExecStatus], 2
     jae loc_155C3
-    jmp near ptr loc_15698
+    jmp near ptr ExecCleanup
 loc_155C3:
-    mov ax, ds:[399h]
-    mov bx, ds:[39Bh]
+    mov ax, word ptr ds:[ExecRelocEntry]
+    mov bx, word ptr ds:[ExecRelocEntry + 2]
     mov si, ax
     and si, 0Fh
     shr bx, 1
@@ -263,48 +269,48 @@ loc_155C3:
     rcr ax, 1
     shr bx, 1
     rcr ax, 1
-    mov cx, ds:[389h]
+    mov cx, ds:[ExecChildSeg]
     add cx, 10h
     add ax, cx
     mov es, ax
     add es:[si], cx
-    dec word ptr ds:[3ABh]
+    dec word ptr ds:[ExecMzHeader + 6]
     jmp short loc_155A2
 loc_155F3:
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     push cs
-    call loc_15A64
-    mov word ptr ds:[744h], 0
-    mov ax, ds:[3BBh]
-    add ax, ds:[389h]
+    call CloseHandleIfOpen
+    mov word ptr ds:[ResHandle], 0
+    mov ax, word ptr ds:[ExecMzHeader + 16h]
+    add ax, ds:[ExecChildSeg]
     add ax, 10h
-    mov ds:[39Fh], ax
-    mov ax, ds:[3B9h]
-    mov ds:[39Dh], ax
-    mov ax, ds:[3B3h]
-    add ax, ds:[389h]
+    mov word ptr ds:[ExecEntry + 2], ax
+    mov ax, word ptr ds:[ExecMzHeader + 14h]
+    mov word ptr ds:[ExecEntry], ax
+    mov ax, word ptr ds:[ExecMzHeader + 0Eh]
+    add ax, ds:[ExecChildSeg]
     add ax, 10h
-    mov ds:[3B3h], ax
+    mov word ptr ds:[ExecMzHeader + 0Eh], ax
     mov ax, 3521h
     int 21h
-    mov ds:[33Dh], bx
-    mov ds:[33Fh], es
+    mov word ptr ds:[OldInt21], bx
+    mov word ptr ds:[OldInt21 + 2], es
     mov dx, 31Ah
     mov ax, 2521h
     int 21h
-    mov ds, ds:[389h]
+    mov ds, ds:[ExecChildSeg]
     mov dx, 80h
     mov ah, 1Ah
     int 21h
     push cs
     pop ds
     cli
-    mov ds:[3A1h], sp
-    mov ds:[3A3h], ss
-    mov ss, ds:[3B3h]
-    mov sp, ds:[3B5h]
+    mov ds:[ExecSavedSp], sp
+    mov ds:[ExecSavedSs], ss
+    mov ss, word ptr ds:[ExecMzHeader + 0Eh]
+    mov sp, word ptr ds:[ExecMzHeader + 10h]
     sti
-    mov ax, ds:[389h]
+    mov ax, ds:[ExecChildSeg]
     mov es, ax
     mov ds, ax
     xor ax, ax
@@ -314,65 +320,82 @@ loc_155F3:
     mov si, ax
     mov di, ax
     mov bp, ax
-    jmp dword ptr cs:[39Dh]
-loc_1566F:
+    jmp dword ptr cs:[ExecEntry]
+ExecChildTerminated:
     push cs
     pop ds
-    mov ds:[343h], al
+    mov ds:[ExecExitCode], al
     cli
-    mov sp, ds:[3A1h]
-    mov ss, ds:[3A3h]
+    mov sp, ds:[ExecSavedSp]
+    mov ss, ds:[ExecSavedSs]
     sti
     mov ax, 2521h
-    lds dx, ds:[33Dh]
+    lds dx, dword ptr ds:[OldInt21]
     int 21h
     push cs
     pop ds
-    lds dx, ds:[38Dh]
+    lds dx, dword ptr ds:[ExecSavedDta]
     mov ah, 1Ah
     int 21h
     push cs
     pop ds
-    mov byte ptr ds:[344h], 0
-loc_15698:
-    cmp word ptr ds:[389h], 0
+    mov byte ptr ds:[ExecStatus], 0
+ExecCleanup:
+    cmp word ptr ds:[ExecChildSeg], 0
     je loc_156AD
-    mov es, ds:[389h]
+    mov es, ds:[ExecChildSeg]
     mov ah, 49h
     int 21h
-    mov word ptr ds:[389h], 0
+    mov word ptr ds:[ExecChildSeg], 0
 loc_156AD:
-    mov bx, ds:[744h]
+    mov bx, ds:[ResHandle]
     push cs
-    call loc_15A64
-    mov ax, ds:[343h]
+    call CloseHandleIfOpen
+    mov ax, word ptr ds:[ExecExitCode]
     pop ds
     retf
-loc_156BA:
+; INT 21h hook while a child runs: counts nested EXECs; the top-level exit (AH=4Ch)
+; returns to ExecChildTerminated. Everything else chains to OldInt21.
+ExecInt21Hook:
     cmp ah, 4Ch
     jne loc_156CE
-    cmp word ptr cs:[341h], 0
-    je loc_1566F
-    dec word ptr cs:[341h]
+    cmp word ptr cs:[ExecNestDepth], 0
+    je ExecChildTerminated
+    dec word ptr cs:[ExecNestDepth]
     jmp short loc_156D8
 loc_156CE:
     cmp ah, 4Bh
     jne loc_156D8
-    inc word ptr cs:[341h]
+    inc word ptr cs:[ExecNestDepth]
 loc_156D8:
-    jmp dword ptr cs:[33Dh]
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h
-loc_15760:
-    mov cs:[40Ch], bx
+    jmp dword ptr cs:[OldInt21]
+; ExecResourceProgram state (it runs an MZ program stored in the archive).
+OldInt21 dd 0
+; Nested EXEC (AH=4Bh) calls made by the child.
+ExecNestDepth dw 0
+; Returned together in AX: the child exit code and a status (0 ok, 1 open failed,
+; 2 read or seek failed, 3 no memory, 4 not MZ).
+ExecExitCode db 0
+ExecStatus db 0
+ExecProgramName db 64 dup (0)
+; Rest of the command string (copied to the child PSP tail).
+ExecTailPtr dd 0
+ExecChildSeg dw 0
+ExecParentPsp dw 0
+ExecSavedDta dd 0
+ExecHeaderBytes dd 0
+ExecImageBytes dd 0
+; One relocation record (offset, segment).
+ExecRelocEntry dd 0
+ExecEntry dd 0
+ExecSavedSp dw 0
+ExecSavedSs dw 0
+; The 1Bh-byte MZ header of the program being loaded.
+ExecMzHeader db 01Bh dup (0)
+; Read CX (low):DX (high) bytes from handle BX to ES:DI in chunks, stepping the
+; segment on wrap. AX = 0, CF clear, or AX = error, CF set.
+ReadHuge:
+    mov cs:[ReadHugeHandle], bx
     mov ax, cx
     or ax, dx
     je loc_157A3
@@ -423,9 +446,12 @@ loc_157A6:
     pop bx
     pop ds
     retf
-loc_157AC:
-    add ds:[bx + si], al
-    mov cs:[45Ch], bx
+; Handle saved by ReadHuge (never read).
+ReadHugeHandle dw 0
+; Write CX (low):DX (high) bytes from ES:SI to handle BX in chunks. The error path
+; pops in the wrong order (stack imbalance); no caller found.
+WriteHuge:
+    mov cs:[WriteHugeHandle], bx
     mov ax, cx
     or ax, dx
     je loc_157F3
@@ -477,16 +503,19 @@ loc_157F6:
     pop bx
     pop ds
     retf
-loc_157FC:
-    add ds:[bx + si], al
-    mov cs:[4D3h], bx
-    mov cs:[4D5h], ax
-    test word ptr cs:[73Ah], 4
+; Handle saved by WriteHuge (never read).
+WriteHugeHandle dw 0
+; Copy CX:DX bytes from handle BX to handle AX through a buffer (CopyChunkBytes at a
+; time; ResBufferPtr when ResOptions bit 4). No caller found; CopyChunkBytes is never set.
+CopyFileData:
+    mov cs:[CopySourceHandle], bx
+    mov cs:[CopyDestHandle], ax
+    test word ptr cs:[ResOptions], 4
     je loc_1581A
-    mov es, cs:[73Eh]
-    mov di, cs:[73Ch]
+    mov es, word ptr cs:[ResBufferPtr + 2]
+    mov di, word ptr cs:[ResBufferPtr]
 loc_1581A:
-    mov cs:[73Ch], di
+    mov word ptr cs:[ResBufferPtr], di
     mov ax, cx
     or ax, dx
     je loc_15868
@@ -501,17 +530,17 @@ loc_1582A:
     push di
     or dx, dx
     jne loc_15839
-    cmp cx, cs:[4D1h]
+    cmp cx, cs:[CopyChunkBytes]
     jb loc_1583E
 loc_15839:
-    mov cx, cs:[4D1h]
+    mov cx, cs:[CopyChunkBytes]
 loc_1583E:
     mov dx, di
     mov ah, 3Fh
     push cx
     int 21h
     jb loc_1586B
-    mov bx, cs:[4D5h]
+    mov bx, cs:[CopyDestHandle]
     mov ax, 4000h
     int 21h
     pop bp
@@ -538,59 +567,59 @@ loc_1586B:
     pop bx
     pop ds
     retf
-loc_15871:
-    add ds:[bx + si], al
-    add ds:[bx + si], al
-    add ds:[bx + si], al
+; CopyFileData chunk size and handles.
+CopyChunkBytes dw 0
+CopySourceHandle dw 0
+CopyDestHandle dw 0
 
 OpenResourceFile:
     push si
     push di
-    mov word ptr cs:[0746h], dx
-    mov word ptr cs:[0748h], ds
+    mov word ptr cs:[ResNamePtr], dx
+    mov word ptr cs:[ResNamePtr + 2], ds
     push ds
     push es
     push cs
     pop ds
-    test word ptr ds:[073Ah], 1
+    test word ptr ds:[ResOptions], 1
     je loc_15892
     jmp near ptr loc_15A21
 loc_15892:
-    mov word ptr ds:[0744h], 0
-    mov ax, word ptr ds:[0740h]
-    mov word ptr ds:[0742h], ax
-    mov word ptr ds:[0744h], 0
+    mov word ptr ds:[ResHandle], 0
+    mov ax, word ptr ds:[ResCurArchive]
+    mov word ptr ds:[ResSearchStart], ax
+    mov word ptr ds:[ResHandle], 0
 loc_158A4:
-    mov dx, word ptr ds:[0740h]
+    mov dx, word ptr ds:[ResCurArchive]
     mov ax, 03D02h
     int 021h
     jae loc_158B2
     jmp near ptr loc_159E0
 loc_158B2:
-    mov word ptr ds:[0744h], ax
-    mov word ptr ds:[07AAh], 0
-    mov word ptr ds:[07ACh], 0
-    mov dx, 074Ah
+    mov word ptr ds:[ResHandle], ax
+    mov word ptr ds:[ResArchiveBase], 0
+    mov word ptr ds:[ResArchiveBase + 2], 0
+    mov dx, offset ResEntryCount
     mov cx, 0Ch
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
     jae loc_158D4
     jmp near ptr loc_159E0
 loc_158D4:
-    cmp word ptr ds:[074Ah], 05A4Dh
+    cmp word ptr ds:[ResEntryCount], 05A4Dh
     jne loc_15919
-    mov ax, word ptr ds:[074Eh]
+    mov ax, word ptr ds:[ResSignature]
     dec ax
     add ax, ax
     mov dh, 0
     mov dl, ah
     mov ah, al
     mov al, dh
-    add ax, word ptr ds:[074Ch]
+    add ax, word ptr ds:[ResKey]
     adc dx, 0
-    mov word ptr ds:[07AAh], ax
-    mov word ptr ds:[07ACh], dx
+    mov word ptr ds:[ResArchiveBase], ax
+    mov word ptr ds:[ResArchiveBase + 2], dx
     mov cx, ax
     xchg cx, dx
     mov ax, 04200h
@@ -598,16 +627,16 @@ loc_158D4:
     jae loc_15906
     jmp near ptr loc_159E0
 loc_15906:
-    mov dx, 074Ah
+    mov dx, offset ResEntryCount
     mov cx, 0Ch
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
     jae loc_15919
     jmp near ptr loc_159E0
 loc_15919:
-    mov si, 074Eh
-    mov di, 0756h
+    mov si, offset ResSignature
+    mov di, offset ShadowSignature
     mov cx, 6
 loc_15922:
     lodsb
@@ -617,7 +646,7 @@ loc_15922:
 loc_1592A:
     inc di
     loop loc_15922
-    mov cx, word ptr ds:[074Ah]
+    mov cx, word ptr ds:[ResEntryCount]
     or cx, cx
     jne loc_15938
     jmp near ptr loc_159E0
@@ -626,29 +655,29 @@ loc_15938:
     jb loc_15941
     jmp near ptr loc_159E0
 loc_15941:
-    mov dx, 075Ch
-    mov cx, word ptr ds:[0754h]
-    mov bx, word ptr ds:[0744h]
+    mov dx, offset ResEntryBuf
+    mov cx, word ptr ds:[ResEntrySize]
+    mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
     jae loc_15955
     jmp near ptr loc_159E0
 loc_15955:
-    mov di, 075Ch
-    mov cx, word ptr ds:[0754h]
-    mov ax, word ptr ds:[074Ch]
+    mov di, offset ResEntryBuf
+    mov cx, word ptr ds:[ResEntrySize]
+    mov ax, word ptr ds:[ResKey]
 loc_1595F:
     xor byte ptr ds:[di], al
     inc di
     add al, ah
     loop loc_1595F
-    mov word ptr ds:[074Ch], ax
-    mov si, 075Ch
+    mov word ptr ds:[ResKey], ax
+    mov si, offset ResEntryBuf
     add si, 0Dh
-    les di, dword ptr ds:[0746h]
+    les di, dword ptr ds:[ResNamePtr]
     mov ah, 3
     push cs
-    call loc_15AA1
+    call StripDirectories
 loc_15979:
     cmp byte ptr es:[di], 020h
     jne loc_15982
@@ -676,20 +705,20 @@ loc_1599B:
     jne loc_15979
     or ah, ah
     jne loc_159D7
-    mov si, 075Ch
+    mov si, offset ResEntryBuf
     mov dx, word ptr ds:[si + 5]
     mov cx, word ptr ds:[si + 7]
-    add dx, word ptr ds:[07AAh]
-    adc cx, word ptr ds:[07ACh]
+    add dx, word ptr ds:[ResArchiveBase]
+    adc cx, word ptr ds:[ResArchiveBase + 2]
     mov ax, 04200h
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     int 021h
     jb loc_159E0
-    mov si, 075Ch
+    mov si, offset ResEntryBuf
     mov cx, word ptr ds:[si + 9]
     mov dx, word ptr ds:[si + 0Bh]
 loc_159CC:
-    mov ax, word ptr ds:[0744h]
+    mov ax, word ptr ds:[ResHandle]
     mov bx, ax
     clc
     pop es
@@ -698,32 +727,32 @@ loc_159CC:
     pop si
     retf
 loc_159D7:
-    dec word ptr ds:[074Ah]
+    dec word ptr ds:[ResEntryCount]
     je loc_159E0
     jmp near ptr loc_15941
 loc_159E0:
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     or bx, bx
     je loc_159EE
     mov ah, DOS_CLOSE_FILE
     int 021h
     jb loc_15A0C
 loc_159EE:
-    mov si, word ptr ds:[0740h]
+    mov si, word ptr ds:[ResCurArchive]
 loc_159F2:
     lodsb
     or al, al
     jne loc_159F2
     cmp byte ptr ds:[si], 0FFh
     jne loc_159FF
-    mov si, 07AEh
+    mov si, offset ResArchiveList
 loc_159FF:
-    mov word ptr ds:[0740h], si
-    cmp si, word ptr ds:[0742h]
+    mov word ptr ds:[ResCurArchive], si
+    cmp si, word ptr ds:[ResSearchStart]
     je loc_15A0C
     jmp near ptr loc_158A4
 loc_15A0C:
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     or bx, bx
     je loc_15A18
     mov ah, DOS_CLOSE_FILE
@@ -737,11 +766,11 @@ loc_15A18:
     pop si
     retf
 loc_15A21:
-    mov word ptr ds:[0744h], 0
-    les di, dword ptr ds:[0746h]
+    mov word ptr ds:[ResHandle], 0
+    les di, dword ptr ds:[ResNamePtr]
     mov ah, 2
     push cs
-    call loc_15AA1
+    call StripDirectories
     mov dx, di
     push ds
     push es
@@ -750,7 +779,7 @@ loc_15A21:
     int 021h
     pop ds
     jb loc_15A0C
-    mov word ptr ds:[0744h], ax
+    mov word ptr ds:[ResHandle], ax
     xor cx, cx
     mov dx, cx
     mov bx, ax
@@ -761,14 +790,14 @@ loc_15A21:
     push dx
     xor cx, cx
     mov dx, cx
-    mov bx, word ptr ds:[0744h]
+    mov bx, word ptr ds:[ResHandle]
     mov ax, 04200h
     int 021h
     pop dx
     pop cx
     jb loc_15A0C
     jmp near ptr loc_159CC
-loc_15A64:
+CloseHandleIfOpen:
     or bx, bx
     je loc_15A6C
     mov ah, 3Eh
@@ -776,7 +805,8 @@ loc_15A64:
 loc_15A6C:
     retf
 
-loc_15A6D:
+; Copy the program's own path (from its environment) to ResArchiveList.
+UseOwnExeAsArchive:
     mov ah, DOS_GET_PSP
     int 021h
     mov es, bx
@@ -797,7 +827,7 @@ loc_15A7A:
     pop ds
     pop es
     cld
-    mov di, 07AEh
+    mov di, offset ResArchiveList
 loc_15A95:
     movsb
     cmp byte ptr ds:[si - 1], 0
@@ -807,8 +837,9 @@ loc_15A95:
     pop ds
     retf
 
-loc_15AA1:
-    test word ptr cs:[073Ah], 2
+; With ResOptions bit 2: skip DS:SI (AH bit 1) or ES:DI (AH bit 2) past the last "\".
+StripDirectories:
+    test word ptr cs:[ResOptions], 2
     je loc_15AD9
     test ah, 1
     je loc_15AC0
@@ -840,21 +871,28 @@ loc_15AD7:
     mov di, bp
 loc_15AD9:
     retf
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,0AEh,07h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,053h,048h,041h,044h
-    db 04Fh,057h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
+; Library options (ResLibSetup AX bit 8000h): bit 1 open loose files instead of
+; searching archives, bit 2 strip directories, bit 4 CopyFileData uses ResBufferPtr.
+ResOptions dw 0
+ResBufferPtr dd 0
+; Archive being searched (in ResArchiveList) and where the search began.
+ResCurArchive dw offset ResArchiveList
+ResSearchStart dw 0
+ResHandle dw 0
+; Caller's DS:DX name pointer.
+ResNamePtr dd 0
+; 12-byte header read from an archive: first probed as an MZ header, then as the
+; SHADOW header {entry count, XOR key (low value, high step), signature, entry size}.
+ResEntryCount dw 0
+ResKey dw 0
+ResSignature db 6 dup (0)
+ResEntrySize dw 0
+ShadowSignature db 'SHADOW'
+; One decrypted directory entry: 5 unread bytes, data offset, length, name.
+ResEntryBuf db 04Eh dup (0)
+; File offset of the SHADOW header (0 when the file is not an MZ executable).
+ResArchiveBase dd 0
+; ASCIIZ archive names ending with 0FFh (set by ResLibSetup); no bounds check.
+ResArchiveList db 072h dup (0FFh)
 SEG153A ends
 end

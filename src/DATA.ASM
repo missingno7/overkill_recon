@@ -1789,7 +1789,7 @@ RevealColumns dw 0
 RevealCellOffset dw 0
 ; Rectangles left (5..1); 5 skips the waits.
 RevealRectsLeft dw 0
-; Archive name list handed to the resource library (loc_153A0, AX = 4000h).
+; Archive name list handed to the resource library (ResLibSetup, AX = 4000h).
 ResourceArchiveList db 'overkill',0,0FFh
 ; 1 while the attract demo runs.
 DemoActive dw 0
