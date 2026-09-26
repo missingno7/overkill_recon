@@ -66,6 +66,7 @@ public AdapterGeometry
 public AimQuadrantBits
 public AllCheatsFlag
 public AttributePatchPointers
+public AutoMoveExtraRecord
 public BlankMessage
 public BlockBytes
 public BonusKeysEnabled
@@ -169,6 +170,7 @@ public InvaderMarchLeft
 public InvaderNextDropStep
 public InvaderNextMarchLeft
 public InvaderSlotCursor
+public JitterAxisFields
 public JoyButtonSelect
 public JoyCalAbortSp
 public JoyCalCenterX
@@ -221,6 +223,14 @@ public LivesLeft
 public LoadIsEnc
 public MapResetLists
 public MapScrollPos
+public MarchDelay
+public MarchDropNow
+public MarchEdgeHit
+public MarchFireDelay
+public MarchFireNow
+public MarchStepNow
+public MarchStepX
+public MarchWord98AC
 public MinusSlotA968
 public MinusSlotA96C
 public ModuleSoundEnabled
@@ -243,6 +253,8 @@ public PageListPtr
 public PaymentFileName
 public PaymentHelpRow
 public PendingSpriteFile
+public PingPongFrames4
+public PingPongFrames8
 public PlaqueFiles
 public PlayfieldRowOffsets
 public PlusSlotA966
@@ -265,6 +277,7 @@ public ReadErrorMessage
 public RecordRowOffsets
 public RedefPageList
 public ResidentFiles
+public SavedAllocStrategy
 public SavedSettings
 public SavedUpgradeSlot
 public ScoreBcd
@@ -322,11 +335,24 @@ public TextColor
 public TextColumn
 public TextInGraphics
 public TextRowOffset
+public TheEndBytes
 public TimerVectorInstalled
+public Type21Path
+public Type28FrameRamp
+public Type34SpriteByLevel
+public Type37Speed
+public Type41Path
+public Type43Path
+public Type44Path
+public Type45Path
+public Type4APath
+public Type51Path
 public Type86Frames
 public Type86FramesDir6
 public Type88Frames
 public Type88FramesDir6
+public Type93KilledLatch
+public Type93KilledPulse
 public UpgradeHitX
 public UpgradeHitY
 public UpgradeSlot0
@@ -439,7 +465,10 @@ MsgNotEnoughMemory db 'Not enough memory$'
 Sprite8Bytes dw 0
 Sprite16Bytes dw 0
 Sprite32Bytes dw 0
-GeometryWords dw 35 dup (0)
+GeometryWords dw 0
+; Size in bytes of the THEND.BIC bank.
+TheEndBytes dw 0
+    dw 33 dup (0)
 BlockBytes dw 0
 ; Per-adapter geometry (CGA, EGA, Tandy): 39 words copied to the active block at
 ; Sprite8Bytes (DS:1024), then PlayfieldRowBytes, WideRowBytes and ScreenSegment.
@@ -1073,22 +1102,35 @@ UpgradeSlot0 dw 0, 0, 0Fh, offset UpgradeList0, 0
 UpgradeSlot1 dw 0, 0, 11h, offset UpgradeList1, 0
 UpgradeSlot2 dw 0, 0, 13h, offset UpgradeList2, 0
 UpgradeSlot3 dw 0, 0, 15h, offset UpgradeList3, 0
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,01h,02h,03h,04h
-    db 05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,04h,03h,02h,01h
-    db 00h,00h,00h,00h,01h,00h,01h,00h,02h,00h,02h,00h,01h,00h,01h,00h
-    db 00h,00h,00h,00h,01h,00h,02h,00h,01h,00h,047h,01h,0BEh,00h,0BEh,00h
-    db 045h,01h,045h,01h,045h,01h,047h,01h,045h,01h,00h,00h,04h,00h,02h,00h
-    db 080h,00h,040h,00h,040h,00h,090h,00h,080h,00h,090h,00h,0A0h,00h,030h,00h
-    db 030h,00h,0A0h,00h,050h,00h,0A0h,00h,030h,075h,060h,00h,0A0h,00h,060h,00h
-    db 090h,00h,050h,00h,00h,00h,050h,00h,00h,00h,010h,00h,080h,00h,010h,00h
-    db 030h,075h,060h,00h,0A0h,00h,070h,00h,090h,00h,080h,00h,00h,00h,080h,00h
-    db 00h,00h,0C0h,00h,080h,00h,0C0h,00h,030h,075h,070h,00h,080h,00h,00h,00h
-    db 0A0h,00h,060h,00h,070h,00h,060h,00h,030h,00h,0C0h,00h,00h,00h,0C0h,00h
-    db 030h,00h,060h,00h,060h,00h,090h,00h,030h,075h,060h,00h,060h,00h,0A0h,00h
-    db 030h,075h,060h,00h,0B0h,00h,0C0h,00h,0B0h,00h,00h,00h,0A0h,00h,00h,00h
-    db 0A0h,00h,0C0h,00h,090h,00h,0C0h,00h,090h,00h,00h,00h,080h,00h,00h,00h
-    db 080h,00h,0C0h,00h,030h,075h,060h,00h,0FFh,0FFh,00h,00h
+; Frame offsets over REC_DIRECTION 0..17h for type 28h (rise, hold, fall).
+Type28FrameRamp db 0, 0, 1, 2, 3, 4, 12 dup (5), 4, 3, 2, 1, 0, 0
+; Ping-pong frame offsets, indexed by counters (DS:232E >> 3, and 0..3 counters).
+PingPongFrames8 dw 0, 1, 1, 2, 2, 1, 1, 0
+PingPongFrames4 dw 0, 1, 2, 1
+; Sprite base of type 34h per LevelIndex (entry 7 has no confirmed use).
+Type34SpriteByLevel dw 147h, 0BEh, 0BEh, 145h, 145h, 145h, 147h, 145h
+; Vertical speed of type 37h (1, 3 or 5 by X).
+Type37Speed dw 0
+; Record fields picked at random for one-axis jitter (types 40h, 68h, 69h).
+JitterAxisFields dw REC_X, REC_Y
+; (Y, X) paths for type 12h movement (REC_FIELD_36), set by the named types.
+Type41Path dw 80h, 40h,  40h, 90h,  80h, 90h,  0A0h, 30h
+    dw 30h, 0A0h,  50h, 0A0h,  LEADER_END_Y, 60h
+Type43Path dw 0A0h, 60h,  90h, 50h,  0h, 50h,  0h, 10h
+    dw 80h, 10h,  LEADER_END_Y, 60h
+Type44Path dw 0A0h, 70h,  90h, 80h,  0h, 80h,  0h, 0C0h
+    dw 80h, 0C0h,  LEADER_END_Y, 70h
+Type45Path dw 80h, 0h,  0A0h, 60h,  70h, 60h,  30h, 0C0h
+    dw 0h, 0C0h,  30h, 60h,  60h, 90h,  LEADER_END_Y, 60h
+Type4APath dw 60h, 0A0h,  LEADER_END_Y, 60h
+Type51Path dw 0B0h, 0C0h,  0B0h, 0h,  0A0h, 0h,  0A0h, 0C0h
+    dw 90h, 0C0h,  90h, 0h,  80h, 0h,  80h, 0C0h
+    dw LEADER_END_Y, 60h
+; Pool A record added by the auto-move sequence (MoveModeA47C 2), FFFFh = none;
+; drawn last while MoveModeA47C is nonzero.
+AutoMoveExtraRecord dw 0FFFFh
+; DOS allocation strategy saved at startup (loc_0F980), restored on exit (loc_0F99D).
+SavedAllocStrategy dw 0
 ; Cheat flags, set by the typed codes below (CheckCheatCodes).
 WhatOilShortageFlag db 0
 ; Keep the life count when a life is lost.
@@ -1135,16 +1177,33 @@ CheatEveryDayIDie dw offset CheatEveryDayIDie + 2
     db SCAN_E, SCAN_V, SCAN_E, SCAN_R, SCAN_Y, SCAN_D, SCAN_A, SCAN_Y, SCAN_I, SCAN_D
     db SCAN_I, SCAN_E, 0
     even
+; Looping (Y, X) path of the level-4 type 21h leader (loc_1009C, cursor in CS at
+; Type21PathCursor): a child spawns at each waypoint; FFFFh restarts it.
+Type21Path dw 10h, 10h,  40h, 40h,  10h, 40h,  20h, 20h,  0h, 0h
+    dw 50h, 30h,  10h, 70h,  30h, 90h,  40h, 90h,  20h, 0B0h
+    dw 0h, 70h,  20h, 50h,  40h, 0A0h,  50h, 0C0h,  20h, 90h
+    dw 50h, 60h,  40h, 40h,  30h, 30h,  20h, 10h,  30h, 90h
+    dw 10h, 0C0h,  0h, 0B0h,  30h, 20h,  30h, 80h,  10h, 0h
+    dw 30h, 60h,  40h, 10h,  0h, 60h,  20h, 90h,  40h, 80h
+    dw 0FFFFh
+; Level-5 march (loc_0A940 drives it, TypeHandler80 marchers follow).
+MarchEdgeHit db 0
+MarchStepNow db 0
+MarchDropNow db 0
+; Frames until the next step (reload 0Ah/6/4/1 by EncounterLiveCount).
+MarchDelay db 0
+MarchFireNow db 0
+; Frames until the next shot (reload 78h..28h by EncounterLiveCount).
+MarchFireDelay db 0
+; Latched when a type 93h record is removed; turned into a one-frame pulse.
+Type93KilledLatch db 0
+Type93KilledPulse db 0
+; X step of the marchers, negated at each edge.
+MarchStepX dw 2
+; Written FFFFh by loc_10044; no reader found.
+MarchWord98AC dw 0FFFFh
 ; UNKNOWN: not yet classified as code or data
-    db 010h,00h,010h,00h,040h,00h,040h,00h
-    db 010h,00h,040h,00h,020h,00h,020h,00h,00h,00h,00h,00h,050h,00h,030h,00h
-    db 010h,00h,070h,00h,030h,00h,090h,00h,040h,00h,090h,00h,020h,00h,0B0h,00h
-    db 00h,00h,070h,00h,020h,00h,050h,00h,040h,00h,0A0h,00h,050h,00h,0C0h,00h
-    db 020h,00h,090h,00h,050h,00h,060h,00h,040h,00h,040h,00h,030h,00h,030h,00h
-    db 020h,00h,010h,00h,030h,00h,090h,00h,010h,00h,0C0h,00h,00h,00h,0B0h,00h
-    db 030h,00h,020h,00h,030h,00h,080h,00h,010h,00h,00h,00h,030h,00h,060h,00h
-    db 040h,00h,010h,00h,00h,00h,060h,00h,020h,00h,090h,00h,040h,00h,080h,00h
-    db 0FFh,0FFh,00h,00h,00h,00h,00h,00h,00h,00h,02h,00h,0FFh,0FFh,00h,00h
+    db 00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 InputBits db 00h
 ; UNKNOWN: not yet classified as code or data

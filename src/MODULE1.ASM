@@ -126,6 +126,7 @@ extrn TextColor:byte
 extrn TextColumn:byte
 extrn TextInGraphics:word
 extrn TextRowOffset:word
+extrn TheEndBytes:word
 extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
@@ -337,6 +338,10 @@ extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
 extrn RequestModuleMusic:near
 extrn ScreenSegment:word
+extrn ScrollBandBytes:word
+extrn ScrollMirrorDistance:word
+extrn ScrollStartOffset:word
+extrn ScrollWrapOffset:word
 extrn SfxTimerTick:near
 extrn ShipSegment:word
 extrn ShutdownGame:near
@@ -1243,14 +1248,14 @@ AllocateBuffers:
     mov cx, 010h
     mov ax, word ptr cs:[PlayfieldRowBytes]
     mul cx
-    mov word ptr cs:[095A2h], ax
-    mov word ptr cs:[095BEh], ax
+    mov word ptr cs:[ScrollStartOffset], ax
+    mov word ptr cs:[ScrollBandBytes], ax
     mov bx, ax
     mov cx, 0Dh
     mul cx
-    mov word ptr cs:[095C2h], ax
+    mov word ptr cs:[ScrollMirrorDistance], ax
     add ax, bx
-    mov word ptr cs:[095C0h], ax
+    mov word ptr cs:[ScrollWrapOffset], ax
     mov bx, 01000h
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
@@ -1334,7 +1339,7 @@ loc_00981:
     jmp near ptr ShowOutOfMemoryAndExit
 loc_009A5:
     mov word ptr cs:[ManExplSegment], ax
-    mov ax, word ptr ds:[GeometryWords + 002h]
+    mov ax, word ptr ds:[TheEndBytes]
     shr ax, 1
     shr ax, 1
     shr ax, 1
