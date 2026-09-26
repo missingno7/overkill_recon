@@ -6,3 +6,5 @@ LEVEL_COUNT equ 06h
 INITIAL_LIVES equ 03h
 ; 8-digit packed BCD score, least significant byte first; compared with the
 ; high-score entries (+0Ch..+0Fh) when the game ends.
+; Waypoint Y that ends a leader script (never reached).
+LEADER_END_Y equ 7530h

@@ -10,6 +10,9 @@ locals
 extrn AimQuadrantBits:word
 extrn AllCheatsFlag:byte
 extrn BonusKeysEnabled:byte
+extrn BossPath:word
+extrn BurstOriginX:word
+extrn BurstOriginY:word
 extrn ByteAttributeTable:byte
 extrn CheckCheatCodes:far
 extrn ChildSpawnThrottle:byte
@@ -18,14 +21,25 @@ extrn ChooseSlotPositions:word
 extrn ClampXHighSeen:byte
 extrn ClampXLowSeen:byte
 extrn CountGate2324:word
+extrn DescentTargetX:word
 extrn DifficultyPositions:word
 extrn DifficultySetting:word
 extrn DirectionFromQuadrant:byte
+extrn DispatchRecordX:word
+extrn DispatchRecordY:word
 extrn EmsAvailable:byte
 extrn EmsDeviceName:byte
 extrn EmsFreePages:word
 extrn EmsPageFrame:word
 extrn EmsTotalPages:word
+extrn EncounterEndDelay:word
+extrn EncounterLiveCount:word
+extrn EncounterTicks:word
+extrn FallerColumnCursor:word
+extrn FallerColumns:word
+extrn FallerColumnsEnd:word
+extrn FallerVariants:word
+extrn FallerVariantsAlt:word
 extrn FarCallMainNearViaAX:far
 extrn FileBufferOffset:word
 extrn FileBufferSegment:word
@@ -38,6 +52,9 @@ extrn FileStatus:word
 extrn File_CHOOSE_ENC:byte
 extrn File_LEVSCR_ENC:byte
 extrn File_WINDOW_BIC:byte
+extrn FormationSlotCursor:word
+extrn FormationSlots:word
+extrn FramesSinceInvaderSpawn:word
 extrn GameOverRequest:word
 extrn HistoryCursor47:word
 extrn HistoryEnd:word
@@ -50,15 +67,30 @@ extrn HistoryWriteCursor:word
 extrn ImageEnd:byte
 extrn InputBits:byte
 extrn InstallCriticalErrorVector:far
+extrn InvaderDropStep:word
+extrn InvaderFormation:word
+extrn InvaderFormationEnd:word
+extrn InvaderMarchLeft:word
+extrn InvaderNextDropStep:word
+extrn InvaderNextMarchLeft:word
+extrn InvaderSlotCursor:word
 extrn KeepLivesFlag:byte
 extrn KeyDownTable:byte
 extrn KeyLastMakeCode:byte
+extrn LeaderScript13End:word
+extrn LeaderScript15End:word
+extrn LeaderScript1CEnd:word
+extrn LeaderScript1FEnd:word
+extrn LeaderScript7DEnd:word
+extrn LeaderScript7EEnd:word
+extrn LeaderScriptCursor:word
 extrn LevelIndex:word
 extrn LevelScriptClock:word
 extrn LevelSkipEnabled:byte
 extrn LifeLostRequest:word
 extrn LivesLeft:word
 extrn LoadIsEnc:byte
+extrn MapScrollPos:word
 extrn MinusSlotA968:word
 extrn MinusSlotA96C:word
 extrn ModuleSoundEnabled:byte
@@ -90,12 +122,20 @@ extrn RapidFireEnabled:byte
 extrn ResidentFiles:word
 extrn ScoreBcd:byte
 extrn ScrollDeltaY:word
+extrn SegBossActive:word
+extrn SegBossAnchor:word
+extrn SegBossCore:word
+extrn SegBossPart77:word
+extrn SegBossPart79:word
+extrn SegBossPathCursor:word
+extrn SegBossX:word
+extrn SegBossY:word
 extrn SequenceFrameCount:word
 extrn SfxActive:byte
 extrn SfxCommandTable:word
 extrn SfxEffectTable:word
 extrn SfxEnabled:byte
-extrn SfxNoteDivisors:byte
+extrn SfxNoteDivisors:word
 extrn SfxRequest:byte
 extrn SfxTickPhase:byte
 extrn SfxVoiceA:byte
@@ -108,9 +148,18 @@ extrn SoundModuleNameTandy:byte
 extrn SoundModuleSelect:byte
 extrn SoundModuleSlot:far
 extrn StackTop:word
+extrn StarLayerTick1:word
+extrn StarLayerTick2:word
+extrn StarLayerTick3:word
+extrn Stars:word
 extrn StateData:byte
 extrn TargetSearchCursor:word
+extrn Type86Frames:word
+extrn Type86FramesDir6:word
+extrn Type88Frames:word
+extrn Type88FramesDir6:word
 extrn VideoBiosModeTable:byte
+extrn WalkerFacingStep:word
 extrn WhatOilShortageFlag:byte
 extrn WinScreenPageList:word
 extrn XAdjustPathTaken:word
@@ -188,9 +237,12 @@ extrn CountXReturn:near
 extrn DrawOffsetFromPlayfieldRow:near
 extrn DrawOffsetFromScreenRow:near
 extrn DrawOffsetFromWideRow:near
+extrn DrawStars:near
+extrn EraseStars:near
 extrn FindFreeRecordPoolA:near
 extrn FindFreeRecordPoolB:near
 extrn FlushBiosKeyboardBuffer:near
+extrn InitStars:near
 extrn InstallKeyboardVector09:near
 extrn InstallTimerVector08:near
 extrn LoadDestOffset:word
@@ -208,6 +260,7 @@ extrn PanelImageOffsets:word
 extrn PlaqueImageOffset:word
 extrn PollInputBits:near
 extrn ReadIndexedByteAttribute:near
+extrn RestartAtCheckpoint:near
 extrn ShowFatalErrorAndExit:near
 extrn TypeHandler13:near
 extrn TypeHandler24:near
@@ -279,11 +332,7 @@ extrn loc_00B3E:near
 extrn loc_00D42:near
 extrn loc_00E9C:near
 extrn loc_04A65:near
-extrn loc_04C76:near
-extrn loc_04CED:near
-extrn loc_04D64:near
 extrn loc_04D95:near
-extrn loc_04DBF:near
 extrn loc_04F37:near
 extrn loc_04F57:near
 extrn loc_04FC3:near
@@ -480,7 +529,7 @@ loc_0966E:
     call LoadSoundModule
     call AllocateBuffers
     call BuildRowTables
-    call loc_04C76
+    call InitStars
     call loc_054C0
     call loc_00D42
     mov word ptr cs:[LoadNamePtr], offset File_WINDOW_BIC
@@ -568,9 +617,9 @@ StartLife:
     mov word ptr ds:[020A6h], 020A8h
     call loc_0C57C
     call loc_0B5A9
-    mov word ptr ds:[0A8C2h], 0
+    mov word ptr ds:[SegBossActive], 0
     call loc_05F43
-    cmp word ptr ds:[02350h], 09Ch
+    cmp word ptr ds:[MapScrollPos], 09Ch
     jne GameFrame
     call RunTimedSequenceUntilPrimary
 ; One game frame, paced by the timer (WaitByteCS066B): update and draw, act on the
@@ -906,7 +955,7 @@ loc_09B07:
     ret
 loc_09B11:
     mov word ptr ss:[bp], 0
-    call loc_04DBF
+    call RestartAtCheckpoint
     mov word ptr ds:[LifeLostRequest], 1
     cmp word ptr ds:[0A97Ah], 0
     je loc_09B27
@@ -951,7 +1000,7 @@ loc_09B8D:
     je loc_09B97
     call DecRecordXTwice
 loc_09B97:
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     jbe loc_09BA9
     test byte ptr ds:[InputBits], IN_BUTTON_SECONDARY
     je loc_09BA9
@@ -972,7 +1021,7 @@ loc_09BCA:
     cmp word ptr ds:[MoveModeA47C], 0
     jne loc_09BDF
     call loc_09CB6
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     jbe loc_09BDF
     call AdjustRecordXFromCounts
 loc_09BDF:
@@ -991,7 +1040,7 @@ StoreApplyHistoryAndConditionalPlacement:
 ; previous clamp feedback survives; history writes do not clear it.
     cmp word ptr ds:[0BDACh], 0
     jne loc_09BF7
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     jbe loc_09BFA
 loc_09BF7:
     call PlaceFourRecordsFromOffsetTables
@@ -1496,7 +1545,7 @@ loc_0A067:
     ret
 loc_0A084:
     mov word ptr ds:[0A980h], 1
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A0A6
     cmp word ptr ds:[0BDACh], 0
     jne loc_0A0A6
@@ -2067,7 +2116,7 @@ loc_0A612:
 ; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from
 ; call stack. Requires valid callee state; normal caller record/state do not overlap.
 UpdatePlacementXOffsetsAtRecordEdges:
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A61F
     ret
 loc_0A61F:
@@ -2117,9 +2166,9 @@ loc_0A66F:
     je loc_0A679
     jmp near ptr loc_0A6FD
 loc_0A679:
-    cmp word ptr ds:[0A47Eh], 0
+    cmp word ptr ds:[EncounterLiveCount], 0
     jne loc_0A6FD
-    cmp word ptr ds:[0A480h], 0
+    cmp word ptr ds:[EncounterEndDelay], 0
     jne loc_0A6FD
     call loc_0A6FE
     cmp word ptr ds:[0234Eh], 0
@@ -2134,7 +2183,7 @@ loc_0A679:
     push es
     push ds
     mov si, 0A982h
-    cmp word ptr ds:[02350h], 0E52h
+    cmp word ptr ds:[MapScrollPos], 0E52h
     jne loc_0A6A8
     call loc_0C591
 loc_0A6A8:
@@ -2147,7 +2196,7 @@ loc_0A6A8:
     pop cx
     pop bx
     pop ax
-    cmp word ptr ds:[02350h], 0EA0h
+    cmp word ptr ds:[MapScrollPos], 0EA0h
     jne loc_0A6FD
     mov word ptr ds:[0A47Ch], 1
     call loc_062AA
@@ -2191,7 +2240,7 @@ loc_0A714:
     jne loc_0A72F
     cmp word ptr ds:[02354h], 0
     je loc_0A72F
-    add word ptr ds:[02350h], 0Dh
+    add word ptr ds:[MapScrollPos], 0Dh
     dec word ptr ds:[LevelScriptClock]
 loc_0A72F:
     mov ax, word ptr cs:[095BEh]
@@ -2212,13 +2261,13 @@ loc_0A746:
 
 loc_0A74E:
     call loc_0A7EB
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A765
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A765
     mov byte ptr ds:[SfxRequest], 7
 loc_0A765:
-    add word ptr ds:[02350h], 0Dh
+    add word ptr ds:[MapScrollPos], 0Dh
     dec word ptr ds:[LevelScriptClock]
     mov al, 5
     cmp word ptr ds:[LevelScriptClock], 4
@@ -2231,7 +2280,7 @@ loc_0A77A:
 loc_0A781:
     push bp
     mov word ptr ds:[02352h], 1
-    cmp word ptr ds:[02350h], 0
+    cmp word ptr ds:[MapScrollPos], 0
     je loc_0A744
     add word ptr ds:[ScrollDeltaY], -1
     cmp word ptr ds:[0234Eh], 0
@@ -2243,7 +2292,7 @@ loc_0A79E:
     jne loc_0A7B9
     cmp word ptr ds:[02354h], 1
     je loc_0A7B9
-    sub word ptr ds:[02350h], 0Dh
+    sub word ptr ds:[MapScrollPos], 0Dh
     inc word ptr ds:[LevelScriptClock]
 loc_0A7B9:
     mov ax, word ptr cs:[095C0h]
@@ -2258,7 +2307,7 @@ loc_0A7C6:
 
 loc_0A7D0:
     call loc_0A7EB
-    sub word ptr ds:[02350h], 0Dh
+    sub word ptr ds:[MapScrollPos], 0Dh
     inc word ptr ds:[LevelScriptClock]
     mov word ptr ds:[02354h], 1
     ret
@@ -2284,19 +2333,19 @@ loc_0A7EB:
     ret
 
 loc_0A81B:
-    mov bx, word ptr ds:[02350h]
+    mov bx, word ptr ds:[MapScrollPos]
     cmp word ptr ds:[02352h], 1
     jne loc_0A82D
     sub bx, 0A9h
     jmp near ptr loc_05A7E
 loc_0A82D:
     mov word ptr ds:[0A408h], bx
-    cmp word ptr ds:[02350h], 0E52h
+    cmp word ptr ds:[MapScrollPos], 0E52h
     ja loc_0A83F
     call loc_07948
     call loc_04A65
 loc_0A83F:
-    mov bx, word ptr ds:[02350h]
+    mov bx, word ptr ds:[MapScrollPos]
     jmp near ptr loc_05A7E
 
 loc_0A846:
@@ -2324,7 +2373,7 @@ loc_0A861:
 loc_0A873:
     pop cx
     loop loc_0A861
-    call loc_04CED
+    call DrawStars
     mov cx, POOL_B_COUNT
 loc_0A87C:
     push cx
@@ -2347,7 +2396,7 @@ loc_0A894:
     je loc_0A8C1
     cmp word ptr ds:[0BDACh], 1
     je loc_0A8B8
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8B8
     cmp word ptr ss:[bp + REC_KIND], 1
     je loc_0A8C1
@@ -2368,7 +2417,7 @@ loc_0A8C7:
     je loc_0A8F4
     cmp word ptr ds:[0BDACh], 1
     je loc_0A8EB
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8EB
     cmp word ptr ss:[bp + REC_KIND], 1
     je loc_0A8F4
@@ -2415,19 +2464,19 @@ loc_0A927:
 loc_0A939:
     pop cx
     loop loc_0A927
-    call loc_04D64
+    call EraseStars
     ret
 
 loc_0A940:
-    cmp word ptr ds:[0A8CEh], -1
+    cmp word ptr ds:[FramesSinceInvaderSpawn], -1
     je loc_0A94B
-    inc word ptr ds:[0A8CEh]
+    inc word ptr ds:[FramesSinceInvaderSpawn]
 loc_0A94B:
-    mov ax, word ptr ds:[0A8C8h]
-    mov word ptr ds:[0A8C6h], ax
-    mov ax, word ptr ds:[0A8CCh]
-    mov word ptr ds:[0A8CAh], ax
-    mov word ptr ds:[0A8CCh], 0
+    mov ax, word ptr ds:[InvaderNextMarchLeft]
+    mov word ptr ds:[InvaderMarchLeft], ax
+    mov ax, word ptr ds:[InvaderNextDropStep]
+    mov word ptr ds:[InvaderDropStep], ax
+    mov word ptr ds:[InvaderNextDropStep], 0
     cmp word ptr ds:[LevelIndex], 5
     jne loc_0A9BD
     cmp byte ptr ds:[098A2h], 0
@@ -2444,7 +2493,7 @@ loc_0A980:
     je loc_0A9A9
     dec byte ptr ds:[098A5h]
     jne loc_0A9B3
-    mov ax, word ptr ds:[0A47Eh]
+    mov ax, word ptr ds:[EncounterLiveCount]
     mov cl, 0Ah
     cmp ax, 010h
     ja loc_0A9A9
@@ -2470,7 +2519,7 @@ loc_0A9BD:
     mov byte ptr ds:[098A8h], 0
     mov byte ptr ds:[098A9h], 1
 loc_0A9D3:
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     jne loc_0A9DD
     call loc_0F797
 loc_0A9DD:
@@ -2504,7 +2553,7 @@ loc_0AA10:
 loc_0AA22:
     pop cx
     loop loc_0AA10
-    call far ptr loc_10112
+    call far ptr MoveStars
     ret
 
 loc_0AA2B:
@@ -2547,7 +2596,7 @@ loc_0AA71:
     sub ax, 02Ch
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
     jg loc_0AA44
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     jne loc_0AAAB
     mov ax, word ptr ss:[bp + 2]
     add ax, 8
@@ -2833,7 +2882,7 @@ loc_0ACF9:
 loc_0AD04:
     cmp word ptr ds:[0BDACh], 1
     je loc_0AD14
-    cmp word ptr ds:[02350h], 0B6h
+    cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0AD14
     ret
 loc_0AD14:
@@ -3570,10 +3619,10 @@ loc_0B402:
 loc_0B40E:
     mov ax, ss:[bp + REC_X]
     add ax, dx
-    mov ds:[0A8B2h], ax
+    mov ds:[BurstOriginX], ax
     mov ax, ss:[bp + REC_Y]
     add ax, dx
-    mov ds:[0A8B4h], ax
+    mov ds:[BurstOriginY], ax
     mov cx, 8
 loc_0B421:
     push cx
@@ -3586,9 +3635,9 @@ loc_0B421:
     mov ds:[bx + 6], cx
     add cx, 8
     mov ds:[bx + 8], cx
-    mov ax, ds:[0A8B2h]
+    mov ax, ds:[BurstOriginX]
     mov ds:[bx + 4], ax
-    mov ax, ds:[0A8B4h]
+    mov ax, ds:[BurstOriginY]
     mov ds:[bx + 2], ax
     mov word ptr ds:[bx], 1
     mov word ptr ds:[bx + 1Eh], 0
@@ -3623,11 +3672,11 @@ loc_0B486:
     pop bp
     ret
 loc_0B48B:
-    cmp word ptr ds:[0A7A0h], 32h
+    cmp word ptr ds:[EncounterTicks], 32h
     jae loc_0B495
     jmp near ptr loc_0B615
 loc_0B495:
-    cmp word ptr ds:[0A7A0h], 5Ah
+    cmp word ptr ds:[EncounterTicks], 5Ah
     jae loc_0B49F
     jmp near ptr loc_0BC4B
 loc_0B49F:
@@ -3638,10 +3687,10 @@ loc_0B4A2:
     je loc_0B4AD
     jmp near ptr loc_0BC4B
 loc_0B4AD:
-    mov word ptr ds:[0A8B6h], 0
-    mov word ptr ds:[0A8B8h], 0
-    mov word ptr ds:[0A8C2h], 1
-    mov word ptr ds:[0A8C4h], 0D2D4h
+    mov word ptr ds:[SegBossX], 0
+    mov word ptr ds:[SegBossY], 0
+    mov word ptr ds:[SegBossActive], 1
+    mov word ptr ds:[SegBossPathCursor], offset BossPath
     mov word ptr ss:[bp + REC_TYPE], 78h
     mov word ptr ss:[bp + REC_SPRITE], 22h
     mov word ptr ss:[bp + REC_HIT_POINTS], 0C8h
@@ -3649,14 +3698,14 @@ loc_0B4AD:
     mov word ptr ss:[bp + REC_Y], 0
     mov word ptr ss:[bp + REC_SIZE_CLASS], 2
     mov word ptr ss:[bp + REC_SLOT_INDEX], 0FFFFh
-    mov ds:[0A8BEh], bp
+    mov ds:[SegBossCore], bp
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_0B54A
     call far ptr loc_10079
     mov word ptr ds:[bx + 18h], 76h
     mov word ptr ds:[bx + 8], 20h
-    mov ds:[0A8BAh], bx
+    mov ds:[SegBossAnchor], bx
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_0B54A
@@ -3664,7 +3713,7 @@ loc_0B4AD:
     mov word ptr ds:[bx + 18h], 77h
     mov word ptr ds:[bx + 8], 21h
     mov word ptr ds:[bx + 4], 20h
-    mov ds:[0A8BCh], bx
+    mov ds:[SegBossPart77], bx
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_0B54A
@@ -3672,10 +3721,10 @@ loc_0B4AD:
     mov word ptr ds:[bx + 18h], 79h
     mov word ptr ds:[bx + 8], 23h
     mov word ptr ds:[bx + 4], 20h
-    mov ds:[0A8C0h], bx
+    mov ds:[SegBossPart79], bx
     jmp near ptr loc_0BC4B
 loc_0B54A:
-    mov word ptr ds:[0A47Eh], 0
+    mov word ptr ds:[EncounterLiveCount], 0
     call loc_062AA
     jmp near ptr loc_0BC4B
 TypeHandler21:
@@ -3691,11 +3740,11 @@ loc_0B56A:
     jne loc_0B574
     jmp near ptr loc_0B4A2
 loc_0B574:
-    cmp word ptr ds:[0A7A0h], 0C8h
+    cmp word ptr ds:[EncounterTicks], 0C8h
     jae loc_0B57F
     jmp near ptr loc_0B615
 loc_0B57F:
-    cmp word ptr ds:[0A7A0h], 0F0h
+    cmp word ptr ds:[EncounterTicks], 0F0h
     jae loc_0B58A
     jmp near ptr loc_0BC4B
 loc_0B58A:
@@ -3710,12 +3759,12 @@ loc_0B58A:
     jmp near ptr loc_0BC4B
 
 loc_0B5A9:
-    mov word ptr ds:[0A8D0h], 0A8D2h
-    mov word ptr ds:[0A8C8h], 0
-    mov word ptr ds:[0A8CCh], 0
+    mov word ptr ds:[InvaderSlotCursor], offset InvaderFormation
+    mov word ptr ds:[InvaderNextMarchLeft], 0
+    mov word ptr ds:[InvaderNextDropStep], 0
     ret
 loc_0B5BC:
-    dec word ptr ds:[0A47Eh]
+    dec word ptr ds:[EncounterLiveCount]
     mov word ptr ss:[bp + REC_TYPE], 64h
     mov ax, ds:[2380h]
     mov ss:[bp + REC_X], ax
@@ -3723,10 +3772,10 @@ loc_0B5BC:
     mov word ptr ss:[bp + REC_SPRITE], 8Eh
     jmp near ptr loc_0BC45
 loc_0B5D8:
-    mov word ptr ds:[0A8CEh], 0
-    cmp word ptr ds:[0A8D0h], 0A932h
+    mov word ptr ds:[FramesSinceInvaderSpawn], 0
+    cmp word ptr ds:[InvaderSlotCursor], offset InvaderFormationEnd
     je loc_0B5BC
-    mov si, ds:[0A8D0h]
+    mov si, ds:[InvaderSlotCursor]
     push si
     call loc_081F4
     pop si
@@ -3739,8 +3788,8 @@ loc_0B5D8:
     mov ds:[bx + 32h], ax
     mov word ptr ds:[bx + 18h], 61h
     mov word ptr ds:[bx + 8], 0E7h
-    inc word ptr ds:[0A47Eh]
-    add word ptr ds:[0A8D0h], 4
+    inc word ptr ds:[EncounterLiveCount]
+    add word ptr ds:[InvaderSlotCursor], 4
 loc_0B612:
     jmp near ptr loc_0BC4B
 loc_0B615:
@@ -3776,15 +3825,15 @@ loc_0B65E:
     mov ds:[bx + 1Ch], ax
     jmp near ptr loc_0BC4B
 loc_0B673:
-    mov si, ds:[0A894h]
-    cmp si, 0A8B2h
+    mov si, ds:[FallerColumnCursor]
+    cmp si, offset FallerColumnsEnd
     jb loc_0B687
-    mov word ptr ds:[0A894h], 0A896h
-    mov si, ds:[0A894h]
+    mov word ptr ds:[FallerColumnCursor], offset FallerColumns
+    mov si, ds:[FallerColumnCursor]
 loc_0B687:
     lodsw
     mov ds:[bx + 32h], ax
-    mov ds:[0A894h], si
+    mov ds:[FallerColumnCursor], si
     ret
 TypeHandler23:
     mov ax, ss:[bp + REC_X]
@@ -3810,7 +3859,7 @@ loc_0B6BE:
     mov si, ss:[bp + REC_FIELD_1C]
     shl si, 1
     shl si, 1
-    mov ax, 0A932h
+    mov ax, offset FallerVariants
     xor cx, cx
     mov dx, 80h
     cmp word ptr ds:[LevelIndex], 3
@@ -3818,7 +3867,7 @@ loc_0B6BE:
     cmp word ptr ds:[LevelIndex], 5
     jne loc_0B6E9
 loc_0B6E2:
-    mov ax, 0A942h
+    mov ax, offset FallerVariantsAlt
     inc cx
     mov dx, 6Dh
 loc_0B6E9:
@@ -3908,7 +3957,7 @@ loc_0B7B2:
     je loc_0B7BD
     jmp near ptr loc_0B85C
 loc_0B7BD:
-    cmp word ptr ds:[0A7A0h], 023h
+    cmp word ptr ds:[EncounterTicks], 023h
     jae loc_0B7F3
     jmp near ptr loc_0BC4B
 loc_0B7C7:
@@ -3935,7 +3984,7 @@ loc_0B7F3:
     jne loc_0B80E
     call loc_07476
 loc_0B80E:
-    cmp word ptr ds:[0A47Eh], 3
+    cmp word ptr ds:[EncounterLiveCount], 3
     jbe loc_0B7C7
     cmp word ptr ds:[02340h], 5
     jb loc_0B7CE
@@ -3943,18 +3992,18 @@ loc_0B80E:
     je loc_0B826
     jmp near ptr loc_0BC4B
 loc_0B826:
-    mov si, word ptr ds:[0A842h]
+    mov si, word ptr ds:[FormationSlotCursor]
     cmp si, 0A894h
     jb loc_0B83A
-    mov word ptr ds:[0A842h], 0A844h
-    mov si, word ptr ds:[0A842h]
+    mov word ptr ds:[FormationSlotCursor], offset FormationSlots
+    mov si, word ptr ds:[FormationSlotCursor]
 loc_0B83A:
     lodsw
     add ax, 020h
     mov word ptr ss:[bp + REC_SAVED_Y], ax
     lodsw
     mov word ptr ss:[bp + REC_SAVED_X], ax
-    mov word ptr ds:[0A842h], si
+    mov word ptr ds:[FormationSlotCursor], si
     mov ax, word ptr ss:[bp + REC_Y]
     cmp ax, word ptr ss:[bp + REC_SAVED_Y]
     jne loc_0B859
@@ -3969,13 +4018,13 @@ loc_0B85C:
     mov word ptr ss:[bp + REC_DIRECTION], 4
     jmp near ptr loc_0BC4B
 TypeHandler1D:
-    cmp word ptr ds:[0A47Eh], 2
+    cmp word ptr ds:[EncounterLiveCount], 2
     ja loc_0B877
     jmp near ptr loc_0B8F8
 loc_0B877:
     cmp word ptr ss:[bp + REC_Y], 0C0h
     ja loc_0B8F8
-    cmp word ptr ds:[0A7A0h], 28h
+    cmp word ptr ds:[EncounterTicks], 28h
     jae loc_0B8B0
     mov word ptr ds:[2308h], 1
     mov word ptr ss:[bp + REC_SPRITE], 75h
@@ -4066,7 +4115,7 @@ loc_0B972:
     mov word ptr ss:[bp + REC_SAVED_Y], 40h
     jmp near ptr loc_0BC4B
 loc_0B97A:
-    cmp word ptr ds:[0A7A0h], 31h
+    cmp word ptr ds:[EncounterTicks], 31h
     je loc_0B984
     jmp near ptr loc_0BC4B
 loc_0B984:
@@ -4112,7 +4161,7 @@ loc_0B9EA:
     mov ss:[bp + REC_FIELD_36], ax
     jmp short TypeHandler18
 TypeHandler14:
-    cmp word ptr ds:[0A482h], 0A4E4h
+    cmp word ptr ds:[LeaderScriptCursor], offset LeaderScript13End
     jne loc_0BA67
     cmp word ptr ds:[2340h], 2EFh
     jne loc_0BA07
@@ -4134,7 +4183,7 @@ loc_0BA1F:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
     jne loc_0BA99
-    cmp word ptr ds:[0A47Eh], 6
+    cmp word ptr ds:[EncounterLiveCount], 6
     jb loc_0BA5A
     mov ax, ds:[2340h]
     cmp word ptr ds:[DifficultySetting], 2
@@ -4176,7 +4225,7 @@ loc_0BA99:
     cmp ax, ss:[bp + REC_SAVED_Y]
     jna loc_0BA73
     call loc_05E42
-    cmp word ptr ds:[0A47Eh], 6
+    cmp word ptr ds:[EncounterLiveCount], 6
     jae loc_0BAB5
     cmp word ptr ds:[232Eh], 3Fh
     jne loc_0BAB5
@@ -4237,10 +4286,10 @@ loc_0BB38:
     mov word ptr ss:[bp + REC_DIRECTION], 6
     jmp near ptr loc_0BC45
 TypeHandler8D:
-    mov word ptr ds:[0A952h], 0FFFFh
+    mov word ptr ds:[WalkerFacingStep], 0FFFFh
     jmp short loc_0BB4E
 TypeHandler8E:
-    mov word ptr ds:[0A952h], 1
+    mov word ptr ds:[WalkerFacingStep], 1
 loc_0BB4E:
     call loc_0BBED
     mov bx, 0
@@ -4250,9 +4299,9 @@ loc_0BB4E:
     mov bx, ds:[bx - 692Eh]
 loc_0BB60:
     mov ax, 13Ah
-    add ax, ds:[0A952h]
-    add ax, ds:[0A952h]
-    add ax, ds:[0A952h]
+    add ax, ds:[WalkerFacingStep]
+    add ax, ds:[WalkerFacingStep]
+    add ax, ds:[WalkerFacingStep]
     add ax, bx
     xor cx, cx
     cmp word ptr ss:[bp + REC_DIRECTION], 0
@@ -4262,10 +4311,10 @@ loc_0BB7C:
     add ax, cx
     jmp short loc_0BBB2
 TypeHandler8C:
-    mov word ptr ds:[0A952h], 0FFFFh
+    mov word ptr ds:[WalkerFacingStep], 0FFFFh
     jmp short loc_0BB8E
 TypeHandler8B:
-    mov word ptr ds:[0A952h], 1
+    mov word ptr ds:[WalkerFacingStep], 1
 loc_0BB8E:
     call loc_0BBED
     mov bx, 0
@@ -4273,10 +4322,10 @@ loc_0BB8E:
     mov bx, ds:[233Ch]
 loc_0BB9A:
     mov ax, 61h
-    add ax, ds:[0A952h]
-    add ax, ds:[0A952h]
-    add ax, ds:[0A952h]
-    add ax, ds:[0A952h]
+    add ax, ds:[WalkerFacingStep]
+    add ax, ds:[WalkerFacingStep]
+    add ax, ds:[WalkerFacingStep]
+    add ax, ds:[WalkerFacingStep]
     add ax, bx
     add ax, ss:[bp + REC_DIRECTION]
 loc_0BBB2:
@@ -4313,7 +4362,7 @@ loc_0BBED:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ds:[237Eh]
     jl loc_0BC2B
-    add bx, ds:[0A952h]
+    add bx, ds:[WalkerFacingStep]
     call ReadIndexedByteAttribute
     je loc_0BBE1
     call loc_0AFD8
@@ -4321,7 +4370,7 @@ loc_0BBED:
     ret
 loc_0BC2B:
     mov word ptr ss:[bp + REC_DIRECTION], 4
-    add bx, ds:[0A952h]
+    add bx, ds:[WalkerFacingStep]
     sub bx, 0Dh
     call ReadIndexedByteAttribute
     je loc_0BBE1
@@ -4414,7 +4463,7 @@ loc_0BCFC:
     jb loc_0BCFF
     ret
 loc_0BCFF:
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     je loc_0BD09
     call loc_0BFC7
 loc_0BD09:
@@ -4639,7 +4688,7 @@ loc_0BF01:
     ret
 loc_0BF07:
     mov word ptr ds:[bx + 01Ch], 0
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp near ptr loc_0BFC7
@@ -4669,18 +4718,18 @@ loc_0BF4D:
     je loc_0BFC7
 loc_0BF52:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     je loc_0BF5F
     ret
 loc_0BF5F:
     push bp
-    mov bp, word ptr ds:[0A8BAh]
+    mov bp, word ptr ds:[SegBossAnchor]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
-    mov bp, word ptr ds:[0A8BCh]
+    mov bp, word ptr ds:[SegBossPart77]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
-    mov bp, word ptr ds:[0A8BEh]
+    mov bp, word ptr ds:[SegBossCore]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
-    mov bp, word ptr ds:[0A8C0h]
+    mov bp, word ptr ds:[SegBossPart79]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0BF90
@@ -4693,19 +4742,19 @@ loc_0BF92:
     jmp short loc_0BF25
 loc_0BF97:
     call loc_0BD0D
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short loc_0BFC7
 loc_0BFA8:
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     jne loc_0BFB2
     jmp near ptr loc_0BF25
 loc_0BFB2:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short loc_0BFC7
 loc_0BFB9:
-    cmp word ptr ds:[0A8C2h], 1
+    cmp word ptr ds:[SegBossActive], 1
     je loc_0BF92
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short loc_0BFC7
@@ -4836,27 +4885,27 @@ loc_0C0CA:
     cmp word ptr ss:[bp + REC_TYPE], 022h
     je loc_0C14F
     cmp word ptr ss:[bp + REC_TYPE], 07Eh
-    mov ax, 0A79Ch
+    mov ax, offset LeaderScript7EEnd
     je loc_0C12D
     cmp word ptr ss:[bp + REC_TYPE], 07Dh
-    mov ax, 0A6F0h
+    mov ax, offset LeaderScript7DEnd
     je loc_0C12D
     cmp word ptr ss:[bp + REC_TYPE], 01Fh
-    mov ax, 0A83Eh
+    mov ax, offset LeaderScript1FEnd
     je loc_0C12D
     cmp word ptr ss:[bp + REC_TYPE], 01Ch
-    mov ax, 0A82Ah
+    mov ax, offset LeaderScript1CEnd
     je loc_0C12D
     cmp word ptr ss:[bp + REC_TYPE], 015h
-    mov ax, 0A5C0h
+    mov ax, offset LeaderScript15End
     je loc_0C12D
     cmp word ptr ss:[bp + REC_TYPE], 013h
-    mov ax, 0A4E4h
+    mov ax, offset LeaderScript13End
     je loc_0C12D
     ret
 loc_0C12D:
-    mov word ptr ds:[0A482h], ax
-    mov word ptr ds:[0A842h], 0A844h
+    mov word ptr ds:[LeaderScriptCursor], ax
+    mov word ptr ds:[FormationSlotCursor], offset FormationSlots
     push bx
     push bp
     mov ax, word ptr ss:[bp + REC_X]
@@ -4869,34 +4918,34 @@ loc_0C12D:
     pop bp
     pop bx
 loc_0C14F:
-    dec word ptr ds:[0A47Eh]
+    dec word ptr ds:[EncounterLiveCount]
     ret
 loc_0C154:
     mov byte ptr ds:[098A8h], 1
     jmp short loc_0C14F
 loc_0C15B:
-    mov bx, word ptr ds:[0A8BAh]
+    mov bx, word ptr ds:[SegBossAnchor]
     cmp bx, bp
     je loc_0C166
     call loc_0C194
 loc_0C166:
-    mov bx, word ptr ds:[0A8BCh]
+    mov bx, word ptr ds:[SegBossPart77]
     cmp bx, bp
     je loc_0C171
     call loc_0C194
 loc_0C171:
-    mov bx, word ptr ds:[0A8BEh]
+    mov bx, word ptr ds:[SegBossCore]
     cmp bx, bp
     je loc_0C17C
     call loc_0C194
 loc_0C17C:
-    mov bx, word ptr ds:[0A8C0h]
+    mov bx, word ptr ds:[SegBossPart79]
     cmp bx, bp
     je loc_0C187
     call loc_0C194
 loc_0C187:
-    mov word ptr ds:[0A47Eh], 0
-    mov word ptr ds:[0A8C2h], 0
+    mov word ptr ds:[EncounterLiveCount], 0
+    mov word ptr ds:[SegBossActive], 0
     ret
 
 loc_0C194:
@@ -5209,8 +5258,8 @@ loc_0C41E:
     call loc_09DB9
     mov word ptr ds:[0A980h], 0
     mov word ptr ds:[020A6h], 020A8h
-    mov word ptr ds:[0A47Eh], 0
-    mov word ptr ds:[0A480h], 0
+    mov word ptr ds:[EncounterLiveCount], 0
+    mov word ptr ds:[EncounterEndDelay], 0
     mov word ptr ds:[0A47Ch], 0
     mov word ptr ds:[02340h], 0
     ret
@@ -6471,7 +6520,7 @@ loc_0CF9C:
     mov word ptr ds:[0A976h], 0
     mov word ptr ds:[0A974h], 0
     mov word ptr ds:[0A97Eh], 0
-    mov word ptr ds:[02350h], 09Ch
+    mov word ptr ds:[MapScrollPos], 09Ch
     call InitPositionHistory
 ; Clear the shared byte-attribute table before calling the setup path at 007EF.
 ; Forward fill requires DF=0; this is state initialization, not static table contents.
@@ -6754,14 +6803,14 @@ RunTimedSequenceUntilPrimary:
 loc_0D318:
     call ClearByteCS066B
     call loc_0511F
-    call loc_04CED
+    call DrawStars
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_0D32C
     call CopyWorkspaceToScreen
 loc_0D32C:
     call loc_0D367
-    call loc_04D64
-    call far ptr loc_10112
+    call EraseStars
+    call far ptr MoveStars
     call loc_0073C
     call loc_060A2
     call loc_05160
@@ -7597,9 +7646,9 @@ EncPushedByte db 0
     db 0EEh,00h,065h,04Eh,0EFh,00h,065h,04Eh,0FFh,0FFh
 loc_0EFAE:
     mov ax, word ptr ss:[bp + REC_X]
-    mov word ptr ds:[0D1FEh], ax
+    mov word ptr ds:[DispatchRecordX], ax
     mov ax, word ptr ss:[bp + REC_Y]
-    mov word ptr ds:[0D200h], ax
+    mov word ptr ds:[DispatchRecordY], ax
     mov bx, word ptr ss:[bp + REC_TYPE]
     shl bx, 1
     jmp word ptr cs:[bx + TypeHandlers]
@@ -7650,10 +7699,10 @@ TypeHandler86:
     shr bx, 1
     shr bx, 1
     shl bx, 1
-    mov si, 0D202h
+    mov si, offset Type86FramesDir6
     cmp word ptr ss:[bp + REC_DIRECTION], 6
     je loc_0F108
-    mov si, 0D20Ah
+    mov si, offset Type86Frames
 loc_0F108:
     mov ax, bx
     mov bx, ds:[bx + si]
@@ -7686,10 +7735,10 @@ loc_0F146:
     shr bx, 1
     shr bx, 1
     shl bx, 1
-    mov si, 0D212h
+    mov si, offset Type88FramesDir6
     cmp word ptr ss:[bp + REC_DIRECTION], 6
     je loc_0F160
-    mov si, 0D21Ah
+    mov si, offset Type88Frames
 loc_0F160:
     mov ax, bx
     mov bx, ds:[bx + si]
@@ -7922,11 +7971,11 @@ loc_0F3B3:
     mov word ptr ss:[bp + REC_TYPE], 62h
     jmp near ptr loc_0BC45
 TypeHandler62:
-    cmp word ptr ds:[0A8CEh], 18h
+    cmp word ptr ds:[FramesSinceInvaderSpawn], 18h
     jae loc_0F3C5
     jmp near ptr loc_0BC45
 loc_0F3C5:
-    mov ax, ds:[0A8CAh]
+    mov ax, ds:[InvaderDropStep]
     add ss:[bp + REC_Y], ax
     cmp word ptr ss:[bp + REC_Y], 0D0h
     jna loc_0F3EB
@@ -7938,16 +7987,16 @@ loc_0F3C5:
     jmp short TypeHandler61
 loc_0F3EB:
     mov ax, 1
-    cmp word ptr ds:[0A47Eh], 10h
+    cmp word ptr ds:[EncounterLiveCount], 10h
     ja loc_0F416
     mov ax, 2
-    cmp word ptr ds:[0A47Eh], 8
+    cmp word ptr ds:[EncounterLiveCount], 8
     ja loc_0F416
     mov ax, 4
-    cmp word ptr ds:[0A47Eh], 4
+    cmp word ptr ds:[EncounterLiveCount], 4
     ja loc_0F416
     mov ax, 8
-    cmp word ptr ds:[0A47Eh], 1
+    cmp word ptr ds:[EncounterLiveCount], 1
     ja loc_0F416
     mov ax, 10h
 loc_0F416:
@@ -7956,7 +8005,7 @@ loc_0F416:
     neg ax
     mov bx, 0C0h
     mov cx, 1
-    cmp word ptr ds:[0A8C6h], 0
+    cmp word ptr ds:[InvaderMarchLeft], 0
     je loc_0F431
     neg ax
     xor bx, bx
@@ -7965,8 +8014,8 @@ loc_0F431:
     add ss:[bp + REC_X], ax
     cmp ss:[bp + REC_X], bx
     jne loc_0F446
-    mov ds:[0A8C8h], cx
-    mov word ptr ds:[0A8CCh], 2
+    mov ds:[InvaderNextMarchLeft], cx
+    mov word ptr ds:[InvaderNextDropStep], 2
     call loc_07476
 loc_0F446:
     mov ax, ds:[2380h]
@@ -8056,7 +8105,7 @@ TypeHandler67:
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
     jmp near ptr loc_0B2C8
 TypeHandler6B:
-    mov word ptr ds:[0D2C2h], 50h
+    mov word ptr ds:[DescentTargetX], 50h
     mov ax, ds:[232Ah]
     shr ax, 1
     shr ax, 1
@@ -8064,7 +8113,7 @@ TypeHandler6B:
     mov ss:[bp + REC_SPRITE], ax
     jmp short loc_0F55A
 TypeHandler6D:
-    mov word ptr ds:[0D2C2h], 70h
+    mov word ptr ds:[DescentTargetX], 70h
     mov ax, ds:[232Ah]
     shr ax, 1
     shr ax, 1
@@ -8072,13 +8121,13 @@ TypeHandler6D:
     mov ss:[bp + REC_SPRITE], ax
     jmp short loc_0F55A
 TypeHandler6C:
-    mov word ptr ds:[0D2C2h], 60h
+    mov word ptr ds:[DescentTargetX], 60h
 loc_0F55A:
     cmp word ptr ss:[bp + REC_Y], 40h
     jae loc_0F563
     jmp near ptr loc_0BC45
 loc_0F563:
-    mov ax, ds:[0D2C2h]
+    mov ax, ds:[DescentTargetX]
     cmp ss:[bp + REC_X], ax
     je loc_0F577
     ja loc_0F573
@@ -8297,28 +8346,28 @@ TypeHandler79:
     mov si, 0D2D0h
 loc_0F779:
     lodsw
-    add ax, ds:[0A8B8h]
+    add ax, ds:[SegBossY]
     mov ss:[bp + REC_Y], ax
     cmp word ptr ss:[bp + REC_Y], 0
     jnl loc_0F78C
     mov word ptr ss:[bp + REC_Y], 0
 loc_0F78C:
     lodsw
-    add ax, ds:[0A8B6h]
+    add ax, ds:[SegBossX]
     mov ss:[bp + REC_X], ax
     jmp near ptr loc_0BC45
 loc_0F797:
-    mov bp, ds:[0A8BAh]
-    push word ptr ds:[0A8B6h]
+    mov bp, ds:[SegBossAnchor]
+    push word ptr ds:[SegBossX]
     pop word ptr ss:[bp + REC_X]
-    push word ptr ds:[0A8B8h]
+    push word ptr ds:[SegBossY]
     pop word ptr ss:[bp + REC_Y]
 loc_0F7A9:
-    mov si, ds:[0A8C4h]
+    mov si, ds:[SegBossPathCursor]
     lodsw
     cmp ax, 0FFFFh
     jne loc_0F7BB
-    mov word ptr ds:[0A8C4h], 0D2D4h
+    mov word ptr ds:[SegBossPathCursor], offset BossPath
     jmp short loc_0F7A9
 loc_0F7BB:
     add ax, 20h
@@ -8328,14 +8377,14 @@ loc_0F7BB:
     mov word ptr ds:[2308h], 2
     call loc_05DB2
     push word ptr ss:[bp + REC_X]
-    pop word ptr ds:[0A8B6h]
+    pop word ptr ds:[SegBossX]
     push word ptr ss:[bp + REC_Y]
-    pop word ptr ds:[0A8B8h]
+    pop word ptr ds:[SegBossY]
     cmp word ptr ds:[230Ah], 0
     jne loc_0F7E4
     ret
 loc_0F7E4:
-    mov ds:[0A8C4h], si
+    mov ds:[SegBossPathCursor], si
     jmp short loc_0F797
 MAIN ends
 
@@ -8344,7 +8393,7 @@ assume cs:FAR0F7F,ds:nothing,ss:nothing,es:nothing
 loc_1000D:
     dec byte ptr ds:[098A7h]
     jne loc_1003E
-    mov ax, word ptr ds:[0A47Eh]
+    mov ax, word ptr ds:[EncounterLiveCount]
     mov cl, 078h
     cmp ax, 010h
     ja loc_10034
@@ -8400,36 +8449,36 @@ loc_10108:
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h
 
-loc_10112:
+MoveStars:
     cmp word ptr ds:[0A95Ah], -1
     je loc_1014F
-    inc word ptr ds:[0C812h]
-    and word ptr ds:[0C812h], 1
+    inc word ptr ds:[StarLayerTick1]
+    and word ptr ds:[StarLayerTick1], 1
     jne loc_1014F
-    mov si, 0C6C1h
+    mov si, offset Stars
     mov cx, 014h
-    call loc_10150
-    inc word ptr ds:[0C814h]
-    and word ptr ds:[0C814h], 1
+    call MoveStarLayer
+    inc word ptr ds:[StarLayerTick2]
+    and word ptr ds:[StarLayerTick2], 1
     jne loc_1014F
     mov cx, 0Ah
-    call loc_10150
-    inc word ptr ds:[0C816h]
-    and word ptr ds:[0C816h], 1
+    call MoveStarLayer
+    inc word ptr ds:[StarLayerTick3]
+    and word ptr ds:[StarLayerTick3], 1
     jne loc_1014F
     mov cx, 0Ah
-    call loc_10150
+    call MoveStarLayer
 loc_1014F:
     retf
 
-loc_10150:
+MoveStarLayer:
     inc word ptr ds:[si]
     cmp word ptr ds:[si], 0C0h
     jne loc_1015C
     mov word ptr ds:[si], 0
 loc_1015C:
     add si, 6
-    loop loc_10150
+    loop MoveStarLayer
     ret
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h

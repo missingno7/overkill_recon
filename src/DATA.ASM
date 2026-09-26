@@ -35,8 +35,12 @@ public AttributePatchPointers
 public BlockBytes
 public BonusKeysEnabled
 public BossKeyScreen
+public BossPath
+public BurstOriginX
+public BurstOriginY
 public ByteAttributeTable
 public CalibPageList
+public CgaPanelPatch
 public CheatBonusCheatOn
 public CheatEveryDayIDie
 public CheatGibStMirSchnellfeuer
@@ -50,17 +54,28 @@ public ChooseSlotPositions
 public ClampXHighSeen
 public ClampXLowSeen
 public CountGate2324
+public DescentTargetX
 public DifficultyPositions
 public DifficultySetting
 public DirectionFromQuadrant
+public DispatchRecordX
+public DispatchRecordY
 public EmsAvailable
 public EmsDeviceName
 public EmsFreePages
 public EmsPageFrame
 public EmsTotalPages
+public EncounterEndDelay
+public EncounterLiveCount
+public EncounterTicks
 public EventTrigger
 public EventX
 public ExitOrderScreen
+public FallerColumnCursor
+public FallerColumns
+public FallerColumnsEnd
+public FallerVariants
+public FallerVariantsAlt
 public FileBufferOffset
 public FileBufferSegment
 public FileByteCount
@@ -80,12 +95,18 @@ public File_PANEL_ENC
 public File_SHIP_BIC
 public File_THEND_BIC
 public File_WINDOW_BIC
+public Font8x8
+public FontPlaneRegs
 public FormationDrawPass
 public FormationSizeClass
+public FormationSlotCursor
+public FormationSlots
 public FormationType
+public FramesSinceInvaderSpawn
 public GameOverRequest
 public GeometryWords
 public GridYSum
+public GroupDropKinds
 public HiscoreBlock
 public HiscoreFileName
 public HiscorePageList
@@ -101,6 +122,13 @@ public IPageList
 public ImageEnd
 public InputBits
 public InputDeviceMode
+public InvaderDropStep
+public InvaderFormation
+public InvaderFormationEnd
+public InvaderMarchLeft
+public InvaderNextDropStep
+public InvaderNextMarchLeft
+public InvaderSlotCursor
 public JoyButtonSelect
 public JoyCalAbortSp
 public JoyCalCenterX
@@ -119,7 +147,22 @@ public KeyBitScancodesA
 public KeyBitScancodesB
 public KeyDownTable
 public KeyLastMakeCode
+public LeaderScript13
+public LeaderScript13End
+public LeaderScript15
+public LeaderScript15End
+public LeaderScript1C
+public LeaderScript1CEnd
+public LeaderScript1F
+public LeaderScript1FEnd
+public LeaderScript7D
+public LeaderScript7DEnd
+public LeaderScript7E
+public LeaderScript7EEnd
+public LeaderScriptCursor
 public LevelBankFiles
+public LevelCheckpointPtrs
+public LevelEndMapRows
 public LevelIndex
 public LevelMapCellHandlers
 public LevelMapFiles
@@ -136,6 +179,7 @@ public LevelSkipEnabled
 public LifeLostRequest
 public LivesLeft
 public LoadIsEnc
+public MapScrollPos
 public MinusSlotA968
 public MinusSlotA96C
 public ModuleSoundEnabled
@@ -180,6 +224,14 @@ public SavedSettings
 public ScoreBcd
 public ScreenRowOffsets
 public ScrollDeltaY
+public SegBossActive
+public SegBossAnchor
+public SegBossCore
+public SegBossPart77
+public SegBossPart79
+public SegBossPathCursor
+public SegBossX
+public SegBossY
 public SequenceFrameCount
 public SfxActive
 public SfxCommandTable
@@ -201,10 +253,26 @@ public Sprite16Bytes
 public Sprite32Bytes
 public Sprite8Bytes
 public StackTop
+public StarBrightCount
+public StarDrawnOffsets
+public StarLayerTick1
+public StarLayerTick2
+public StarLayerTick3
+public StarMasksCga
+public StarMasksEga
+public StarMasksTandy
+public Stars
 public StateData
+public SweepPath
+public SweepPathLeadIn
 public TargetSearchCursor
 public TimerVectorInstalled
+public Type86Frames
+public Type86FramesDir6
+public Type88Frames
+public Type88FramesDir6
 public VideoBiosModeTable
+public WalkerFacingStep
 public WhatOilShortageFlag
 public WideRowOffsets
 public WinScreenPageList
@@ -585,140 +653,183 @@ PlaqueFiles label word
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,018h
-    db 018h,018h,018h,00h,018h,00h,024h,048h,06Ch,06Ch,00h,00h,00h,00h,00h,024h
-    db 07Eh,024h,024h,07Eh,024h,00h,00h,010h,07Eh,050h,07Eh,016h,07Eh,010h,00h,0C6h
-    db 0CCh,018h,030h,066h,0C6h,00h,00h,01Ch,036h,01Ch,03Bh,066h,03Bh,00h,018h,018h
-    db 08h,010h,00h,00h,00h,00h,0Ch,018h,030h,030h,030h,030h,01Ch,00h,030h,018h
-    db 0Ch,0Ch,0Ch,0Ch,038h,00h,00h,06Ch,038h,0FEh,038h,06Ch,00h,00h,00h,018h
-    db 018h,07Eh,018h,018h,00h,00h,00h,00h,00h,00h,060h,060h,020h,040h,00h,00h
-    db 00h,07Ch,00h,00h,00h,00h,00h,00h,00h,00h,00h,018h,018h,00h,00h,03h
-    db 06h,0Ch,018h,030h,060h,00h,03Ch,066h,06Eh,07Eh,076h,066h,03Ch,00h,018h,038h
-    db 018h,018h,018h,018h,07Eh,00h,03Ch,066h,06h,01Ch,030h,066h,07Eh,00h,03Ch,066h
-    db 06h,01Ch,06h,066h,03Ch,00h,01Ch,03Ch,06Ch,0CCh,0FEh,0Ch,01Eh,00h,07Eh,060h
-    db 07Ch,06h,06h,066h,03Ch,00h,01Ch,030h,060h,07Ch,066h,066h,03Ch,00h,07Eh,066h
-    db 06h,0Ch,018h,018h,018h,00h,03Ch,066h,066h,03Ch,066h,066h,03Ch,00h,03Ch,066h
-    db 066h,03Eh,06h,0Ch,038h,00h,00h,018h,018h,00h,018h,018h,00h,00h,00h,018h
-    db 018h,00h,018h,018h,08h,010h,01Ch,030h,060h,0C0h,060h,030h,01Ch,00h,00h,03Ch
-    db 03Ch,00h,03Ch,03Ch,00h,00h,038h,0Ch,06h,03h,06h,0Ch,038h,00h,00h,07Eh
-    db 066h,0Ch,018h,00h,018h,00h,07Ch,0C6h,0DEh,0D6h,0DEh,0C0h,07Ch,00h,03Ch,066h
-    db 063h,07Fh,063h,063h,063h,00h,07Ch,066h,063h,07Eh,063h,063h,07Eh,00h,03Ch,066h
-    db 060h,060h,060h,063h,03Eh,00h,07Ch,066h,063h,063h,063h,063h,07Eh,00h,07Eh,060h
-    db 060h,07Eh,060h,060h,07Fh,00h,07Eh,060h,060h,07Eh,060h,060h,060h,00h,03Ch,066h
-    db 060h,06Fh,063h,063h,03Eh,00h,063h,063h,063h,07Fh,063h,063h,063h,00h,01Eh,0Ch
-    db 0Ch,0Ch,0Ch,0Ch,01Eh,00h,0Fh,03h,03h,03h,03h,066h,03Ch,00h,063h,063h
-    db 066h,07Ch,066h,063h,063h,00h,060h,060h,060h,060h,060h,060h,07Fh,00h,063h,077h
-    db 07Fh,06Bh,063h,063h,063h,00h,063h,073h,07Bh,06Fh,067h,063h,063h,00h,03Ch,066h
-    db 063h,063h,063h,063h,03Eh,00h,07Ch,066h,063h,07Eh,060h,060h,060h,00h,03Ch,066h
-    db 063h,063h,07Bh,06Fh,03Fh,00h,07Ch,066h,063h,07Eh,063h,063h,063h,00h,03Ch,066h
-    db 060h,03Eh,03h,063h,03Eh,00h,03Fh,0Ch,0Ch,0Ch,0Ch,0Ch,0Ch,00h,063h,063h
-    db 063h,063h,063h,033h,01Fh,00h,063h,063h,063h,063h,063h,036h,01Ch,00h,063h,063h
-    db 063h,063h,06Bh,07Fh,036h,00h,063h,063h,036h,01Ch,036h,063h,063h,00h,033h,033h
-    db 033h,01Eh,0Ch,0Ch,0Ch,00h,07Eh,06h,0Ch,018h,030h,060h,07Fh,00h,00h,01Ch
-    db 018h,018h,018h,018h,01Ch,00h,00h,0C0h,060h,030h,018h,0Ch,06h,00h,00h,038h
-    db 018h,018h,018h,018h,038h,00h,010h,038h,07Ch,038h,038h,038h,038h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,0FEh,00h,03Eh,032h,020h,070h,020h,07Eh,00h,00h,00h
-    db 01Eh,03h,03Fh,063h,03Fh,00h,060h,060h,07Ch,066h,063h,063h,07Eh,00h,00h,00h
-    db 03Ch,066h,060h,063h,03Eh,00h,03h,03h,01Fh,033h,063h,063h,03Fh,00h,00h,00h
-    db 03Ch,066h,07Eh,060h,03Fh,00h,01Eh,033h,030h,03Ch,030h,030h,030h,00h,00h,00h
-    db 01Fh,033h,063h,03Fh,03h,07Eh,060h,060h,07Ch,066h,063h,063h,063h,00h,0Ch,00h
-    db 0Ch,0Ch,0Ch,0Ch,0Ch,00h,03h,00h,03h,03h,03h,03h,066h,03Ch,060h,060h
-    db 066h,066h,07Ch,066h,063h,00h,018h,018h,018h,018h,018h,018h,0Ch,00h,00h,00h
-    db 076h,07Fh,06Bh,06Bh,063h,00h,00h,00h,07Ch,066h,063h,063h,063h,00h,00h,00h
-    db 03Ch,066h,063h,063h,03Eh,00h,00h,00h,07Ch,066h,063h,07Eh,060h,060h,00h,00h
-    db 01Fh,033h,063h,03Fh,03h,03h,00h,00h,07Eh,063h,060h,060h,060h,00h,00h,00h
-    db 03Ch,060h,03Eh,03h,07Eh,00h,030h,030h,03Ch,030h,030h,033h,01Eh,00h,00h,00h
-    db 063h,063h,063h,033h,01Fh,00h,00h,00h,063h,063h,063h,036h,01Ch,00h,00h,00h
-    db 063h,063h,06Bh,07Fh,036h,00h,00h,00h,063h,036h,01Ch,036h,063h,00h,00h,00h
-    db 063h,063h,033h,01Fh,03h,07Eh,00h,00h,07Eh,0Ch,018h,030h,07Fh,00h,00h,01Ch
-    db 018h,030h,030h,018h,01Ch,00h,018h,018h,018h,018h,018h,018h,018h,00h,00h,038h
-    db 018h,0Ch,0Ch,018h,038h,00h,00h,00h,00h,0F6h,0DEh,00h,00h,00h,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,01h,01h,01h,011h,01h,015h,055h,055h,055h,055h
-    db 011h,011h,011h,01h,011h,015h,055h,055h,055h,055h,011h,011h,01h,011h,01h,015h
-    db 055h,055h,055h,055h,011h,011h,05h,011h,011h,015h,055h,055h,055h,055h,011h,01h
-    db 011h,011h,011h,01h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 05h,01h,011h,01h,015h,01h,055h,055h,055h,055h,011h,011h,011h,011h,015h,015h
-    db 055h,055h,055h,055h,011h,011h,011h,01h,015h,05h,055h,055h,055h,055h,011h,011h
-    db 011h,011h,015h,015h,055h,055h,055h,055h,01h,01h,01h,01h,01h,01h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,07h,00h,05h,00h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,041h,044h,04h,04h,04h,04h,04h
-    db 055h,055h,055h,044h,044h,044h,054h,044h,044h,044h,055h,055h,055h,044h,044h,04h
-    db 044h,044h,044h,04h,055h,055h,055h,044h,044h,044h,044h,044h,044h,044h,055h,055h
-    db 055h,040h,044h,044h,04h,04h,044h,044h,05h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,01h,01h,01h,01h,011h,015h,01h,01h,055h,055h,015h,011h,011h
-    db 015h,011h,015h,011h,015h,055h,055h,01h,015h,01h,05h,011h,015h,01h,01h,055h
-    db 055h,051h,011h,05h,015h,01h,015h,011h,051h,055h,055h,01h,01h,011h,01h,011h
-    db 01h,011h,01h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,07h,00h
-    db 05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,050h,010h,010h
-    db 010h,011h,050h,010h,015h,055h,055h,051h,051h,011h,054h,051h,051h,011h,055h,055h
-    db 055h,050h,050h,010h,014h,051h,050h,010h,015h,055h,055h,051h,051h,015h,014h,051h
-    db 051h,015h,015h,055h,055h,051h,051h,010h,014h,050h,011h,010h,015h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,07h,00h,05h,00h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,054h,04h,040h,040h,045h,040h,040h,055h,055h
-    db 055h,054h,044h,044h,045h,045h,044h,045h,055h,055h,055h,054h,04h,044h,044h,045h
-    db 040h,040h,055h,055h,055h,054h,014h,044h,044h,045h,044h,054h,055h,055h,055h,054h
-    db 044h,044h,040h,040h,044h,040h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,050h,010h,010h,010h,010h,011h,010h,015h,055h,055h,051h,011h,011h,014h,051h
-    db 011h,011h,015h,055h,055h,051h,051h,011h,014h,051h,011h,010h,015h,055h,055h,051h
-    db 011h,011h,014h,051h,011h,010h,055h,055h,055h,050h,010h,011h,014h,050h,010h,011h
-    db 015h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,07h,00h,05h,00h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,051h,010h,015h,051h
-    db 010h,015h,055h,055h,055h,055h,051h,011h,015h,051h,011h,015h,055h,055h,055h,055h
-    db 050h,011h,010h,010h,011h,015h,055h,055h,055h,055h,055h,011h,015h,055h,011h,015h
-    db 055h,055h,055h,055h,050h,010h,015h,050h,010h,015h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,01h,011h,01h,01h,01h,01h,01h,015h,055h,055h,015h
-    db 011h,011h,011h,011h,011h,015h,015h,055h,055h,01h,01h,01h,01h,01h,011h,05h
-    db 015h,055h,055h,051h,011h,05h,011h,015h,011h,015h,015h,055h,055h,01h,011h,011h
-    db 011h,015h,011h,01h,01h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,040h
-    db 044h,04h,04h,04h,04h,04h,05h,055h,055h,045h,044h,044h,054h,044h,044h,054h
-    db 055h,055h,055h,041h,044h,04h,014h,044h,044h,04h,015h,055h,055h,045h,044h,014h
-    db 054h,044h,045h,044h,055h,055h,055h,045h,044h,044h,04h,044h,04h,04h,05h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,07h,00h,05h,00h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,040h,044h,014h,04h,04h,04h,044h
-    db 05h,055h,055h,045h,044h,044h,054h,044h,044h,04h,055h,055h,055h,040h,044h,044h
-    db 014h,04h,04h,044h,05h,055h,055h,054h,044h,044h,054h,044h,014h,045h,045h,055h
-    db 055h,040h,044h,04h,04h,044h,044h,044h,05h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,050h,050h,010h,010h,010h,015h,055h,055h,055h,055h,051h,011h
-    db 011h,011h,011h,055h,055h,055h,055h,055h,051h,010h,011h,011h,010h,055h,055h,055h
-    db 055h,055h,051h,010h,051h,011h,011h,055h,055h,055h,055h,055h,050h,011h,010h,011h
-    db 010h,015h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,07h,00h
-    db 05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,050h,010h
-    db 010h,011h,010h,015h,055h,055h,055h,055h,051h,051h,051h,011h,014h,055h,055h,055h
-    db 055h,055h,050h,011h,051h,011h,014h,055h,055h,055h,055h,055h,055h,011h,051h,011h
-    db 014h,055h,055h,055h,055h,055h,050h,010h,010h,010h,014h,055h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,07h,00h,05h,00h,055h,055h,055h,055h
-    db 055h,055h,055h,055h,055h,055h,055h,054h,04h,040h,044h,040h,040h,040h,055h,055h
-    db 055h,054h,054h,045h,044h,051h,045h,044h,055h,055h,055h,054h,014h,044h,040h,051h
-    db 041h,041h,055h,055h,055h,054h,054h,044h,044h,051h,045h,044h,055h,055h,055h,054h
-    db 054h,040h,044h,051h,040h,044h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,055h,07h,00h,05h,00h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
-    db 055h,054h,04h,04h,044h,040h,040h,040h,055h,055h,055h,054h,054h,044h,044h,045h
-    db 045h,044h,055h,055h,055h,054h,054h,014h,044h,040h,041h,041h,055h,055h,055h,054h
-    db 054h,044h,044h,054h,045h,044h,055h,055h,055h,054h,04h,044h,04h,040h,040h,044h
-    db 055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h,055h
+    db 00h,00h,00h,00h,00h,00h
+; 8x8 font, 8 bytes per character code 00h..7Fh (glyph = DS:Font8x8 + 8 * code).
+; Codes below 20h have empty glyphs; the last two bytes of glyph 1Fh double as
+; FontPlaneRegs, scratch for EGA Graphics Controller writes while drawing text.
+Font8x8 db 31 * 8 dup (0)
+    db 6 dup (0)
+; Graphics Controller index 4 (read map select) and its plane, sent as one word.
+FontPlaneRegs dw 0
+    db 00h,00h,00h,00h,00h,00h,00h,00h    ; ' '
+    db 00h,18h,18h,18h,18h,00h,18h,00h    ; '!'
+    db 24h,48h,6Ch,6Ch,00h,00h,00h,00h    ; '"'
+    db 00h,24h,7Eh,24h,24h,7Eh,24h,00h    ; '#'
+    db 00h,10h,7Eh,50h,7Eh,16h,7Eh,10h    ; '$'
+    db 00h,0C6h,0CCh,18h,30h,66h,0C6h,00h    ; '%'
+    db 00h,1Ch,36h,1Ch,3Bh,66h,3Bh,00h    ; '&'
+    db 18h,18h,08h,10h,00h,00h,00h,00h    ; "'"
+    db 0Ch,18h,30h,30h,30h,30h,1Ch,00h    ; '('
+    db 30h,18h,0Ch,0Ch,0Ch,0Ch,38h,00h    ; ')'
+    db 00h,6Ch,38h,0FEh,38h,6Ch,00h,00h    ; '*'
+    db 00h,18h,18h,7Eh,18h,18h,00h,00h    ; '+'
+    db 00h,00h,00h,00h,60h,60h,20h,40h    ; ','
+    db 00h,00h,00h,7Ch,00h,00h,00h,00h    ; '-'
+    db 00h,00h,00h,00h,00h,18h,18h,00h    ; '.'
+    db 00h,03h,06h,0Ch,18h,30h,60h,00h    ; '/'
+    db 3Ch,66h,6Eh,7Eh,76h,66h,3Ch,00h    ; '0'
+    db 18h,38h,18h,18h,18h,18h,7Eh,00h    ; '1'
+    db 3Ch,66h,06h,1Ch,30h,66h,7Eh,00h    ; '2'
+    db 3Ch,66h,06h,1Ch,06h,66h,3Ch,00h    ; '3'
+    db 1Ch,3Ch,6Ch,0CCh,0FEh,0Ch,1Eh,00h    ; '4'
+    db 7Eh,60h,7Ch,06h,06h,66h,3Ch,00h    ; '5'
+    db 1Ch,30h,60h,7Ch,66h,66h,3Ch,00h    ; '6'
+    db 7Eh,66h,06h,0Ch,18h,18h,18h,00h    ; '7'
+    db 3Ch,66h,66h,3Ch,66h,66h,3Ch,00h    ; '8'
+    db 3Ch,66h,66h,3Eh,06h,0Ch,38h,00h    ; '9'
+    db 00h,18h,18h,00h,18h,18h,00h,00h    ; ':'
+    db 00h,18h,18h,00h,18h,18h,08h,10h    ; semicolon
+    db 1Ch,30h,60h,0C0h,60h,30h,1Ch,00h    ; '<'
+    db 00h,3Ch,3Ch,00h,3Ch,3Ch,00h,00h    ; '='
+    db 38h,0Ch,06h,03h,06h,0Ch,38h,00h    ; '>'
+    db 00h,7Eh,66h,0Ch,18h,00h,18h,00h    ; '?'
+    db 7Ch,0C6h,0DEh,0D6h,0DEh,0C0h,7Ch,00h    ; '@'
+    db 3Ch,66h,63h,7Fh,63h,63h,63h,00h    ; 'A'
+    db 7Ch,66h,63h,7Eh,63h,63h,7Eh,00h    ; 'B'
+    db 3Ch,66h,60h,60h,60h,63h,3Eh,00h    ; 'C'
+    db 7Ch,66h,63h,63h,63h,63h,7Eh,00h    ; 'D'
+    db 7Eh,60h,60h,7Eh,60h,60h,7Fh,00h    ; 'E'
+    db 7Eh,60h,60h,7Eh,60h,60h,60h,00h    ; 'F'
+    db 3Ch,66h,60h,6Fh,63h,63h,3Eh,00h    ; 'G'
+    db 63h,63h,63h,7Fh,63h,63h,63h,00h    ; 'H'
+    db 1Eh,0Ch,0Ch,0Ch,0Ch,0Ch,1Eh,00h    ; 'I'
+    db 0Fh,03h,03h,03h,03h,66h,3Ch,00h    ; 'J'
+    db 63h,63h,66h,7Ch,66h,63h,63h,00h    ; 'K'
+    db 60h,60h,60h,60h,60h,60h,7Fh,00h    ; 'L'
+    db 63h,77h,7Fh,6Bh,63h,63h,63h,00h    ; 'M'
+    db 63h,73h,7Bh,6Fh,67h,63h,63h,00h    ; 'N'
+    db 3Ch,66h,63h,63h,63h,63h,3Eh,00h    ; 'O'
+    db 7Ch,66h,63h,7Eh,60h,60h,60h,00h    ; 'P'
+    db 3Ch,66h,63h,63h,7Bh,6Fh,3Fh,00h    ; 'Q'
+    db 7Ch,66h,63h,7Eh,63h,63h,63h,00h    ; 'R'
+    db 3Ch,66h,60h,3Eh,03h,63h,3Eh,00h    ; 'S'
+    db 3Fh,0Ch,0Ch,0Ch,0Ch,0Ch,0Ch,00h    ; 'T'
+    db 63h,63h,63h,63h,63h,33h,1Fh,00h    ; 'U'
+    db 63h,63h,63h,63h,63h,36h,1Ch,00h    ; 'V'
+    db 63h,63h,63h,63h,6Bh,7Fh,36h,00h    ; 'W'
+    db 63h,63h,36h,1Ch,36h,63h,63h,00h    ; 'X'
+    db 33h,33h,33h,1Eh,0Ch,0Ch,0Ch,00h    ; 'Y'
+    db 7Eh,06h,0Ch,18h,30h,60h,7Fh,00h    ; 'Z'
+    db 00h,1Ch,18h,18h,18h,18h,1Ch,00h    ; '['
+    db 00h,0C0h,60h,30h,18h,0Ch,06h,00h    ; '\\'
+    db 00h,38h,18h,18h,18h,18h,38h,00h    ; ']'
+    db 10h,38h,7Ch,38h,38h,38h,38h,00h    ; '^'
+    db 00h,00h,00h,00h,00h,00h,00h,0FEh    ; '_'
+    db 00h,3Eh,32h,20h,70h,20h,7Eh,00h    ; '`'
+    db 00h,00h,1Eh,03h,3Fh,63h,3Fh,00h    ; 'a'
+    db 60h,60h,7Ch,66h,63h,63h,7Eh,00h    ; 'b'
+    db 00h,00h,3Ch,66h,60h,63h,3Eh,00h    ; 'c'
+    db 03h,03h,1Fh,33h,63h,63h,3Fh,00h    ; 'd'
+    db 00h,00h,3Ch,66h,7Eh,60h,3Fh,00h    ; 'e'
+    db 1Eh,33h,30h,3Ch,30h,30h,30h,00h    ; 'f'
+    db 00h,00h,1Fh,33h,63h,3Fh,03h,7Eh    ; 'g'
+    db 60h,60h,7Ch,66h,63h,63h,63h,00h    ; 'h'
+    db 0Ch,00h,0Ch,0Ch,0Ch,0Ch,0Ch,00h    ; 'i'
+    db 03h,00h,03h,03h,03h,03h,66h,3Ch    ; 'j'
+    db 60h,60h,66h,66h,7Ch,66h,63h,00h    ; 'k'
+    db 18h,18h,18h,18h,18h,18h,0Ch,00h    ; 'l'
+    db 00h,00h,76h,7Fh,6Bh,6Bh,63h,00h    ; 'm'
+    db 00h,00h,7Ch,66h,63h,63h,63h,00h    ; 'n'
+    db 00h,00h,3Ch,66h,63h,63h,3Eh,00h    ; 'o'
+    db 00h,00h,7Ch,66h,63h,7Eh,60h,60h    ; 'p'
+    db 00h,00h,1Fh,33h,63h,3Fh,03h,03h    ; 'q'
+    db 00h,00h,7Eh,63h,60h,60h,60h,00h    ; 'r'
+    db 00h,00h,3Ch,60h,3Eh,03h,7Eh,00h    ; 's'
+    db 30h,30h,3Ch,30h,30h,33h,1Eh,00h    ; 't'
+    db 00h,00h,63h,63h,63h,33h,1Fh,00h    ; 'u'
+    db 00h,00h,63h,63h,63h,36h,1Ch,00h    ; 'v'
+    db 00h,00h,63h,63h,6Bh,7Fh,36h,00h    ; 'w'
+    db 00h,00h,63h,36h,1Ch,36h,63h,00h    ; 'x'
+    db 00h,00h,63h,63h,33h,1Fh,03h,7Eh    ; 'y'
+    db 00h,00h,7Eh,0Ch,18h,30h,7Fh,00h    ; 'z'
+    db 00h,1Ch,18h,30h,30h,18h,1Ch,00h    ; '{'
+    db 18h,18h,18h,18h,18h,18h,18h,00h    ; '|'
+    db 00h,38h,18h,0Ch,0Ch,18h,38h,00h    ; '}'
+    db 00h,00h,00h,0F6h,0DEh,00h,00h,00h    ; '~'
+    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh    ; 'DEL'
+; CGA only: copied over the start of PanelSegment after PANEL.ENC loads
+; (15 * GeometryWords+6 bytes).
+CgaPanelPatch label byte
+    db 07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 01h,01h,01h,11h,01h,15h,55h,55h,55h,55h,11h,11h,11h,01h,11h,15h
+    db 55h,55h,55h,55h,11h,11h,01h,11h,01h,15h,55h,55h,55h,55h,11h,11h
+    db 05h,11h,11h,15h,55h,55h,55h,55h,11h,01h,11h,11h,11h,01h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,05h,01h,11h,01h,15h,01h
+    db 55h,55h,55h,55h,11h,11h,11h,11h,15h,15h,55h,55h,55h,55h,11h,11h
+    db 11h,01h,15h,05h,55h,55h,55h,55h,11h,11h,11h,11h,15h,15h,55h,55h
+    db 55h,55h,01h,01h,01h,01h,01h,01h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,41h,44h,04h,04h,04h,04h,04h,55h,55h,55h,44h,44h,44h
+    db 54h,44h,44h,44h,55h,55h,55h,44h,44h,04h,44h,44h,44h,04h,55h,55h
+    db 55h,44h,44h,44h,44h,44h,44h,44h,55h,55h,55h,40h,44h,44h,04h,04h
+    db 44h,44h,05h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h
+    db 05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,01h,01h,01h
+    db 01h,11h,15h,01h,01h,55h,55h,15h,11h,11h,15h,11h,15h,11h,15h,55h
+    db 55h,01h,15h,01h,05h,11h,15h,01h,01h,55h,55h,51h,11h,05h,15h,01h
+    db 15h,11h,51h,55h,55h,01h,01h,11h,01h,11h,01h,11h,01h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,50h,10h,10h,10h,11h,50h,10h,15h,55h
+    db 55h,51h,51h,11h,54h,51h,51h,11h,55h,55h,55h,50h,50h,10h,14h,51h
+    db 50h,10h,15h,55h,55h,51h,51h,15h,14h,51h,51h,15h,15h,55h,55h,51h
+    db 51h,10h,14h,50h,11h,10h,15h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,54h,04h,40h,40h,45h,40h,40h,55h,55h,55h,54h,44h,44h,45h,45h
+    db 44h,45h,55h,55h,55h,54h,04h,44h,44h,45h,40h,40h,55h,55h,55h,54h
+    db 14h,44h,44h,45h,44h,54h,55h,55h,55h,54h,44h,44h,40h,40h,44h,40h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,50h,10h,10h,10h,10h
+    db 11h,10h,15h,55h,55h,51h,11h,11h,14h,51h,11h,11h,15h,55h,55h,51h
+    db 51h,11h,14h,51h,11h,10h,15h,55h,55h,51h,11h,11h,14h,51h,11h,10h
+    db 55h,55h,55h,50h,10h,11h,14h,50h,10h,11h,15h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,07h,00h,05h,00h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,51h,10h,15h,51h,10h,15h,55h,55h,55h,55h
+    db 51h,11h,15h,51h,11h,15h,55h,55h,55h,55h,50h,11h,10h,10h,11h,15h
+    db 55h,55h,55h,55h,55h,11h,15h,55h,11h,15h,55h,55h,55h,55h,50h,10h
+    db 15h,50h,10h,15h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,01h
+    db 11h,01h,01h,01h,01h,01h,15h,55h,55h,15h,11h,11h,11h,11h,11h,15h
+    db 15h,55h,55h,01h,01h,01h,01h,01h,11h,05h,15h,55h,55h,51h,11h,05h
+    db 11h,15h,11h,15h,15h,55h,55h,01h,11h,11h,11h,15h,11h,01h,01h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,40h,44h,04h,04h,04h,04h,04h
+    db 05h,55h,55h,45h,44h,44h,54h,44h,44h,54h,55h,55h,55h,41h,44h,04h
+    db 14h,44h,44h,04h,15h,55h,55h,45h,44h,14h,54h,44h,45h,44h,55h,55h
+    db 55h,45h,44h,44h,04h,44h,04h,04h,05h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,40h,44h,14h,04h,04h,04h,44h,05h,55h,55h,45h,44h,44h
+    db 54h,44h,44h,04h,55h,55h,55h,40h,44h,44h,14h,04h,04h,44h,05h,55h
+    db 55h,54h,44h,44h,54h,44h,14h,45h,45h,55h,55h,40h,44h,04h,04h,44h
+    db 44h,44h,05h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h
+    db 05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,50h,50h
+    db 10h,10h,10h,15h,55h,55h,55h,55h,51h,11h,11h,11h,11h,55h,55h,55h
+    db 55h,55h,51h,10h,11h,11h,10h,55h,55h,55h,55h,55h,51h,10h,51h,11h
+    db 11h,55h,55h,55h,55h,55h,50h,11h,10h,11h,10h,15h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,50h,10h,10h,11h,10h,15h,55h,55h
+    db 55h,55h,51h,51h,51h,11h,14h,55h,55h,55h,55h,55h,50h,11h,51h,11h
+    db 14h,55h,55h,55h,55h,55h,55h,11h,51h,11h,14h,55h,55h,55h,55h,55h
+    db 50h,10h,10h,10h,14h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
+    db 55h,54h,04h,40h,44h,40h,40h,40h,55h,55h,55h,54h,54h,45h,44h,51h
+    db 45h,44h,55h,55h,55h,54h,14h,44h,40h,51h,41h,41h,55h,55h,55h,54h
+    db 54h,44h,44h,51h,45h,44h,55h,55h,55h,54h,54h,40h,44h,51h,40h,44h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,07h,00h,05h,00h
+    db 55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,54h,04h,04h,44h,40h
+    db 40h,40h,55h,55h,55h,54h,54h,44h,44h,45h,45h,44h,55h,55h,55h,54h
+    db 54h,14h,44h,40h,41h,41h,55h,55h,55h,54h,54h,44h,44h,54h,45h,44h
+    db 55h,55h,55h,54h,04h,44h,04h,40h,40h,44h,55h,55h,55h,55h,55h,55h
+    db 55h,55h,55h,55h,55h,55h
 EventX dw 00000h
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h
@@ -830,7 +941,11 @@ CountGate2324 dw 00000h
 ScrollWindowOffset dw 00000h
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h
-    db 00h,00h,00h,00h,00h,00h
+; View position in the level map, in map bytes (13 tiles per row); each scroll step
+; moves it by 0Dh and LevelScriptClock by one.
+MapScrollPos dw 00000h
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h,00h,00h
 ; Level 0..5: selects LEVnMAP.BIC, the attribute patch stream and 6-entry tables;
 ; advanced modulo LEVEL_COUNT when a level is completed.
 LevelIndex dw 00000h
@@ -1089,86 +1204,134 @@ TargetSearchCursor dw 023B4h
     db 090h,00h,058h,00h,010h,00h,058h,00h,00h,00h,040h,00h,040h,00h,030h,00h
     db 0A0h,00h,058h,00h,0B0h,00h,010h,00h,030h,075h,010h,00h
 MoveModeA47C dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
-    db 00h,00h,00h,00h,020h,00h,010h,00h,030h,00h,010h,00h,010h,00h,020h,00h
-    db 040h,00h,040h,00h,020h,00h,070h,00h,010h,00h,060h,00h,030h,00h,0B0h,00h
-    db 010h,00h,090h,00h,040h,00h,070h,00h,050h,00h,030h,00h,060h,00h,020h,00h
-    db 010h,00h,030h,00h,010h,00h,040h,00h,020h,00h,050h,00h,010h,00h,080h,00h
-    db 020h,00h,0B0h,00h,010h,00h,0A0h,00h,030h,00h,060h,00h,060h,00h,0A0h,00h
-    db 050h,00h,060h,00h,050h,00h,090h,00h,040h,00h,050h,00h,040h,00h,060h,00h
-    db 040h,00h,080h,00h,030h,075h,0C0h,00h,020h,00h,0C0h,00h,00h,00h,0B0h,00h
-    db 020h,00h,0B0h,00h,040h,00h,0A0h,00h,020h,00h,0A0h,00h,00h,00h,090h,00h
-    db 020h,00h,090h,00h,040h,00h,080h,00h,020h,00h,080h,00h,00h,00h,070h,00h
-    db 020h,00h,070h,00h,040h,00h,060h,00h,020h,00h,060h,00h,00h,00h,050h,00h
-    db 020h,00h,050h,00h,040h,00h,040h,00h,020h,00h,040h,00h,00h,00h,030h,00h
-    db 020h,00h,030h,00h,040h,00h,020h,00h,020h,00h,020h,00h,00h,00h,010h,00h
-    db 020h,00h,010h,00h,040h,00h,00h,00h,020h,00h,00h,00h,0FFh,0FFh,0FFh,0FFh
-    db 080h,00h,00h,00h,0FFh,0FFh,0FFh,0FFh,080h,00h,0C0h,00h,0FFh,0FFh,0FFh,0FFh
-    db 040h,00h,0C0h,00h,060h,00h,0C0h,00h,040h,00h,0B0h,00h,020h,00h,0B0h,00h
-    db 040h,00h,0A0h,00h,060h,00h,0A0h,00h,040h,00h,090h,00h,020h,00h,090h,00h
-    db 040h,00h,080h,00h,060h,00h,080h,00h,040h,00h,070h,00h,020h,00h,070h,00h
-    db 040h,00h,060h,00h,060h,00h,060h,00h,040h,00h,050h,00h,020h,00h,050h,00h
-    db 040h,00h,040h,00h,060h,00h,040h,00h,040h,00h,030h,00h,020h,00h,030h,00h
-    db 040h,00h,020h,00h,060h,00h,020h,00h,040h,00h,010h,00h,020h,00h,010h,00h
-    db 030h,075h,00h,00h,020h,00h,0C0h,00h,0B0h,00h,0C0h,00h,0B0h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,0B0h,00h,010h,00h,0B0h,00h,010h,00h,010h,00h
-    db 020h,00h,010h,00h,020h,00h,0B0h,00h,030h,00h,0B0h,00h,030h,00h,010h,00h
-    db 040h,00h,010h,00h,040h,00h,0B0h,00h,050h,00h,0B0h,00h,050h,00h,010h,00h
-    db 060h,00h,010h,00h,060h,00h,0B0h,00h,070h,00h,0B0h,00h,070h,00h,010h,00h
-    db 080h,00h,010h,00h,080h,00h,0B0h,00h,090h,00h,0B0h,00h,090h,00h,010h,00h
-    db 0A0h,00h,010h,00h,0A0h,00h,0B0h,00h,0B0h,00h,0B0h,00h,0B0h,00h,00h,00h
-    db 00h,00h,00h,00h,0FFh,0FFh,0D4h,0A5h,00h,00h,0B0h,00h,010h,00h,0B0h,00h
-    db 00h,00h,0B0h,00h,010h,00h,0A0h,00h,00h,00h,0B0h,00h,010h,00h,090h,00h
-    db 00h,00h,0B0h,00h,020h,00h,080h,00h,00h,00h,0B0h,00h,020h,00h,070h,00h
-    db 00h,00h,060h,00h,010h,00h,060h,00h,00h,00h,010h,00h,010h,00h,010h,00h
-    db 00h,00h,010h,00h,010h,00h,020h,00h,00h,00h,010h,00h,010h,00h,030h,00h
-    db 00h,00h,010h,00h,020h,00h,040h,00h,00h,00h,010h,00h,020h,00h,050h,00h
-    db 060h,00h,010h,00h,030h,00h,020h,00h,060h,00h,020h,00h,030h,00h,030h,00h
-    db 060h,00h,030h,00h,050h,00h,030h,00h,060h,00h,040h,00h,040h,00h,050h,00h
-    db 060h,00h,050h,00h,030h,00h,060h,00h,060h,00h,060h,00h,040h,00h,060h,00h
-    db 060h,00h,070h,00h,050h,00h,060h,00h,060h,00h,080h,00h,040h,00h,070h,00h
-    db 060h,00h,090h,00h,050h,00h,090h,00h,060h,00h,0A0h,00h,030h,00h,090h,00h
-    db 060h,00h,0B0h,00h,030h,00h,0A0h,00h,090h,00h,030h,00h,0FFh,0FFh,0FFh,0FFh
-    db 030h,075h,00h,00h,00h,00h,060h,00h,010h,00h,050h,00h,010h,00h,060h,00h
-    db 010h,00h,070h,00h,020h,00h,060h,00h,020h,00h,060h,00h,030h,00h,060h,00h
-    db 030h,00h,060h,00h,040h,00h,060h,00h,040h,00h,060h,00h,050h,00h,060h,00h
-    db 050h,00h,060h,00h,060h,00h,070h,00h,060h,00h,070h,00h,050h,00h,080h,00h
-    db 050h,00h,080h,00h,040h,00h,090h,00h,040h,00h,090h,00h,030h,00h,0A0h,00h
-    db 050h,00h,0B0h,00h,020h,00h,0B0h,00h,030h,00h,0B0h,00h,010h,00h,0C0h,00h
-    db 020h,00h,0B0h,00h,00h,00h,0C0h,00h,010h,00h,0A0h,00h,00h,00h,00h,00h
-    db 010h,00h,020h,00h,010h,00h,00h,00h,020h,00h,010h,00h,020h,00h,010h,00h
-    db 030h,00h,010h,00h,030h,00h,020h,00h,050h,00h,010h,00h,040h,00h,030h,00h
-    db 040h,00h,030h,00h,050h,00h,040h,00h,050h,00h,040h,00h,060h,00h,050h,00h
-    db 060h,00h,050h,00h,070h,00h,060h,00h,0FFh,0FFh,0FFh,0FFh,030h,075h,00h,00h
-    db 00h,00h,00h,00h,0C0h,00h,030h,00h,08h,00h,010h,00h,0C0h,00h,020h,00h
-    db 010h,00h,020h,00h,0C0h,00h,020h,00h,020h,00h,030h,00h,0C0h,00h,030h,00h
-    db 030h,00h,040h,00h,0C0h,00h,040h,00h,040h,00h,050h,00h,0C0h,00h,040h,00h
-    db 050h,00h,060h,00h,0C0h,00h,050h,00h,050h,00h,060h,00h,0B0h,00h,030h,00h
-    db 060h,00h,060h,00h,0A0h,00h,040h,00h,060h,00h,060h,00h,090h,00h,040h,00h
-    db 070h,00h,060h,00h,080h,00h,050h,00h,070h,00h,060h,00h,070h,00h,040h,00h
-    db 080h,00h,060h,00h,060h,00h,030h,00h,090h,00h,060h,00h,050h,00h,020h,00h
-    db 0A0h,00h,060h,00h,040h,00h,020h,00h,0B0h,00h,060h,00h,030h,00h,030h,00h
-    db 0B8h,00h,060h,00h,00h,00h,00h,00h,00h,00h,030h,075h,00h,00h,050h,00h
-    db 0C0h,00h,050h,00h,00h,00h,00h,00h,00h,00h,00h,00h,0C0h,00h,030h,075h
-    db 00h,00h,044h,0A8h,040h,00h,090h,00h,040h,00h,080h,00h,030h,00h,080h,00h
-    db 030h,00h,090h,00h,020h,00h,070h,00h,020h,00h,050h,00h,030h,00h,040h,00h
-    db 030h,00h,030h,00h,040h,00h,030h,00h,040h,00h,040h,00h,030h,00h,010h,00h
-    db 020h,00h,010h,00h,010h,00h,010h,00h,010h,00h,020h,00h,010h,00h,030h,00h
-    db 010h,00h,090h,00h,010h,00h,0A0h,00h,010h,00h,0B0h,00h,020h,00h,0B0h,00h
-    db 030h,00h,0B0h,00h,096h,0A8h,080h,00h,030h,00h,00h,00h,070h,00h,090h,00h
-    db 020h,00h,0C0h,00h,010h,00h,0A0h,00h,040h,00h,060h,00h,0B0h,00h,090h,00h
-    db 050h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,050h,00h,0A8h,00h,050h,00h,090h,00h,050h,00h,078h,00h,050h,00h
-    db 060h,00h,050h,00h,048h,00h,050h,00h,030h,00h,050h,00h,018h,00h,050h,00h
-    db 00h,00h,038h,00h,00h,00h,038h,00h,018h,00h,038h,00h,030h,00h,038h,00h
-    db 048h,00h,038h,00h,060h,00h,038h,00h,078h,00h,038h,00h,090h,00h,038h,00h
-    db 0A8h,00h,020h,00h,0A8h,00h,020h,00h,090h,00h,020h,00h,078h,00h,020h,00h
-    db 060h,00h,020h,00h,048h,00h,020h,00h,030h,00h,020h,00h,018h,00h,020h,00h
-    db 00h,00h,036h,023h,02h,00h,036h,023h,03h,00h,028h,023h,04h,00h,028h,023h
-    db 05h,00h,026h,023h,05h,00h,026h,023h,06h,00h,026h,023h,07h,00h,026h,023h
-    db 08h,00h,00h,00h
+; Encounter state. Waypoints and spawn points below are (Y, X) words; Y gets +20h
+; when loaded (target Y at DS:2306 or REC_SAVED_Y), X is used as is.
+; Live leader and child records of the current encounter.
+EncounterLiveCount dw 0
+; Counts down (from 64h) once no encounter record is left.
+EncounterEndDelay dw 0
+; Current entry of the leader's script (loc_0FA6A advances it by 4 or 8).
+LeaderScriptCursor dw 0
+; Leader scripts, one per leader REC_TYPE, each ending with a LEADER_END_Y waypoint
+; (never reached; the leader flies off). Type 13h and 1Fh scripts are waypoints; the
+; others are {waypoint Y, X, spawn Y, X}, spawn Y FFFFh = no spawn (not checked by 1Ch).
+LeaderScript13 dw 20h, 10h,  30h, 10h,  10h, 20h,  40h, 40h
+    dw 20h, 70h,  10h, 60h,  30h, 0B0h,  10h, 90h
+    dw 40h, 70h,  50h, 30h,  60h, 20h,  10h, 30h
+    dw 10h, 40h,  20h, 50h,  10h, 80h,  20h, 0B0h
+    dw 10h, 0A0h,  30h, 60h,  60h, 0A0h,  50h, 60h
+    dw 50h, 90h,  40h, 50h,  40h, 60h,  40h, 80h
+LeaderScript13End dw LEADER_END_Y, 0C0h
+LeaderScript15 dw 20h, 0C0h,  0h, 0B0h,  20h, 0B0h,  40h, 0A0h
+    dw 20h, 0A0h,  0h, 90h,  20h, 90h,  40h, 80h
+    dw 20h, 80h,  0h, 70h,  20h, 70h,  40h, 60h
+    dw 20h, 60h,  0h, 50h,  20h, 50h,  40h, 40h
+    dw 20h, 40h,  0h, 30h,  20h, 30h,  40h, 20h
+    dw 20h, 20h,  0h, 10h,  20h, 10h,  40h, 0h
+    dw 20h, 0h,  0FFFFh, 0FFFFh,  80h, 0h,  0FFFFh, 0FFFFh
+    dw 80h, 0C0h,  0FFFFh, 0FFFFh,  40h, 0C0h,  60h, 0C0h
+    dw 40h, 0B0h,  20h, 0B0h,  40h, 0A0h,  60h, 0A0h
+    dw 40h, 90h,  20h, 90h,  40h, 80h,  60h, 80h
+    dw 40h, 70h,  20h, 70h,  40h, 60h,  60h, 60h
+    dw 40h, 50h,  20h, 50h,  40h, 40h,  60h, 40h
+    dw 40h, 30h,  20h, 30h,  40h, 20h,  60h, 20h
+    dw 40h, 10h,  20h, 10h
+LeaderScript15End dw LEADER_END_Y, 0h
+; Path of the type 16h/17h children (REC_FIELD_36): lead-in, then a loop through
+; SweepPath (0FFFFh, next address).
+SweepPathLeadIn dw 20h, 0C0h,  0B0h, 0C0h,  0B0h, 0h,  0h, 0h
+SweepPath dw 0h, 0B0h,  10h, 0B0h,  10h, 10h,  20h, 10h
+    dw 20h, 0B0h,  30h, 0B0h,  30h, 10h,  40h, 10h
+    dw 40h, 0B0h,  50h, 0B0h,  50h, 10h,  60h, 10h
+    dw 60h, 0B0h,  70h, 0B0h,  70h, 10h,  80h, 10h
+    dw 80h, 0B0h,  90h, 0B0h,  90h, 10h,  0A0h, 10h
+    dw 0A0h, 0B0h,  0B0h, 0B0h,  0B0h, 0h,  0h, 0h
+    dw 0FFFFh, offset SweepPath
+LeaderScript7D dw 0h, 0B0h,  10h, 0B0h,  0h, 0B0h,  10h, 0A0h
+    dw 0h, 0B0h,  10h, 90h,  0h, 0B0h,  20h, 80h
+    dw 0h, 0B0h,  20h, 70h,  0h, 60h,  10h, 60h
+    dw 0h, 10h,  10h, 10h,  0h, 10h,  10h, 20h
+    dw 0h, 10h,  10h, 30h,  0h, 10h,  20h, 40h
+    dw 0h, 10h,  20h, 50h,  60h, 10h,  30h, 20h
+    dw 60h, 20h,  30h, 30h,  60h, 30h,  50h, 30h
+    dw 60h, 40h,  40h, 50h,  60h, 50h,  30h, 60h
+    dw 60h, 60h,  40h, 60h,  60h, 70h,  50h, 60h
+    dw 60h, 80h,  40h, 70h,  60h, 90h,  50h, 90h
+    dw 60h, 0A0h,  30h, 90h,  60h, 0B0h,  30h, 0A0h
+    dw 90h, 30h,  0FFFFh, 0FFFFh
+LeaderScript7DEnd dw LEADER_END_Y, 0h
+LeaderScript7E dw 0h, 60h,  10h, 50h,  10h, 60h,  10h, 70h
+    dw 20h, 60h,  20h, 60h,  30h, 60h,  30h, 60h
+    dw 40h, 60h,  40h, 60h,  50h, 60h,  50h, 60h
+    dw 60h, 70h,  60h, 70h,  50h, 80h,  50h, 80h
+    dw 40h, 90h,  40h, 90h,  30h, 0A0h,  50h, 0B0h
+    dw 20h, 0B0h,  30h, 0B0h,  10h, 0C0h,  20h, 0B0h
+    dw 0h, 0C0h,  10h, 0A0h,  0h, 0h,  10h, 20h
+    dw 10h, 0h,  20h, 10h,  20h, 10h,  30h, 10h
+    dw 30h, 20h,  50h, 10h,  40h, 30h,  40h, 30h
+    dw 50h, 40h,  50h, 40h,  60h, 50h,  60h, 50h
+    dw 70h, 60h,  0FFFFh, 0FFFFh
+LeaderScript7EEnd dw LEADER_END_Y, 0h
+; Encounter age, counted every fourth frame; gates boss phases.
+EncounterTicks dw 0
+LeaderScript1C dw 0h, 0C0h,  30h, 8h,  10h, 0C0h,  20h, 10h
+    dw 20h, 0C0h,  20h, 20h,  30h, 0C0h,  30h, 30h
+    dw 40h, 0C0h,  40h, 40h,  50h, 0C0h,  40h, 50h
+    dw 60h, 0C0h,  50h, 50h,  60h, 0B0h,  30h, 60h
+    dw 60h, 0A0h,  40h, 60h,  60h, 90h,  40h, 70h
+    dw 60h, 80h,  50h, 70h,  60h, 70h,  40h, 80h
+    dw 60h, 60h,  30h, 90h,  60h, 50h,  20h, 0A0h
+    dw 60h, 40h,  20h, 0B0h,  60h, 30h,  30h, 0B8h
+    dw 60h, 0h,  0h, 0h
+LeaderScript1CEnd dw LEADER_END_Y, 0h
+LeaderScript1F dw 50h, 0C0h,  50h, 0h,  0h, 0h,  0h, 0C0h
+LeaderScript1FEnd dw LEADER_END_Y, 0h
+; Next group of five FormationSlots (wraps at FallerColumnCursor).
+FormationSlotCursor dw offset FormationSlots
+; Four groups of five (Y, X) slots for the type 20h children.
+FormationSlots dw 40h, 90h,  40h, 80h,  30h, 80h,  30h, 90h,  20h, 70h
+    dw 20h, 50h,  30h, 40h,  30h, 30h,  40h, 30h,  40h, 40h
+    dw 30h, 10h,  20h, 10h,  10h, 10h,  10h, 20h,  10h, 30h
+    dw 10h, 90h,  10h, 0A0h,  10h, 0B0h,  20h, 0B0h,  30h, 0B0h
+; Next of the FallerColumns X values (wraps at FallerColumnsEnd).
+FallerColumnCursor dw offset FallerColumns
+FallerColumns dw 80h, 30h, 0h, 70h, 90h, 20h, 0C0h, 10h, 0A0h, 40h, 60h, 0B0h, 90h, 50h
+FallerColumnsEnd label word
+; Scratch origin of the eight-shard burst (loc_0B402).
+BurstOriginX dw 0
+BurstOriginY dw 0
+; The level-0 multi-part boss: anchor position and part records (types 76h..79h).
+SegBossX dw 0
+SegBossY dw 0
+SegBossAnchor dw 0
+SegBossPart77 dw 0
+SegBossCore dw 0
+SegBossPart79 dw 0
+SegBossActive dw 0
+SegBossPathCursor dw 0
+; Invader march (TypeHandler62): 0 = right towards X C0h, 1 = left towards 0; the
+; Next* values are latched at an edge and copied by loc_0A940 once per frame.
+InvaderMarchLeft dw 0
+InvaderNextMarchLeft dw 0
+InvaderDropStep dw 0
+InvaderNextDropStep dw 0
+; Frames since the last invader spawn (stops at FFFFh).
+FramesSinceInvaderSpawn dw 0
+InvaderSlotCursor dw 0
+; Three rows of eight invader start positions (Y, X).
+InvaderFormation dw 50h, 0A8h,  50h, 90h,  50h, 78h,  50h, 60h
+    dw 50h, 48h,  50h, 30h,  50h, 18h,  50h, 0h
+    dw 38h, 0h,  38h, 18h,  38h, 30h,  38h, 48h
+    dw 38h, 60h,  38h, 78h,  38h, 90h,  38h, 0A8h
+    dw 20h, 0A8h,  20h, 90h,  20h, 78h,  20h, 60h
+    dw 20h, 48h,  20h, 30h,  20h, 18h,  20h, 0h
+InvaderFormationEnd label word
+; Faller variants by REC_FIELD_1C: {animation counter address, Y step per frame};
+; FallerVariantsAlt on levels 3 and 5.
+FallerVariants dw 2336h, 2,  2336h, 3,  2328h, 4,  2328h, 5
+FallerVariantsAlt dw 2326h, 5,  2326h, 6,  2326h, 7,  2326h, 8
+; +1 or -1: facing of the walker types 8Bh..8Eh.
+WalkerFacingStep dw 0
 ; Aiming: bit 0 target to the right, 1 left, 2 below, 3 above (none = aligned);
 ; DirectionFromQuadrant maps it to REC_DIRECTION.
 AimQuadrantBits dw 00000h
@@ -1709,45 +1872,70 @@ AttributePatches5 db 1h,0, 3h,0, 0Ch,0, 0Dh,0, 13h,0, 16h,0, 1Eh,0, 23h,0
 LevelScriptCursorPtrs dw offset LevelScriptCursors + 0, offset LevelScriptCursors + 2, offset LevelScriptCursors + 4, offset LevelScriptCursors + 6, offset LevelScriptCursors + 8, offset LevelScriptCursors + 10
 ; Next event of each level's script; loc_00B3E resets them to the script starts.
 LevelScriptCursors dw offset LevelScript0, offset LevelScript1, offset LevelScript2, offset LevelScript3, offset LevelScript4, offset LevelScript5
+; Per LevelIndex: restart checkpoints used after a life is lost (RestartAtCheckpoint).
+LevelCheckpointPtrs dw offset LevelCheckpoints0, offset LevelCheckpoints1, offset LevelCheckpoints2, offset LevelCheckpoints3, offset LevelCheckpoints4, offset LevelCheckpoints5
+; Four {map position, LevelScriptClock, script cursor, next map position} entries
+; per level (the last without the next position): the first entry whose next
+; position lies beyond the scroll position DS:2350 is used.
+LevelCheckpoints0 dw 9Ch, 111h, offset LevelScript0, 3CFh
+    dw 3CFh, 0D2h, offset LevelScript0 + 8, 750h
+    dw 750h, 8Dh, offset LevelScript0 + 32, 0A90h
+    dw 0A90h, 4Dh, offset LevelScript0 + 80
+LevelCheckpoints1 dw 9Ch, 111h, offset LevelScript1, 3CFh
+    dw 3CFh, 0D2h, offset LevelScript1 + 40, 7C5h
+    dw 7C5h, 84h, offset LevelScript1 + 88, 0A90h
+    dw 0A90h, 4Dh, offset LevelScript1 + 136
+LevelCheckpoints2 dw 9Ch, 111h, offset LevelScript2, 3CFh
+    dw 3CFh, 0D2h, offset LevelScript2 + 102, 777h
+    dw 777h, 8Ah, offset LevelScript2 + 220, 0A90h
+    dw 0A90h, 4Dh, offset LevelScript2 + 380
+LevelCheckpoints3 dw 9Ch, 111h, offset LevelScript3, 3CFh
+    dw 3CFh, 0D2h, offset LevelScript3 + 8, 70Fh
+    dw 70Fh, 92h, offset LevelScript3 + 18, 0AEBh
+    dw 0AEBh, 46h, offset LevelScript3 + 38
+LevelCheckpoints4 dw 9Ch, 111h, offset LevelScript4, 3B5h
+    dw 3B5h, 0D4h, offset LevelScript4 + 8, 736h
+    dw 736h, 8Fh, offset LevelScript4 + 16, 0AEBh
+    dw 0AEBh, 46h, offset LevelScript4 + 24
+LevelCheckpoints5 dw 9Ch, 111h, offset LevelScript5, 3CFh
+    dw 3CFh, 0D2h, offset LevelScript5 + 24, 75Dh
+    dw 75Dh, 8Ch, offset LevelScript5 + 56, 0AEBh
+    dw 0AEBh, 46h, offset LevelScript5 + 56
+; Starfield: 40 {Y, X, mask} entries. At startup InitStars turns X (pixels) into a
+; byte column and fills the mask from StarMasks*; the first 20, 10 and 10 stars
+; form three layers moving at different speeds (MoveStars).
+Stars dw 7, 28, 0,  33, 62, 0,  50, 5, 0,  66, 60, 0,  81, 41, 0
+    dw 133, 14, 0,  132, 50, 0,  108, 64, 0,  164, 85, 0,  137, 113, 0
+    dw 125, 137, 0,  142, 169, 0,  91, 111, 0,  80, 154, 0,  108, 82, 0
+    dw 53, 127, 0,  25, 105, 0,  17, 150, 0,  38, 174, 0,  7, 203, 0
+    dw 21, 36, 0,  72, 25, 0,  135, 26, 0,  163, 78, 0,  88, 79, 0
+    dw 110, 133, 0,  172, 171, 0,  22, 126, 0,  35, 176, 0,  79, 153, 0
+    dw 24, 33, 0,  70, 67, 0,  102, 26, 0,  149, 47, 0,  109, 93, 0
+    dw 158, 121, 0,  141, 191, 0,  73, 132, 0,  42, 179, 0,  14, 138, 0
+; Workspace offsets of the stars drawn this frame, FFFFh-terminated (DrawStars,
+; erased by EraseStars).
+StarDrawnOffsets dw 40 dup (0)
+    dw 0FFFFh
+; Pixel masks by X within the byte: CGA 2 bits, EGA 1 bit, Tandy 4 bits (the Tandy
+; masks become 07h/70h after StarBrightCount stars, dimming the rest).
+StarMasksCga db 03h, 0Ch, 30h, 0C0h
+StarMasksEga db 01h, 02h, 04h, 08h, 10h, 20h, 40h, 80h
+StarMasksTandy db 0Fh, 0F0h
+    even
+; Frame dividers of the three star layers.
+StarLayerTick1 dw 0
+StarLayerTick2 dw 0
+StarLayerTick3 dw 0
+StarBrightCount dw 14h
+; Item kind (0 = none, 1..4) dropped when a whole group of a script event dies,
+; indexed by EventTrigger & 3Fh.
+GroupDropKinds db 3,1,0,0,0,2,0,4,1,0,1,0,0,0,1,4
+    db 0,0,0,3,1,0,0,0,0,0,1,0,3,0,0,0
+    db 2,3,1,0,0,2,0,1,1,0,1,3,0,1,0,0
+    db 1,0,0,0,1,3,0,0,0,1,1,4,0,0,0,0
 ; UNKNOWN: not yet classified as code or data
-    db 0Dh,0C6h,02Bh,0C6h,049h,0C6h,067h,0C6h,085h,0C6h,0A3h,0C6h,09Ch,00h,011h
-    db 01h,05Ch,0C8h,0CFh,03h,0CFh,03h,0D2h,00h,064h,0C8h,050h,07h,050h,07h,08Dh
-    db 00h,07Ch,0C8h,090h,0Ah,090h,0Ah,04Dh,00h,0ACh,0C8h,09Ch,00h,011h,01h,0D6h
-    db 0C8h,0CFh,03h,0CFh,03h,0D2h,00h,0FEh,0C8h,0C5h,07h,0C5h,07h,084h,00h,02Eh
-    db 0C9h,090h,0Ah,090h,0Ah,04Dh,00h,05Eh,0C9h,09Ch,00h,011h,01h,02h,0CAh,0CFh
-    db 03h,0CFh,03h,0D2h,00h,068h,0CAh,077h,07h,077h,07h,08Ah,00h,0DEh,0CAh,090h
-    db 0Ah,090h,0Ah,04Dh,00h,07Eh,0CBh,09Ch,00h,011h,01h,036h,0CCh,0CFh,03h,0CFh
-    db 03h,0D2h,00h,03Eh,0CCh,0Fh,07h,0Fh,07h,092h,00h,048h,0CCh,0EBh,0Ah,0EBh
-    db 0Ah,046h,00h,05Ch,0CCh,09Ch,00h,011h,01h,080h,0CCh,0B5h,03h,0B5h,03h,0D4h
-    db 00h,088h,0CCh,036h,07h,036h,07h,08Fh,00h,090h,0CCh,0EBh,0Ah,0EBh,0Ah,046h
-    db 00h,098h,0CCh,09Ch,00h,011h,01h,0AAh,0CCh,0CFh,03h,0CFh,03h,0D2h,00h,0C2h
-    db 0CCh,05Dh,07h,05Dh,07h,08Ch,00h,0E2h,0CCh,0EBh,0Ah,0EBh,0Ah,046h,00h,0E2h
-    db 0CCh,07h,00h,01Ch,00h,00h,00h,021h,00h,03Eh,00h,00h,00h,032h,00h,05h
-    db 00h,00h,00h,042h,00h,03Ch,00h,00h,00h,051h,00h,029h,00h,00h,00h,085h
-    db 00h,0Eh,00h,00h,00h,084h,00h,032h,00h,00h,00h,06Ch,00h,040h,00h,00h
-    db 00h,0A4h,00h,055h,00h,00h,00h,089h,00h,071h,00h,00h,00h,07Dh,00h,089h
-    db 00h,00h,00h,08Eh,00h,0A9h,00h,00h,00h,05Bh,00h,06Fh,00h,00h,00h,050h
-    db 00h,09Ah,00h,00h,00h,06Ch,00h,052h,00h,00h,00h,035h,00h,07Fh,00h,00h
-    db 00h,019h,00h,069h,00h,00h,00h,011h,00h,096h,00h,00h,00h,026h,00h,0AEh
-    db 00h,00h,00h,07h,00h,0CBh,00h,00h,00h,015h,00h,024h,00h,00h,00h,048h
-    db 00h,019h,00h,00h,00h,087h,00h,01Ah,00h,00h,00h,0A3h,00h,04Eh,00h,00h
-    db 00h,058h,00h,04Fh,00h,00h,00h,06Eh,00h,085h,00h,00h,00h,0ACh,00h,0ABh
-    db 00h,00h,00h,016h,00h,07Eh,00h,00h,00h,023h,00h,0B0h,00h,00h,00h,04Fh
-    db 00h,099h,00h,00h,00h,018h,00h,021h,00h,00h,00h,046h,00h,043h,00h,00h
-    db 00h,066h,00h,01Ah,00h,00h,00h,095h,00h,02Fh,00h,00h,00h,06Dh,00h,05Dh
-    db 00h,00h,00h,09Eh,00h,079h,00h,00h,00h,08Dh,00h,0BFh,00h,00h,00h,049h
-    db 00h,084h,00h,00h,00h,02Ah,00h,0B3h,00h,00h,00h,0Eh,00h,08Ah,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,0FFh,0FFh,03h,0Ch,030h,0C0h,01h,02h,04h,08h,010h,020h,040h,080h,0Fh
-    db 0F0h,090h,00h,00h,00h,00h,00h,00h,014h,00h,03h,01h,00h,00h,00h,02h
-    db 00h,04h,01h,00h,01h,00h,00h,00h,01h,04h,00h,00h,00h,03h,01h,00h
-    db 00h,00h,00h,00h,01h,00h,03h,00h,00h,00h,02h,03h,01h,00h,00h,02h
-    db 00h,01h,01h,00h,01h,03h,00h,01h,00h,00h,01h,00h,00h,00h,01h,03h
-    db 00h,00h,00h,01h,01h,04h,00h,00h,00h,00h,00h,090h
+    db 0h
+    even
 ; Level scripts: events (trigger, [0FFFFh,] formation, x, y) ending with trigger
 ; 0FFFFh. An event fires when its trigger equals the scroll countdown at DS:A978; the
 ; optional 0FFFFh clears the flag at DS:20A2 for that event. The formation's members
@@ -2014,31 +2202,49 @@ Formation51 dw 1, 0, 8Ch, 1
     dw 0, 0
 Formation52 dw 1, 0, 8Bh, 1
     dw 0, 0
+; The last five map rows (13 tiles each) of every level: the end-of-level
+; structure, copied to the level map after its load.
+LevelEndMapRows db 1h,1h,1h,27h,28h,29h,1h,2Ah,2Bh,2Ch,1h,1h,1h
+    db 1h,1h,1h,21h,22h,23h,1h,24h,25h,26h,1h,1h,1h
+    db 1h,18h,19h,1Ah,1Bh,1Ch,1h,1Dh,1Eh,1Fh,20h,1h,1h
+    db 1h,0Dh,0Eh,0Fh,10h,11h,12h,13h,14h,15h,16h,17h,1h
+    db 1h,2h,3h,4h,5h,6h,7h,8h,9h,0Ah,0Bh,0Ch,1h
+    even
+; Written by the TypeHandlers dispatcher for every record; no reader found.
+DispatchRecordX dw 0
+DispatchRecordY dw 0
+; Four-frame sprite cycles indexed by DS:232E bits 4..5: types 86h and 88h, facing
+; REC_DIRECTION 6 or not.
+Type86FramesDir6 dw 0C8h, 0C9h, 0CAh, 0C9h
+Type86Frames dw 0DAh, 0DBh, 0DCh, 0DBh
+Type88FramesDir6 dw 0FDh, 0FEh, 0FFh, 0FEh
+Type88Frames dw 0FAh, 0FBh, 0FCh, 0FBh
+; (Y, X) paths of types 66h and 67h (REC_FIELD_36), the second mirrored (X = B0h - X);
+; each ends with an unreachable LEADER_END_Y waypoint.
+PathType66 dw 0h, 0h,  30h, 30h,  30h, 50h,  40h, 50h
+    dw 40h, 0h,  70h, 30h,  70h, 50h,  80h, 50h
+    dw 80h, 10h,  70h, 0h,  40h, 0h,  0h, 40h
+    dw 10h, 50h,  0B0h, 50h,  0B0h, 0h,  60h, 50h
+    dw 0h, 0h,  0h, 40h,  10h, 50h,  LEADER_END_Y, 50h
+PathType67 dw 0h, 0B0h,  30h, 80h,  30h, 60h,  40h, 60h
+    dw 40h, 0B0h,  70h, 80h,  70h, 60h,  80h, 60h
+    dw 80h, 0A0h,  70h, 0B0h,  40h, 0B0h,  0h, 70h
+    dw 10h, 60h,  0B0h, 60h,  0B0h, 0B0h,  60h, 60h
+    dw 0h, 0B0h,  0h, 70h,  10h, 60h,  LEADER_END_Y, 60h
+; X target (50h, 60h or 70h) of types 6Bh..6Dh.
+DescentTargetX dw 0
+; (Y, X) offsets of the four 32-pixel boss parts (types 76h..79h) from SegBossY/X.
+BossPartOffsets dw 0h, 0h,  0h, 20h,  20h, 0h,  20h, 20h
+; Path of the boss anchor (SegBossPathCursor); FFFFh restarts it.
+BossPath dw 0h, 0h,  80h, 0h,  50h, 40h,  30h, 30h
+    dw 10h, 70h,  40h, 90h,  0h, 90h,  80h, 90h
+    dw 40h, 90h,  0h, 50h,  20h, 30h,  40h, 0h
+    dw 40h, 40h,  80h, 0h,  50h, 0h,  30h, 20h
+    dw 20h, 70h,  50h, 50h,  20h, 70h,  50h, 20h
+    dw 20h, 10h,  0h, 0h
+    dw 0FFFFh
 ; UNKNOWN: not yet classified as code or data
-    db 01h,01h,01h,027h
-    db 028h,029h,01h,02Ah,02Bh,02Ch,01h,01h,01h,01h,01h,01h,021h,022h,023h,01h
-    db 024h,025h,026h,01h,01h,01h,01h,018h,019h,01Ah,01Bh,01Ch,01h,01Dh,01Eh,01Fh
-    db 020h,01h,01h,01h,0Dh,0Eh,0Fh,010h,011h,012h,013h,014h,015h,016h,017h,01h
-    db 01h,02h,03h,04h,05h,06h,07h,08h,09h,0Ah,0Bh,0Ch,01h,090h,00h,00h
-    db 00h,00h,0C8h,00h,0C9h,00h,0CAh,00h,0C9h,00h,0DAh,00h,0DBh,00h,0DCh,00h
-    db 0DBh,00h,0FDh,00h,0FEh,00h,0FFh,00h,0FEh,00h,0FAh,00h,0FBh,00h,0FCh,00h
-    db 0FBh,00h,00h,00h,00h,00h,030h,00h,030h,00h,030h,00h,050h,00h,040h,00h
-    db 050h,00h,040h,00h,00h,00h,070h,00h,030h,00h,070h,00h,050h,00h,080h,00h
-    db 050h,00h,080h,00h,010h,00h,070h,00h,00h,00h,040h,00h,00h,00h,00h,00h
-    db 040h,00h,010h,00h,050h,00h,0B0h,00h,050h,00h,0B0h,00h,00h,00h,060h,00h
-    db 050h,00h,00h,00h,00h,00h,00h,00h,040h,00h,010h,00h,050h,00h,030h,075h
-    db 050h,00h,00h,00h,0B0h,00h,030h,00h,080h,00h,030h,00h,060h,00h,040h,00h
-    db 060h,00h,040h,00h,0B0h,00h,070h,00h,080h,00h,070h,00h,060h,00h,080h,00h
-    db 060h,00h,080h,00h,0A0h,00h,070h,00h,0B0h,00h,040h,00h,0B0h,00h,00h,00h
-    db 070h,00h,010h,00h,060h,00h,0B0h,00h,060h,00h,0B0h,00h,0B0h,00h,060h,00h
-    db 060h,00h,00h,00h,0B0h,00h,00h,00h,070h,00h,010h,00h,060h,00h,030h,075h
-    db 060h,00h,00h,00h,00h,00h,00h,00h,00h,00h,020h,00h,020h,00h,00h,00h
-    db 020h,00h,020h,00h,00h,00h,00h,00h,080h,00h,00h,00h,050h,00h,040h,00h
-    db 030h,00h,030h,00h,010h,00h,070h,00h,040h,00h,090h,00h,00h,00h,090h,00h
-    db 080h,00h,090h,00h,040h,00h,090h,00h,00h,00h,050h,00h,020h,00h,030h,00h
-    db 040h,00h,00h,00h,040h,00h,040h,00h,080h,00h,00h,00h,050h,00h,00h,00h
-    db 030h,00h,020h,00h,020h,00h,070h,00h,050h,00h,050h,00h,020h,00h,070h,00h
-    db 050h,00h,020h,00h,020h,00h,010h,00h,00h,00h,00h,00h,0FFh,0FFh,0FFh,0FFh
+    db 0FFh,0FFh
 DATA ends
 
 ; Empty segment marking the end of the program image (the DOS resize target).
