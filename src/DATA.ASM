@@ -14,7 +14,11 @@ TEXTROW macro attr, text
     endm
 endm
 locals
+extrn ApplyFrontPod:far
+extrn ApplySidePods:far
+extrn ApplyTrailingPods:far
 extrn CountXReturn:far
+extrn FrontPodAvailable:far
 extrn Level0MapCell:far
 extrn Level1MapCell:far
 extrn Level2MapCell:far
@@ -33,6 +37,8 @@ extrn SfxCmdStepDown:far
 extrn SfxCmdStepUp:far
 extrn SfxStopAll:far
 extrn SfxStreamStoreAndWait:far
+extrn SidePodsAvailable:far
+extrn TrailingPodsAvailable:far
 extrn loc_083D7:far
 extrn loc_083DE:far
 extrn loc_083E4:far
@@ -50,12 +56,6 @@ extrn loc_08437:far
 extrn loc_0843D:far
 extrn loc_08445:far
 extrn loc_0844E:far
-extrn loc_08456:far
-extrn loc_08463:far
-extrn loc_08468:far
-extrn loc_0849D:far
-extrn loc_084A2:far
-extrn loc_084C3:far
 extrn loc_084C9:far
 extrn loc_084D6:far
 extrn loc_084F0:far
@@ -107,12 +107,13 @@ public ClampXHighSeen
 public ClampXLowSeen
 public ClearWorkspaceHalfOnly
 public Codeword
-public CompanionRecord
 public CorruptMsgHead
 public CorruptMsgPressKey
 public CorruptMsgTail
 public CountGate2324
 public CreditRandomWords
+public CurrentSidePodSlot
+public CurrentTrailingPodSlot
 public DacColor6Default
 public DacColor6Level1
 public DebugCodewordLine
@@ -153,6 +154,8 @@ public EventMarkerFlag
 public EventTrigger
 public EventX
 public EventY
+public ExhaustFrames
+public ExhaustOffsets
 public ExitOrderScreen
 public ExitWithError
 public FallerColumnCursor
@@ -198,6 +201,8 @@ public FrameCount64
 public FrameCount8
 public FrameDivider4
 public FramesSinceInvaderSpawn
+public FrontPodOffsets
+public FrontPodRecord
 public Fuel
 public FuelGaugeOffset
 public GameOverRequest
@@ -224,8 +229,6 @@ public HistoryEnd
 public HistoryPairs
 public HistoryReadCursor15
 public HistoryReadCursor31
-public HistoryRecordSlot15
-public HistoryRecordSlot31
 public HistoryWriteCursor
 public HudTankCompare
 public IPageList
@@ -318,8 +321,6 @@ public MenuKeyLatchA
 public MenuKeyLatchK
 public MenuKeyLatchM
 public MenuShowingHiscores
-public MinusSlotA968
-public MinusSlotA96C
 public MissileAmmo
 public MissilesLive
 public ModuleSoundEnabled
@@ -331,16 +332,9 @@ public MuzzleOffsets
 public NextLevelRequest
 public NonAsciiCodeword
 public OPageList
-public OffsetTableA368
-public OffsetTableA374
-public OffsetTableA380
-public OffsetTableA38C
-public OffsetXGroupA
-public OffsetXGroupB
 public OffsetXWork
 public OkMenuPageList
 public OldNonAsciiCodeword
-public OptionShotDirection
 public PageIndex
 public PageListPtr
 public Password
@@ -353,8 +347,7 @@ public PingPongFrames4
 public PingPongFrames8
 public PlaqueFiles
 public PlayfieldRowOffsets
-public PlusSlotA966
-public PlusSlotA96A
+public PodShotDirection
 public PoolA
 public PoolACursor
 public PoolAEnd
@@ -413,16 +406,26 @@ public SfxTickPhase
 public SfxVoiceA
 public SfxVoiceB
 public ShotsAtFireBeam
-public ShotsAtFireCompanion
+public ShotsAtFireFrontPod
 public ShotsAtFireMain
 public ShotsAtFireSide
-public ShotsLiveCompanion
+public ShotsLiveFrontPod
 public ShotsLiveMain
 public ShotsLiveSide
 public ShotsLiveType9
+public SidePodLeftInner
+public SidePodLeftOuter
+public SidePodOffsetsLeftInner
+public SidePodOffsetsLeftOuter
+public SidePodOffsetsRightInner
+public SidePodOffsetsRightOuter
+public SidePodRightInner
+public SidePodRightOuter
+public SidePodSlotPtr
+public SidePodSpreadLeft
+public SidePodSpreadRight
+public SidePodsToAdd
 public SideShotsEnabled
-public SlotFillBudget
-public SlotFillPtr
 public SlowCount10
 public SlowCount3
 public SlowCount4
@@ -485,6 +488,8 @@ public TimerVectorInstalled
 public TitleLogoPiecePtr
 public TitleLogoPieces
 public TitleRevealRects
+public TrailingPodFar
+public TrailingPodNear
 public TurretPhaseTable
 public Type21Path
 public Type28FrameRamp
@@ -1295,9 +1300,9 @@ UpgradeList1 dw 24h, offset loc_083D7, offset CountXReturn
     dw 7h, offset loc_08445, offset loc_0844E
     dw 0FFFFh, 0FFFFh, offset CountXReturn
 UpgradeList2 dw 24h, offset loc_083D7, offset CountXReturn
-    dw 9h, offset loc_08456, offset loc_08463
-    dw 0Ah, offset loc_08468, offset loc_0849D
-    dw 0Bh, offset loc_084A2, offset loc_084C3
+    dw 9h, offset FrontPodAvailable, offset ApplyFrontPod
+    dw 0Ah, offset SidePodsAvailable, offset ApplySidePods
+    dw 0Bh, offset TrailingPodsAvailable, offset ApplyTrailingPods
     dw 0FFFFh, 0FFFFh, offset CountXReturn
 UpgradeList3 dw 24h, offset loc_083D7, offset CountXReturn
     dw 0Dh, offset loc_084C9, offset loc_084D6
@@ -1491,40 +1496,40 @@ XAdjustPathTaken dw 00000h
 ; DifficultySetting 0: alternates so only every other hit costs a life (loc_09E85).
 EasyHitToggle db 0h
     even
-; Slots still to fill (loc_09F5F).
-SlotFillBudget dw 0h
-SlotFillPtr dw 0h
+; Slots still to fill (AddSidePods).
+SidePodsToAdd dw 0h
+SidePodSlotPtr dw 0h
 ; Offset pairs at DS:A368; three adjacent pairs, caller index bound not proven.
-OffsetTableA368 dw 010h ; offset pair 0 field Y, signed value 16
+SidePodOffsetsLeftInner dw 010h ; offset pair 0 field Y, signed value 16
     dw 0FFF8h ; offset pair 0 field X, signed value -8
     dw 0Ch ; offset pair 1 field Y, signed value 12
     dw 0FFF4h ; offset pair 1 field X, signed value -12
     dw 0Fh ; offset pair 2 field Y, signed value 15
     dw 0FFF3h ; offset pair 2 field X, signed value -13
 ; Offset pairs at DS:A374; three adjacent pairs, caller index bound not proven.
-OffsetTableA374 dw 010h ; offset pair 0 field Y, signed value 16
+SidePodOffsetsRightInner dw 010h ; offset pair 0 field Y, signed value 16
     dw 018h ; offset pair 0 field X, signed value 24
     dw 0Ch ; offset pair 1 field Y, signed value 12
     dw 01Ch ; offset pair 1 field X, signed value 28
     dw 0Fh ; offset pair 2 field Y, signed value 15
     dw 01Dh ; offset pair 2 field X, signed value 29
 ; Offset pairs at DS:A380; three adjacent pairs, caller index bound not proven.
-OffsetTableA380 dw 014h ; offset pair 0 field Y, signed value 20
+SidePodOffsetsLeftOuter dw 014h ; offset pair 0 field Y, signed value 20
     dw 0FFECh ; offset pair 0 field X, signed value -20
     dw 010h ; offset pair 1 field Y, signed value 16
     dw 0FFE8h ; offset pair 1 field X, signed value -24
     dw 013h ; offset pair 2 field Y, signed value 19
     dw 0FFE7h ; offset pair 2 field X, signed value -25
 ; Offset pairs at DS:A38C; three adjacent pairs, caller index bound not proven.
-OffsetTableA38C dw 014h ; offset pair 0 field Y, signed value 20
+SidePodOffsetsRightOuter dw 014h ; offset pair 0 field Y, signed value 20
     dw 024h ; offset pair 0 field X, signed value 36
     dw 010h ; offset pair 1 field Y, signed value 16
     dw 028h ; offset pair 1 field X, signed value 40
     dw 013h ; offset pair 2 field Y, signed value 19
     dw 029h ; offset pair 2 field X, signed value 41
 OffsetXWork dw 00000h
-OffsetXGroupA dw 00000h
-OffsetXGroupB dw 00000h
+SidePodSpreadRight dw 00000h
+SidePodSpreadLeft dw 00000h
 ClampXLowSeen db 00h
 ClampXHighSeen db 00h
 ; ShotsLive* copied when the fire button is taken (HandleFireButton); the burst
@@ -1532,7 +1537,7 @@ ClampXHighSeen db 00h
 ShotsAtFireMain dw 0
 ShotsAtFireBeam dw 0
 ShotsAtFireSide dw 0
-ShotsAtFireCompanion dw 0
+ShotsAtFireFrontPod dw 0
 ; Muzzle (dY, dX) from the player position per PrimaryRecord REC_SPRITE 0..2.
 MuzzleOffsets dw 6, 0Ch,  0, 0Ch,  0, 0Ch
 ; Records of the beam (type 9 shots), head first; FFFFh-filled when the beam starts.
@@ -1541,8 +1546,8 @@ BeamList dw 26 dup (0FFFFh)
 BeamListTerminator dw 0FFFFh
 ; Next free BeamList entry.
 BeamListEnd dw 0
-; Direction of the next option fork shot, FFFFh = outward by the option's X.
-OptionShotDirection dw 0
+; Direction of the next pod fork shot, FFFFh = outward by the pod's X.
+PodShotDirection dw 0
 ; (Y, X, sprite) of the four type 53h records spawned at MapScrollPos 0EA0h.
 Type53SpawnTable dw 20h, 18h, 10h,  20h, 98h, 13h,  40h, 28h, 16h,  40h, 88h, 19h
 ; Map row being spawned by SpawnFromMapRow: cells left, cursor into the level map
@@ -1550,9 +1555,15 @@ Type53SpawnTable dw 20h, 18h, 10h,  20h, 98h, 13h,  40h, 28h, 16h,  40h, 88h, 19
 MapRowCellsLeft dw 00000h
 MapRowCursor dw 00000h
 MapCellX dw 00000h
-    db 00h,01h,02h,03h
-    db 04h,03h,02h,01h,019h,00h,08h,00h,016h,00h,08h,00h,018h,00h,08h,00h
-    db 0FBh,0FFh,08h,00h,0F3h,0FFh,08h,00h,0F2h,0FFh,08h,00h,00h,00h,00h,00h
+; Exhaust sprite offset (from 9) by SlowCount8.
+ExhaustFrames db 0, 1, 2, 3, 4, 3, 2, 1
+; (Y, X) from the player to the exhaust and to the front pod, per ship form
+; (PrimaryRecord REC_SPRITE 0..2).
+ExhaustOffsets dw 19h, 8,  16h, 8,  18h, 8
+FrontPodOffsets dw -5, 8,  -0Dh, 8,  -0Eh, 8
+; Slot (SidePod* or TrailingPod*) of the pod being updated, cleared when it is lost.
+CurrentSidePodSlot dw 0
+CurrentTrailingPodSlot dw 0
 ; TryTerrainStep scratch: 1 when the step was blocked; the start position (written,
 ; no reader found); the probe position moved by the step and checked by loc_0BDD0.
 TerrainBlocked dw 00000h
@@ -1713,18 +1724,20 @@ EnergyPoints dw 0h
 SideShotsEnabled dw 0h
 ; Missiles, +4 per pickup.
 MissileAmmo dw 0h
-HistoryRecordSlot15 dw 0FFFFh
-HistoryRecordSlot31 dw 0FFFFh
-PlusSlotA966 dw 0FFFFh
-MinusSlotA968 dw 0FFFFh
-PlusSlotA96A dw 0FFFFh
-MinusSlotA96C dw 0FFFFh
-; Companion pod record, FFFFh = none.
-CompanionRecord dw 0FFFFh
-; Live shots by class (main, type 9, companion, side), decremented as they are freed.
+; Pod records (KIND_POD), FFFFh = none. Trailing pods follow the ship's position
+; history (HistoryReadCursor15/31); side pods sit beside it (PlaceSidePods).
+TrailingPodNear dw 0FFFFh
+TrailingPodFar dw 0FFFFh
+SidePodLeftInner dw 0FFFFh
+SidePodRightInner dw 0FFFFh
+SidePodLeftOuter dw 0FFFFh
+SidePodRightOuter dw 0FFFFh
+; Front pod record (above the ship; fires FireFrontPodBurst), FFFFh = none.
+FrontPodRecord dw 0FFFFh
+; Live shots by class (main, beam, front pod, side), decremented as they are freed.
 ShotsLiveMain dw 0h
 ShotsLiveType9 dw 0h
-ShotsLiveCompanion dw 0h
+ShotsLiveFrontPod dw 0h
 ShotsLiveSide dw 0h
 LevelScriptClock dw 00000h
 ; Fuel 0..58h, drained every 40h/80h frames (loc_09EE4); empty kills the player.

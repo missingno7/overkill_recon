@@ -2,7 +2,7 @@
 ; Field +8 is an unchecked index only at PlaceRecordFromOffsetPair.
 ; RECORD_Y_MIN/MAX are equality sentinels, NOT saturating bounds.
 ; PLACEMENT_X_SIGNED_MAX is distinct from the unsigned movement X limit.
-; CLAMP_X_* are exact-1 sentinels; PlaceFourRecordsFromOffsetTables clears them, its PlaceRecordFromOffsetPair tail only sets.
+; CLAMP_X_* are exact-1 sentinels; PlaceSidePods clears them, its PlaceRecordFromOffsetPair tail only sets.
 ; XAdjustPathTaken records an attempted path, even at an unchanged X bound.
 OFFSET_PAIR_INDEX_08 equ 08h
 ; Initial byte offsets of the lagging cursors inside HistoryPairs: 48 minus the lag, in pairs.

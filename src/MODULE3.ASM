@@ -31,12 +31,13 @@ extrn ClampXHighSeen:byte
 extrn ClampXLowSeen:byte
 extrn ClearWorkspaceHalfOnly:word
 extrn Codeword:byte
-extrn CompanionRecord:word
 extrn CorruptMsgHead:byte
 extrn CorruptMsgPressKey:byte
 extrn CorruptMsgTail:byte
 extrn CountGate2324:word
 extrn CreditRandomWords:byte
+extrn CurrentSidePodSlot:word
+extrn CurrentTrailingPodSlot:word
 extrn DacColor6Default:byte
 extrn DacColor6Level1:byte
 extrn DebugCodewordLine:byte
@@ -71,6 +72,8 @@ extrn EncounterLiveCount:word
 extrn EncounterTicks:word
 extrn EnergyPoints:word
 extrn EnergyTanks:word
+extrn ExhaustFrames:byte
+extrn ExhaustOffsets:word
 extrn FallerColumnCursor:word
 extrn FallerColumns:word
 extrn FallerColumnsEnd:word
@@ -99,6 +102,8 @@ extrn FrameCount4:word
 extrn FrameCount64:word
 extrn FrameCount8:word
 extrn FramesSinceInvaderSpawn:word
+extrn FrontPodOffsets:word
+extrn FrontPodRecord:word
 extrn Fuel:word
 extrn GameOverRequest:word
 extrn GridYSum:word
@@ -108,8 +113,6 @@ extrn HistoryEnd:word
 extrn HistoryPairs:byte
 extrn HistoryReadCursor15:word
 extrn HistoryReadCursor31:word
-extrn HistoryRecordSlot15:word
-extrn HistoryRecordSlot31:word
 extrn HistoryWriteCursor:word
 extrn ImageEnd:byte
 extrn InputBits:byte
@@ -151,8 +154,6 @@ extrn MarchFireNow:byte
 extrn MarchStepNow:byte
 extrn MarchStepX:word
 extrn MarchWord98AC:word
-extrn MinusSlotA968:word
-extrn MinusSlotA96C:word
 extrn MissileAmmo:word
 extrn MissilesLive:word
 extrn ModuleSoundEnabled:byte
@@ -162,16 +163,9 @@ extrn MsgDeallocError:byte
 extrn MuzzleOffsets:word
 extrn NextLevelRequest:word
 extrn NonAsciiCodeword:byte
-extrn OffsetTableA368:word
-extrn OffsetTableA374:word
-extrn OffsetTableA380:word
-extrn OffsetTableA38C:word
-extrn OffsetXGroupA:word
-extrn OffsetXGroupB:word
 extrn OffsetXWork:word
 extrn OldNonAsciiCodeword:byte
 extrn OpenResourceFile:far
-extrn OptionShotDirection:word
 extrn PageIndex:word
 extrn PageListPtr:word
 extrn Password:byte
@@ -181,8 +175,7 @@ extrn PaymentFileName:byte
 extrn PaymentHelpRow:word
 extrn PingPongFrames4:word
 extrn PingPongFrames8:word
-extrn PlusSlotA966:word
-extrn PlusSlotA96A:word
+extrn PodShotDirection:word
 extrn PoolA:byte
 extrn PoolAEnd:byte
 extrn PoolAPointers:word
@@ -229,17 +222,27 @@ extrn SfxTickPhase:byte
 extrn SfxVoiceA:byte
 extrn SfxVoiceB:byte
 extrn ShotsAtFireBeam:word
-extrn ShotsAtFireCompanion:word
+extrn ShotsAtFireFrontPod:word
 extrn ShotsAtFireMain:word
 extrn ShotsAtFireSide:word
-extrn ShotsLiveCompanion:word
+extrn ShotsLiveFrontPod:word
 extrn ShotsLiveMain:word
 extrn ShotsLiveSide:word
 extrn ShotsLiveType9:word
 extrn ShowPageList:far
+extrn SidePodLeftInner:word
+extrn SidePodLeftOuter:word
+extrn SidePodOffsetsLeftInner:word
+extrn SidePodOffsetsLeftOuter:word
+extrn SidePodOffsetsRightInner:word
+extrn SidePodOffsetsRightOuter:word
+extrn SidePodRightInner:word
+extrn SidePodRightOuter:word
+extrn SidePodSlotPtr:word
+extrn SidePodSpreadLeft:word
+extrn SidePodSpreadRight:word
+extrn SidePodsToAdd:word
 extrn SideShotsEnabled:word
-extrn SlotFillBudget:word
-extrn SlotFillPtr:word
 extrn SlowCount4:word
 extrn SlowCount5:word
 extrn SlowCount6:word
@@ -278,6 +281,8 @@ extrn TimerTickPhase:byte
 extrn TitleLogoPiecePtr:word
 extrn TitleLogoPieces:byte
 extrn TitleRevealRects:byte
+extrn TrailingPodFar:word
+extrn TrailingPodNear:word
 extrn Type21Path:word
 extrn Type53SpawnTable:word
 extrn Type86Frames:word
@@ -298,6 +303,9 @@ extrn XAdjustPathTaken:word
 extrn loc_0F980:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
+public AddFrontPod
+public AddSidePods
+public AddTrailingPod
 public BlueBitsSegment
 public DestroyRecord
 public FinishRecordUpdate
@@ -355,10 +363,7 @@ public VideoAdapter
 public WaitVerticalRetracePulse
 public WideRowBytes
 public WorkspaceSegment
-public loc_09D91
 public loc_09EE4
-public loc_09F1A
-public loc_09F5F
 public loc_0A781
 public loc_0AF22
 public loc_0B2AC
@@ -370,6 +375,7 @@ public loc_1009C
 public loc_10108
 extrn AimAtPlayer:near
 extrn AllocPoolBRecordEvicting:near
+extrn AllocRecordEvicting:near
 extrn AllocateBuffers:near
 extrn BlitPackedStride104:near
 extrn BlitPackedStride160:near
@@ -524,7 +530,6 @@ extrn loc_06176:near
 extrn loc_061DC:near
 extrn loc_062AA:near
 extrn loc_07420:near
-extrn loc_074FE:near
 extrn loc_07596:near
 extrn loc_07746:near
 extrn loc_077C5:near
@@ -1028,22 +1033,22 @@ loc_09A39:
 loc_09A3E:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_09A5D
-    cmp word ptr ds:[OffsetXGroupB], 8
+    cmp word ptr ds:[SidePodSpreadLeft], 8
     je loc_09A50
-    inc word ptr ds:[OffsetXGroupB]
+    inc word ptr ds:[SidePodSpreadLeft]
 loc_09A50:
-    cmp word ptr ds:[OffsetXGroupA], -8
+    cmp word ptr ds:[SidePodSpreadRight], -8
     je loc_09A73
-    dec word ptr ds:[OffsetXGroupA]
+    dec word ptr ds:[SidePodSpreadRight]
     jmp short loc_09A73
 loc_09A5D:
-    cmp word ptr ds:[OffsetXGroupB], 0Fh
+    cmp word ptr ds:[SidePodSpreadLeft], 0Fh
     je loc_09A68
-    inc word ptr ds:[OffsetXGroupB]
+    inc word ptr ds:[SidePodSpreadLeft]
 loc_09A68:
-    cmp word ptr ds:[OffsetXGroupA], -0Fh
+    cmp word ptr ds:[SidePodSpreadRight], -0Fh
     je loc_09A73
-    dec word ptr ds:[OffsetXGroupA]
+    dec word ptr ds:[SidePodSpreadRight]
 loc_09A73:
     mov si, offset AutopilotWaypointB
     jmp short loc_09A7B
@@ -1060,8 +1065,8 @@ loc_09A86:
     je loc_09A94
     jmp near ptr loc_099F6
 loc_09A94:
-    mov word ptr ds:[OffsetXGroupA], 0
-    mov word ptr ds:[OffsetXGroupB], 0
+    mov word ptr ds:[SidePodSpreadRight], 0
+    mov word ptr ds:[SidePodSpreadLeft], 0
     call FindFreeRecordPoolA
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
@@ -1176,7 +1181,7 @@ loc_09BDF:
     call AdvancePositionHistoryIfRequested
 
 ; Near entry9BE2 and fallthrough from9BDF. StorePositionHistory, then ApplyPositionHistoryToRecords, then
-; PlaceFourRecordsFromOffsetTables iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor
+; PlaceSidePods iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor
 ; advance at this entry. Requires reviewed callee memory/segment/DF preconditions, including valid source record
 ; and selected table/index pairs. Preserve BP,CX,DX,DS,SS; ES becomes CS:9596 and DI follows the history store.
 ; AX,BX,SI and flags are path-dependent as documented in callees; not declared dead. Skipping placement
@@ -1191,15 +1196,15 @@ StoreApplyHistoryAndConditionalPlacement:
     cmp word ptr ds:[MapScrollPos], 0B6h
     jbe loc_09BFA
 loc_09BF7:
-    call PlaceFourRecordsFromOffsetTables
+    call PlaceSidePods
 loc_09BFA:
     ret
 
-loc_09BFB:
+CountLeftPod:
     inc ah
     ret
 
-loc_09BFE:
+CountRightPod:
     inc al
     ret
 
@@ -1228,21 +1233,21 @@ loc_09C1E:
     mov word ptr ds:[XAdjustPathTaken], 1
 loc_09C35:
     xor ax, ax
-    cmp word ptr ds:[PlusSlotA966], -1
+    cmp word ptr ds:[SidePodLeftInner], -1
     je loc_09C41
-    call loc_09BFB
+    call CountLeftPod
 loc_09C41:
-    cmp word ptr ds:[MinusSlotA968], -1
+    cmp word ptr ds:[SidePodRightInner], -1
     je loc_09C4B
-    call loc_09BFE
+    call CountRightPod
 loc_09C4B:
-    cmp word ptr ds:[PlusSlotA96A], -1
+    cmp word ptr ds:[SidePodLeftOuter], -1
     je loc_09C55
-    call loc_09BFB
+    call CountLeftPod
 loc_09C55:
-    cmp word ptr ds:[MinusSlotA96C], -1
+    cmp word ptr ds:[SidePodRightOuter], -1
     je loc_09C5F
-    call loc_09BFE
+    call CountRightPod
 loc_09C5F:
     mov bl, al
     xor bh, bh
@@ -1382,13 +1387,13 @@ loc_09D84:
     je loc_09D7E
     inc word ptr ds:[EnergyPoints]
     jmp short loc_09D84
-loc_09D91:
-    cmp word ptr ds:[CompanionRecord], -1
+AddFrontPod:
+    cmp word ptr ds:[FrontPodRecord], -1
     je loc_09D99
     ret
 loc_09D99:
-    call loc_074FE
-    mov ds:[CompanionRecord], bx
+    call AllocRecordEvicting
+    mov ds:[FrontPodRecord], bx
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_POD
@@ -1529,26 +1534,28 @@ loc_09F0E:
 loc_09F11:
     mov word ptr ds:[Fuel], 058h
     jmp near ptr loc_077DF
-loc_09F1A:
+AddTrailingPod:
     push bp
     call loc_09F20
     pop bp
     ret
 loc_09F20:
-    cmp word ptr ds:[HistoryRecordSlot15], -1
+    cmp word ptr ds:[TrailingPodNear], -1
     jne loc_09F30
-    call loc_074FE
-    mov ds:[HistoryRecordSlot15], bx
-    jmp short loc_09F41
+    call AllocRecordEvicting
+    mov ds:[TrailingPodNear], bx
+    jmp short InitPodRecord
 loc_09F30:
-    cmp word ptr ds:[HistoryRecordSlot31], -1
+    cmp word ptr ds:[TrailingPodFar], -1
     jne loc_09F40
-    call loc_074FE
-    mov ds:[HistoryRecordSlot31], bx
-    jmp short loc_09F41
+    call AllocRecordEvicting
+    mov ds:[TrailingPodFar], bx
+    jmp short InitPodRecord
 loc_09F40:
     ret
-loc_09F41:
+; BX = record: a live KIND_POD, size class 1, sprite 14h, 80 hit points, second draw
+; pass.
+InitPodRecord:
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_POD
@@ -1556,37 +1563,39 @@ loc_09F41:
     mov word ptr ds:[bx + REC_HIT_POINTS], 050h
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
     ret
-loc_09F5F:
-    mov word ptr ds:[SlotFillBudget], 2
-    mov bx, 0A966h
-    call loc_09F82
-    mov bx, 0A968h
-    call loc_09F82
+; Fills up to two empty SidePod* slots in the order left inner, right inner, left outer,
+; right outer.
+AddSidePods:
+    mov word ptr ds:[SidePodsToAdd], 2
+    mov bx, offset SidePodLeftInner
+    call FillSidePodSlotIfEmpty
+    mov bx, offset SidePodRightInner
+    call FillSidePodSlotIfEmpty
     je loc_09F81
-    mov bx, 0A96Ah
-    call loc_09F82
+    mov bx, offset SidePodLeftOuter
+    call FillSidePodSlotIfEmpty
     je loc_09F81
-    mov bx, 0A96Ch
-    call loc_09F82
+    mov bx, offset SidePodRightOuter
+    call FillSidePodSlotIfEmpty
 loc_09F81:
     ret
-loc_09F82:
+FillSidePodSlotIfEmpty:
     cmp word ptr ds:[bx], -1
     je loc_09F88
     ret
 loc_09F88:
-    mov word ptr ds:[SlotFillPtr], bx
+    mov word ptr ds:[SidePodSlotPtr], bx
     push bp
     mov bp, offset PrimaryRecord
-    call loc_074FE
-    call loc_09F41
+    call AllocRecordEvicting
+    call InitPodRecord
     mov word ptr ds:[bx + REC_SPRITE], 018h
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
-    mov di, word ptr ds:[SlotFillPtr]
+    mov di, word ptr ds:[SidePodSlotPtr]
     mov word ptr ds:[di], bx
-    call PlaceFourRecordsFromOffsetTables
+    call PlaceSidePods
     pop bp
-    dec word ptr ds:[SlotFillBudget]
+    dec word ptr ds:[SidePodsToAdd]
     ret
 
 ; Closed near-entry cluster ending through shared9FEA leaf tail. Clear bytes DS:A39E/A39F. Set A398=A39A, apply
@@ -1595,24 +1604,24 @@ loc_09F88:
 ; signed X clamp; they do not count records or report actual source movement. Preserve CX,DX,DI,BP and segments;
 ; AX,BX,SI scratch with path-dependent returns. No internal index bound; requires each selected table/index and
 ; record valid. Shared global A398 means non-reentrant without external protection.
-PlaceFourRecordsFromOffsetTables:
+PlaceSidePods:
     mov byte ptr ds:[ClampXLowSeen], 0
     mov byte ptr ds:[ClampXHighSeen], 0
-    mov ax, word ptr ds:[OffsetXGroupA]
+    mov ax, word ptr ds:[SidePodSpreadRight]
     mov word ptr ds:[OffsetXWork], ax
-    mov si, offset OffsetTableA38C
-    mov bx, word ptr ds:[MinusSlotA96C]
+    mov si, offset SidePodOffsetsRightOuter
+    mov bx, word ptr ds:[SidePodRightOuter]
     call PlaceRecordFromOffsetPair
-    mov si, offset OffsetTableA374
-    mov bx, word ptr ds:[MinusSlotA968]
+    mov si, offset SidePodOffsetsRightInner
+    mov bx, word ptr ds:[SidePodRightInner]
     call PlaceRecordFromOffsetPair
-    mov ax, word ptr ds:[OffsetXGroupB]
+    mov ax, word ptr ds:[SidePodSpreadLeft]
     mov word ptr ds:[OffsetXWork], ax
-    mov si, offset OffsetTableA380
-    mov bx, word ptr ds:[PlusSlotA96A]
+    mov si, offset SidePodOffsetsLeftOuter
+    mov bx, word ptr ds:[SidePodLeftOuter]
     call PlaceRecordFromOffsetPair
-    mov si, offset OffsetTableA368
-    mov bx, word ptr ds:[PlusSlotA966]
+    mov si, offset SidePodOffsetsLeftInner
+    mov bx, word ptr ds:[SidePodLeftInner]
 
 ; Near callable leaf and fallthrough tail of9FAF. BX=FFFF returns unchanged registers, flags CMP(BX,FFFF).
 ; Otherwise with DF=0 select pair at DS:(SI+4*SS:[BP+8]) modulo65536. Store Y=pair.word0+SS:[BP+2] modulo65536
@@ -1665,18 +1674,18 @@ loc_0A030:
 ; pointers; pair abstraction assumes destinations do not alias cursors/slots/source. Actual load/store order
 ; remains significant; no activation/type checks.
 ApplyPositionHistoryToRecords:
-    cmp word ptr ds:[HistoryRecordSlot15], -1
+    cmp word ptr ds:[TrailingPodNear], -1
     je loc_0A048
-    mov bx, word ptr ds:[HistoryRecordSlot15]
+    mov bx, word ptr ds:[TrailingPodNear]
     mov si, word ptr ds:[HistoryReadCursor15]
     lodsw
     mov word ptr ds:[bx + REC_Y], ax
     lodsw
     mov word ptr ds:[bx + REC_X], ax
 loc_0A048:
-    cmp word ptr ds:[HistoryRecordSlot31], -1
+    cmp word ptr ds:[TrailingPodFar], -1
     je loc_0A05F
-    mov bx, word ptr ds:[HistoryRecordSlot31]
+    mov bx, word ptr ds:[TrailingPodFar]
     mov si, word ptr ds:[HistoryReadCursor31]
     lodsw
     mov word ptr ds:[bx + REC_Y], ax
@@ -1691,7 +1700,7 @@ ClearFireLatch:
 ; BP = PrimaryRecord. Fires when the primary button is newly pressed, held with rapid
 ; fire, or every 16 frames while held. Early in the level (MapScrollPos <= B6h, not the
 ; demo) only the main shot fires; otherwise the ShotsLive* snapshot is taken and
-; missile, side shots, option shots and the main weapon fire in turn.
+; missile, side shots, pod shots and the main weapon fire in turn.
 HandleFireButton:
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je ClearFireLatch
@@ -1720,13 +1729,13 @@ loc_0A0A6:
     mov word ptr ds:[ShotsAtFireBeam], ax
     mov ax, word ptr ds:[ShotsLiveSide]
     mov word ptr ds:[ShotsAtFireSide], ax
-    mov ax, word ptr ds:[ShotsLiveCompanion]
-    mov word ptr ds:[ShotsAtFireCompanion], ax
+    mov ax, word ptr ds:[ShotsLiveFrontPod]
+    mov word ptr ds:[ShotsAtFireFrontPod], ax
     cmp word ptr ds:[DemoActive], 1
     jne loc_0A0D8
     cmp word ptr ds:[DemoStep], 8
     jne loc_0A0CE
-    jmp short FireCompanionBurst
+    jmp short FireFrontPodBurst
 loc_0A0CE:
     cmp word ptr ds:[DemoStep], 0Fh
     jbe loc_0A0D8
@@ -1734,21 +1743,21 @@ loc_0A0CE:
 loc_0A0D8:
     call FireMissile
     call FirePlayerSideShots
-    call FireTrailingOptionShots
-    call FireFixedOptionShots
+    call FireTrailingPodShots
+    call FireSidePodShots
     call FireMainWeapon
     ret
 
-; Starts the beam in WeaponMode 5, fires the companion burst, then the WeaponMode
+; Starts the beam in WeaponMode 5, fires the front pod burst, then the WeaponMode
 ; pattern.
 FireMainWeapon:
     cmp word ptr ds:[WeaponMode], 5
     jne loc_0A0F2
     call StartBeam
 loc_0A0F2:
-    cmp word ptr ds:[CompanionRecord], -1
+    cmp word ptr ds:[FrontPodRecord], -1
     je loc_0A0FC
-    call FireCompanionBurst
+    call FireFrontPodBurst
 loc_0A0FC:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
@@ -1758,10 +1767,10 @@ loc_0A0FCCases label word
     dw offset FireSingleShot, offset FireHeavyShot, offset FireForkShot, offset FireTwinRising3
     dw offset FireTwinRising16, offset CountXReturn
 
-; Three type 0Ch shots from CompanionRecord (up, up-left, up-right), one burst at a
+; Three type 0Ch shots from FrontPodRecord (up, up-left, up-right), one burst at a
 ; time.
-FireCompanionBurst:
-    cmp word ptr ds:[ShotsAtFireCompanion], 0
+FireFrontPodBurst:
+    cmp word ptr ds:[ShotsAtFireFrontPod], 0
     je loc_0A11C
     ret
 loc_0A11C:
@@ -1769,23 +1778,23 @@ loc_0A11C:
     je loc_0A128
     mov byte ptr ds:[SfxRequest], 018h
 loc_0A128:
-    inc word ptr ds:[ShotsLiveCompanion]
-    call AllocCompanionShot
+    inc word ptr ds:[ShotsLiveFrontPod]
+    call AllocFrontPodShot
     sub ax, 6
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ds:[si + REC_X]
     add ax, 4
     mov word ptr ds:[bx + REC_X], ax
-    inc word ptr ds:[ShotsLiveCompanion]
-    call AllocCompanionShot
+    inc word ptr ds:[ShotsLiveFrontPod]
+    call AllocFrontPodShot
     sub ax, 2
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ds:[si + REC_X]
     sub ax, 4
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_DIRECTION], 7
-    inc word ptr ds:[ShotsLiveCompanion]
-    call AllocCompanionShot
+    inc word ptr ds:[ShotsLiveFrontPod]
+    call AllocFrontPodShot
     sub ax, 2
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ds:[si + REC_X]
@@ -1794,13 +1803,13 @@ loc_0A128:
     mov word ptr ds:[bx + REC_DIRECTION], 1
     ret
 
-; AllocPlayerShot as type 0Ch with REC_FIELD_1C 7; returns SI = CompanionRecord, AX =
+; AllocPlayerShot as type 0Ch with REC_FIELD_1C 7; returns SI = FrontPodRecord, AX =
 ; its Y.
-AllocCompanionShot:
+AllocFrontPodShot:
     call AllocPlayerShot
     mov word ptr ds:[bx + REC_TYPE], 0Ch
     mov word ptr ds:[bx + REC_FIELD_1C], 7
-    mov si, word ptr ds:[CompanionRecord]
+    mov si, word ptr ds:[FrontPodRecord]
     mov ax, word ptr ds:[si + REC_Y]
     ret
 ; WeaponMode 1: the single shot with sprite 33h, which does an extra hit point of
@@ -1998,9 +2007,9 @@ loc_0A34B:
     add word ptr ds:[bx + REC_Y], 8
     ret
 
-; SI = option record (FFFFh = none): its type 6 and type 5 side shots when side shots
+; SI = pod record (FFFFh = none): its type 6 and type 5 side shots when side shots
 ; are enabled.
-FireOptionSideShots:
+FirePodSideShots:
     cmp si, -1
     jne loc_0A37E
     ret
@@ -2034,37 +2043,36 @@ loc_0A3A6:
     mov word ptr ds:[bx + REC_TYPE], 5
     ret
 
-; The WeaponMode pattern from the fixed option pods (PlusSlotA966/A96A fork up-left,
-; MinusSlotA968/A96C up-right).
-FireFixedOptionShots:
-    mov word ptr ds:[OptionShotDirection], 7
-    mov si, word ptr ds:[PlusSlotA966]
-    call FireOptionWeapon
-    mov word ptr ds:[OptionShotDirection], 1
-    mov si, word ptr ds:[MinusSlotA968]
-    call FireOptionWeapon
-    mov word ptr ds:[OptionShotDirection], 7
-    mov si, word ptr ds:[PlusSlotA96A]
-    call FireOptionWeapon
-    mov word ptr ds:[OptionShotDirection], 1
-    mov si, word ptr ds:[MinusSlotA96C]
-    call FireOptionWeapon
+; The WeaponMode pattern from the side pods (left pods fire up-left, right
+; pods up-right).
+FireSidePodShots:
+    mov word ptr ds:[PodShotDirection], 7
+    mov si, word ptr ds:[SidePodLeftInner]
+    call FirePodWeapon
+    mov word ptr ds:[PodShotDirection], 1
+    mov si, word ptr ds:[SidePodRightInner]
+    call FirePodWeapon
+    mov word ptr ds:[PodShotDirection], 7
+    mov si, word ptr ds:[SidePodLeftOuter]
+    call FirePodWeapon
+    mov word ptr ds:[PodShotDirection], 1
+    mov si, word ptr ds:[SidePodRightOuter]
+    call FirePodWeapon
     ret
 
-; The WeaponMode pattern and side shots from the two trailing options
-; (HistoryRecordSlot15/31).
-FireTrailingOptionShots:
-    mov word ptr ds:[OptionShotDirection], 0FFFFh
-    mov si, word ptr ds:[HistoryRecordSlot15]
-    call FireOptionWeapon
-    call FireOptionSideShots
-    mov si, word ptr ds:[HistoryRecordSlot31]
-    call FireOptionWeapon
-    call FireOptionSideShots
+; The WeaponMode pattern and side shots from the two trailing pods.
+FireTrailingPodShots:
+    mov word ptr ds:[PodShotDirection], 0FFFFh
+    mov si, word ptr ds:[TrailingPodNear]
+    call FirePodWeapon
+    call FirePodSideShots
+    mov si, word ptr ds:[TrailingPodFar]
+    call FirePodWeapon
+    call FirePodSideShots
     ret
 
-; SI = option record (FFFFh = none): its WeaponMode pattern (no beam).
-FireOptionWeapon:
+; SI = pod record (FFFFh = none): its WeaponMode pattern (no beam).
+FirePodWeapon:
     cmp si, -1
     jne loc_0A420
     ret
@@ -2074,48 +2082,48 @@ loc_0A420:
     jmp word ptr cs:[bx + loc_0A420Cases]
     even
 loc_0A420Cases label word
-    dw offset SpawnShotAtOption, offset OptionHeavyShot, offset OptionForkShot, offset OptionTwinRising3
-    dw offset OptionTwinRising16, offset CountXReturn
-OptionTwinRising16:
+    dw offset SpawnShotAtPod, offset PodHeavyShot, offset PodForkShot, offset PodTwinRising3
+    dw offset PodTwinRising16, offset CountXReturn
+PodTwinRising16:
     cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A440
     ret
 loc_0A440:
     add word ptr ds:[ShotsLiveMain], 2
-    call SpawnShotAtOption
+    call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 8
     mov word ptr ds:[bx + REC_SPRITE], 35h
-    call SpawnShotAtOption
+    call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 8
     mov word ptr ds:[bx + REC_SPRITE], 35h
     add word ptr ds:[bx + REC_Y], 8
     ret
-OptionTwinRising3:
+PodTwinRising3:
     cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A46C
     ret
 loc_0A46C:
     add word ptr ds:[ShotsLiveMain], 2
-    call SpawnShotAtOption
+    call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 7
     mov word ptr ds:[bx + REC_SPRITE], 37h
-    call SpawnShotAtOption
+    call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 7
     mov word ptr ds:[bx + REC_SPRITE], 37h
     add word ptr ds:[bx + REC_Y], 8
     ret
-OptionHeavyShot:
-    call SpawnShotAtOption
+PodHeavyShot:
+    call SpawnShotAtPod
     mov word ptr ds:[bx + REC_SPRITE], 33h
     ret
-OptionForkShot:
+PodForkShot:
     call AllocPlayerShot
     mov ax, ds:[si + REC_Y]
     mov ds:[bx + REC_Y], ax
     mov ax, ds:[si + REC_X]
     add ax, 4
     mov ds:[bx + REC_X], ax
-    mov ax, ds:[OptionShotDirection]
+    mov ax, ds:[PodShotDirection]
     mov ds:[bx + REC_DIRECTION], ax
     cmp ax, 0FFFFh
     jne loc_0A4C6
@@ -2130,7 +2138,7 @@ loc_0A4C6:
     mov word ptr ds:[bx + REC_SPRITE], 1Fh
 loc_0A4D6:
     ret
-SpawnShotAtOption:
+SpawnShotAtPod:
     call AllocPlayerShot
     mov ax, ds:[si + REC_Y]
     mov ds:[bx + REC_Y], ax
@@ -2298,7 +2306,7 @@ loc_0A612:
     ret
 
 ; Near entry. If unsigned DS:2350<=B6 return. Otherwise call UpdatePlacementXGroupA, then re-read SS:[BP+REC_X].
-; If X==B0 and IN_XPLUS set, increment DS:OffsetXGroupB unless exactly8; otherwise decrement it unless
+; If X==B0 and IN_XPLUS set, increment DS:SidePodSpreadLeft unless exactly8; otherwise decrement it unless
 ; exactly0. Group A is updated first, preserving sequential alias effects of the original loads. Word operations
 ; wrap at16 bits; guards are equality-only, not saturation. Preserve all general/segment registers and IF/DF;
 ; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from
@@ -2313,19 +2321,19 @@ loc_0A61F:
     jne loc_0A63C
     test byte ptr ds:[InputBits], IN_XPLUS
     je loc_0A63C
-    cmp word ptr ds:[OffsetXGroupB], 8
+    cmp word ptr ds:[SidePodSpreadLeft], 8
     je loc_0A63B
-    inc word ptr ds:[OffsetXGroupB]
+    inc word ptr ds:[SidePodSpreadLeft]
 loc_0A63B:
     ret
 loc_0A63C:
-    cmp word ptr ds:[OffsetXGroupB], 0
+    cmp word ptr ds:[SidePodSpreadLeft], 0
     je loc_0A647
-    dec word ptr ds:[OffsetXGroupB]
+    dec word ptr ds:[SidePodSpreadLeft]
 loc_0A647:
     ret
 
-; Near leaf. Read SS:[BP+REC_X] and DS:InputBits. If X==0 and IN_XMINUS set, decrement DS:OffsetXGroupA
+; Near leaf. Read SS:[BP+REC_X] and DS:InputBits. If X==0 and IN_XMINUS set, decrement DS:SidePodSpreadRight
 ; unless exactlyFFF8h; otherwise increment it unless exactly0. All arithmetic wraps at16 bits. Equality
 ; sentinels do not validate or clamp arbitrary accumulator values. Preserve all general and segment registers,
 ; IF/DF; arithmetic flags path-dependent. Normal near return; only group-A word may be written. Requires valid
@@ -2335,18 +2343,18 @@ UpdatePlacementXGroupA:
     jne loc_0A662
     test byte ptr ds:[InputBits], IN_XMINUS
     je loc_0A662
-    cmp word ptr ds:[OffsetXGroupA], -8
+    cmp word ptr ds:[SidePodSpreadRight], -8
     jne loc_0A65D
     ret
 loc_0A65D:
-    dec word ptr ds:[OffsetXGroupA]
+    dec word ptr ds:[SidePodSpreadRight]
     ret
 loc_0A662:
-    cmp word ptr ds:[OffsetXGroupA], 0
+    cmp word ptr ds:[SidePodSpreadRight], 0
     jne loc_0A66A
     ret
 loc_0A66A:
-    inc word ptr ds:[OffsetXGroupA]
+    inc word ptr ds:[SidePodSpreadRight]
     ret
 
 loc_0A66F:
@@ -2752,7 +2760,7 @@ UpdateRecordByKind:
     even
 KindHandlers label word
     dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
-    dw offset RunTypeHandler, offset UpdatePickup, offset UpdateCompanion
+    dw offset RunTypeHandler, offset UpdatePickup, offset UpdateExhaust
 loc_0AA44:
     clc
     ret
@@ -2836,22 +2844,26 @@ loc_0AAE7Cases label word
 loc_0AB0C:
     pop bp
     jmp near ptr RemoveRecord
-UpdateCompanion:
+; BP = the exhaust: animates it under the ship; freed silently once the ship form is
+; 3 or more (destroyed) or MoveModeA47C is 3 or more.
+UpdateExhaust:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AB1A
-    jmp near ptr loc_0AC22
+    jmp near ptr FreeRecordSilently
 loc_0AB1A:
     cmp word ptr ds:[MoveModeA47C], 3
     jb loc_0AB24
-    jmp near ptr loc_0AC22
+    jmp near ptr FreeRecordSilently
 loc_0AB24:
     mov ax, word ptr ds:[SlowCount8]
-    mov bx, 0A40Ch
+    mov bx, offset ExhaustFrames
     xlat
     add ax, 9
     mov word ptr ss:[bp + REC_SPRITE], ax
-    mov dx, 0A414h
-loc_0AB34:
+    mov dx, offset ExhaustOffsets
+; BP = record, DX = (Y, X) table: places BP at the player's position plus the entry for
+; the ship form (PrimaryRecord REC_SPRITE 0..2).
+PlaceAtPlayerOffset:
     mov bx, offset PrimaryRecord
     mov si, word ptr ds:[bx + REC_SPRITE]
     shl si, 1
@@ -2864,78 +2876,86 @@ loc_0AB34:
     add ax, word ptr ds:[bx + REC_X]
     mov word ptr ss:[bp + REC_X], ax
     ret
-loc_0AB4F:
+AnimateSidePodSprite:
     mov ax, word ptr ds:[SlowCount4]
     add ax, 018h
     mov word ptr ss:[bp + REC_SPRITE], ax
     ret
-loc_0AB59:
-    mov word ptr ds:[0A42Ch], 0A96Ch
-    jmp short loc_0AB77
-loc_0AB61:
-    mov word ptr ds:[0A42Ch], 0A96Ah
-    jmp short loc_0AB77
-loc_0AB69:
-    mov word ptr ds:[0A42Ch], 0A968h
-    jmp short loc_0AB77
-loc_0AB71:
-    mov word ptr ds:[0A42Ch], 0A966h
-loc_0AB77:
+UpdateSidePodRightOuter:
+    mov word ptr ds:[CurrentSidePodSlot], offset SidePodRightOuter
+    jmp short UpdateSidePod
+UpdateSidePodLeftOuter:
+    mov word ptr ds:[CurrentSidePodSlot], offset SidePodLeftOuter
+    jmp short UpdateSidePod
+UpdateSidePodRightInner:
+    mov word ptr ds:[CurrentSidePodSlot], offset SidePodRightInner
+    jmp short UpdateSidePod
+UpdateSidePodLeftInner:
+    mov word ptr ds:[CurrentSidePodSlot], offset SidePodLeftInner
+; Side pods: animate, place (PlaceSidePods runs elsewhere), and lose the pod on terrain
+; or on an enemy collision that takes its last hit point. When the collision kills it,
+; DestroyRecordAtBX runs on the enemy a second time (original behaviour: score, sfx and
+; group count twice).
+UpdateSidePod:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jae loc_0AB8F
-    call loc_0AB4F
-    call loc_0AC28
+    call AnimateSidePodSprite
+    call PodTerrainHit
     jb loc_0AB8F
-    call loc_0AC81
+    call PodCollideRecords
     jb loc_0AB8C
     ret
 loc_0AB8C:
-    call loc_0AB99
+    call DestroyRecordAtBX
 loc_0AB8F:
-    mov bx, word ptr ds:[0A42Ch]
+    mov bx, word ptr ds:[CurrentSidePodSlot]
     mov word ptr ds:[bx], 0FFFFh
-    jmp short loc_0ABF3
-loc_0AB99:
+    jmp short ExplodePod
+; DestroyRecord for BX, preserving BP.
+DestroyRecordAtBX:
     push bp
     mov bp, bx
     call DestroyRecord
     mov bx, bp
     pop bp
     ret
-loc_0ABA3:
-    mov word ptr ds:[0A42Eh], bx
+; BX = offset of its TrailingPod* slot. Trailing pods have no terrain check.
+UpdateTrailingPod:
+    mov word ptr ds:[CurrentTrailingPodSlot], bx
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jae loc_0ABC0
     mov ax, word ptr ds:[SlowCount4]
     add ax, 014h
     mov word ptr ss:[bp + REC_SPRITE], ax
-    call loc_0AC81
+    call PodCollideRecords
     jb loc_0ABBD
     ret
 loc_0ABBD:
-    call loc_0AB99
+    call DestroyRecordAtBX
 loc_0ABC0:
-    mov bx, word ptr ds:[0A42Eh]
+    mov bx, word ptr ds:[CurrentTrailingPodSlot]
     mov word ptr ds:[bx], 0FFFFh
-    jmp short loc_0ABF3
-loc_0ABCA:
+    jmp short ExplodePod
+UpdateFrontPod:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jae loc_0ABDC
-    mov dx, 0A420h
-    call loc_0AB34
-    call loc_0AC28
+    mov dx, offset FrontPodOffsets
+    call PlaceAtPlayerOffset
+    call PodTerrainHit
     jae loc_0ABE4
 loc_0ABDC:
-    mov word ptr ds:[CompanionRecord], 0FFFFh
-    jmp short loc_0ABF3
+    mov word ptr ds:[FrontPodRecord], 0FFFFh
+    jmp short ExplodePod
 loc_0ABE4:
-    call loc_0AC81
+    call PodCollideRecords
     jb loc_0ABEA
     ret
 loc_0ABEA:
-    mov word ptr ds:[CompanionRecord], 0FFFFh
-    call loc_0AB99
-loc_0ABF3:
+    mov word ptr ds:[FrontPodRecord], 0FFFFh
+    call DestroyRecordAtBX
+; Shared tail: turns the lost pod BP into a dying enemy (type 1), then refreshes the
+; upgrade display.
+ExplodePod:
     cmp bp, -1
     jne loc_0ABF9
     ret
@@ -2954,10 +2974,12 @@ loc_0AC19:
     call loc_0859E
     pop bp
     ret
-loc_0AC22:
+FreeRecordSilently:
     mov word ptr ss:[bp + REC_STATUS], 0
     ret
-loc_0AC28:
+; CF when terrain contact took BP's last hit point; always NC in the demo or when
+; MoveModeA47C is not 0.
+PodTerrainHit:
     cmp word ptr ds:[MoveModeA47C], 0
     je loc_0AC32
     jmp near ptr loc_0AA44
@@ -3004,7 +3026,10 @@ StepRecordResponseCounter:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     stc
     ret
-loc_0AC81:
+; BP = pod: the first live size-1 pool A record within 10h: a pickup is collected (NC);
+; an enemy is destroyed and the pod loses a hit point (CF when it was the last). Always
+; NC in the demo.
+PodCollideRecords:
     cmp word ptr ds:[DemoActive], 1
     jne loc_0AC8B
     jmp near ptr loc_0AA44
@@ -3035,7 +3060,7 @@ loc_0AC97:
     cmp ax, si
     jl loc_0ACD2
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
-    cmp si, word ptr ds:[bx + 0Eh]
+    cmp si, word ptr ds:[bx + REC_SAVE_BUFFER]
     jne loc_0ACD9
 loc_0ACD2:
     add bx, RECORD_SIZE
@@ -3043,15 +3068,16 @@ loc_0ACD2:
     clc
     ret
 loc_0ACD9:
-    cmp word ptr ds:[bx + 016h], 5
+    cmp word ptr ds:[bx + REC_KIND], KIND_PICKUP
     je loc_0ACF9
-    cmp word ptr ds:[bx + 014h], 1
+; Always taken: the scan only accepts size class 1.
+    cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
     je loc_0ACE8
     jmp near ptr loc_05059
 loc_0ACE8:
-    cmp word ptr ds:[bx + 016h], 4
+    cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
     jne loc_0ACD2
-    call loc_0AB99
+    call DestroyRecordAtBX
 ; Record scan shares the same response/counter path as the grid attribute probe.
     call SetResponseAndStepRecordCounter
     jb loc_0ACF7
@@ -3076,33 +3102,33 @@ UpdatePod:
 loc_0AD14:
     cmp word ptr ss:[bp + REC_SPRITE], 0Fh
     jne loc_0AD1D
-    jmp near ptr loc_0ABCA
+    jmp near ptr UpdateFrontPod
 loc_0AD1D:
-    cmp bp, word ptr ds:[PlusSlotA966]
+    cmp bp, word ptr ds:[SidePodLeftInner]
     jne loc_0AD26
-    jmp near ptr loc_0AB71
+    jmp near ptr UpdateSidePodLeftInner
 loc_0AD26:
-    cmp bp, word ptr ds:[MinusSlotA968]
+    cmp bp, word ptr ds:[SidePodRightInner]
     jne loc_0AD2F
-    jmp near ptr loc_0AB69
+    jmp near ptr UpdateSidePodRightInner
 loc_0AD2F:
-    cmp bp, word ptr ds:[PlusSlotA96A]
+    cmp bp, word ptr ds:[SidePodLeftOuter]
     jne loc_0AD38
-    jmp near ptr loc_0AB61
+    jmp near ptr UpdateSidePodLeftOuter
 loc_0AD38:
-    cmp bp, word ptr ds:[MinusSlotA96C]
+    cmp bp, word ptr ds:[SidePodRightOuter]
     jne loc_0AD41
-    jmp near ptr loc_0AB59
+    jmp near ptr UpdateSidePodRightOuter
 loc_0AD41:
-    mov bx, 0A962h
-    cmp bp, word ptr ds:[HistoryRecordSlot15]
+    mov bx, offset TrailingPodNear
+    cmp bp, word ptr ds:[TrailingPodNear]
     jne loc_0AD4D
-    jmp near ptr loc_0ABA3
+    jmp near ptr UpdateTrailingPod
 loc_0AD4D:
-    mov bx, 0A964h
-    cmp bp, word ptr ds:[HistoryRecordSlot31]
+    mov bx, offset TrailingPodFar
+    cmp bp, word ptr ds:[TrailingPodFar]
     jne loc_0AD59
-    jmp near ptr loc_0ABA3
+    jmp near ptr UpdateTrailingPod
 loc_0AD59:
     ret
 ; Shot tail: scrolls, then the bounds test below.
@@ -4736,7 +4762,7 @@ RemoveRecordAtBX:
     ret
 
 ; BP = record: free it (REC_STATUS = 0) and update the live counters its kind and
-; type belong to (shots, encounter, companion).
+; type belong to (shots, encounter, pods).
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
@@ -4809,9 +4835,9 @@ loc_0BDAC:
 loc_0BDB7:
     ret
 loc_0BDB8:
-    cmp word ptr ds:[ShotsLiveCompanion], 0
+    cmp word ptr ds:[ShotsLiveFrontPod], 0
     je loc_0BDC3
-    dec word ptr ds:[ShotsLiveCompanion]
+    dec word ptr ds:[ShotsLiveFrontPod]
 loc_0BDC3:
     ret
 loc_0BDC4:
@@ -5503,7 +5529,7 @@ loc_0C41E:
     call FindFreeRecordPoolA
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
-    mov word ptr ds:[bx + REC_KIND], KIND_COMPANION
+    mov word ptr ds:[bx + REC_KIND], KIND_EXHAUST
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset BeamList
     mov ax, 0FFFFh
@@ -5513,12 +5539,12 @@ loc_0C41E:
     mov word ptr ds:[EnergyPoints], 018h
     mov word ptr ds:[ShotsLiveMain], 0
     mov word ptr ds:[ShotsLiveType9], 0
-    mov word ptr ds:[ShotsLiveCompanion], 0
+    mov word ptr ds:[ShotsLiveFrontPod], 0
     mov word ptr ds:[ShotsLiveSide], 0
     mov word ptr ds:[Fuel], 0
     mov word ptr ds:[MissilesLive], 0
-    mov word ptr ds:[OffsetXGroupA], 0
-    mov word ptr ds:[OffsetXGroupB], 0
+    mov word ptr ds:[SidePodSpreadRight], 0
+    mov word ptr ds:[SidePodSpreadLeft], 0
     mov word ptr ds:[AutoMoveExtraRecord], 0FFFFh
     call loc_09DB9
     mov word ptr ds:[FireLatch], 0
@@ -5551,13 +5577,13 @@ loc_0C4E5:
     mov word ptr ds:[WeaponMode], 0
     mov word ptr ds:[SideShotsEnabled], 0
     mov word ptr ds:[MissileAmmo], 0
-    mov word ptr ds:[HistoryRecordSlot15], 0FFFFh
-    mov word ptr ds:[HistoryRecordSlot31], 0FFFFh
-    mov word ptr ds:[PlusSlotA966], 0FFFFh
-    mov word ptr ds:[MinusSlotA968], 0FFFFh
-    mov word ptr ds:[PlusSlotA96A], 0FFFFh
-    mov word ptr ds:[MinusSlotA96C], 0FFFFh
-    mov word ptr ds:[CompanionRecord], 0FFFFh
+    mov word ptr ds:[TrailingPodNear], 0FFFFh
+    mov word ptr ds:[TrailingPodFar], 0FFFFh
+    mov word ptr ds:[SidePodLeftInner], 0FFFFh
+    mov word ptr ds:[SidePodRightInner], 0FFFFh
+    mov word ptr ds:[SidePodLeftOuter], 0FFFFh
+    mov word ptr ds:[SidePodRightOuter], 0FFFFh
+    mov word ptr ds:[FrontPodRecord], 0FFFFh
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     call loc_08517
     jmp near ptr loc_0859E
@@ -6842,7 +6868,7 @@ loc_0CF9C:
     mov word ptr ds:[ShotsLiveMain], 0
     mov word ptr ds:[ShotsLiveType9], 0
     mov word ptr ds:[ShotsLiveSide], 0
-    mov word ptr ds:[ShotsLiveCompanion], 0
+    mov word ptr ds:[ShotsLiveFrontPod], 0
     mov word ptr ds:[MissilesLive], 0
     mov word ptr ds:[MapScrollPos], 09Ch
     call InitPositionHistory
@@ -6996,7 +7022,7 @@ loc_0D183:
 loc_0D193:
     mov word ptr ds:[DemoStepTimer], 032h
     mov bp, offset PrimaryRecord
-    jmp near ptr PlaceFourRecordsFromOffsetTables
+    jmp near ptr PlaceSidePods
 loc_0D19F:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D1AB
@@ -7004,7 +7030,7 @@ loc_0D19F:
 loc_0D1AB:
     mov bp, offset PrimaryRecord
     call FindFreeRecordPoolA
-    mov word ptr ds:[CompanionRecord], bx
+    mov word ptr ds:[FrontPodRecord], bx
     call loc_08209
     mov word ptr ds:[bx + REC_Y], 0
     mov word ptr ds:[bx + REC_SPRITE], 0Fh
@@ -7022,8 +7048,8 @@ loc_0D1DC:
     je loc_0D1E8
     mov byte ptr ds:[SfxRequest], 1Eh
 loc_0D1E8:
-    call loc_09F1A
-    mov bp, ds:[HistoryRecordSlot15]
+    call AddTrailingPod
+    mov bp, ds:[TrailingPodNear]
     call loc_0D213
     mov word ptr ss:[bp + REC_X], 0
     ret
@@ -7032,8 +7058,8 @@ loc_0D1F8:
     je loc_0D204
     mov byte ptr ds:[SfxRequest], 1Eh
 loc_0D204:
-    call loc_09F1A
-    mov bp, ds:[HistoryRecordSlot31]
+    call AddTrailingPod
+    mov bp, ds:[TrailingPodFar]
     call loc_0D213
     add word ptr ss:[bp + REC_SAVED_Y], 14h
     ret
@@ -7051,22 +7077,22 @@ loc_0D229:
     je loc_0D235
     mov byte ptr ds:[SfxRequest], 01Eh
 loc_0D235:
-    call loc_09F5F
-    mov bp, word ptr ds:[PlusSlotA966]
+    call AddSidePods
+    mov bp, word ptr ds:[SidePodLeftInner]
     call loc_0D269
     mov word ptr ss:[bp + REC_X], 0
-    mov bp, word ptr ds:[MinusSlotA968]
+    mov bp, word ptr ds:[SidePodRightInner]
     jmp short loc_0D269
 loc_0D24A:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D256
     mov byte ptr ds:[SfxRequest], 1Eh
 loc_0D256:
-    call loc_09F5F
-    mov bp, ds:[PlusSlotA96A]
+    call AddSidePods
+    mov bp, ds:[SidePodLeftOuter]
     call loc_0D269
     mov word ptr ss:[bp + REC_X], 0
-    mov bp, ds:[MinusSlotA96C]
+    mov bp, ds:[SidePodRightOuter]
 loc_0D269:
     call loc_0BE97
     mov word ptr ss:[bp + REC_Y], 0C8h

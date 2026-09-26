@@ -21,7 +21,6 @@ extrn CheatLifeInTheFastLane:word
 extrn CheatMyNameIsSmith:word
 extrn CheatRemindMe:word
 extrn CheatWhatOilShortage:word
-extrn CompanionRecord:word
 extrn CountGate2324:word
 extrn DemoActive:word
 extrn DemoUpgradeStatus:word
@@ -53,6 +52,7 @@ extrn FrameCount4:word
 extrn FrameCount64:word
 extrn FrameCount8:word
 extrn FrameDivider4:word
+extrn FrontPodRecord:word
 extrn Fuel:word
 extrn FuelGaugeOffset:word
 extrn GroupDropKind:word
@@ -71,8 +71,6 @@ extrn HiscorePageList:word
 extrn HiscoreQualified:word
 extrn HiscoreRankPrefix:byte
 extrn HiscoreRowPrefix:byte
-extrn HistoryRecordSlot15:word
-extrn HistoryRecordSlot31:word
 extrn HudTankCompare:word
 extrn IPageList:word
 extrn InputBits:byte
@@ -110,8 +108,6 @@ extrn MenuKeyLatchA:word
 extrn MenuKeyLatchK:word
 extrn MenuKeyLatchM:word
 extrn MenuShowingHiscores:word
-extrn MinusSlotA968:word
-extrn MinusSlotA96C:word
 extrn MissileAmmo:word
 extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
@@ -119,8 +115,6 @@ extrn OPageList:word
 extrn OkMenuPageList:word
 extrn PingPongFrames4:word
 extrn PingPongFrames8:word
-extrn PlusSlotA966:word
-extrn PlusSlotA96A:word
 extrn PoolA:byte
 extrn PoolACursor:word
 extrn PoolAEnd:byte
@@ -149,6 +143,10 @@ extrn SfxActive:byte
 extrn SfxEnabled:byte
 extrn SfxRequest:byte
 extrn ShowPageList:far
+extrn SidePodLeftInner:word
+extrn SidePodLeftOuter:word
+extrn SidePodRightInner:word
+extrn SidePodRightOuter:word
 extrn SideShotsEnabled:word
 extrn SlowCount10:word
 extrn SlowCount3:word
@@ -171,6 +169,8 @@ extrn SwayReversals:word
 extrn SweepPath:word
 extrn SweepPathLeadIn:word
 extrn ThrustDrainToggle:word
+extrn TrailingPodFar:word
+extrn TrailingPodNear:word
 extrn TurretPhaseTable:word
 extrn Type28FrameRamp:byte
 extrn Type34SpriteByLevel:word
@@ -199,6 +199,10 @@ assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AdapterDrawHandlers
 public AimAtPlayer
 public AllocPoolBRecordEvicting
+public AllocRecordEvicting
+public ApplyFrontPod
+public ApplySidePods
+public ApplyTrailingPods
 public BlitPackedStride104
 public BlitPackedStride160
 public BlitPackedToScreen
@@ -223,6 +227,7 @@ public DrawPanelGraphic
 public FarCallMainNearViaAX
 public FindFreeRecordPoolA
 public FindFreeRecordPoolB
+public FrontPodAvailable
 public Level0MapCell
 public Level1MapCell
 public Level2MapCell
@@ -233,6 +238,7 @@ public LoadHiscoreFile
 public PlayerShotsHitRecord
 public SetDeltaToward
 public ShutdownGame
+public SidePodsAvailable
 public SpawnAimedShot
 public SpawnEnemyHere
 public SpawnEnemyHereQuiet
@@ -243,6 +249,7 @@ public Sprite8Offsets
 public StartLeaderScript
 public SteerTowardTarget
 public StepAlongDelta
+public TrailingPodsAvailable
 public Type13FormationLeader
 public Type24TurretLeftFire32
 public Type25TurretRightFire32
@@ -337,7 +344,6 @@ public loc_06176
 public loc_061DC
 public loc_062AA
 public loc_07420
-public loc_074FE
 public loc_07596
 public loc_07746
 public loc_077C5
@@ -362,12 +368,6 @@ public loc_08437
 public loc_0843D
 public loc_08445
 public loc_0844E
-public loc_08456
-public loc_08463
-public loc_08468
-public loc_0849D
-public loc_084A2
-public loc_084C3
 public loc_084C9
 public loc_084D6
 public loc_084F0
@@ -379,6 +379,9 @@ public loc_0878C
 public loc_08D83
 public loc_0F953
 public loc_0F980
+extrn AddFrontPod:near
+extrn AddSidePods:near
+extrn AddTrailingPod:near
 extrn BlitPackedStride104Cga:near
 extrn BlitPackedStride104Ega:near
 extrn BlitPackedStride160Cga:near
@@ -554,10 +557,7 @@ extrn loc_0497A:near
 extrn loc_04A41:near
 extrn loc_0511F:near
 extrn loc_05145:near
-extrn loc_09D91:near
 extrn loc_09EE4:near
-extrn loc_09F1A:near
-extrn loc_09F5F:near
 extrn loc_0A781:near
 extrn loc_0AF22:near
 extrn loc_0B2AC:near
@@ -4163,7 +4163,9 @@ AimAtPlayer:
     sub ax, cx
     mov word ptr ds:[bx + REC_DELTA_Y], ax
     ret
-loc_074FE:
+; BX = a free pool A record; when the pool is full, frees the first record that is not a
+; pod or the exhaust (else the first one).
+AllocRecordEvicting:
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_07507
@@ -4172,7 +4174,7 @@ loc_07507:
     mov cx, POOL_A_COUNT
     mov bx, offset PoolA
 loc_0750D:
-    cmp word ptr ds:[bx + REC_KIND], KIND_COMPANION
+    cmp word ptr ds:[bx + REC_KIND], KIND_EXHAUST
     je loc_07519
     cmp word ptr ds:[bx + REC_KIND], KIND_POD
     jne loc_07521
@@ -5765,21 +5767,21 @@ loc_08445:
 loc_0844E:
     mov word ptr ds:[MissileAmmo], 4
     jmp short loc_08430
-loc_08456:
-    cmp word ptr ds:[CompanionRecord], -1
+FrontPodAvailable:
+    cmp word ptr ds:[FrontPodRecord], -1
     jne loc_08460
     jmp near ptr loc_083DA
 loc_08460:
     jmp near ptr loc_083D7
-loc_08463:
-    call loc_09D91
+ApplyFrontPod:
+    call AddFrontPod
     jmp short loc_08430
-loc_08468:
-    cmp word ptr ds:[PlusSlotA966], -1
+SidePodsAvailable:
+    cmp word ptr ds:[SidePodLeftInner], -1
     jne loc_08472
     jmp near ptr loc_083DA
 loc_08472:
-    cmp word ptr ds:[MinusSlotA968], -1
+    cmp word ptr ds:[SidePodRightInner], -1
     jne loc_0847C
     jmp near ptr loc_083DA
 loc_0847C:
@@ -5787,34 +5789,34 @@ loc_0847C:
     jne loc_08486
     jmp near ptr loc_083D7
 loc_08486:
-    cmp word ptr ds:[PlusSlotA96A], -1
+    cmp word ptr ds:[SidePodLeftOuter], -1
     jne loc_08490
     jmp near ptr loc_083DA
 loc_08490:
-    cmp word ptr ds:[MinusSlotA96C], -1
+    cmp word ptr ds:[SidePodRightOuter], -1
     jne loc_0849A
     jmp near ptr loc_083DA
 loc_0849A:
     jmp near ptr loc_083D7
-loc_0849D:
-    call loc_09F5F
+ApplySidePods:
+    call AddSidePods
     jmp short loc_08430
-loc_084A2:
+TrailingPodsAvailable:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_084AC
     jmp near ptr loc_083D7
 loc_084AC:
-    cmp word ptr ds:[HistoryRecordSlot15], -1
+    cmp word ptr ds:[TrailingPodNear], -1
     jne loc_084B6
     jmp near ptr loc_083DA
 loc_084B6:
-    cmp word ptr ds:[HistoryRecordSlot31], -1
+    cmp word ptr ds:[TrailingPodFar], -1
     jne loc_084C0
     jmp near ptr loc_083DA
 loc_084C0:
     jmp near ptr loc_083D7
-loc_084C3:
-    call loc_09F1A
+ApplyTrailingPods:
+    call AddTrailingPod
     jmp near ptr loc_08430
 loc_084C9:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
