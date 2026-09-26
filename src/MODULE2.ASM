@@ -4253,8 +4253,8 @@ loc_075BB:
     shl bx, 1
     add bx, offset Sprite32Offsets
     mov si, word ptr cs:[bx]
-    mov word ptr cs:[07624h], si
-    mov word ptr cs:[07626h], cx
+    mov word ptr cs:[Sprite32HalfSource], si
+    mov word ptr cs:[Sprite32HalfSegment], cx
     mov di, word ptr ss:[bp + REC_SCREEN_OFS]
     cmp di, -1
     je loc_075DB
@@ -4267,8 +4267,8 @@ loc_075DB:
     jne loc_075E4
     ret
 loc_075E4:
-    mov si, word ptr cs:[07624h]
-    mov cx, word ptr cs:[07626h]
+    mov si, word ptr cs:[Sprite32HalfSource]
+    mov cx, word ptr cs:[Sprite32HalfSegment]
     mov ax, word ptr ds:[Sprite32Bytes]
     shr ax, 1
     add si, ax
@@ -4290,8 +4290,11 @@ loc_07615:
     mov bp, 010h
     mov cx, bp
     jmp word ptr cs:[bx]
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,00h,00h
+; NOP filler (word alignment).
+    db 90h
+; Source offset and segment of a 32x32 sprite, kept for drawing its lower half.
+Sprite32HalfSource dw 0
+Sprite32HalfSegment dw 0
 ; 32x32 sprite blitters (one 16-row half per call) indexed by VideoAdapter*8 +
 ; REC_PIXEL_PHASE (CGA uses 4 phases, EGA 8, Tandy 1); unused slots hold loc_07688.
 ; FlashSprite32Blitters is used while REC_FLASH_TIMER is nonzero.

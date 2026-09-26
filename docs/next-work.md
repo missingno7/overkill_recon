@@ -5,17 +5,18 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
 
 ## Unclassified bytes
 
-- SEG153A 0040..04D7 and 0D3A..: far library routines; only 153A:0000 and
-  OpenResourceFile (04D7) are ever called, so no entry is proven for the rest.
-- MAIN EE06..: a table of (value, 4E65h/4E5Fh) word pairs with FFFFh separators; find
-  its reader. MAIN 5960, 58F9, 5AF4 (CS variables of the packed-row drawer), 050CC and
-  051FB (small helpers with no known caller).
-- DATA: 1514..1816 (zero, no reader found), 96AA.., 9828.., 9944 (zero), BB85..,
-  BCC5.., BD53.., C440 (zero), 20A6.., 215C.., 2283.., 22D0...
+What remains UNKNOWN (about 290 bytes) has no reader found anywhere in the image:
+zero or FFh runs (DS:0000, 2162, 9944 after KeyDownTable, 98AE, C440 region ends,
+MAIN ECB8 after EncRingBuffer), small word tables (DS:214E, 236E), two text records
+at DS:BE0C, and single bytes between routines. Classify them only if a reader or a
+layout argument appears (as the linker padding at far 10162 did).
+
+## Semantics still open
+
 - GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
-- `[bx + N]` in the decoded REC_TYPE handlers: where BX is a record (after
-  FindFreeRecordPool*), write REC_* fields.
-- Effects of WhatOilShortageFlag and AllCheatsFlag: no reader found yet.
+- Handler-level meaning of the REC_TYPE handlers (TypeHandlerNN) and the remaining
+  loc_ labels; `[bx + N]` record fields where BX provenance is not a null check.
+- Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
 
 ## Data still to name
 
