@@ -3577,15 +3577,29 @@ loc_01FC0:
     mov ds, cs:[MainDataSegment]
     ret
 loc_01FFB:
-; UNKNOWN: not yet classified as code or data
-    db 8Bh,04h,0B2h,0FFh,0F7h
-
-; Modern record/state symbols.
-; UNKNOWN: not yet classified as code or data
-    db 0D0h,0F6h,0D2h,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,0D0h,0E8h,0D0h,0DCh,0D0h,0DAh,026h
-    db 09h,05h,026h,08h,055h,02h,026h,09h,045h,01Ah,026h,08h,055h,01Ch,026h,09h
-    db 045h,034h,026h,08h,055h,036h,026h,09h,045h,04Eh,026h,08h,055h,050h,083h,0C7h
-    db 068h,083h,0C6h,0Ah,0E2h,0C5h,02Eh,08Eh,01Eh,096h,095h,0C3h
+    mov ax, ds:[si]
+    mov dl, 0FFh
+    not ax
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    or es:[di + 1Ah], ax
+    or es:[di + 1Ch], dl
+    or es:[di + 34h], ax
+    or es:[di + 36h], dl
+    or es:[di + 4Eh], ax
+    or es:[di + 50h], dl
+    add di, 68h
+    add si, 0Ah
+    loop loc_01FFB
+    mov ds, cs:[MainDataSegment]
+    ret
 loc_0203C:
     mov ax, ds:[si]
     mov dl, 0FFh
@@ -7343,13 +7357,31 @@ loc_03FEB:
     rcr bh, 1
     rcr al, 1
     rcr ah, 1
-
-; Modern grid-probe names; roles are local, broader map ownership unresolved.
-; UNKNOWN: not yet classified as code or data
-    db 0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh
-    db 0D0h,0D8h,0D0h,0DCh,0D0h,0DAh,0D0h,0EBh,0D0h,0DFh,0D0h,0D8h,0D0h,0DCh,0D0h,0DAh
-    db 026h,09h,01Dh,026h,09h,045h,02h,026h,08h,055h,04h,083h,0C6h,08h,083h,0C7h
-    db 034h,04Dh,075h,0B7h,02Eh,08Eh,01Eh,096h,095h,0C3h
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], dl
+    add si, 8
+    add di, 34h
+    dec bp
+    jne loc_03FEB
+    mov ds, cs:[MainDataSegment]
+    ret
 loc_0403A:
     mov bx, ds:[si]
     not bx

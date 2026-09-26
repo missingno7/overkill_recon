@@ -1710,7 +1710,6 @@ loc_05F5E:
     jmp near ptr RequestModuleMusic
 
 
-; Modern record/state symbols.
 loc_05F61:
     cmp word ptr ds:[EncounterLiveCount], 0
     jne loc_05F89
@@ -5157,8 +5156,6 @@ loc_07FFB:
     jne loc_08001
 
 ; Offset-placement use of field+8 does not define its role in other record types.
-; Modern position-history symbols.
-; Modern record/state symbols.
 ; UNKNOWN: not yet classified as code or data
     db 0C3h
 loc_08001:

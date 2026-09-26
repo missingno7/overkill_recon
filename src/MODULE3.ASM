@@ -1568,8 +1568,6 @@ loc_09FF0:
 
 ; Fields scoped to the SetResponseAndStepRecordCounter response path; no entity/health identity asserted.
 ; Offset-placement use of field+8 does not define its role in other record types.
-; Modern position-history symbols.
-; Modern record/state symbols.
 ; Continuation of PlaceRecordFromOffsetPair across the physical
 ; chunk boundary: same routine, not a separate clamp/feedback producer.
     lodsw
