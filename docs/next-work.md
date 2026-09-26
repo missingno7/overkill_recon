@@ -29,7 +29,6 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
   stays within 0..4 is not yet shown.
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
-- 1534:004E critical-error continuation and its saved stack relation.
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
 - CS:9594 holds B800h; its reader has not been reviewed.
 - Record fields +1C and +36 are type-dependent; REC_KIND values 0, 2, 6 are unexplained.

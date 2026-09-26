@@ -144,5 +144,10 @@ addresses, so the original had more link modules than the three the relocation
 runs prove. MODULE2 keeps the fillers as explicit `db 90h` because `even` there would
 align relative to 52CF.
 
+The far code at 0F7F:0980 (ShowPageList, linear 10170) starts on a paragraph after 14
+zero bytes that MODULE3 cannot produce (its far part starts at the odd address 1000D):
+a separate paragraph-aligned module (MODULE4.ASM) makes TLINK emit exactly that
+padding, which is further evidence of more link modules than the relocation runs prove.
+
 TASM 1.0 assembles the whole MAIN segment as one 16,800-line file (0.8 s, ample
 memory), so file boundaries are a readability and evidence choice, not a tool limit.

@@ -24,8 +24,8 @@ python tools/where.py 9C01        # source line for an image address (after a bu
 ## Layout
 
 - `src/sources.txt` - main-program sources in link order.
-- `src/MODULE1.ASM` .. `MODULE3.ASM` - the main and far (0F7F) code, split where the
-  original relocation order proves link-module boundaries. The evidence shows at least
+- `src/MODULE1.ASM` .. `MODULE4.ASM` - the main and far (0F7F) code, split where the
+  original relocation order or linker padding shows link-module boundaries. The evidence shows at least
   three modules and leaves some boundaries non-unique; these files are not claimed to
   be the historical object modules (see docs/executable-wrapping.md).
 - `src/SLOT1022.ASM`, `SEG1534.ASM`, `SEG153A.ASM`, `DATA.ASM` - one file per remaining

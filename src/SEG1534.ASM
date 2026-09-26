@@ -15,6 +15,10 @@ public InstallCriticalErrorVector
 ErrorReturnOffset dw 0              ; saved by the handler
 ErrorReturnSegment dw 0
 ErrorFlagsOrTarget dw 0             ; flags, later the IRET target offset
+; INT 24h handler: fail the DOS call instead of asking Abort/Retry/Ignore. Drop DOS's
+; frame and the saved registers, keep the caller's return, set its CF and resume at
+; CriticalErrorResume.
+CriticalErrorHandler:
     add sp, 6
     pop ax
     mov ax, di
@@ -32,7 +36,7 @@ ErrorFlagsOrTarget dw 0             ; flags, later the IRET target offset
     or word ptr cs:[ErrorFlagsOrTarget], 1
     push word ptr cs:[ErrorFlagsOrTarget]
     push cs
-    mov word ptr cs:[ErrorFlagsOrTarget], 04Eh
+    mov word ptr cs:[ErrorFlagsOrTarget], offset CriticalErrorResume
     push word ptr cs:[ErrorFlagsOrTarget]
     iret
 
@@ -42,7 +46,7 @@ ErrorFlagsOrTarget dw 0             ; flags, later the IRET target offset
 ; for the nonlocal handler at0006.
 InstallCriticalErrorVector:
     mov al, 024h
-    mov dx, 6
+    mov dx, offset CriticalErrorHandler
     call SetInterruptVectorToCS
     retf
 
@@ -57,12 +61,17 @@ SetInterruptVectorToCS:
     int 021h
     pop ds
     ret
-; Handler1534:0006 constructs an IRET to this1534:004E continuation.
-; These UNKNOWN bytes must not be treated as inter-frame padding; the
-; nonlocal DOS stack contract and eventual far handoff still need review.
-; UNKNOWN: not yet classified as code or data
-    db 09Ch,050h,0B4h,019h,0CDh,021h,058h,09Dh,02Eh,0FFh,02Eh,00h,00h,00h,00h,00h
-    db 00h,00h
+; Continuation (1534:004E) the INT 24h handler IRETs to, running outside the error
+; handler: make a harmless DOS call (get current drive) so DOS leaves its critical
+; state, then return to the interrupted INT 21h caller with its flags (CF set).
+CriticalErrorResume:
+    pushf
+    push ax
+    mov ah, 019h
+    int 021h
+    pop ax
+    popf
+    jmp dword ptr cs:[ErrorReturnOffset]
 
 SEG1534 ends
 end
