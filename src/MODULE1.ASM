@@ -1151,6 +1151,8 @@ RedrawStatusPanel:
 ; F9 boss key: silence the sound module (StopModuleMusic), switch to text mode and show
 ; BossKeyScreen with coloured rows, wait for F9 release, any key and F9 release again,
 ; then restore the game's BIOS video mode.
+; Blocks; timer and SFX keep running. The mode set clears the screen, so callers redraw
+; (CheckBossKey falls into RedrawStatusPanel; the menu restarts).
 ShowBossKeyScreen:
     call StopModuleMusic
     mov ax, 3
@@ -1268,6 +1270,8 @@ ShowOutOfMemoryAndExit:
     jmp near ptr ShutdownGame
 ; Jump target, DX = $-terminated message: switch to text mode, print it, pause
 ; 200 ticks of WaitVerticalRetrace and leave through ShutdownGame.
+; Its only use is the DOS resize failure at entry, before LoadHiscoreFile, so ShutdownGame
+; then saves the image's default HiscoreBlock over the player's hiscore.dat.
 ShowFatalErrorAndExit:
     push dx
     mov ax, 3
@@ -9256,7 +9260,7 @@ InstallKeyboardVector09:
     push ds
     push cs
     pop ds
-    mov dx, 04ED2h
+    mov dx, offset Interrupt09KeyboardHandler
     mov ah, DOS_SET_VECTOR
     mov al, 9
     int 021h
@@ -9264,7 +9268,8 @@ InstallKeyboardVector09:
     pop ds
     ret
 
-; Put back the INT 09h vector saved by InstallKeyboardVector09.
+; Put back the INT 09h vector saved by InstallKeyboardVector09. Unguarded: on the
+; resize-failure exit (before the install) KbdSavedInt09 is 0, so INT 09h becomes 0000:0000.
 RestoreKeyboardVector09:
     push ds
     mov di, offset KbdSavedInt09

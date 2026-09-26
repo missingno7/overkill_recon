@@ -18,6 +18,10 @@ extrn WaitVerticalRetrace:far
 FAR0F7F segment para public 'CODE'
 assume cs:FAR0F7F,ds:nothing,ss:nothing,es:nothing
 public ShowPageList
+; Far. AX = page list (the word before it: 1 browsable, 0 single page). Shows PageIndex
+; via LoadAndShowPage; a single page returns at once. Else Left/Up/PgUp/Backspace and
+; Right/Down/PgDn/Space/Enter step (5 retraces, stops at the ends); Esc returns after
+; release. Polls KeyDownTable, so it needs the INT 09h handler.
 ShowPageList:
     mov word ptr ds:[PageListPtr], ax
     mov word ptr ds:[PageIndex], 0

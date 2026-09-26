@@ -587,7 +587,8 @@ PlaqueSegment dw 0
 BlueBitsSegment dw 0
 ; Unreferenced CS word among the bank segment variables.
 UnusedSegmentWord28 db 00h,00h
-; 0 CGA, 1 EGA, 2 Tandy (from PSP:82h, values above 2 become 1). Indexes the BIOS
+; 0 CGA, 1 EGA, 2 Tandy (PSP:82h, values above 2 become 1; hiscore.dat
+; overrides it, unclamped, unless the launcher mask is F0h/FFh). Indexes the BIOS
 ; mode table and many dispatch tables.
 VideoAdapter dw 0
 ; The workspace scroll ring: ScrollWindowOffset moves up one row per scroll step; at
@@ -601,12 +602,13 @@ EntryEsPsp dw 00000h
 EntryDsPsp dw 00000h
 LauncherOverrideMask db 00h
 
-; EXE entry point. Set DS/SS to the state segment, install the critical-error vector and
-; shrink the memory block. The launcher passes three bytes at PSP:81h: an override mask,
-; the video adapter (0 CGA, 1 EGA, 2 Tandy; values above 2 become 1) and the sound module
-; letter. Settings saved in hiscore.dat win unless the mask is exactly F0h (video), 0Fh
-; (sound) or FFh (both). Then initialize, set the BIOS video mode and run the game loops;
-; never returns (exits through ShutdownGame).
+; EXE entry. OVERKILL.EXE (the launcher) EXECs this file, OVERKILL, passing binary bytes
+; at PSP:81h, not text: an override mask, the adapter (0 CGA, 1 EGA, 2 Tandy; above 2
+; becomes 1) and the sound module letter ('t', 'r', 'a', FFh any). Settings saved in
+; hiscore.dat win unless the mask is exactly F0h (video), 0Fh (sound) or FFh (both).
+; The PSP block shrinks to end at ImageEnd; the stack is DATA's StackArea. Then init,
+; set the BIOS video mode and run the game loops; never returns (exits through
+; ShutdownGame).
 ProgramEntry:
     mov word ptr cs:[EntryEsPsp], es
     mov word ptr cs:[EntryDsPsp], ds
@@ -616,8 +618,8 @@ ProgramEntry:
     mov ss, word ptr cs:[MainDataSegment]
     mov sp, offset StackTop
     sti
-; InstallCriticalErrorVector: far code frame1534, entry003C. The handler
-; owns CS-private scratch; this crossing alone does not prove an OBJ boundary.
+; From here DOS calls fail with CF set instead of prompting; INT 24h is never restored
+; (DOS restores it from the PSP at exit).
     call far ptr InstallCriticalErrorVector
     mov es, word ptr cs:[EntryEsPsp]
     mov ax, es
@@ -675,6 +677,11 @@ ApplyLauncherVideoOverride:
 ApplyLauncherSoundOverride:
     mov byte ptr ds:[SoundModuleSelect], al
     ret
+; Init order: VGA DAC probe, checksums (may exit with code 1), INT 08h (72.8 Hz), INT 09h,
+; archive list, retrace polarity, best-fit DOS allocation, floppies, EMS, sound module
+; (requests MUSIC_TITLE), buffers, row tables, stars, rank colour, common graphics.
+; hiscore.dat was already applied above. No video mode is set yet: the launcher's screen
+; is captured and collapsed and WINDOW.BIC stretched in before the BIOS mode set clears it.
 StartupAfterOverrides:
     call EnableFileFlagsIfVgaDac
     call VerifyStartupChecksums
@@ -5815,7 +5822,8 @@ MapEmsPages:
     ret
 
 ; Loads the file named by FileNamePtr to FileBufferSegment:FileBufferOffset: copied from
-; FileCache when present, else read from disk (drive prompt and retry; ESC leaves through
+; FileCache when present, else read from disk (retried silently while the current drive is A: or B: and ESC is not
+; held; otherwise leaves through
 ; ShutdownWithError) and then offered to CacheLoadedFile. FileStatus is always OK on
 ; return: open failures retry or shut down, and a failed LoadPackedFile (CF) is ignored
 ; (its partial output is still cached), so callers' retry loops never trigger.
@@ -6103,15 +6111,18 @@ PrintDebugCodewords:
     call PrintMessageBP
     ret
 
-; Checksums OVERKILL.EXE and the data file (falls into ChecksumFileOrAbort).
+; Checksums OVERKILL.EXE (the launcher) and OVERKILL (this program's own file, which also
+; carries the SHADOW archive), both in the current directory; falls into ChecksumFileOrAbort.
 VerifyStartupChecksums:
     mov word ptr cs:[IntegritySkip], 0
     mov dx, offset IntegrityFileExe
     call ChecksumFileOrAbort
     mov dx, offset IntegrityFileData
 
-; DX = file name: sums it in 1400h-byte chunks; a mismatch shows the corrupt message and
-; exits.
+; DX = file name. Sum from 1234h, per byte AX += b then AH += AL, over all but the last
+; word, which must equal it. For OVERKILL.EXE the 64 bytes before that word also give
+; Codeword..Password (XOR AAh), read only by uncalled code. DOS errors unchecked; a
+; mismatch prints, waits for a key and exits with code 1 (not through ShutdownGame).
 ChecksumFileOrAbort:
     mov word ptr ds:[FileNamePtr], dx
     mov bx, 0180h
@@ -6369,8 +6380,7 @@ ShowSoundCardCaption:
 
 ; Load and initialize the optional sound module named by SoundModuleSelect ('t', 'r',
 ; 'a'; FFh tries tandy, roland, then adlib) into SOUND_MODULE_SEGMENT. On success sets
-; SoundModuleLoaded and falls through into CB1C with AL=2. CB95 (the resource loader)
-; is unreviewed.
+; SoundModuleLoaded and falls into RequestModuleMusic with AL = MUSIC_TITLE.
 LoadSoundModule:
     mov al, byte ptr ds:[SoundModuleSelect]
     cmp al, SOUND_SELECT_ANY
@@ -7619,6 +7629,8 @@ TextLineCount dw 0
 ; DOS handle of the open ENC file (DecodeEncFile, ShowPaymentText).
 EncFileHandle dw 0
 ; Show payment.enc in text mode, scrollable. No caller found in this image.
+; Leaves text mode with the cursor hidden; returns on Esc; a missing payment.enc off A:/B:
+; goes to ShutdownWithError.
 ShowPaymentText:
     mov ax, 3
     int 10h

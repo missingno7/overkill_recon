@@ -29,7 +29,8 @@ SoundModuleInitEntry:
 SoundStubNop:
     ret
 ; Space the loaded ADLIB.ENC or ROLAND.ENC image overwrites (both end below
-; SlotBuffer). Zero in the image.
+; SlotBuffer; the tandy module LoadSoundModule tries first is not in the archive).
+; Zero in the image.
     db SLOT_BUFFER_PARAGRAPH * 16 - ($ - SoundModuleSlot) dup (0)
 ; Load buffer at paragraph SLOT_BUFFER_PARAGRAPH of the slot: receives hiscore.dat
 ; (LoadHiscoreFile) and the level map (the segment in LevelMapSegment).

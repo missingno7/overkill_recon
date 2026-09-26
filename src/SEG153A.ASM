@@ -11,8 +11,7 @@ SEG153A segment para public 'CODE'
 assume cs:SEG153A,ds:nothing,ss:nothing,es:nothing
 public OpenResourceFile
 public ResLibSetup
-; Observed frame153A: private CS state and DOS/file/path operations, with
-; caller segment pointers. Distinct address frame, historical OBJ count unknown.
+; SHADOW resource library: archive search, huge reads, and unused exec/copy helpers.
 ; Far. AX option bits: 8000h ResOptions = AL; 4000h copy the DS:SI archive name list
 ; (0FFh-terminated) to ResArchiveList; 2000h use the program's own EXE as the archive;
 ; 1000h ResBufferPtr = ES:DI. The game calls it with 4000h and ResourceArchiveList.
@@ -54,7 +53,7 @@ ResLibSetup:
 @@done:
     retf
 ; Further resource-library routines (far entries ending in RETF). The game only calls
-; 153A:0000 (ResLibSetup) and OpenResourceFile; no caller of these was found.
+; ResLibSetup and OpenResourceFile; no caller of these was found.
 ; Far. Open the resource named at DS:DX and read all of it to ES:DI. No caller found.
 ResLoadWholeFile:
     push di
@@ -80,8 +79,9 @@ ResLoadWholeFile:
     popf
 @@done:
     retf
-; Far. Load and run an MZ program stored in the archive (DS:DX = "NAME args"),
-; hooking INT 21h to catch its exit; AX = ExecStatus:ExecExitCode. No caller found.
+; Resource-library routine never called by Overkill: the game executes no program. Would
+; load and run an MZ program from the archive (DS:DX = "NAME args"), hooking INT 21h to
+; catch AH=4Ch exits only; the child PSP is never made current. AX = ExecStatus:ExitCode.
 ExecResourceProgram:
     push ds
     push cs

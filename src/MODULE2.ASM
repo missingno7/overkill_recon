@@ -567,6 +567,9 @@ extrn WorkspaceSegment:word
 ; Load hiscore.dat: verify the checksum word over the encoded block, copy the block to
 ; HiscoreBlock, decode it and apply the saved settings. Returns AL=1 on success,
 ; AL=0 if the file is missing or damaged. The byte count read is not checked.
+; Plain DOS read, before the rest of init. If missing or damaged, the PSP adapter/module
+; bytes and image defaults stay. Reads up to FFFFh bytes into SlotBuffer (EA0h bytes), so
+; a longer file overwrites SEG1534 onward. The saved adapter is not clamped to 0..2.
 LoadHiscoreFile:
     mov ax, seg SoundModuleSlot + SLOT_BUFFER_PARAGRAPH
     mov word ptr ds:[FileBufferSegment], ax
@@ -1571,9 +1574,11 @@ DebugPrintHexDigit:
 ShutdownWithError:
     mov ds, word ptr cs:[MainDataSegment]
     inc byte ptr ds:[ExitWithError]
-; Common exit: silence the speaker, save hiscore.dat, stop sound, restore the keyboard
-; vector, return to text mode and exit to DOS. If ExitWithError is set an error message
-; naming FileNamePtr is printed first.
+; Common exit, reached by jump (SS:SP never reset; Alt+X leaves its INT 09h frame, so STI).
+; Always rewrites hiscore.dat, stops music, restores INT 09h, INT 08h and the PIT rate, sets
+; text mode, frees EMS handles, restores the DOS allocation strategy and exits with code 0,
+; also after an error (then an error naming FileNamePtr is printed first, ExitWithError).
+; INT 24h and DOS memory blocks are left to DOS.
 ShutdownGame:
     mov ds, word ptr cs:[MainDataSegment]
     sti

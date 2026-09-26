@@ -10,7 +10,6 @@ locals
 SEG1534 segment para public 'CODE'
 assume cs:SEG1534,ds:nothing,ss:nothing,es:nothing
 public InstallCriticalErrorVector
-; Frame1534 private saved return words; not evidence of an original OBJ.
 ; Critical-error handler scratch: six bytes the INT 24h handler pops into and reuses.
 ErrorReturnOffset dw 0              ; saved by the handler
 ErrorReturnSegment dw 0
@@ -18,6 +17,8 @@ ErrorFlagsOrTarget dw 0             ; flags, later the IRET target offset
 ; INT 24h handler: fail the DOS call instead of asking Abort/Retry/Ignore. Drop DOS's
 ; frame and the saved registers, keep the caller's return, set its CF and resume at
 ; CriticalErrorResume.
+; The failed call gets AX = the INT 24h error code (DI: 0 write-protect, 2 not ready, ...),
+; not a DOS error code.
 CriticalErrorHandler:
     add sp, 6
     pop ax
@@ -56,7 +57,7 @@ SetInterruptVectorToCS:
     int 021h
     pop ds
     ret
-; Continuation (1534:004E) the INT 24h handler IRETs to, running outside the error
+; Continuation the INT 24h handler IRETs to, running outside the error
 ; handler: make a harmless DOS call (get current drive) so DOS leaves its critical
 ; state, then return to the interrupted INT 21h caller with its flags (CF set).
 CriticalErrorResume:
