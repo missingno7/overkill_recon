@@ -239,6 +239,7 @@ public PlayerShotsHitRecord
 public SetDeltaToward
 public ShutdownGame
 public SidePodsAvailable
+public SmartBombAll
 public SpawnAimedShot
 public SpawnEnemyHere
 public SpawnEnemyHereQuiet
@@ -342,7 +343,6 @@ public loc_060A2
 public loc_060AC
 public loc_06176
 public loc_061DC
-public loc_062AA
 public loc_07420
 public loc_07596
 public loc_07746
@@ -2136,7 +2136,8 @@ loc_06296:
     pop di
     jmp near ptr loc_0613E
 
-loc_062AA:
+; Item 3: SmartBombRecord on every live pool A record.
+SmartBombAll:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_062B6
     mov byte ptr ds:[SfxRequest], 8

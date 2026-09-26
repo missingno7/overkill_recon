@@ -423,6 +423,7 @@ extrn SetDeltaToward:near
 extrn SetMapTile1:near
 extrn SetMapTile28:near
 extrn ShowFatalErrorAndExit:near
+extrn SmartBombAll:near
 extrn SpawnAimedShot:near
 extrn SpawnEnemyHere:near
 extrn SpawnEnemyHereQuiet:near
@@ -528,7 +529,6 @@ extrn loc_060A2:near
 extrn loc_060AC:near
 extrn loc_06176:near
 extrn loc_061DC:near
-extrn loc_062AA:near
 extrn loc_07420:near
 extrn loc_07596:near
 extrn loc_07746:near
@@ -1014,7 +1014,7 @@ loc_099F6Cases label word
     dw offset CountXReturn
 loc_09A16:
     mov byte ptr ds:[InputBits], 8
-    call loc_09DB9
+    call PickupFuel
     call loc_09DEA
     cmp word ptr ds:[Fuel], 58h
     je loc_09A29
@@ -1165,7 +1165,7 @@ loc_09BA9:
     je loc_09BC0
     cmp byte ptr ds:[KeyDownTable + SCAN_3], KEY_STATE_DOWN
     jne loc_09BC0
-    call loc_09D4D
+    call PickupUpgradeSelector
 loc_09BC0:
     cmp word ptr ds:[MoveModeA47C], 1
     ja loc_09BCA
@@ -1359,7 +1359,8 @@ loc_09D39:
 loc_09D4C:
     ret
 
-loc_09D4D:
+; Item 1: advances SelectedUpgradeSlot (0..3) and refreshes the upgrade display.
+PickupUpgradeSelector:
     cmp byte ptr ds:[BonusKeysEnabled], 0
     je loc_09D5B
 loc_09D54:
@@ -1369,7 +1370,8 @@ loc_09D5B:
     inc word ptr ds:[SelectedUpgradeSlot]
     and word ptr ds:[SelectedUpgradeSlot], 3
     jmp near ptr loc_0AC19
-loc_09D67:
+; Item 2: an energy tank, or refilled energy when all three are held.
+PickupEnergy:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_09D73
     mov byte ptr ds:[SfxRequest], 1Ch
@@ -1401,7 +1403,8 @@ loc_09D99:
     mov word ptr ds:[bx + REC_HIT_POINTS], 14h
     ret
 
-loc_09DB9:
+; Item 4: starts refuelling unless the tank is full or already refilling.
+PickupFuel:
     cmp word ptr ds:[Fuel], 058h
     jne loc_09DC1
     ret
@@ -2395,7 +2398,7 @@ loc_0A6A8:
     cmp word ptr ds:[MapScrollPos], 0EA0h
     jne loc_0A6FD
     mov word ptr ds:[MoveModeA47C], 1
-    call loc_062AA
+    call SmartBombAll
     mov si, offset Type53SpawnTable
     mov cx, 4
 loc_0A6C8:
@@ -2833,15 +2836,16 @@ loc_0AAE7:
     mov bx, 020h
     call loc_05F0D
     push bp
-    push word ptr cs:[0AB0Ah]
+; The handlers return into PickupDone (the table's last entry) to free the pickup.
+    push word ptr cs:[PickupHandlers + 0Ah]
     mov bx, word ptr ss:[bp + REC_ITEM_INDEX]
     mov bp, offset PrimaryRecord
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0AAE7Cases]
-loc_0AAE7Cases label word
-    dw offset CountXReturn, offset loc_09D4D, offset loc_09D67, offset loc_062AA
-    dw offset loc_09DB9, offset loc_0AB0C
-loc_0AB0C:
+    jmp word ptr cs:[bx + PickupHandlers]
+PickupHandlers label word
+    dw offset CountXReturn, offset PickupUpgradeSelector, offset PickupEnergy, offset SmartBombAll
+    dw offset PickupFuel, offset PickupDone
+PickupDone:
     pop bp
     jmp near ptr RemoveRecord
 ; BP = the exhaust: animates it under the ship; freed silently once the ship form is
@@ -3975,7 +3979,7 @@ loc_0B4AD:
     jmp near ptr FinishRecordUpdate
 loc_0B54A:
     mov word ptr ds:[EncounterLiveCount], 0
-    call loc_062AA
+    call SmartBombAll
     jmp near ptr FinishRecordUpdate
 ; Per level encounter driver: spawns type 23h fallers, then becomes boss type 22h (level
 ; 0: segmented boss 78h; level 3: invaders).
@@ -5546,7 +5550,7 @@ loc_0C41E:
     mov word ptr ds:[SidePodSpreadRight], 0
     mov word ptr ds:[SidePodSpreadLeft], 0
     mov word ptr ds:[AutoMoveExtraRecord], 0FFFFh
-    call loc_09DB9
+    call PickupFuel
     mov word ptr ds:[FireLatch], 0
     mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
     mov word ptr ds:[EncounterLiveCount], 0

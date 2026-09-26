@@ -6653,14 +6653,14 @@ loc_0390E:
     loop loc_0390E
     mov ds, cs:[MainDataSegment]
     ret
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Ninth byte of an eight-byte mask row shifted right in registers by loc_03926.
+SpriteShiftSpill db 00h
 loc_03926:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
     mov dx, ds:[si + 0Ch]
-    mov byte ptr cs:[3925h], 0FFh
+    mov byte ptr cs:[SpriteShiftSpill], 0FFh
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6670,7 +6670,7 @@ loc_03926:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6680,18 +6680,18 @@ loc_03926:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     and es:[di], bx
     and es:[di + 2], ax
     and es:[di + 4], cx
     and es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     and es:[di + 8], al
     mov bx, ds:[si + 2]
     mov ax, ds:[si + 6]
     mov cx, ds:[si + 0Ah]
     mov dx, ds:[si + 0Eh]
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6700,7 +6700,7 @@ loc_03926:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6709,12 +6709,12 @@ loc_03926:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
@@ -6729,7 +6729,7 @@ loc_039DF:
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
     mov dx, ds:[si + 0Ch]
-    mov byte ptr cs:[3925h], 0FFh
+    mov byte ptr cs:[SpriteShiftSpill], 0FFh
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6739,7 +6739,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6749,7 +6749,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6759,7 +6759,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6769,18 +6769,18 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     and es:[di], bx
     and es:[di + 2], ax
     and es:[di + 4], cx
     and es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     and es:[di + 8], al
     mov bx, ds:[si + 2]
     mov ax, ds:[si + 6]
     mov cx, ds:[si + 0Ah]
     mov dx, ds:[si + 0Eh]
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6789,7 +6789,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6798,7 +6798,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6807,7 +6807,7 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6816,12 +6816,12 @@ loc_039DF:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
@@ -6836,7 +6836,7 @@ loc_03AEE:
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
     mov dx, ds:[si + 0Ch]
-    mov byte ptr cs:[3925h], 0FFh
+    mov byte ptr cs:[SpriteShiftSpill], 0FFh
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6846,7 +6846,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6856,7 +6856,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6866,7 +6866,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6876,7 +6876,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6886,7 +6886,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     stc
     rcr bl, 1
     rcr bh, 1
@@ -6896,18 +6896,18 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     and es:[di], bx
     and es:[di + 2], ax
     and es:[di + 4], cx
     and es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     and es:[di + 8], al
     mov bx, ds:[si + 2]
     mov ax, ds:[si + 6]
     mov cx, ds:[si + 0Ah]
     mov dx, ds:[si + 0Eh]
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6916,7 +6916,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6925,7 +6925,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6934,7 +6934,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6943,7 +6943,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6952,7 +6952,7 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6961,12 +6961,12 @@ loc_03AEE:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
@@ -6985,7 +6985,7 @@ loc_03C53:
     not cx
     mov dx, ds:[si + 0Ch]
     not dx
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -6994,7 +6994,7 @@ loc_03C53:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7003,12 +7003,12 @@ loc_03C53:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
@@ -7025,7 +7025,7 @@ loc_03CBC:
     not cx
     mov dx, ds:[si + 0Ch]
     not dx
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7034,7 +7034,7 @@ loc_03CBC:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7043,7 +7043,7 @@ loc_03CBC:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7052,7 +7052,7 @@ loc_03CBC:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7061,12 +7061,12 @@ loc_03CBC:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
@@ -7085,7 +7085,7 @@ loc_03D52:
     not cx
     mov dx, ds:[si + 0Ch]
     not dx
-    mov byte ptr cs:[3925h], 0
+    mov byte ptr cs:[SpriteShiftSpill], 0
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7094,7 +7094,7 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7103,7 +7103,7 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7112,7 +7112,7 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7121,7 +7121,7 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7130,7 +7130,7 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7139,12 +7139,12 @@ loc_03D52:
     rcr ch, 1
     rcr dl, 1
     rcr dh, 1
-    rcr byte ptr cs:[3925h], 1
+    rcr byte ptr cs:[SpriteShiftSpill], 1
     or es:[di], bx
     or es:[di + 2], ax
     or es:[di + 4], cx
     or es:[di + 6], dx
-    mov al, cs:[3925h]
+    mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
     add di, 34h
