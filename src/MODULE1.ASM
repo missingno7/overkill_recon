@@ -170,7 +170,10 @@ public CalibrateJoystickWithAbort
 public CgaColorMap
 public CgaSelectBrightPalette0
 public CgaSelectBrightPalette1
+public CgaSelectBrightPaletteNoBurst
 public CheckBossKey
+public ClearCga16K
+public ClearEgaPages
 public ClearKeyDownTable
 public ClearScreen104x200Cga
 public ClearScreen104x200Ega
@@ -179,6 +182,9 @@ public ClearTandy32K
 public ClearTimerTick
 public ClearWorkspace
 public ComputeRecordGridOffset
+public CopyFullWorkspaceToScreenCga
+public CopyFullWorkspaceToScreenEga
+public CopyFullWorkspaceToScreenTandy
 public CopyPackedRowsStride104
 public CopyPackedRowsStride160
 public CopyPackedRowsToTandyBanks
@@ -186,6 +192,12 @@ public CopyWorkspace104x192ToTandy
 public CopyWorkspaceToScreenCga
 public CopyWorkspaceToScreenEga
 public CountXReturn
+public DecodeGraphicsImagesCga
+public DecodeGraphicsImagesEga
+public DecodeGraphicsImagesTandy
+public DrawMapRowBlocksCga
+public DrawMapRowBlocksEga
+public DrawMapRowBlocksTandy
 public DrawOffsetFromPlayfieldRowCga
 public DrawOffsetFromPlayfieldRowEga
 public DrawOffsetFromScreenRowCga
@@ -233,6 +245,9 @@ public DrawSprite8Shift7Ega
 public DrawSprite8Tandy
 public DrawStars
 public DrawStatusPanel
+public DrawStretchedImageCga
+public DrawStretchedImageEga
+public DrawStretchedImageTandy
 public EraseStars
 public FlashSprite16Shift0Cga
 public FlashSprite16Shift0Ega
@@ -288,15 +303,36 @@ public PrintMessageBP
 public PrintTextChar
 public ProbeShipTerrainCollision
 public ReadIndexedByteAttribute
+public RecordScreenOffsetCga
+public RecordScreenOffsetEga
+public RecordScreenOffsetTandy
 public RecordWorkspaceOffsetCga
 public RecordWorkspaceOffsetEga
 public RecordWorkspaceOffsetTandy
 public RedrawStatusPanel
 public ResetEgaPages
 public RestartAtCheckpoint
+public RestoreBackground16Cga
+public RestoreBackground16Ega
+public RestoreBackground16Tandy
+public RestoreBackground32Cga
+public RestoreBackground32Ega
+public RestoreBackground32Tandy
+public RestoreBackground8Cga
+public RestoreBackground8Ega
+public RestoreBackground8Tandy
 public RestoreKeyboardVector09
 public RestoreTimerVector08
 public RunLevelScriptEvents
+public SaveBackground16Cga
+public SaveBackground16Ega
+public SaveBackground16Tandy
+public SaveBackground32Cga
+public SaveBackground32Ega
+public SaveBackground32Tandy
+public SaveBackground8Cga
+public SaveBackground8Ega
+public SaveBackground8Tandy
 public SaveHiscoreFile
 public SetMapTile1
 public SetMapTile28
@@ -310,42 +346,6 @@ public UpdateHighScoreTable
 public WaitTimerTick
 public WaitVerticalRetrace
 public XorCodeHiscoreBlock
-public loc_025E9
-public loc_02737
-public loc_027D9
-public loc_02991
-public loc_029C6
-public loc_029E5
-public loc_02A4F
-public loc_02AB9
-public loc_02AF9
-public loc_02B84
-public loc_02D2D
-public loc_02E2D
-public loc_03142
-public loc_033AF
-public loc_034AD
-public loc_034D8
-public loc_03542
-public loc_0356C
-public loc_035CC
-public loc_03657
-public loc_036A2
-public loc_0375B
-public loc_03824
-public loc_04264
-public loc_0446C
-public loc_0450C
-public loc_04684
-public loc_046AA
-public loc_04711
-public loc_04740
-public loc_0480E
-public loc_04896
-public loc_048E6
-public loc_0497A
-public loc_04A41
-public loc_04F37
 public loc_05059
 extrn AdapterDrawHandlers:word
 extrn ApplyLevelPalette:near
@@ -356,6 +356,7 @@ extrn DecodeByte5BA0:byte
 extrn DecodeByte5BA1:byte
 extrn DecodeDest:word
 extrn DecodeFileFlags:word
+extrn DecodeGraphicsImages:near
 extrn DecodeImageIndex:word
 extrn DecodePixelBytes:byte
 extrn DecodePlaneBits:byte
@@ -412,7 +413,6 @@ extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
 extrn WideRowBytes:word
 extrn WorkspaceSegment:word
-extrn loc_05BAC:near
 ; Palette index treated as transparent when sprites are loaded and drawn.
 TransparentColor db 05h
 ; Esc during calibration jumps here from PollJoystickPrimaryOrAbort. Reloading the SP
@@ -1664,7 +1664,7 @@ loc_00D2E:
     mov es, word ptr cs:[LoadDestSegment]
     mov di, word ptr cs:[LoadDestOffset]
     xor si, si
-    jmp near ptr loc_05BAC
+    jmp near ptr DecodeGraphicsImages
 
 ; Startup load of the shared sprite banks, THEND, PANEL.ENC (CGA patched), BLUEBITS and
 ; SHIP.BIC. THEND's image offsets are overwritten by PANEL's.
@@ -1882,11 +1882,12 @@ loc_00F69:
     xchg ax, di
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_00F69Cases]
-loc_00F69Cases label word
-    dw offset loc_00F7D, offset loc_00F8D, offset loc_00F92
+    jmp word ptr cs:[bx + ScreenRowStepCases]
+ScreenRowStepCases label word
+    dw offset NextScreenRowCga, offset NextScreenRowEga, offset NextScreenRowTandy
 
-loc_00F7D:
+; DI += one CGA scan line (two interleaved 8K banks).
+NextScreenRowCga:
     add di, 02000h
     test di, 04000h
     je loc_00F8B
@@ -1894,11 +1895,12 @@ loc_00F7D:
 loc_00F8B:
     jmp short loc_00FA0
 
-loc_00F8D:
+NextScreenRowEga:
     add di, 028h
     jmp short loc_00FA0
 
-loc_00F92:
+; DI += one Tandy scan line (four interleaved 8K banks).
+NextScreenRowTandy:
     add di, 02000h
     test di, 08000h
     je loc_00FA0
@@ -4289,7 +4291,7 @@ DrawOffsetFromWideRowEga:
     add ax, bx
     mov di, ax
     ret
-loc_025E9:
+RecordScreenOffsetEga:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
     mov bx, ds:[bx + ScreenRowOffsets]
@@ -4300,7 +4302,7 @@ loc_025E9:
     add ax, bx
     ret
 
-loc_025FE:
+PrintGraphicsCharEga:
     cmp al, 010h
     jne loc_02605
     jmp near ptr loc_0272F
@@ -4433,7 +4435,8 @@ loc_0272F:
     mov byte ptr ds:[TextColor], al
     ret
 
-loc_02737:
+; Clears 16000 bytes on all planes: both EGA pages.
+ClearEgaPages:
     mov es, word ptr cs:[ScreenSegment]
     mov dx, 03C4h
     mov al, 2
@@ -4515,7 +4518,7 @@ loc_027CB:
     jne loc_027CB
     ret
 
-loc_027D9:
+DecodeGraphicsImagesEga:
     inc word ptr cs:[DecodeImageIndex]
     call ReadDecodeImageHeader
     jne loc_027E6
@@ -4640,7 +4643,7 @@ loc_028E0:
 loc_02916:
     jmp near ptr loc_027EB
 loc_02919:
-    jmp near ptr loc_027D9
+    jmp near ptr DecodeGraphicsImagesEga
 
 ; EGA decoder: copies CX bytes from CS:DI to ES:[DecodeDest] and advances DecodeDest.
 StoreDecodedPlaneRow:
@@ -4694,7 +4697,7 @@ loc_02982:
     stosb
     inc si
     ret
-loc_02991:
+RestoreBackground32Ega:
     cmp di, -1
     je loc_02999
     call RestoreEgaBackgroundHalf
@@ -4728,7 +4731,7 @@ loc_029AF:
     add di, bx
     loop loc_029AF
     ret
-loc_029C6:
+RestoreBackground16Ega:
     cmp di, -1
     jne loc_029CC
     ret
@@ -4750,7 +4753,7 @@ loc_029D2:
     add di, bx
     loop loc_029D2
     ret
-loc_029E5:
+RestoreBackground8Ega:
     cmp di, -1
     jne loc_029EB
     ret
@@ -4821,7 +4824,7 @@ loc_029EB:
     movsw
     add di, bx
     ret
-loc_02A4F:
+SaveBackground32Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -4871,7 +4874,7 @@ loc_02A9D:
     loop loc_02A9D
     mov ds, cs:[MainDataSegment]
     ret
-loc_02AB9:
+SaveBackground16Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -4902,7 +4905,7 @@ loc_02AE1:
     loop loc_02AE1
     mov ds, cs:[MainDataSegment]
     ret
-loc_02AF9:
+SaveBackground8Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -4983,7 +4986,7 @@ loc_02B05:
     mov ds, cs:[MainDataSegment]
     ret
 
-loc_02B84:
+DrawMapRowBlocksEga:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
@@ -5159,7 +5162,7 @@ loc_02D27:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_02D2D:
+DrawStretchedImageEga:
     mov word ptr cs:[StretchRowError], 0
     mov di, word ptr cs:[StretchDest]
     mov si, word ptr cs:[StretchSource]
@@ -5281,7 +5284,7 @@ loc_02E23:
     rep stosb
     ret
 
-loc_02E2D:
+CopyFullWorkspaceToScreenEga:
     mov ds, word ptr cs:[WorkspaceSegment]
     mov dx, 03C4h
     mov al, 2
@@ -5678,7 +5681,7 @@ TandyOffsetFromWideRow:
     add ax, bx
     mov di, ax
     ret
-loc_03142:
+RecordScreenOffsetTandy:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
     mov bx, ds:[bx + ScreenRowOffsets]
@@ -5687,7 +5690,7 @@ loc_03142:
     add ax, bx
     ret
 
-loc_03153:
+PrintGraphicsCharTandy:
     cmp al, 010h
     jne loc_0315A
     jmp near ptr loc_0333D
@@ -5943,7 +5946,7 @@ loc_033AB:
     jne loc_03393
     ret
 
-loc_033AF:
+DecodeGraphicsImagesTandy:
     call ReadDecodeImageHeader
     jne loc_033B7
     jmp near ptr loc_044AA
@@ -5962,7 +5965,7 @@ loc_033C2:
     add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
     loop loc_033BC
-    jmp short loc_033AF
+    jmp short DecodeGraphicsImagesTandy
 
 ; Tandy decoder: 8 planar pixels at DS:SI to 4bpp at ES:DI (with mask words when
 ; LoadMakeMask is set).
@@ -6052,7 +6055,7 @@ loc_03491:
 loc_034AA:
     mov ax, bx
     ret
-loc_034AD:
+RestoreBackground32Tandy:
     cmp di, -1
     je loc_034B5
     call RestoreTandyBackgroundHalf
@@ -6078,7 +6081,7 @@ loc_034CB:
     add di, bx
     loop loc_034CB
     ret
-loc_034D8:
+RestoreBackground16Tandy:
     cmp di, -1
     jne loc_034DE
     ret
@@ -6165,7 +6168,7 @@ loc_034DE:
     movsw
     add di, bx
     ret
-loc_03542:
+RestoreBackground8Tandy:
     cmp di, -1
     jne loc_03548
     ret
@@ -6196,7 +6199,7 @@ loc_03548:
     movsw
     add di, bx
     ret
-loc_0356C:
+SaveBackground32Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -6238,7 +6241,7 @@ loc_035BA:
     loop loc_035BA
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_035CC:
+SaveBackground16Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -6334,7 +6337,7 @@ loc_035D8:
     add si, bx
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_03657:
+SaveBackground8Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -6375,7 +6378,7 @@ loc_03663:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_036A2:
+DrawMapRowBlocksTandy:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
@@ -6487,7 +6490,7 @@ loc_03755:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_0375B:
+DrawStretchedImageTandy:
     mov word ptr cs:[StretchRowError], 0
     mov di, word ptr cs:[StretchDest]
     mov si, word ptr cs:[StretchSource]
@@ -6572,7 +6575,7 @@ loc_0381D:
     rep stosb
     ret
 
-loc_03824:
+CopyFullWorkspaceToScreenTandy:
     mov ds, word ptr cs:[WorkspaceSegment]
 loc_03829:
     mov cx, 050h
@@ -7730,7 +7733,7 @@ DrawOffsetFromWideRowCga:
     add ax, bx
     mov di, ax
     ret
-loc_04264:
+RecordScreenOffsetCga:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
     mov bx, ds:[bx + ScreenRowOffsets]
@@ -7740,7 +7743,8 @@ loc_04264:
     add ax, bx
     ret
 
-loc_04277:
+; AL = character or control code, drawn at TextRowOffset + TextColumn.
+PrintGraphicsCharCga:
     cmp al, 010h
     jne loc_0427E
     jmp near ptr loc_0445E
@@ -7953,7 +7957,7 @@ loc_0445E:
     mov byte ptr ds:[TextColor], al
     ret
 
-loc_0446C:
+ClearCga16K:
     mov es, word ptr cs:[ScreenSegment]
     xor di, di
     mov ax, di
@@ -8033,7 +8037,7 @@ loc_04505:
 ; UNKNOWN: not yet classified as code or data
     db 00h
 
-loc_0450C:
+DecodeGraphicsImagesCga:
     call ReadDecodeImageHeader
     je loc_044AA
     mov cx, word ptr cs:[DecodeRows]
@@ -8050,7 +8054,7 @@ loc_0451C:
     add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
     loop loc_04516
-    jmp short loc_0450C
+    jmp short DecodeGraphicsImagesCga
 
 ; CGA decoder: 8 planar pixels at DS:SI to one CGA pixel word at ES:DI (colours through
 ; CgaColorMap, with a mask word when LoadMakeMask is set).
@@ -8185,7 +8189,7 @@ loc_04656:
     mov cl, al
     mov ax, word ptr cs:[CgaSavedAX]
     ret
-loc_04684:
+RestoreBackground32Cga:
     cmp di, -1
     je loc_0468C
     call RestoreCgaBackgroundHalf
@@ -8207,7 +8211,7 @@ loc_0469F:
     add di, 2Bh
     loop loc_0469F
     ret
-loc_046AA:
+RestoreBackground16Cga:
     cmp di, -1
     jne loc_046B0
     ret
@@ -8277,7 +8281,7 @@ loc_046B0:
     movsb
     add di, 2Fh
     ret
-loc_04711:
+RestoreBackground8Cga:
     cmp di, -1
     jne loc_04717
     ret
@@ -8307,7 +8311,7 @@ loc_04717:
     movsb
     add di, 31h
     ret
-loc_04740:
+SaveBackground32Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -8432,7 +8436,7 @@ SaveCgaBackgroundHalf:
     add si, 2Bh
     mov ds, cs:[MainDataSegment]
     ret
-loc_0480E:
+SaveBackground16Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -8511,7 +8515,7 @@ loc_0481A:
     add si, 2Fh
     mov ds, cs:[MainDataSegment]
     ret
-loc_04896:
+SaveBackground8Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
@@ -8551,7 +8555,7 @@ loc_048A2:
     mov ds, cs:[MainDataSegment]
     ret
 
-loc_048E6:
+DrawMapRowBlocksCga:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
@@ -8627,7 +8631,8 @@ loc_048FD:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_0497A:
+; One frame of the Stretch* image at StretchShownRows rows.
+DrawStretchedImageCga:
     mov word ptr cs:[StretchRowError], 0
     mov di, word ptr cs:[StretchDest]
     mov si, word ptr cs:[StretchSource]
@@ -8711,7 +8716,7 @@ loc_04A3A:
     rep stosb
     ret
 
-loc_04A41:
+CopyFullWorkspaceToScreenCga:
     mov ds, word ptr cs:[WorkspaceSegment]
 loc_04A46:
     mov cx, 028h
@@ -8954,11 +8959,12 @@ loc_04C7C:
     lodsw
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_04C7CCases]
-loc_04C7CCases label word
-    dw loc_04C90, loc_04CA6, loc_04CBE    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + InitStarCases]
+InitStarCases label word
+    dw InitStarCga, InitStarEga, InitStarTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_04C90:
+; AX = star X: stores its byte column at [SI-2] and pixel mask at [SI].
+InitStarCga:
     mov bx, ax
     shr ax, 1
     shr ax, 1
@@ -8969,7 +8975,7 @@ loc_04C90:
     mov word ptr ds:[si], bx
     jmp short loc_04CE7
 
-loc_04CA6:
+InitStarEga:
     mov bx, ax
     shr ax, 1
     shr ax, 1
@@ -8981,7 +8987,8 @@ loc_04CA6:
     mov word ptr ds:[si], bx
     jmp short loc_04CE7
 
-loc_04CBE:
+; Also counts StarBrightCount down; at zero dims StarMasksTandy.
+InitStarTandy:
     mov bx, ax
     shr ax, 1
     mov word ptr ds:[si - 2], ax
@@ -9309,8 +9316,9 @@ Interrupt09KeyboardHandler:
     pop bx
     pop ax
     iret
-loc_04F37:
-    cmp word ptr cs:[VideoAdapter], 0
+; Bright palette 1 with the colour burst off (cyan/red/white).
+CgaSelectBrightPaletteNoBurst:
+    cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_04F40
     ret
 loc_04F40:
@@ -9645,9 +9653,9 @@ PrintTextChar:
     je loc_051B8
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0519ACases]
-loc_0519ACases label word
-    dw loc_04277, loc_025FE, loc_03153    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + PrintGraphicsCharCases]
+PrintGraphicsCharCases label word
+    dw PrintGraphicsCharCga, PrintGraphicsCharEga, PrintGraphicsCharTandy    ; per VideoAdapter: CGA, EGA, Tandy
 loc_051B8:
     cmp al, 010h
     je loc_051F3

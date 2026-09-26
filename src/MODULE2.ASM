@@ -223,6 +223,7 @@ public DecodeByte5BA0
 public DecodeByte5BA1
 public DecodeDest
 public DecodeFileFlags
+public DecodeGraphicsImages
 public DecodeImageIndex
 public DecodePixelBytes
 public DecodePlaneBits
@@ -232,6 +233,7 @@ public DecodeRows
 public DrawEnergyGauge
 public DrawFuelGauge
 public DrawHud
+public DrawMapRowBlocks
 public DrawOffsetFromPlayfieldRow
 public DrawOffsetFromScreenRow
 public DrawOffsetFromWideRow
@@ -353,8 +355,6 @@ public Type90TurretVolley
 public Type91TurretVolleyAlt
 public Type93SweepDescendClimb
 public UpdateRefuelTimersAndScore
-public loc_05A7E
-public loc_05BAC
 public loc_05D0B
 public loc_08331
 public loc_083D7
@@ -390,11 +390,16 @@ extrn BlitPackedStride160Ega:near
 extrn BlitPackedToScreenCga:near
 extrn BlitPackedToScreenEga:near
 extrn CalibrateJoystickWithAbort:near
+extrn ClearCga16K:near
+extrn ClearEgaPages:near
 extrn ClearKeyDownTable:near
 extrn ClearScreen104x200Cga:near
 extrn ClearScreen104x200Ega:near
 extrn ClearTandy104x200:near
 extrn ClearTandy32K:near
+extrn CopyFullWorkspaceToScreenCga:near
+extrn CopyFullWorkspaceToScreenEga:near
+extrn CopyFullWorkspaceToScreenTandy:near
 extrn CopyPackedRowsStride104:near
 extrn CopyPackedRowsStride160:near
 extrn CopyPackedRowsToTandyBanks:near
@@ -402,8 +407,14 @@ extrn CopyWorkspace104x192ToTandy:near
 extrn CopyWorkspaceToScreenCga:near
 extrn CopyWorkspaceToScreenEga:near
 extrn CountXReturn:near
+extrn DecodeGraphicsImagesCga:near
+extrn DecodeGraphicsImagesEga:near
+extrn DecodeGraphicsImagesTandy:near
 extrn DestroyRecord:near
 extrn DrainFuelUnit:near
+extrn DrawMapRowBlocksCga:near
+extrn DrawMapRowBlocksEga:near
+extrn DrawMapRowBlocksTandy:near
 extrn DrawOffsetFromPlayfieldRowCga:near
 extrn DrawOffsetFromPlayfieldRowEga:near
 extrn DrawOffsetFromScreenRowCga:near
@@ -449,6 +460,9 @@ extrn DrawSprite8Shift5Ega:near
 extrn DrawSprite8Shift6Ega:near
 extrn DrawSprite8Shift7Ega:near
 extrn DrawSprite8Tandy:near
+extrn DrawStretchedImageCga:near
+extrn DrawStretchedImageEga:near
+extrn DrawStretchedImageTandy:near
 extrn FinishRecordUpdate:near
 extrn FlashSprite16Shift0Cga:near
 extrn FlashSprite16Shift0Ega:near
@@ -495,6 +509,9 @@ extrn PanelSegment:word
 extrn PollInputBits:near
 extrn PrintMessageBP:near
 extrn PrintTextChar:near
+extrn RecordScreenOffsetCga:near
+extrn RecordScreenOffsetEga:near
+extrn RecordScreenOffsetTandy:near
 extrn RecordWorkspaceOffsetCga:near
 extrn RecordWorkspaceOffsetEga:near
 extrn RecordWorkspaceOffsetTandy:near
@@ -502,9 +519,27 @@ extrn ReleaseEmsCache:near
 extrn RemoveRecordAtBX:near
 extrn RequestModuleMusic:near
 extrn ResetEgaPages:near
+extrn RestoreBackground16Cga:near
+extrn RestoreBackground16Ega:near
+extrn RestoreBackground16Tandy:near
+extrn RestoreBackground32Cga:near
+extrn RestoreBackground32Ega:near
+extrn RestoreBackground32Tandy:near
+extrn RestoreBackground8Cga:near
+extrn RestoreBackground8Ega:near
+extrn RestoreBackground8Tandy:near
 extrn RestoreKeyboardVector09:near
 extrn RestoreTimerVector08:near
 extrn RunAttractSequence:near
+extrn SaveBackground16Cga:near
+extrn SaveBackground16Ega:near
+extrn SaveBackground16Tandy:near
+extrn SaveBackground32Cga:near
+extrn SaveBackground32Ega:near
+extrn SaveBackground32Tandy:near
+extrn SaveBackground8Cga:near
+extrn SaveBackground8Ega:near
+extrn SaveBackground8Tandy:near
 extrn SaveHiscoreFile:near
 extrn ScreenSegment:word
 extrn ScrollBackwardOneLine:near
@@ -528,41 +563,6 @@ extrn TryTerrainStep:near
 extrn VideoAdapter:word
 extrn WaitVerticalRetrace:near
 extrn WorkspaceSegment:word
-extrn loc_025E9:near
-extrn loc_02737:near
-extrn loc_027D9:near
-extrn loc_02991:near
-extrn loc_029C6:near
-extrn loc_029E5:near
-extrn loc_02A4F:near
-extrn loc_02AB9:near
-extrn loc_02AF9:near
-extrn loc_02B84:near
-extrn loc_02D2D:near
-extrn loc_02E2D:near
-extrn loc_03142:near
-extrn loc_033AF:near
-extrn loc_034AD:near
-extrn loc_034D8:near
-extrn loc_03542:near
-extrn loc_0356C:near
-extrn loc_035CC:near
-extrn loc_03657:near
-extrn loc_036A2:near
-extrn loc_0375B:near
-extrn loc_03824:near
-extrn loc_04264:near
-extrn loc_0446C:near
-extrn loc_0450C:near
-extrn loc_04684:near
-extrn loc_046AA:near
-extrn loc_04711:near
-extrn loc_04740:near
-extrn loc_0480E:near
-extrn loc_04896:near
-extrn loc_048E6:near
-extrn loc_0497A:near
-extrn loc_04A41:near
 extrn loc_0B2AC:near
 ; Load hiscore.dat: verify the checksum word over the encoded block, copy the block to
 ; HiscoreBlock, decode it and apply the saved settings. Returns AL=1 on success,
@@ -1108,11 +1108,11 @@ loc_05827:
     push cx
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05827Cases]
-loc_05827Cases label word
-    dw loc_0583A, loc_05852, loc_0587E    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + CaptureScreenRowCases]
+CaptureScreenRowCases label word
+    dw CaptureScreenRowCga, CaptureScreenRowEga, CaptureScreenRowTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_0583A:
+CaptureScreenRowCga:
     mov cx, 050h
     rep movsb
     sub si, 050h
@@ -1123,7 +1123,7 @@ loc_0583A:
 loc_05850:
     jmp short loc_05895
 
-loc_05852:
+CaptureScreenRowEga:
     mov ax, 4
     out dx, ax
     mov cx, 028h
@@ -1145,7 +1145,7 @@ loc_05852:
     rep movsb
     jmp short loc_05895
 
-loc_0587E:
+CaptureScreenRowTandy:
     mov cx, 050h
     rep movsw
     sub si, 0A0h
@@ -1230,7 +1230,7 @@ loc_05953:
     ret
 ; Per VideoAdapter: CGA, EGA and Tandy versions of the same draw routine.
 AdapterDrawHandlers label word
-    dw offset loc_0497A, offset loc_02D2D, offset loc_0375B
+    dw offset DrawStretchedImageCga, offset DrawStretchedImageEga, offset DrawStretchedImageTandy
 ; Step of the unused loc_0590B; AX = 1 (NZ) when a key or the primary button stops it.
 SquashAndStretchUntilInput:
     mov cx, cs:[StretchImageRows]
@@ -1285,14 +1285,15 @@ loc_059E7:
     inc ax
     ret
 ; Per-adapter dispatch; no caller found in this image.
-loc_059ED:
+; BP = record: AX = screen offset of REC_Y/REC_X. No caller found.
+RecordScreenOffset:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_059EDCases]
+    jmp word ptr cs:[bx + RecordScreenOffsetCases]
 ; NOP filler: word-aligns the table.
     db 90h
-loc_059EDCases label word
-    dw offset loc_04264, offset loc_025E9, offset loc_03142
+RecordScreenOffsetCases label word
+    dw offset RecordScreenOffsetCga, offset RecordScreenOffsetEga, offset RecordScreenOffsetTandy
 
 ; Per-adapter screen offset for row AH and 8-pixel column AL (ScreenRowOffsets on Tandy).
 DrawOffsetFromScreenRow:
@@ -1350,13 +1351,14 @@ BlitPackedToScreen:
     jmp word ptr cs:[bx + BlitPackedToScreenCases]
 BlitPackedToScreenCases label word
     dw BlitPackedToScreenCga, BlitPackedToScreenEga, CopyPackedRowsToTandyBanks    ; per VideoAdapter: CGA, EGA, Tandy
-loc_05A7E:
+; BX = LevelMap offset, DI = workspace: draws the 13 16x16 blocks of one map row.
+DrawMapRowBlocks:
     mov dx, bx
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05A7ECases]
-loc_05A7ECases label word
-    dw loc_048E6, loc_02B84, loc_036A2    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + DrawMapRowBlocksCases]
+DrawMapRowBlocksCases label word
+    dw DrawMapRowBlocksCga, DrawMapRowBlocksEga, DrawMapRowBlocksTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
 ; BP = record: copies REC_SAVE_BUFFER back at REC_WORK_OFS (and the lower half).
 RestoreRecordBackground:
@@ -1368,12 +1370,12 @@ RestoreRecordBackground:
     add bx, word ptr cs:[VideoAdapter]
     add bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05A92Cases]
+    jmp word ptr cs:[bx + RestoreRecordBackgroundCases]
 ; Indexed by VideoAdapter*3 + REC_SIZE_CLASS (CGA, EGA, Tandy; sizes 0..2).
-loc_05A92Cases label word
-    dw offset loc_04711, offset loc_046AA, offset loc_04684
-    dw offset loc_029E5, offset loc_029C6, offset loc_02991
-    dw offset loc_03542, offset loc_034D8, offset loc_034AD
+RestoreRecordBackgroundCases label word
+    dw offset RestoreBackground8Cga, offset RestoreBackground16Cga, offset RestoreBackground32Cga
+    dw offset RestoreBackground8Ega, offset RestoreBackground16Ega, offset RestoreBackground32Ega
+    dw offset RestoreBackground8Tandy, offset RestoreBackground16Tandy, offset RestoreBackground32Tandy
 
 ; BP = record: sets REC_WORK_OFS and saves the workspace under it to REC_SAVE_BUFFER.
 SaveRecordBackground:
@@ -1382,13 +1384,13 @@ SaveRecordBackground:
     add bx, word ptr cs:[VideoAdapter]
     add bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05AC8Cases]
+    jmp word ptr cs:[bx + SaveRecordBackgroundCases]
 ; NOP filler (word alignment).
     db 90h
-loc_05AC8Cases label word
-    dw offset loc_04896, offset loc_0480E, offset loc_04740, offset loc_02AF9
-    dw offset loc_02AB9, offset loc_02A4F, offset loc_03657, offset loc_035CC
-    dw offset loc_0356C
+SaveRecordBackgroundCases label word
+    dw offset SaveBackground8Cga, offset SaveBackground16Cga, offset SaveBackground32Cga, offset SaveBackground8Ega
+    dw offset SaveBackground16Ega, offset SaveBackground32Ega, offset SaveBackground8Tandy, offset SaveBackground16Tandy
+    dw offset SaveBackground32Tandy
 ; Graphics decoder (LoadGraphicsFile): one 4-plane row (4 * 28h bytes), per-pixel
 ; plane bytes, the image header (rows, bytes per plane row) and progress state.
 DecodeRowBuffer db 0A0h dup (0)
@@ -1403,14 +1405,15 @@ DecodeDest dw 0
 DecodeImageIndex dw 0
 ; Per-file flag bytes (the word before the file name when PerFileFlagsEnabled = 1, else FFFFh).
 DecodeFileFlags dw 0
-loc_05BAC:
+; DS:SI = file, ES:DI = destination, BP = per-file flags or FFFFh: decodes all images.
+DecodeGraphicsImages:
     mov word ptr cs:[DecodeFileFlags], bp
     mov word ptr cs:[DecodeImageIndex], 0FFFFh
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05BACCases]
-loc_05BACCases label word
-    dw loc_0450C, loc_027D9, loc_033AF    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + DecodeGraphicsImagesCases]
+DecodeGraphicsImagesCases label word
+    dw DecodeGraphicsImagesCga, DecodeGraphicsImagesEga, DecodeGraphicsImagesTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
 ; Per-adapter clear of the 104-byte-wide play area.
 ClearScreen104x200:
@@ -1434,11 +1437,11 @@ ResetPageAndClearScreen:
     call ResetEgaPages
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05BEECases]
+    jmp word ptr cs:[bx + ResetPageAndClearScreenCases]
 ; NOP filler (word alignment).
     db 90h
-loc_05BEECases label word
-    dw offset loc_0446C, offset loc_02737, offset ClearTandy32K
+ResetPageAndClearScreenCases label word
+    dw offset ClearCga16K, offset ClearEgaPages, offset ClearTandy32K
 
 ; Copies 200 workspace rows to the screen from offset 0. Returns DS = MainDataSegment.
 CopyFullWorkspaceToScreen:
@@ -1448,9 +1451,9 @@ CopyFullWorkspaceToScreen:
     mov es, word ptr cs:[ScreenSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05C04Cases]
-loc_05C04Cases label word
-    dw loc_04A41, loc_02E2D, loc_03824    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + CopyFullWorkspaceToScreenCases]
+CopyFullWorkspaceToScreenCases label word
+    dw CopyFullWorkspaceToScreenCga, CopyFullWorkspaceToScreenEga, CopyFullWorkspaceToScreenTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
 ; Clears the screen, then stretches in the WINDOW.BIC image (WorkspaceSegment+7D1h:0) at
 ; the top left.
@@ -2032,19 +2035,19 @@ loc_06138:
 AdvanceDrawColumn:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0613ECases]
-loc_0613ECases label word
-    dw loc_06150, loc_06154, loc_06156    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + AdvanceDrawColumnCases]
+AdvanceDrawColumnCases label word
+    dw AdvanceDrawColumnCga, AdvanceDrawColumnEga, AdvanceDrawColumnTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_06150:
+AdvanceDrawColumnCga:
     add di, 2
     ret
 
-loc_06154:
+AdvanceDrawColumnEga:
     inc di
     ret
 
-loc_06156:
+AdvanceDrawColumnTandy:
     add di, 4
     ret
 
@@ -2052,19 +2055,19 @@ loc_06156:
 RetreatDrawColumn:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0615ACases]
-loc_0615ACases label word
-    dw loc_0616C, loc_06170, loc_06172    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + RetreatDrawColumnCases]
+RetreatDrawColumnCases label word
+    dw RetreatDrawColumnCga, RetreatDrawColumnEga, RetreatDrawColumnTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_0616C:
+RetreatDrawColumnCga:
     sub di, 2
     ret
 
-loc_06170:
+RetreatDrawColumnEga:
     dec di
     ret
 
-loc_06172:
+RetreatDrawColumnTandy:
     sub di, 4
     ret
 
@@ -4314,10 +4317,10 @@ loc_07591:
 DrawRecordSprite:
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_07596Cases]
-loc_07596Cases label word
-    dw offset DrawSprite8Record, offset loc_0768E, offset loc_075A6
-loc_075A6:
+    jmp word ptr cs:[bx + DrawRecordSpriteCases]
+DrawRecordSpriteCases label word
+    dw offset DrawSprite8Record, offset DrawSprite16Record, offset DrawSprite32Record
+DrawSprite32Record:
     mov bx, word ptr ss:[bp + REC_SPRITE]
     mov cx, word ptr cs:[ManExplSegment]
     cmp bx, 01Ch
@@ -4392,7 +4395,7 @@ FlashSprite32Blitters label word
 SkipBlit:
     mov ds, cs:[MainDataSegment]
     ret
-loc_0768E:
+DrawSprite16Record:
     mov di, word ptr ss:[bp + REC_WORK_OFS]
     cmp di, -1
     jne loc_07697
@@ -4675,30 +4678,30 @@ loc_0795D:
 Level1MapCell:
     cmp al, 4
     jne loc_0797E
-    jmp near ptr loc_07A6E
+    jmp near ptr SpawnCellClimbWalker8B
 loc_0797E:
     cmp al, 7
     jne loc_07985
-    jmp near ptr loc_07A7A
+    jmp near ptr SpawnCellClimbWalker8C
 loc_07985:
     cmp al, 06Ch
     jne loc_0798C
-    jmp near ptr loc_07AAE
+    jmp near ptr SpawnCellTurretLeft24
 loc_0798C:
     cmp al, 06Dh
     jne loc_07993
-    jmp near ptr loc_07AC4
+    jmp near ptr SpawnCellTurretRight25
 loc_07993:
     cmp al, 0ACh
     jne loc_0799A
-    jmp near ptr loc_07ADA
+    jmp near ptr SpawnCellVolleyTurret90
 loc_0799A:
     cmp al, 0B1h
     jne loc_079A1
-    jmp near ptr loc_07AF0
+    jmp near ptr SpawnCellVolleyTurret91
 loc_079A1:
     cmp al, 0C9h
-    je loc_07A11
+    je SpawnCellHatch28
     ret
 ; Overwrites the 2x2 cells at ES:SI (the map is 13 cells wide) with cell 1.
 Clear2x2MapCells:
@@ -4707,7 +4710,8 @@ Clear2x2MapCells:
     mov byte ptr es:[si + 0Dh], 1
     mov byte ptr es:[si + 0Eh], 1
     ret
-loc_079BA:
+; Level 5 byte D9h: large type 48h, facing down, joins group.
+SpawnCellCreeper48:
     call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -4718,7 +4722,8 @@ loc_079C6:
     mov word ptr ds:[bx + REC_TYPE], 48h
     mov word ptr ds:[bx + REC_DIRECTION], 4
     jmp near ptr JoinMapGroup
-loc_079D6:
+; Level 0 byte F8h: large type 75h, joins group.
+SpawnCellSpreadShooter75:
     call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -4730,7 +4735,8 @@ loc_079E2:
     mov word ptr ds:[bx + REC_SPRITE], 24h
     mov word ptr ds:[bx + REC_DIRECTION], 4
     jmp near ptr JoinMapGroup
-loc_079F7:
+; Level 0 byte F7h: large type 72h, facing down.
+SpawnCellAimedDescender72:
     call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -4741,7 +4747,8 @@ loc_07A03:
     mov word ptr ds:[bx + REC_TYPE], 72h
     mov word ptr ds:[bx + REC_DIRECTION], 4
     ret
-loc_07A11:
+; Level 1/4 byte C9h: writes the hatch cells 26h..29h, large type 28h.
+SpawnCellHatch28:
     mov byte ptr es:[si + 0Dh], 026h
     mov byte ptr es:[si + 0Eh], 027h
     mov byte ptr es:[si], 028h
@@ -4770,28 +4777,32 @@ InitMapLargeEnemy:
     mov word ptr ds:[bx + REC_HIT_POINTS], 0Ah
     mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     ret
-loc_07A6E:
+; Level 1 04h, level 3 DEh, level 4 CFh, level 5 D8h.
+SpawnCellClimbWalker8B:
     call SpawnMapEnemy
     jne loc_07A74
     ret
 loc_07A74:
     mov word ptr ds:[bx + REC_TYPE], 08Bh
     ret
-loc_07A7A:
+; Level 1 07h, level 3 DDh, level 4 CEh, level 5 D7h.
+SpawnCellClimbWalker8C:
     call SpawnMapEnemy
     jne loc_07A80
     ret
 loc_07A80:
     mov word ptr ds:[bx + REC_TYPE], 08Ch
     ret
-loc_07A86:
+; Level 0 byte EEh (grouped); the level 5 D8h table slot is dead.
+SpawnCellClimbWalker8E:
     call SpawnMapGroupEnemy
     jne loc_07A8C
     ret
 loc_07A8C:
     mov word ptr ds:[bx + REC_TYPE], 8Eh
     ret
-loc_07A92:
+; Level 0 byte F9h: a fuel pickup (DropKind 4).
+SpawnCellFuelPickup:
     call SpawnMapEnemy
     jne loc_07A98
     ret
@@ -4800,14 +4811,16 @@ loc_07A98:
     mov ds:[DropKind], ax
     call InitPickupRecord
     ret
-loc_07AA2:
+; Level 0 byte EDh (grouped); the level 5 D7h table slot is dead.
+SpawnCellClimbWalker8D:
     call SpawnMapGroupEnemy
     jne loc_07AA8
     ret
 loc_07AA8:
     mov word ptr ds:[bx + REC_TYPE], 8Dh
     ret
-loc_07AAE:
+; Level 1 byte 6Ch: type 24h facing left; the cell stays.
+SpawnCellTurretLeft24:
     call SpawnMapEnemyKeepCell
     jne loc_07AB4
     ret
@@ -4816,7 +4829,8 @@ loc_07AB4:
     mov word ptr ds:[bx + REC_SPRITE], 08Fh
     mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
-loc_07AC4:
+; Level 1 byte 6Dh: type 25h facing right; the cell stays.
+SpawnCellTurretRight25:
     call SpawnMapEnemyKeepCell
     jne loc_07ACA
     ret
@@ -4825,7 +4839,8 @@ loc_07ACA:
     mov word ptr ds:[bx + REC_SPRITE], 090h
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07ADA:
+; Level 1/4 byte ACh, level 5 D3h: type 90h facing left; the cell stays.
+SpawnCellVolleyTurret90:
     call SpawnMapEnemyKeepCell
     jne loc_07AE0
     ret
@@ -4834,7 +4849,8 @@ loc_07AE0:
     mov word ptr ds:[bx + REC_SPRITE], 089h
     mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
-loc_07AF0:
+; Level 1/4 byte B1h, level 5 D2h: type 91h facing right; the cell stays.
+SpawnCellVolleyTurret91:
     call SpawnMapEnemyKeepCell
     jne loc_07AF6
     ret
@@ -4845,13 +4861,14 @@ loc_07AF6:
     ret
 Level2MapCell:
     cmp al, 30h
-    je loc_07B13
+    je SpawnCellHatch2A
     cmp al, 0C4h
-    je loc_07B64
+    je SpawnCellFireBurst8F
     cmp al, 5Ah
-    je loc_07B54
+    je SpawnCellPlunger2E
     ret
-loc_07B13:
+; Level 2/5 byte 30h: large type 2Ah; the cell stays and REC_SLOT_INDEX is not set.
+SpawnCellHatch2A:
     call FindFreeRecordPoolA
     cmp bx, -1
     jne loc_07B1C
@@ -4870,7 +4887,8 @@ loc_07B1C:
     mov word ptr ds:[bx + REC_SPRITE], 1Ch
     mov word ptr ds:[bx + REC_DIRECTION], 0
     ret
-loc_07B54:
+; Level 2 byte 5Ah: type 2Eh, 6 px higher.
+SpawnCellPlunger2E:
     call SpawnMapEnemy
     jne loc_07B5A
     ret
@@ -4878,7 +4896,8 @@ loc_07B5A:
     mov word ptr ds:[bx + REC_TYPE], 2Eh
     sub word ptr ds:[bx + REC_Y], 6
     ret
-loc_07B64:
+; Level 2 byte C4h: type 8Fh facing the centre.
+SpawnCellFireBurst8F:
     call SpawnMapEnemy
     jne loc_07B6A
     ret
@@ -4893,7 +4912,8 @@ loc_07B80:
     mov word ptr ds:[bx + REC_SPRITE], 0C2h
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07B8B:
+; Level 0 byte BCh (left half only): type 73h facing right.
+SpawnCellRunnerRight73:
     call SpawnMapEnemy
     jne loc_07B91
     ret
@@ -4905,7 +4925,8 @@ loc_07B91:
     mov word ptr ds:[bx + REC_TYPE], 73h
     mov word ptr ds:[bx + REC_SPRITE], 14Ch
     ret
-loc_07BAB:
+; Level 0 byte BBh (right half only): type 74h facing left.
+SpawnCellRunnerLeft74:
     call SpawnMapEnemy
     jne loc_07BB1
     ret
@@ -4921,11 +4942,11 @@ Level0MapCell:
     cmp word ptr ds:[MapCellX], 60h
     ja loc_07BD8
     cmp al, 0BCh
-    je loc_07B8B
+    je SpawnCellRunnerRight73
     jmp short loc_07BDC
 loc_07BD8:
     cmp al, 0BBh
-    je loc_07BAB
+    je SpawnCellRunnerLeft74
 loc_07BDC:
     sub al, 0E1h
     jns loc_07BE1
@@ -4952,14 +4973,15 @@ loc_07BE6:
 ; Map bytes E1h..F9h; the range check also admits FAh and FBh, which would index past
 ; the table into code (those bytes presumably never occur in level 0 maps).
 Level0CellCases label word
-    dw offset loc_07ED7, offset loc_07ED7, offset loc_08143, offset loc_08137
-    dw offset loc_07F86, offset loc_07F86, offset loc_07F5D, offset loc_07F69
-    dw offset loc_07F7A, offset loc_07FEA, offset loc_07F14, offset loc_07FFB
-    dw offset loc_07AA2, offset loc_07A86, offset loc_07F25, offset loc_07FAD
-    dw offset loc_07FAD, offset loc_080EF, offset loc_080EF, offset loc_0804C
-    dw offset loc_07C3A, offset loc_08113, offset loc_079F7, offset loc_079D6
-    dw offset loc_07A92
-loc_07C3A:
+    dw offset SpawnCellBurstFirer88, offset SpawnCellBurstFirer88, offset SpawnCellJitterShooter68, offset SpawnCellJitterDropper69
+    dw offset SpawnCellCrawler6A, offset SpawnCellCrawler6A, offset SpawnCellDescender6B, offset SpawnCellDescender6C
+    dw offset SpawnCellDescender6D, offset SpawnCellCrawler6E, offset SpawnCellDiver71, offset SpawnCellCruiser6F
+    dw offset SpawnCellClimbWalker8D, offset SpawnCellClimbWalker8E, offset SpawnCellPatroller8A, offset SpawnCellCrawler54InwardB
+    dw offset SpawnCellCrawler54InwardB, offset SpawnCellSideTurret34, offset SpawnCellSideTurret34, offset SpawnCellCrawler59
+    dw offset ClearMapCellAlt, offset SpawnCellFaller4F, offset SpawnCellAimedDescender72, offset SpawnCellSpreadShooter75
+    dw offset SpawnCellFuelPickup
+; Level 0 byte F5h: only clears the cell (a copy of ClearMapCell).
+ClearMapCellAlt:
     mov byte ptr es:[si], 1
     ret
 Level3MapCell:
@@ -4985,25 +5007,25 @@ loc_07C49:
     jmp word ptr cs:[bx + Level3CellCases]
 ; Map bytes CEh..E9h; the range check also admits EAh and EBh (past the table).
 Level3CellCases label word
-    dw offset loc_07EB0, offset loc_07EB0, offset loc_07F36, offset loc_07F36
-    dw offset loc_080B7, offset loc_080B7, offset loc_080DE, offset loc_08107
-    dw offset loc_0806E, offset loc_07EFE, offset loc_0804C, offset loc_08172
-    dw offset loc_08188, offset loc_0811F, offset loc_08166, offset loc_07A7A
-    dw offset loc_07A6E, offset CountXReturn, offset loc_08113, offset loc_080FB
-    dw offset loc_0802A, offset loc_07FD4, offset loc_080A1, offset loc_080EF
-    dw offset loc_080EF, offset loc_0808B, offset loc_0803B, offset loc_0812B
+    dw offset SpawnCellLauncher86, offset SpawnCellLauncher86, offset SpawnCellCrawler54InwardA, offset SpawnCellCrawler54InwardA
+    dw offset SpawnCellFireBurst87, offset SpawnCellFireBurst87, offset SpawnCellDropper55, offset SpawnCellPatroller83
+    dw offset SpawnCellCrawler5F, offset SpawnCellSlider63, offset SpawnCellCrawler59, offset SpawnCellCrawler58Right
+    dw offset SpawnCellCrawler57Left, offset SpawnCellWallPatroller19Down, offset SpawnCellPatroller89, offset SpawnCellClimbWalker8C
+    dw offset SpawnCellClimbWalker8B, offset CountXReturn, offset SpawnCellFaller4F, offset SpawnCellBouncer37
+    dw offset SpawnCellPlunger2D, offset SpawnCellCrawler5E, offset SpawnCellDropper5D, offset SpawnCellSideTurret34
+    dw offset SpawnCellSideTurret34, offset SpawnCellRiser5B, offset SpawnCellPatroller47, offset SpawnCellBurster35
 Level4MapCell:
     cmp al, 0ACh
     jne loc_07CA9
-    jmp near ptr loc_07ADA
+    jmp near ptr SpawnCellVolleyTurret90
 loc_07CA9:
     cmp al, 0B1h
     jne loc_07CB0
-    jmp near ptr loc_07AF0
+    jmp near ptr SpawnCellVolleyTurret91
 loc_07CB0:
     cmp al, 0C9h
     jne loc_07CB7
-    jmp near ptr loc_07A11
+    jmp near ptr SpawnCellHatch28
 loc_07CB7:
     sub al, 0CEh
     jns loc_07CBC
@@ -5024,14 +5046,16 @@ loc_07CC1:
     mov bl, al
     xor bh, bh
     shl bx, 1
-    jmp word ptr cs:[bx + loc_07CC1Cases]
-loc_07CC1Cases label word
-    dw offset loc_07A7A, offset loc_07A6E, offset loc_08172, offset loc_08188
-    dw offset loc_07D2A, offset loc_07D4D, offset loc_0806E, offset loc_07F25
-    dw offset loc_08113, offset loc_0804C, offset loc_08107, offset loc_080A1
-    dw offset loc_07D08, offset loc_07D19, offset loc_080EF, offset loc_08143
-    dw offset loc_08137, offset loc_0812B, offset loc_07FD4
-loc_07D08:
+    jmp word ptr cs:[bx + Level4CellCases]
+; Map bytes CEh..E0h; the range check also admits E1h and E2h (past the table).
+Level4CellCases label word
+    dw offset SpawnCellClimbWalker8C, offset SpawnCellClimbWalker8B, offset SpawnCellCrawler58Right, offset SpawnCellCrawler57Left
+    dw offset SpawnCellCrawler54UpRight, offset SpawnCellCrawler54UpLeft, offset SpawnCellCrawler5F, offset SpawnCellPatroller8A
+    dw offset SpawnCellFaller4F, offset SpawnCellCrawler59, offset SpawnCellPatroller83, offset SpawnCellDropper5D
+    dw offset SpawnCellWallBouncer38Right, offset SpawnCellWallBouncer38Left, offset SpawnCellSideTurret34, offset SpawnCellJitterShooter68
+    dw offset SpawnCellJitterDropper69, offset SpawnCellBurster35, offset SpawnCellCrawler5E
+; Level 4 byte DAh: type 38h heading down-right.
+SpawnCellWallBouncer38Right:
     call SpawnMapEnemy
     jne loc_07D0E
     ret
@@ -5039,7 +5063,8 @@ loc_07D0E:
     mov word ptr ds:[bx + REC_TYPE], 38h
     mov word ptr ds:[bx + REC_DIRECTION], 3
     ret
-loc_07D19:
+; Level 4 byte DBh: type 38h heading down-left.
+SpawnCellWallBouncer38Left:
     call SpawnMapEnemy
     jne loc_07D1F
     ret
@@ -5047,7 +5072,8 @@ loc_07D1F:
     mov word ptr ds:[bx + REC_TYPE], 38h
     mov word ptr ds:[bx + REC_DIRECTION], 5
     ret
-loc_07D2A:
+; Level 4 D2h, level 5 DCh: type 54h.
+SpawnCellCrawler54UpRight:
     call SpawnMapEnemy
     jne loc_07D30
     ret
@@ -5061,7 +5087,8 @@ loc_07D30:
 loc_07D47:
     mov word ptr ds:[bx + REC_SPRITE], 17Ah
     ret
-loc_07D4D:
+; Level 4 D3h, level 5 DDh: type 54h.
+SpawnCellCrawler54UpLeft:
     call SpawnMapEnemy
     jne loc_07D53
     ret
@@ -5075,7 +5102,8 @@ loc_07D53:
 loc_07D6A:
     mov word ptr ds:[bx + REC_SPRITE], 17Bh
     ret
-loc_07D70:
+; Level 5 byte BAh: type 84h facing up.
+SpawnCellLurker84Up:
     call SpawnMapEnemy
     jne loc_07D76
     ret
@@ -5084,7 +5112,8 @@ loc_07D76:
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 156h
     ret
-loc_07D86:
+; Level 5 byte BBh: type 84h facing right.
+SpawnCellLurker84Right:
     call SpawnMapEnemy
     jne loc_07D8C
     ret
@@ -5093,7 +5122,8 @@ loc_07D8C:
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 157h
     ret
-loc_07D9C:
+; Level 5 byte BCh: type 84h facing down.
+SpawnCellLurker84Down:
     call SpawnMapEnemy
     jne loc_07DA2
     ret
@@ -5102,7 +5132,8 @@ loc_07DA2:
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 158h
     ret
-loc_07DB2:
+; Level 5 byte B6h: type 84h facing left.
+SpawnCellLurker84Left:
     call SpawnMapEnemy
     jne loc_07DB8
     ret
@@ -5114,31 +5145,31 @@ loc_07DB8:
 Level5MapCell:
     cmp al, 30h
     jne loc_07DCF
-    jmp near ptr loc_07B13
+    jmp near ptr SpawnCellHatch2A
 loc_07DCF:
     cmp al, 0BAh
-    je loc_07D70
+    je SpawnCellLurker84Up
     cmp al, 0BBh
-    je loc_07D86
+    je SpawnCellLurker84Right
     cmp al, 0BCh
-    je loc_07D9C
+    je SpawnCellLurker84Down
     cmp al, 0B6h
-    je loc_07DB2
+    je SpawnCellLurker84Left
     cmp al, 0D8h
     jne loc_07DE6
-    jmp near ptr loc_07A6E
+    jmp near ptr SpawnCellClimbWalker8B
 loc_07DE6:
     cmp al, 0D7h
     jne loc_07DED
-    jmp near ptr loc_07A7A
+    jmp near ptr SpawnCellClimbWalker8C
 loc_07DED:
     cmp al, 0D3h
     jne loc_07DF4
-    jmp near ptr loc_07ADA
+    jmp near ptr SpawnCellVolleyTurret90
 loc_07DF4:
     cmp al, 0D2h
     jne loc_07DFB
-    jmp near ptr loc_07AF0
+    jmp near ptr SpawnCellVolleyTurret91
 loc_07DFB:
     sub al, 0D7h
     jns loc_07E00
@@ -5162,18 +5193,19 @@ loc_07E05:
     jmp word ptr cs:[bx + Level5CellCases]
 ; Map bytes D7h..EFh; the range check also admits F0h and F1h (past the table).
 Level5CellCases label word
-    dw offset loc_07AA2, offset loc_07A86, offset loc_079BA, offset loc_07E84
-    dw offset loc_07E9A, offset loc_07D2A, offset loc_07D4D, offset loc_080B7
-    dw offset loc_080B7, offset loc_080A1, offset ClearMapCell, offset ClearMapCell
-    dw offset loc_07EFE, offset loc_07E6E, offset loc_08172, offset loc_08188
-    dw offset loc_07E5D, offset loc_08166, offset loc_0803B, offset loc_0812B
-    dw offset loc_08143, offset loc_08113, offset loc_080FB, offset loc_0802A
-    dw offset loc_07FD4
+    dw offset SpawnCellClimbWalker8D, offset SpawnCellClimbWalker8E, offset SpawnCellCreeper48, offset SpawnCellLevelFirer92Right
+    dw offset SpawnCellLevelFirer92Left, offset SpawnCellCrawler54UpRight, offset SpawnCellCrawler54UpLeft, offset SpawnCellFireBurst87
+    dw offset SpawnCellFireBurst87, offset SpawnCellDropper5D, offset ClearMapCell, offset ClearMapCell
+    dw offset SpawnCellSlider63, offset SpawnCellShooter30, offset SpawnCellCrawler58Right, offset SpawnCellCrawler57Left
+    dw offset SpawnCellWallPatroller19Right, offset SpawnCellPatroller89, offset SpawnCellPatroller47, offset SpawnCellBurster35
+    dw offset SpawnCellJitterShooter68, offset SpawnCellFaller4F, offset SpawnCellBouncer37, offset SpawnCellPlunger2D
+    dw offset SpawnCellCrawler5E
 ; Overwrites the current map cell (ES:SI) with the plain cell 1.
 ClearMapCell:
     mov byte ptr es:[si], 1
     ret
-loc_07E5D:
+; Level 5 byte E7h: type 19h facing right.
+SpawnCellWallPatroller19Right:
     call SpawnMapEnemy
     jne loc_07E63
     ret
@@ -5181,7 +5213,8 @@ loc_07E63:
     mov word ptr ds:[bx + REC_TYPE], 19h
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07E6E:
+; Level 5 byte E4h: type 30h facing down.
+SpawnCellShooter30:
     call SpawnMapEnemy
     jne loc_07E74
     ret
@@ -5190,7 +5223,8 @@ loc_07E74:
     mov word ptr ds:[bx + REC_TYPE], 30h
     mov word ptr ds:[bx + REC_DIRECTION], 4
     ret
-loc_07E84:
+; Level 5 byte DAh: type 92h facing right.
+SpawnCellLevelFirer92Right:
     call SpawnMapEnemy
     jne loc_07E8A
     ret
@@ -5199,7 +5233,8 @@ loc_07E8A:
     mov word ptr ds:[bx + REC_SPRITE], 15Ah
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07E9A:
+; Level 5 byte DBh: type 92h facing left.
+SpawnCellLevelFirer92Left:
     call SpawnMapEnemy
     jne loc_07EA0
     ret
@@ -5208,7 +5243,8 @@ loc_07EA0:
     mov word ptr ds:[bx + REC_SPRITE], 15Bh
     mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
-loc_07EB0:
+; Level 3 bytes CEh, CFh: type 86h facing the centre.
+SpawnCellLauncher86:
     call SpawnMapEnemy
     jne loc_07EB6
     ret
@@ -5223,7 +5259,8 @@ loc_07ECC:
     mov word ptr ds:[bx + REC_SPRITE], 0DAh
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07ED7:
+; Level 0 bytes E1h, E2h: type 88h facing the centre.
+SpawnCellBurstFirer88:
     call SpawnMapEnemy
     jne loc_07EDD
     ret
@@ -5238,7 +5275,8 @@ loc_07EF3:
     mov word ptr ds:[bx + REC_SPRITE], 0FAh
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_07EFE:
+; Level 3 D7h, level 5 E3h: type 63h facing right.
+SpawnCellSlider63:
     call SpawnMapEnemy
     jne loc_07F04
     ret
@@ -5247,7 +5285,8 @@ loc_07F04:
     mov word ptr ds:[bx + REC_TYPE], 63h
     mov word ptr ds:[bx + REC_SPRITE], 0E7h
     ret
-loc_07F14:
+; Level 0 byte EBh: type 71h facing down, joins group.
+SpawnCellDiver71:
     call SpawnMapGroupEnemy
     jne loc_07F1A
     ret
@@ -5255,7 +5294,8 @@ loc_07F1A:
     mov word ptr ds:[bx + REC_DIRECTION], 4
     mov word ptr ds:[bx + REC_TYPE], 71h
     ret
-loc_07F25:
+; Level 0 EFh, level 4 D5h: type 8Ah, joins group.
+SpawnCellPatroller8A:
     call SpawnMapGroupEnemy
     jne loc_07F2B
     ret
@@ -5263,7 +5303,8 @@ loc_07F2B:
     mov word ptr ds:[bx + REC_DIRECTION], 4
     mov word ptr ds:[bx + REC_TYPE], 8Ah
     ret
-loc_07F36:
+; Level 3 bytes D0h, D1h: type 54h heading up toward the centre.
+SpawnCellCrawler54InwardA:
     call SpawnMapEnemy
     jne loc_07F3C
     ret
@@ -5278,14 +5319,16 @@ loc_07F52:
     mov word ptr ds:[bx + REC_DIRECTION], 1
     mov word ptr ds:[bx + REC_SPRITE], 0F4h
     ret
-loc_07F5D:
+; Level 0 byte E7h: type 6Bh.
+SpawnCellDescender6B:
     call SpawnMapEnemy
     jne loc_07F63
     ret
 loc_07F63:
     mov word ptr ds:[bx + REC_TYPE], 6Bh
     ret
-loc_07F69:
+; Level 0 byte E8h: type 6Ch, joins group.
+SpawnCellDescender6C:
     call SpawnMapGroupEnemy
     jne loc_07F6F
     ret
@@ -5293,14 +5336,16 @@ loc_07F6F:
     mov word ptr ds:[bx + REC_TYPE], 6Ch
     mov word ptr ds:[bx + REC_SPRITE], 123h
     ret
-loc_07F7A:
+; Level 0 byte E9h: type 6Dh.
+SpawnCellDescender6D:
     call SpawnMapEnemy
     jne loc_07F80
     ret
 loc_07F80:
     mov word ptr ds:[bx + REC_TYPE], 6Dh
     ret
-loc_07F86:
+; Level 0 bytes E5h, E6h: type 6Ah heading down toward the centre.
+SpawnCellCrawler6A:
     call SpawnMapEnemy
     jne loc_07F8C
     ret
@@ -5315,7 +5360,8 @@ loc_07FA2:
     mov word ptr ds:[bx + REC_DIRECTION], 3
     mov word ptr ds:[bx + REC_SPRITE], 11Dh
     ret
-loc_07FAD:
+; Level 0 bytes F0h, F1h: type 54h facing the centre.
+SpawnCellCrawler54InwardB:
     call SpawnMapEnemy
     jne loc_07FB3
     ret
@@ -5330,7 +5376,8 @@ loc_07FC9:
     mov word ptr ds:[bx + REC_DIRECTION], 1
     mov word ptr ds:[bx + REC_SPRITE], 144h
     ret
-loc_07FD4:
+; Level 3 E3h, level 4 E0h, level 5 EFh: type 5Eh, joins group.
+SpawnCellCrawler5E:
     call SpawnMapGroupEnemy
     jne loc_07FDA
     ret
@@ -5339,7 +5386,8 @@ loc_07FDA:
     mov word ptr ds:[bx + REC_TYPE], 5Eh
     mov word ptr ds:[bx + REC_SPRITE], 27h
     ret
-loc_07FEA:
+; Level 0 byte EAh: type 6Eh facing down, joins group.
+SpawnCellCrawler6E:
     call SpawnMapGroupEnemy
     jne loc_07FF0
     ret
@@ -5347,7 +5395,8 @@ loc_07FF0:
     mov word ptr ds:[bx + REC_DIRECTION], 4
     mov word ptr ds:[bx + REC_TYPE], 6Eh
     ret
-loc_07FFB:
+; Level 0 byte ECh: type 6Fh, 16 px outward, facing the centre.
+SpawnCellCruiser6F:
     call SpawnMapGroupEnemy
     jne loc_08001
     ret
@@ -5365,7 +5414,8 @@ loc_08020:
     mov word ptr ds:[bx + REC_DIRECTION], 5
     add word ptr ds:[bx + REC_X], 20h
     ret
-loc_0802A:
+; Level 3 E2h, level 5 EEh: type 2Dh, joins group.
+SpawnCellPlunger2D:
     call SpawnMapGroupEnemy
     jne loc_08030
     ret
@@ -5373,7 +5423,8 @@ loc_08030:
     mov word ptr ds:[bx + REC_DIRECTION], 0
     mov word ptr ds:[bx + REC_TYPE], 2Dh
     ret
-loc_0803B:
+; Level 3 E8h, level 5 E9h: type 47h, joins group.
+SpawnCellPatroller47:
     call SpawnMapGroupEnemy
     jne loc_08041
     ret
@@ -5381,7 +5432,8 @@ loc_08041:
     mov word ptr ds:[bx + REC_DIRECTION], 6
     mov word ptr ds:[bx + REC_TYPE], 47h
     ret
-loc_0804C:
+; Level 0 F4h, level 3 D8h, level 4 D7h: type 59h facing the centre.
+SpawnCellCrawler59:
     call SpawnMapEnemy
     jne loc_08052
     ret
@@ -5395,7 +5447,8 @@ loc_08052:
 loc_08068:
     mov word ptr ds:[bx + REC_DIRECTION], 1
     ret
-loc_0806E:
+; Level 3 D6h, level 4 D4h: type 5Fh facing the centre.
+SpawnCellCrawler5F:
     call SpawnMapEnemy
     jne loc_08074
     ret
@@ -5408,7 +5461,8 @@ loc_08074:
 loc_08085:
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_0808B:
+; Level 3 byte E7h: type 5Bh facing up.
+SpawnCellRiser5B:
     call SpawnMapEnemy
     jne loc_08091
     ret
@@ -5417,7 +5471,8 @@ loc_08091:
     mov word ptr ds:[bx + REC_TYPE], 5Bh
     mov word ptr ds:[bx + REC_SPRITE], 74h
     ret
-loc_080A1:
+; Level 3 E4h, level 4 D9h, level 5 E0h: type 5Dh, joins group.
+SpawnCellDropper5D:
     call SpawnMapGroupEnemy
     jne loc_080A7
     ret
@@ -5426,7 +5481,8 @@ loc_080A7:
     mov word ptr ds:[bx + REC_TYPE], 5Dh
     mov word ptr ds:[bx + REC_SPRITE], 77h
     ret
-loc_080B7:
+; Level 3 D2h, D3h, level 5 DEh, DFh: type 87h facing the centre.
+SpawnCellFireBurst87:
     call SpawnMapEnemy
     jne loc_080BD
     ret
@@ -5441,7 +5497,8 @@ loc_080D3:
     mov word ptr ds:[bx + REC_DIRECTION], 2
     mov word ptr ds:[bx + REC_SPRITE], 0DDh
     ret
-loc_080DE:
+; Level 3 byte D4h: type 55h.
+SpawnCellDropper55:
     call SpawnMapEnemy
     jne loc_080E4
     ret
@@ -5449,56 +5506,64 @@ loc_080E4:
     mov word ptr ds:[bx + REC_TYPE], 55h
     mov word ptr ds:[bx + REC_SPRITE], 77h
     ret
-loc_080EF:
+; Level 0 F2h, F3h, level 3 E5h, E6h, level 4 DCh: type 34h.
+SpawnCellSideTurret34:
     call SpawnMapEnemy
     jne loc_080F5
     ret
 loc_080F5:
     mov word ptr ds:[bx + REC_TYPE], 34h
     ret
-loc_080FB:
+; Level 3 E1h, level 5 EDh: type 37h, joins group.
+SpawnCellBouncer37:
     call SpawnMapGroupEnemy
     jne loc_08101
     ret
 loc_08101:
     mov word ptr ds:[bx + REC_TYPE], 37h
     ret
-loc_08107:
+; Level 3 D5h, level 4 D8h: type 83h, joins group.
+SpawnCellPatroller83:
     call SpawnMapGroupEnemy
     jne loc_0810D
     ret
 loc_0810D:
     mov word ptr ds:[bx + REC_TYPE], 83h
     ret
-loc_08113:
+; Level 0 F6h, level 3 E0h, level 4 D6h, level 5 ECh: type 4Fh.
+SpawnCellFaller4F:
     call SpawnMapEnemy
     jne loc_08119
     ret
 loc_08119:
     mov word ptr ds:[bx + REC_TYPE], 4Fh
     ret
-loc_0811F:
+; Level 3 byte DBh: type 19h, joins group.
+SpawnCellWallPatroller19Down:
     call SpawnMapGroupEnemy
     jne loc_08125
     ret
 loc_08125:
     mov word ptr ds:[bx + REC_TYPE], 19h
     ret
-loc_0812B:
+; Level 3 E9h, level 4 DFh, level 5 EAh: type 35h, joins group.
+SpawnCellBurster35:
     call SpawnMapGroupEnemy
     jne loc_08131
     ret
 loc_08131:
     mov word ptr ds:[bx + REC_TYPE], 35h
     ret
-loc_08137:
+; Level 0 E4h, level 4 DEh: type 69h.
+SpawnCellJitterDropper69:
     call SpawnMapEnemy
     jne loc_0813D
     ret
 loc_0813D:
     mov word ptr ds:[bx + REC_TYPE], 69h
     ret
-loc_08143:
+; Level 0 E3h, level 4 DDh, level 5 EBh: type 68h (1 in 16 grouped on level 5).
+SpawnCellJitterShooter68:
     cmp word ptr ds:[LevelIndex], 5
     jne loc_0815A
     call NextRandomWord
@@ -5515,14 +5580,16 @@ loc_0815D:
 loc_08160:
     mov word ptr ds:[bx + REC_TYPE], 68h
     ret
-loc_08166:
+; Level 3 DCh, level 5 E8h: type 89h, joins group.
+SpawnCellPatroller89:
     call SpawnMapGroupEnemy
     jne loc_0816C
     ret
 loc_0816C:
     mov word ptr ds:[bx + REC_TYPE], 89h
     ret
-loc_08172:
+; Level 3 D9h, level 4 D0h, level 5 E5h: type 58h facing right.
+SpawnCellCrawler58Right:
     call SpawnMapEnemy
     jne loc_08178
     ret
@@ -5531,7 +5598,8 @@ loc_08178:
     mov word ptr ds:[bx + REC_SPRITE], 99h
     mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
-loc_08188:
+; Level 3 DAh, level 4 D1h, level 5 E6h: type 57h facing left.
+SpawnCellCrawler57Left:
     call SpawnMapEnemy
     jne loc_0818E
     ret
@@ -5670,17 +5738,17 @@ loc_0829E:
     jmp near ptr ScrollRecordThenFinish
 loc_082C2:
     shl bx, 1
-    jmp word ptr cs:[bx + loc_082C2Cases]
+    jmp word ptr cs:[bx + TurretVolleyShotCases]
 ; NOP filler: word-aligns the table (every MAIN jump table has one).
     db 90h
-loc_082C2Cases label word
-    dw offset loc_082DE, offset ScrollRecordThenFinish, offset loc_082D0
-loc_082D0:
+TurretVolleyShotCases label word
+    dw offset TurretVolleyFireUpper, offset ScrollRecordThenFinish, offset TurretVolleyFireLower
+TurretVolleyFireLower:
     add word ptr ss:[bp + REC_Y], 4
     call SpawnThrottledChild
     sub word ptr ss:[bp + REC_Y], 4
     jmp near ptr ScrollRecordThenFinish
-loc_082DE:
+TurretVolleyFireUpper:
     sub word ptr ss:[bp + REC_Y], 4
     call SpawnThrottledChild
     add word ptr ss:[bp + REC_Y], 4

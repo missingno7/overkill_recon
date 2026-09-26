@@ -392,6 +392,7 @@ extrn BuildRowTables:near
 extrn CgaColorMap:byte
 extrn CgaSelectBrightPalette0:near
 extrn CgaSelectBrightPalette1:near
+extrn CgaSelectBrightPaletteNoBurst:near
 extrn CheckBossKey:near
 extrn ClearScreen104x200:near
 extrn ClearTimerTick:near
@@ -405,6 +406,7 @@ extrn CountXReturn:near
 extrn DrawEnergyGauge:near
 extrn DrawFuelGauge:near
 extrn DrawHud:near
+extrn DrawMapRowBlocks:near
 extrn DrawOffsetFromPlayfieldRow:near
 extrn DrawOffsetFromScreenRow:near
 extrn DrawOffsetFromWideRow:near
@@ -538,9 +540,7 @@ extrn UpdateHighScoreTable:near
 extrn UpdateRefuelTimersAndScore:near
 extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
-extrn loc_04F37:near
 extrn loc_05059:near
-extrn loc_05A7E:near
 extrn loc_05D0B:near
 extrn loc_08331:near
 extrn loc_0878C:near
@@ -1014,7 +1014,7 @@ RunLevelEndSequence:
     jmp word ptr cs:[bx + LevelEndPhaseCases]
     even
 LevelEndPhaseCases label word
-    dw offset CountXReturn, offset loc_09A78, offset loc_09A3E, offset LevelEndRefill
+    dw offset CountXReturn, offset LevelEndFlyToWaypointA, offset LevelEndFlyToWaypointB, offset LevelEndRefill
     dw offset CountXReturn
 LevelEndRefill:
     mov byte ptr ds:[InputBits], 8
@@ -1034,7 +1034,8 @@ loc_09A31:
 loc_09A39:
     inc word ptr ds:[LevelEndPhase]
     ret
-loc_09A3E:
+; Also spreads the side pods out.
+LevelEndFlyToWaypointB:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_09A5D
     cmp word ptr ds:[SidePodSpreadLeft], 8
@@ -1056,7 +1057,7 @@ loc_09A68:
 loc_09A73:
     mov si, offset AutopilotWaypointB
     jmp short loc_09A7B
-loc_09A78:
+LevelEndFlyToWaypointA:
     mov si, offset AutopilotWaypointA
 loc_09A7B:
     call SteerInputToWaypoint
@@ -2520,7 +2521,7 @@ DrawIncomingMapRow:
     cmp word ptr ds:[ScrollingBackward], 1
     jne loc_0A82D
     sub bx, 0A9h
-    jmp near ptr loc_05A7E
+    jmp near ptr DrawMapRowBlocks
 loc_0A82D:
     mov word ptr ds:[MapRowCursor], bx
     cmp word ptr ds:[MapScrollPos], 0E52h
@@ -2529,7 +2530,7 @@ loc_0A82D:
     call RunLevelScriptEvents
 loc_0A83F:
     mov bx, word ptr ds:[MapScrollPos]
-    jmp near ptr loc_05A7E
+    jmp near ptr DrawMapRowBlocks
 
 ; Per frame: draws all live records, stars and the level-end extra record into the
 ; workspace, by pool and draw pass.
@@ -4164,8 +4165,8 @@ Type20SlotHopperDropper:
     shl bx, 1
     jmp word ptr cs:[bx + Type20Cases]
 Type20Cases label word
-    dw offset loc_0B754, offset loc_0B770, offset loc_0B77B
-loc_0B754:
+    dw offset Type20MoveAbovePlayer, offset Type20StartDrop, offset Type20Drop
+Type20MoveAbovePlayer:
     mov ax, word ptr ss:[bp + REC_X]
     cmp ax, word ptr ss:[bp + REC_SAVED_X]
     je loc_0B75F
@@ -4178,11 +4179,11 @@ loc_0B75F:
 loc_0B76A:
     inc word ptr ss:[bp + REC_FIELD_1C]
     jmp near ptr FinishRecordUpdate
-loc_0B770:
+Type20StartDrop:
     mov word ptr ss:[bp + REC_SPRITE], 079h
     inc word ptr ss:[bp + REC_FIELD_1C]
     jmp near ptr FinishRecordUpdate
-loc_0B77B:
+Type20Drop:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ss:[bp + REC_Y], 0A0h
     jae loc_0B789
@@ -4901,11 +4902,11 @@ loc_0BE46:
     inc word ptr ss:[bp + REC_ANIM_COUNTER]
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0BE46Cases]
+    jmp word ptr cs:[bx + ExplosionSizeCases]
     even
-loc_0BE46Cases label word
-    dw offset ScrollRecordThenFinish, offset loc_0BE5A, offset loc_0BEB0
-loc_0BE5A:
+ExplosionSizeCases label word
+    dw offset ScrollRecordThenFinish, offset AnimateExplosion16, offset AnimateExplosion32
+AnimateExplosion16:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 9
     jne loc_0BEA4
     cmp word ptr ss:[bp + REC_PREV_TYPE], 024h
@@ -4935,7 +4936,7 @@ loc_0BEA4:
     add ax, 0
     mov word ptr ss:[bp + REC_SPRITE], ax
     jmp near ptr ScrollRecordThenFinish
-loc_0BEB0:
+AnimateExplosion32:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 0Ch
     jne loc_0BEB9
     jmp near ptr RemoveRecord
@@ -5097,14 +5098,14 @@ loc_0C027:
     mov word ptr ss:[bp + REC_ANIM_COUNTER], 0
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0C027Cases]
+    jmp word ptr cs:[bx + ExplosionStartCases]
     even
-loc_0C027Cases label word
-    dw offset CountXReturn, offset loc_0C048, offset loc_0C04E
-loc_0C048:
+ExplosionStartCases label word
+    dw offset CountXReturn, offset StartExplosion16, offset StartExplosion32
+StartExplosion16:
     mov word ptr ss:[bp + REC_SPRITE], 0
     ret
-loc_0C04E:
+StartExplosion32:
     mov word ptr ss:[bp + REC_SPRITE], 3
     ret
 
@@ -5600,10 +5601,10 @@ loc_0C4E5:
 loc_0C565:
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0C565Cases]
-loc_0C565Cases label word
-    dw offset loc_04F37, offset CgaSelectBrightPalette1, offset CgaSelectBrightPalette0, offset CgaSelectBrightPalette1
-    dw offset loc_04F37, offset CgaSelectBrightPalette0
+    jmp word ptr cs:[bx + LevelCgaPaletteCases]
+LevelCgaPaletteCases label word
+    dw offset CgaSelectBrightPaletteNoBurst, offset CgaSelectBrightPalette1, offset CgaSelectBrightPalette0, offset CgaSelectBrightPalette1
+    dw offset CgaSelectBrightPaletteNoBurst, offset CgaSelectBrightPalette0
 
 ; CGA: the level's palette routine; otherwise DAC colour 6 for the level (EGA with a VGA
 ; DAC only).
@@ -6550,12 +6551,13 @@ loc_0CC7F:
     mov es, word ptr cs:[WorkspaceSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0CC7FCases]
+    jmp word ptr cs:[bx + RevealCellMergeCases]
     even
-loc_0CC7FCases label word
-    dw offset loc_0CCAA, offset loc_0CCF0, offset loc_0CCC4
+RevealCellMergeCases label word
+    dw offset MergeRevealCellCga, offset MergeRevealCellEga, offset MergeRevealCellTandy
 
-loc_0CCAA:
+; Copies the cell from workspace + 7D00h into the workspace; DL = 1 if it changed.
+MergeRevealCellCga:
     mov cx, 8
 loc_0CCAD:
     mov ax, word ptr es:[si]
@@ -6569,7 +6571,7 @@ loc_0CCBA:
     loop loc_0CCAD
     jmp short loc_0CD08
 
-loc_0CCC4:
+MergeRevealCellTandy:
     mov cx, 8
 loc_0CCC7:
     mov ax, word ptr es:[si]
@@ -6589,7 +6591,7 @@ loc_0CCE4:
     loop loc_0CCC7
     jmp short loc_0CD08
 
-loc_0CCF0:
+MergeRevealCellEga:
     mov cx, 020h
 loc_0CCF3:
     mov al, byte ptr es:[si]
@@ -6642,12 +6644,13 @@ loc_0CD68:
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0CD68Cases]
+    jmp word ptr cs:[bx + RevealCellShowCases]
     even
-loc_0CD68Cases label word
-    dw offset loc_0CD8A, offset loc_0CDCC, offset loc_0CDA7
+RevealCellShowCases label word
+    dw offset ShowRevealCellCga, offset ShowRevealCellEga, offset ShowRevealCellTandy
 
-loc_0CD8A:
+; Copies the workspace cell at RevealCellOffset to the screen at DI.
+ShowRevealCellCga:
     mov cx, 8
 loc_0CD8D:
     mov ax, word ptr ds:[si]
@@ -6661,7 +6664,7 @@ loc_0CDA3:
     loop loc_0CD8D
     jmp short loc_0CE02
 
-loc_0CDA7:
+ShowRevealCellTandy:
     mov cx, 8
 loc_0CDAA:
     mov ax, word ptr ds:[si]
@@ -6677,7 +6680,7 @@ loc_0CDC8:
     loop loc_0CDAA
     jmp short loc_0CE02
 
-loc_0CDCC:
+ShowRevealCellEga:
     mov dx, 03C4h
     mov al, 2
     out dx, al
@@ -6991,7 +6994,7 @@ loc_0D0BE:
 loc_0D0CA:
     cmp word ptr ds:[DemoStep], 0
     jne loc_0D0D4
-    jmp near ptr loc_0D160
+    jmp near ptr DemoRiseShipToY60
 loc_0D0D4:
     dec word ptr ds:[DemoStepTimer]
     je loc_0D0DB
@@ -7014,29 +7017,29 @@ loc_0D0DB:
 loc_0D107:
     mov bx, word ptr ds:[DemoStep]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0D107Cases]
-loc_0D107Cases label word
-    dw offset CountXReturn, offset loc_0D19F, offset loc_0D229, offset loc_0D183
-    dw offset loc_0D24A, offset loc_0D183, offset loc_0D1DC, offset loc_0D1F8
-    dw offset CountXReturn, offset CountXReturn, offset loc_0D14D, offset loc_0D152
-    dw offset loc_0D14D, offset loc_0D14D, offset loc_0D14D, offset loc_0D14D
-    dw offset loc_0D13A, offset loc_0D159, offset CountXReturn, offset CountXReturn
-loc_0D13A:
+    jmp word ptr cs:[bx + DemoStepActions]
+DemoStepActions label word
+    dw offset CountXReturn, offset DemoStepLaunchFrontPod, offset DemoStepLaunchInnerSidePods, offset DemoStepNextShipForm
+    dw offset DemoStepLaunchOuterSidePods, offset DemoStepNextShipForm, offset DemoStepLaunchTrailingPodNear, offset DemoStepLaunchTrailingPodFar
+    dw offset CountXReturn, offset CountXReturn, offset DemoStepNextWeaponMode, offset DemoStepEnableSideShots
+    dw offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode
+    dw offset DemoStepSpawnPathEnemy51, offset DemoStepGiveMissile, offset CountXReturn, offset CountXReturn
+DemoStepSpawnPathEnemy51:
     call SpawnEnemyHere
     mov word ptr ds:[bx + REC_X], 0C0h
     mov word ptr ds:[bx + REC_Y], 0C8h
     mov word ptr ds:[bx + REC_TYPE], 51h
     ret
-loc_0D14D:
+DemoStepNextWeaponMode:
     inc word ptr ds:[WeaponMode]
     ret
-loc_0D152:
+DemoStepEnableSideShots:
     mov word ptr ds:[SideShotsEnabled], 1
     ret
-loc_0D159:
+DemoStepGiveMissile:
     mov word ptr ds:[MissileAmmo], 1
     ret
-loc_0D160:
+DemoRiseShipToY60:
     cmp word ptr ds:[PrimaryRecord + REC_Y], 060h
     jne loc_0D16A
     jmp near ptr loc_0D0D4
@@ -7050,7 +7053,7 @@ loc_0D16A:
 loc_0D17C:
     mov word ptr ds:[DemoStepTimer], 032h
     ret
-loc_0D183:
+DemoStepNextShipForm:
     inc word ptr ds:[PrimaryRecord + REC_SPRITE]
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D193
@@ -7059,7 +7062,7 @@ loc_0D193:
     mov word ptr ds:[DemoStepTimer], 032h
     mov bp, offset PrimaryRecord
     jmp near ptr PlaceSidePods
-loc_0D19F:
+DemoStepLaunchFrontPod:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D1AB
     mov byte ptr ds:[SfxRequest], 01Eh
@@ -7079,7 +7082,7 @@ loc_0D1AB:
     sub ax, 8
     mov word ptr ss:[bp + REC_SAVED_Y], ax
     ret
-loc_0D1DC:
+DemoStepLaunchTrailingPodNear:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D1E8
     mov byte ptr ds:[SfxRequest], 1Eh
@@ -7089,7 +7092,7 @@ loc_0D1E8:
     call DemoLaunchTrailingPod
     mov word ptr ss:[bp + REC_X], 0
     ret
-loc_0D1F8:
+DemoStepLaunchTrailingPodFar:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D204
     mov byte ptr ds:[SfxRequest], 1Eh
@@ -7109,7 +7112,7 @@ DemoLaunchTrailingPod:
     add ax, 28h
     mov ss:[bp + REC_SAVED_Y], ax
     ret
-loc_0D229:
+DemoStepLaunchInnerSidePods:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D235
     mov byte ptr ds:[SfxRequest], 01Eh
@@ -7120,7 +7123,7 @@ loc_0D235:
     mov word ptr ss:[bp + REC_X], 0
     mov bp, word ptr ds:[SidePodRightInner]
     jmp short DemoLaunchPod
-loc_0D24A:
+DemoStepLaunchOuterSidePods:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D256
     mov byte ptr ds:[SfxRequest], 1Eh
