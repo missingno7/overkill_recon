@@ -58,8 +58,9 @@ def cases(rng, scale, pair):
                expect=lambda m, r: check(m.read(s('SfxRequest'), 1) == b'\x0e', 'SfxRequest 0Eh wins'))
 
     # Shot bounds are unsigned: a shot at X = FFF0h (just left of the playfield) is removed.
+    # (Entered through Type09BeamLink, which is exactly ShotBoundsCheck; that label is C now.)
     for x, y in ((0xFFF0, 0x50), (0x40, 0xFFF0), (0xC9, 0x50), (0xC8, 0x50)):
-        yield Case('ShotBoundsCheck', {'BP': b0},
+        yield Case('Type09BeamLink', {'BP': b0},
                    [(s('DemoActive'), W(1)), (b0, rec(status=1, y=y, x=x, kind=2, type=4))],
                    ('BP', 'SP', 'DS', 'SS'), name=f'unsigned bounds X={x:04X} Y={y:04X}',
                    expect=lambda m, r, keep=(x == 0xC8): check(m.word(b0) == (1 if keep else 0), 'unsigned shot bounds'))

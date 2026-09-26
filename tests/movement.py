@@ -39,11 +39,12 @@ def put(data, off, value): struct.pack_into('<H', data, off, value & 0xFFFF)
 def cases(rng, scale, pair):
     s = pair.sym
     n = 6000 * scale
-    moves = ('MoveInDirection2', 'MoveInDirection3', 'MoveInDirection4', 'MoveInDirection8')
+    # MoveInDirection3/8 have no ASM caller left (c/shots.c calls move_in_direction).
+    moves = ('MoveInDirection2', 'MoveInDirection4')
     for i in range(n):
         at, rec = record(rng, pair)
         put(rec, 2, word(rng)); put(rec, 4, word(rng)); put(rec, 6, i % 8)
-        yield Case(moves[i % 4], regs(rng, BP=at), [(at, rec)], keep('BX'), name=f'#{i}')
+        yield Case(moves[i // 8 % 2], regs(rng, BP=at), [(at, rec)], keep('BX'), name=f'#{i}')
     for i in range(n):
         at, rec = record(rng, pair)
         tx, ty = word(rng), word(rng)

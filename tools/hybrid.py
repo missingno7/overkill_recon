@@ -234,20 +234,28 @@ def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
         objects.append(path.stem)
     missing = sorted(set(owned) - {n.upper() for n in removed_all})
     if missing: raise ValueError('OWNS names no oracle label: ' + ' '.join(missing))
-    c_objects, far_objects, functions = [], [], {}
-    for k, source in enumerate(sorted(c_dir.glob('*.c')) if with_c else (), 1):
-        stem = f'C{k:02}'; obj = out/(stem + '.OBJ'); obj.unlink(missing_ok=True)
-        segment = code_segment(source)
-        watcom([str(source), *WCC_OPTIONS, f'-nt={segment}', f'-i={c_dir}', f'-i={out}',
-                f'-nm={source.stem.upper()}', f'-fo={obj}'], out)
-        functions[source.stem.lower()] = (segment, set(check_c_object(obj, segment)))
-        (c_objects if segment == 'MAIN' else far_objects).append(stem)
-    # One bridge per C region (c/<region>.asm); DOS 8.3 names in the build directory.
-    for k, bridge in enumerate(sorted(c_dir.glob('*.asm')) if with_c else (), 1):
-        text = bridge.read_bytes().decode('latin-1')
-        segment, names = functions.get(bridge.stem.lower(), ('MAIN', set()))
+    # All C regions compile as one unit and all bridges assemble as one module: TLINK 2.0
+    # under the DOS player keeps every object open and fails (it hangs) past 13 objects
+    # with a map, so the object count must not grow with the number of regions.
+    c_objects, far_objects, names = [], [], set()
+    sources = sorted(c_dir.glob('*.c')) if with_c else []
+    if sources:
+        segments = {code_segment(src) for src in sources}
+        if len(segments) != 1: raise ValueError(f'all C regions must share one code segment: {segments}')
+        segment = segments.pop()
+        (out/'ISLAND.C').write_bytes(''.join(f'#include "{src.name}"\r\n' for src in sources).encode('latin-1'))
+        obj = out/'ISLAND.OBJ'; obj.unlink(missing_ok=True)
+        watcom(['ISLAND.C', *WCC_OPTIONS, f'-nt={segment}', f'-i={c_dir}', f'-i={out}', '-nm=CISLAND', '-fo=ISLAND.OBJ'], out)
+        names = set(check_c_object(obj, segment))
+        (c_objects if segment == 'MAIN' else far_objects).append('ISLAND')
+        bridges = []
+        for bridge in sorted(c_dir.glob('*.asm')):
+            lines = bridge.read_bytes().decode('latin-1').replace('\r\n', '\n').split('\n')
+            last = max(i for i, l in enumerate(lines) if re.match(r'^end\b', l, re.I))
+            bridges += [f'; ---- {bridge.name}'] + lines[:last]
+        text = '\r\n'.join(bridges + ['end', ''])
         if segment != 'MAIN': text = far_bridge(text, names, segment)
-        (out/f'B{k:02}.ASM').write_bytes(text.encode('latin-1')); objects.append(f'B{k:02}')
+        (out/'BRIDGES.ASM').write_bytes(text.encode('latin-1')); objects.append('BRIDGES')
     for stem in objects:
         (out/(stem + '.OBJ')).unlink(missing_ok=True)
         log = dos('TASM.EXE', [f'{stem}.ASM,{stem}.OBJ,{stem}.LST'], out)
