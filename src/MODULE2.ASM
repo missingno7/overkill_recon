@@ -1403,9 +1403,13 @@ DecodePlaneBits db 4 dup (0)
 DecodeDest dw 0
 ; Images decoded so far in this file; index into the per-file flag table.
 DecodeImageIndex dw 0
-; Per-file flag bytes (the word before the file name when PerFileFlagsEnabled = 1, else FFFFh).
+; Pointer to one flag byte per image (the word before the file name when
+; PerFileFlagsEnabled, else FFFFh = none). EGA decoder only: 1 swaps colours 6 and 12,
+; other values do nothing. Inert: every file-table word is FFFFh.
 DecodeFileFlags dw 0
-; DS:SI = file, ES:DI = destination, BP = per-file flags or FFFFh: decodes all images.
+; DS:SI = file, ES:DI = destination, BP = DecodeFileFlags. Source: images {dw rows, dw B;
+; rows x planes 0..3 of B bytes} until a 0, 0 header; width 8 * B, MSB = leftmost pixel,
+; colour index = p3p2p1p0 (0..15); files carry no palette.
 DecodeGraphicsImages:
     mov word ptr cs:[DecodeFileFlags], bp
     mov word ptr cs:[DecodeImageIndex], 0FFFFh

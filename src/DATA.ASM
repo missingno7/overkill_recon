@@ -633,9 +633,9 @@ Sprite32Bytes dw 0
 GeometryUnread dw 0
 ; Size in bytes of the THEND.BIC bank.
 TheEndBytes dw 0
-; PANEL.ENC bank: image sizes of 19 groups; AllocateBuffers multiplies each by the
-; group's image count (1, 16, 8, 7, 6, 4, 4, 18, then 2 x 7, 1, 1, 6, 1: 87 images,
-; the entries of PanelImageOffsets).
+; PANEL.ENC bank: 19 size terms AllocateBuffers multiplies by counts (1, 16, 8, 7, 6, 4,
+; 4, 18, then 2 x 7, 1, 1, 6, 1: 87, the entries of PanelImageOffsets). The terms size
+; the allocation only; they do not follow the image order in PANEL.ENC.
 PanelImageBytes dw 8 dup (0)
 ; BLUEBITS.BIC bank: image sizes of 13 groups (counts 1 x 9, 3, 3, 3, 1: 19 images).
 BlueBitsImageBytes dw 13 dup (0)
@@ -644,7 +644,7 @@ PanelImageBytes2 dw 11 dup (0)
 PlaqueBytes dw 0
 BlockBytes dw 0
 ; Per-adapter geometry (CGA, EGA, Tandy): 39 words copied to the active block at
-; Sprite8Bytes (DS:1024), then PlayfieldRowBytes, WideRowBytes and ScreenSegment.
+; Sprite8Bytes.., then PlayfieldRowBytes, WideRowBytes and ScreenSegment.
 ; Only some of the 39 words are named so far.
 CgaGeometry dw 20h, 80h, 200h, 1104h, 0DC4h, 1454h, 4Ah, 66h
     dw 14h, 44h, 1E4h, 244h, 0DCh, 76Ch, 0BA4h, 0FE8h
@@ -666,8 +666,9 @@ TandyGeometry dw 40h, 100h, 400h, 2204h, 1B84h, 28A4h, 90h, 0C8h
     dw 68h, 0A0h, 0B800h
 ; Indexed by VideoAdapter.
 AdapterGeometry dw offset CgaGeometry, offset EgaGeometry, offset TandyGeometry
-; Asset file names. Each is preceded by a word (FFFF in the image) that the resource
-; loader reads at name-2, and followed by a zero word with no known reader.
+; Asset file names. Each is preceded by a word LoadGraphicsFile reads at name - 2 as the
+; DecodeFileFlags pointer (FFFFh everywhere), and followed by a zero word with no known
+; reader.
     dw 0FFFFh
 File_LEV0MAP_BIC db 'LEV0MAP.BIC',0
     dw 0
@@ -843,11 +844,11 @@ File_LEVSCR_ENC db 'levscr.enc',0
 File_CHOOSE_ENC db 'choose.enc',0
     dw 0
     even
-; Per LevelIndex: the level map, loaded into the segment at CS:9592.
+; Per LevelIndex: the level map, loaded into LevelMapSegment.
 LevelMapFiles label word
     dw offset File_LEV0MAP_BIC, offset File_LEV1MAP_BIC, offset File_LEV2MAP_BIC, offset File_LEV3MAP_BIC
     dw offset File_LEV4MAP_BIC, offset File_LEV5MAP_BIC, offset File_LEV6MAP_BIC, offset File_LEV7MAP_BIC
-; Loaded once at startup; FileCacheLoad never caches these (FFFF ends the list).
+; CacheLoadedFile never caches these (FFFF ends the list).
 ResidentFiles label word
     dw offset File_1X1_BIC, offset File_2X2_BIC, offset File_2X2C_BIC, offset File_MANEXPL_BIC
     dw offset File_LOGO_BIC, offset File_THEND_BIC, offset File_PANEL_ENC, offset File_SHIP_BIC
@@ -855,8 +856,8 @@ ResidentFiles label word
     dw 0FFFFh
 ; Holds the G file of LevelBankFiles while the BLX file loads.
 PendingSpriteFile dw 0
-; Per LevelIndex: sprite bank (Gn.BIC, into CS:95AE) and block set (LEVnBLX.BIC,
-; into CS:959A). Entries 6 and 7 (the files of levels 0 and 3) are
+; Per LevelIndex: sprite bank (Gn.BIC, into LevelSpritesSegment) and block set (LEVnBLX.BIC,
+; into LevelBlocksSegment). Entries 6 and 7 (the files of levels 0 and 3) are
 ; unreachable: LevelIndex stays below LEVEL_COUNT.
 LevelBankFiles label word
     dw offset File_G0_BIC, offset File_LEV0BLX_BIC
@@ -867,7 +868,7 @@ LevelBankFiles label word
     dw offset File_G5_BIC, offset File_LEV5BLX_BIC
     dw offset File_G0_BIC, offset File_LEV0BLX_BIC
     dw offset File_G3_BIC, offset File_LEV3BLX_BIC
-; Per LevelIndex: the plaque shown for the level, loaded into CS:95B6.
+; Per LevelIndex: the plaque shown for the level, loaded into PlaqueSegment.
 PlaqueFiles label word
     dw offset File_PLAQ5_ENC, offset File_PLAQ0_ENC, offset File_PLAQ1_ENC, offset File_PLAQ2_ENC
     dw offset File_PLAQ3_ENC, offset File_PLAQ4_ENC
@@ -979,8 +980,8 @@ FontPlaneRegs dw 0
     db 00h,38h,18h,0Ch,0Ch,18h,38h,00h    ; '}'
     db 00h,00h,00h,0F6h,0DEh,00h,00h,00h    ; '~'
     db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh    ; 'DEL'
-; CGA only: copied over the start of PanelSegment after PANEL.ENC loads
-; (15 * PanelImageBytes+2 bytes).
+; CGA only: 15 ready-made CGA images {7 rows, B = 5} copied over the start of PanelSegment
+; after PANEL.ENC loads; PanelImageOffsets are kept, so they replace PANEL images 0..14.
 CgaPanelPatch label byte
     db 07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
     db 01h,01h,01h,11h,01h,15h,55h,55h,55h,55h,11h,11h,11h,01h,11h,15h
@@ -1116,7 +1117,8 @@ UnusedTextBuffer db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h
 TextInGraphics dw 00000h
-; Shared DOS file descriptor used by LoadFileToBuffer and SaveBufferToFile.
+; File request parameters of LoadResourceFile, LoadFileToBuffer, SaveBufferToFile and the
+; FileCache.
 FileBufferSegment dw 00000h
 FileBufferOffset dw 00000h
 FileByteCount dw 00000h
@@ -1837,8 +1839,9 @@ EmsFreePages dw 0
 ; Next free FileCache entry.
 FileCacheEnd dw offset FileCache
 ; Files kept after their first load, FILE_CACHE_ENTRY_BYTES each (CACHE_* fields),
-; ended by a CACHE_NAME of FFFF. Nothing bounds FileCacheEnd; the image leaves room
-; for FILE_CACHE_ENTRIES and a final end word.
+; ended by a CACHE_NAME of FFFF. Keyed by name pointer, not string; holds decompressed
+; (adapter-neutral) file bytes, never evicted. Nothing bounds FileCacheEnd; the image
+; leaves room for FILE_CACHE_ENTRIES and a final end word.
 FileCache db FILE_CACHE_ENTRIES * FILE_CACHE_ENTRY_BYTES dup (0FFh)
     dw 0FFFFh
 FileStatus dw 00000h

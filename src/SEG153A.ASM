@@ -574,6 +574,10 @@ CopyChunkBytes dw 0
 CopySourceHandle dw 0
 CopyDestHandle dw 0
 
+; Far. DS:DX = ASCIIZ name (AX ignored). Searches ResArchiveList from ResCurArchive,
+; wrapping; the name is case-folded and spaces are skipped. Hit: CF = 0, AX = BX = handle
+; positioned at the data, CX:DX = length (low:high). Miss: AX = 2, CF = 1. Archives are
+; opened read/write (3D02h).
 OpenResourceFile:
     push si
     push di
@@ -885,6 +889,10 @@ ResHandle dw 0
 ResNamePtr dd 0
 ; 12-byte header read from an archive: first probed as an MZ header, then as the
 ; SHADOW header {entry count, XOR key (low value, high step), signature, entry size}.
+; Container: optional MZ stub (directory at (pages - 1) * 512 + last-page bytes), then
+; {count < 800, key, 'SHADOW', 26}; entries XOR'd by one running key (value += step per
+; byte, across entries): +5 dd offset from the header, +9 dd length, +13 ASCIIZ upper-case
+; name. The game ignores the length; its streams end themselves.
 ResEntryCount dw 0
 ResKey dw 0
 ResSignature db 6 dup (0)

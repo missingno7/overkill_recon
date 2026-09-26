@@ -413,7 +413,9 @@ extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
 extrn WideRowBytes:word
 extrn WorkspaceSegment:word
-; Palette index treated as transparent when sprites are loaded and drawn.
+; Palette index made transparent by the decoders when LoadMakeMask is set (the colour
+; becomes 0 and mask bits are set). Never written. Blitters use only the mask:
+; dest = (dest AND mask) OR colour; flash = dest OR NOT mask.
 TransparentColor db 05h
 ; Esc during calibration jumps here from PollJoystickPrimaryOrAbort. Reloading the SP
 ; saved by CalibrateJoystickWithAbort makes the RET return straight to that routine's
@@ -699,8 +701,10 @@ PackedOpenFailed dw 0 ; PackedOpenFailed
 
 ; Open the packed file PackedNamePtr (through the resource container) and decode it
 ; to PackedDestSegment:PackedDestOffset; PackedOutputBytes counts the output. The
-; first byte selects the format: 0 byte escape-RLE, 1 word escape-RLE, 2 dword
-; escape-RLE, 3 PackBits (80h ends), 4 PackBits by columns. Success returns CF=0; any
+; first byte selects the format. Mode 0: escape byte E, then bytes; E, n, v = n copies of
+; v; E, 0 ends. Mode 1: the same in words. Mode 2: escape word E, data dwords; E, n,
+; v (dword) = n copies. Mode 3 PackBits: c < 80h copies c + 1 bytes, c > 80h repeats the
+; next byte 257 - c times, 80h ends. Mode 4: DecodeColumnPackBits. Success returns CF=0; any
 ; failure reloads the entry SP (PackedUnwindSp) and returns CF=1 straight to the
 ; caller. Short reads are not detected: the stream terminator stops decoding.
 LoadPackedFile:
@@ -864,10 +868,12 @@ DecodePackBitsStream:
     jmp short @@next_control
     even
 ; DecodeColumnPackBits header: only the width word is ever read.
-PackedColumnHeader0 dw 0 ; PackedColumnHeader0
-PackedColumnWidth dw 0 ; PackedColumnWidth
-PackedColumnHeader2 dw 0 ; PackedColumnHeader2
+PackedColumnHeader0 dw 0
+PackedColumnWidth dw 0
+PackedColumnHeader2 dw 0
 
+; Header words (?, W, ?), then W columns left to right, each a mode-3 stream ended by
+; 80h, written top-down with a row stride of W bytes.
 DecodeColumnPackBits:
     mov es, word ptr ds:[PackedDestSegment]
     mov di, word ptr ds:[PackedDestOffset]
@@ -949,12 +955,11 @@ PackedReadBuffer db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-PackedReadCursor dw 0 ; PackedReadCursor
-PackedSavedBx dw 0 ; PackedSavedBx
-PackedWordLow db 0 ; PackedWordLow
+PackedReadCursor dw 0
+PackedSavedBx dw 0
+PackedWordLow db 0
 
-; Call ReadBufferedByte twice; first byte saved in DS:0614, second becomes AH and saved
-; first becomes AL. Shares scratch and inherits nonlocal error unwind from callee.
+; AX = the next little-endian word of the packed stream (ReadBufferedByte twice).
 ReadBufferedWordLE:
     call ReadBufferedByte
     mov byte ptr ds:[PackedWordLow], al
@@ -962,9 +967,9 @@ ReadBufferedWordLE:
     mov ah, al
     mov al, byte ptr ds:[PackedWordLow]
     ret
-; Save BX at DS:0612; cursor DS:0610. If cursor >=0610h, reset to0410h and request512 bytes
-; via DOS AH=3F, handle DS:0240. Return byte in AL, advance cursor, restore BX. DOS failure
-; branches to02B2 which restores SP from CS:0242. Short reads are not checked here.
+; AL = the next byte of the packed file, refilling PackedReadBuffer 512 bytes at a time
+; (BX preserved). A DOS error goes to FailPackedLoad, which unwinds to LoadPackedFile's
+; caller; short reads are not checked.
 ReadBufferedByte:
     mov word ptr ds:[PackedSavedBx], bx
     mov bx, word ptr ds:[PackedReadCursor]
@@ -988,6 +993,7 @@ ReadBufferedByte:
     mov bx, word ptr ds:[PackedSavedBx]
     ret
 
+; A close error re-enters FailPackedLoad, which closes again: loops while it keeps failing.
 ClosePackedFile:
     mov bx, word ptr cs:[PackedFileHandle]
     mov ah, DOS_CLOSE_FILE
@@ -1277,7 +1283,7 @@ ShowFatalErrorAndExit:
 ; Running total of paragraphs requested by AllocateBuffers.
 AllocatedParagraphs dw 00000h
 
-; Copy the current adapter's geometry table to DS:1024, set ScreenSegment from it and
+; Copy the current adapter's geometry table to Sprite8Bytes.., set ScreenSegment from it and
 ; allocate the game's buffers through DOS; any failure ends in ShowOutOfMemoryAndExit.
 AllocateBuffers:
     mov word ptr cs:[AllocatedParagraphs], 0
@@ -1607,6 +1613,14 @@ AttributePatchesDone:
 ; offset tables it fills. With LoadMakeMask set, pixels of TransparentColor become 0
 ; and a mask is built; with LoadRecordImages set, each image's width/height header is
 ; copied and its offset stored at LoadImageSlot, which then advances by one word.
+; Asset pipeline: name -> OpenResourceFile (SHADOW directory in OVERKILL) -> FileCache hit,
+; else LoadIsEnc ? DecodeEncFile (LZSS) : LoadPackedFile (modes 0..4); the cache keeps
+; these decompressed, adapter-neutral bytes. Level maps are used as they are. Graphics are
+; 4-plane 16-colour image lists, converted once per adapter by DecodeGraphicsImages (CGA
+; 2bpp via CgaColorMap, EGA planar rows, Tandy 4bpp; masked banks turn TransparentColor
+; into mask bits). Recorded images keep {rows, B} for BlitPacked*; banks are headerless
+; frames cut at Sprite8Bytes.. for the blitters. Everything after decompression is
+; adapter-specific.
 LoadMakeMask dw 0
 LoadRecordImages dw 0
 LoadDestOffset dw 0
@@ -1637,6 +1651,9 @@ LoadGraphicsMasked:
 LoadGraphicsMaskedRecordImages:
     mov word ptr cs:[LoadMakeMask], 1
     mov word ptr cs:[LoadRecordImages], 1
+; LoadNamePtr -> WorkspaceSegment:0 (after ClearWorkspace), then DecodeGraphicsImages to
+; LoadDestSegment:LoadDestOffset. The word before the name becomes DecodeFileFlags (FFFFh
+; unless PerFileFlagsEnabled). A workspace destination must lie above the source file.
 LoadGraphicsFile:
     call ClearWorkspace
     mov ax, word ptr cs:[WorkspaceSegment]
@@ -1718,7 +1735,8 @@ LoadCommonGraphics:
     call LoadGraphicsPlain
     ret
 
-; Read the whole file named by FileNamePtr into FileBufferSegment:FileBufferOffset.
+; Read the whole plain DOS file (not the archive; hiscore.dat) named by FileNamePtr into
+; FileBufferSegment:FileBufferOffset.
 ; Callers must test FileStatus: DOS errors return early through UnwindFileError, and a
 ; failed read leaves the handle open.
 LoadFileToBuffer:
@@ -5556,7 +5574,7 @@ DrawSprite8Tandy:
     ret
 
 ; Copy a packed image (DS:SI header: row count, width in 8-pixel units) to Tandy video
-; memory at ES=CS:95A4, ES:DI. Tandy rows interleave across four 2000h banks: each row
+; memory at ES = ScreenSegment, ES:DI. Tandy rows interleave across four 2000h banks: each row
 ; adds 2000h, and after the fourth bank adding 80A0h wraps to the first bank one 160-byte
 ; line further. No clipping; DF=0.
 CopyPackedRowsToTandyBanks:
@@ -5895,7 +5913,7 @@ PrintGraphicsCharTandy:
     mov byte ptr ds:[TextColor], al
     ret
 
-; Zero the whole 32 KiB Tandy video buffer (ES=CS:95A4, left in ES). DF=0.
+; Zero the whole 32 KiB Tandy video buffer (ES = ScreenSegment, left in ES). DF=0.
 ClearTandy32K:
     mov es, word ptr cs:[ScreenSegment]
     xor di, di
@@ -8120,7 +8138,8 @@ PackCgaPixel:
 ; Scratch AX of ExtractCgaPixelPair, and the CGA pixel word built two bits at a time.
 CgaSavedAX dw 0
 CgaPixelWord dw 0
-; 16-colour index to CGA colour 0..3 (RunChooseScreen switches entry 7 between 0 and 1).
+; 16-colour index to CGA colour 0..3 (RunChooseScreen switches entry 7 between 0 and 1),
+; a slot of the current CGA palette (set per level by ApplyLevelPalette).
 CgaColorMap db 0, 1, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 2, 1, 3
 
 ; ExtractTandyPixelPair with both pixels mapped through CgaColorMap.

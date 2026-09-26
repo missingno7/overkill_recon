@@ -545,7 +545,9 @@ extrn UpdateHighScoreTable:near
 extrn UpdateRefuelTimersAndScore:near
 extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
-; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer).
+; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer): 13 cells per row from
+; offset 0; cell = block number + 1, also a ByteAttributeTable index. LoadLevelMap sets
+; rows 0-1 to 1 and rows 283-287 from LevelEndMapRows.
 LevelMapSegment dw seg SoundModuleSlot + SLOT_BUFFER_PARAGRAPH
 ; Colour text-mode video segment, used when printing without graphics (TextInGraphics = 0).
 TextVideoSegment dw 0B800h
@@ -566,7 +568,9 @@ ScrollStartOffset dw 0
 ; Current screen segment: from the adapter's geometry table; EGA flips it between
 ; A000h and A200h.
 ScreenSegment dw 0
-; Sprite banks: MANEXPL.BIC, 1X1.BIC, 2X2.BIC, 2X2C.BIC and the level's Gn.BIC.
+; Sprite banks. Ids: 8x8 n -> 1X1; 16x16 n < FAh -> 2X2, else 2X2C n - FAh; 32x32
+; n < 1Ch -> MANEXPL, else Gn n - 1Ch (two 16-row halves). Map cell c -> LEVnBLX block
+; c - 1; from MAP_END_ROWS_POS, SHIP.BIC block c - 1.
 ManExplSegment dw 0
 Sprites1x1Segment dw 0
 Sprites2x2Segment dw 0
@@ -5681,7 +5685,8 @@ SetDacColor6:
     sti
     cmp al, 7
     ret
-; 1 enables the per-file flag bytes (DecodeFileFlags) while loading graphics.
+; 1 enables the per-file flag bytes (DecodeFileFlags); set only when a VGA DAC answers
+; (EnableFileFlagsIfVgaDac), read by the EGA decoder only.
 PerFileFlagsEnabled db 0
 
 EnableFileFlagsIfVgaDac:
@@ -5804,7 +5809,9 @@ MapEmsPages:
 
 ; Loads the file named by FileNamePtr to FileBufferSegment:FileBufferOffset: copied from
 ; FileCache when present, else read from disk (drive prompt and retry; ESC leaves through
-; ShutdownWithError) and then offered to CacheLoadedFile. Sets FileStatus.
+; ShutdownWithError) and then offered to CacheLoadedFile. FileStatus is always OK on
+; return: open failures retry or shut down, and a failed LoadPackedFile (CF) is ignored
+; (its partial output is still cached), so callers' retry loops never trigger.
 LoadResourceFile:
     mov word ptr ds:[FileStatus], FILE_STATUS_OK
     call CopyFromFileCache
@@ -5994,10 +6001,8 @@ UppercaseAsciiAL:
 @@toUpper:
     and al, 0DFh
     ret
-; Read pointer DS:21AA. If byte +1 is colon and ASCII-case-folded byte +0 is A or B, retain
-; it only when DS:BB86 (A) or DS:BB87 (B) equals exactly1; otherwise increment original byte
-; +0 and retry. Case of stored prefix is preserved. Other prefixes return unchanged. Flags
-; and AL/SI are scratch.
+; FileNamePtr with an "A:" or "B:" prefix: keep it only when DriveAPresent/DriveBPresent is
+; exactly 1, otherwise advance the drive letter and retry. Other names return unchanged.
 AdvanceABColonPrefix:
     mov si, word ptr ds:[FileNamePtr]
     cmp byte ptr ds:[si + 1], 03Ah
@@ -7905,7 +7910,8 @@ ProbeCrtcAtDX:
     ret
 ; ENC (LZSS) input buffer, refilled 400h bytes at a time from EncFileHandle.
 EncReadBuffer db 0400h dup (0)
-; LZSS ring buffer: 4096 bytes, first write at 0FEEh, its first 0FEEh bytes cleared.
+; LZSS ring buffer: 4096 bytes, first write at 0FEEh. Only [0, 0FEEh) is cleared per file:
+; the last 18 bytes keep the previous ENC file's output.
 EncRingBuffer db 01000h dup (0)
 ; LZSS allocation slack: the ring is sized N + F - 1 (4096 + 18 - 1), but
 ; DecodeEncFile wraps its index at 4096, so these 17 bytes are never touched.
@@ -7913,8 +7919,9 @@ EncRingBufferSlack db 00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h
 
 ; Decode the ENC file open on EncFileHandle to EncDestSegment:EncDestOffset, then close
-; it. Format is LZSS: flag bytes, literals, 12-bit position + 4-bit (length-3) pairs; a
-; zero pair followed by a zero byte ends. EncOutputBytes counts the output; DS preserved.
+; it. LZSS: flag bytes LSB first, 1 = literal, 0 = pair b0, b1: copy (b1 & 0Fh) + 3 bytes
+; from ring[b0 | (b1 & F0h) << 4]. Pair 0, 0 then byte 0 ends; pair 0, 0 then a nonzero X
+; is an ordinary 3-byte copy from ring 0, and X is read again as the next input byte. EncOutputBytes counts the output; DS preserved.
 ; CF set if the first read fails.
 DecodeEncFile:
     push ds
