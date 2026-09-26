@@ -17,7 +17,7 @@ from unicorn.x86_const import *
 import re, struct
 
 LOAD = 0x1010
-HEAP = 0x3600          # first paragraph the allocator hands out (past either linked image)
+HEAP = 0x4000          # first paragraph the allocator hands out (past either image's state segment window)
 HEAP_END = 0xA000
 HEAP_FILL = b'\x01\x00'  # allocated memory: small positive words, so unloaded images are tiny
 REG = {r: globals()['UC_X86_REG_' + r] for r in
@@ -46,6 +46,8 @@ class Machine:
         self.u.mem_write(LOAD * 16, self.image)
         self.data_frame = LOAD + self.symbols['STACKTOP'][0]
         self.stack_top = self.symbols['STACKTOP'][1]
+        # Heap addresses are compared as addresses: the 64 KiB DS window must end below them.
+        assert self.data_frame + 0x1000 <= HEAP, 'the state segment window overlaps the test heap'
         self.u.hook_add(UC_HOOK_INTR, self._interrupt)
         self.u.hook_add(UC_HOOK_INSN, self._port_in, None, 1, 0, UC_X86_INS_IN)
         self.u.hook_add(UC_HOOK_INSN, self._port_out, None, 1, 0, UC_X86_INS_OUT)

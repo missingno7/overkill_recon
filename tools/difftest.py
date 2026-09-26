@@ -28,6 +28,11 @@ import bisect, importlib, itertools, random, re, shutil, sys, time
 
 STATE_BYTES = 0xD330
 ALL_REGS = ('AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS')
+# Game state a case may place outside the state segment, by image label (the links differ
+# in address, not in label): the level map (LevelMapSegment is SlotBuffer's paragraph) and
+# CS-resident variables. A write key far(label, offset) = (index + 1) << 16 | offset.
+FAR_LABELS = ('SlotBuffer', 'Type21PathCursor')
+def far(label, offset=0): return (FAR_LABELS.index(label) + 1) << 16 | offset
 
 class OracleFault(AssertionError):
     """The oracle itself faulted, hung or hit an interrupt: the state is not one the game can
@@ -73,11 +78,19 @@ class Side:
         keep: leave writes outside the state segment in place for a following step."""
         if fresh:
             self.m.set_state(self.pristine); self.undo = []
-        for off, data in case.writes: self.m.write(off, data)
+        for off, data in case.writes:
+            if off >> 16:     # far(label, offset): undone like the routine's own outside writes
+                at = self.m.linear(FAR_LABELS[(off >> 16) - 1]) + (off & 0xFFFF)
+                self.undo.append((at, bytes(self.m.u.mem_read(at, len(data)))))
+                self.m.u.mem_write(at, bytes(data))
+            else: self.m.write(off, data)
         self.before = self.m.read(0, STATE_BYTES)
         self.outside = []
         try:
-            regs = self.m.call(case.label, case.regs, sp=sp)
+            # A register value given as a label name is that image word on this side (e.g.
+            # ES = 'LevelMapSegment': segment values differ between the links).
+            self.entry = {r: self.m.peek(v) if isinstance(v, str) else v for r, v in case.regs.items()}
+            regs = self.m.call(case.label, self.entry, sp=sp)
             return regs, self.m.read(0, STATE_BYTES)
         finally:
             if not keep: self.rollback()
@@ -130,7 +143,7 @@ class Pair:
         # Segment values are compared relative to each image's state segment frame.
         for regs, side in ((ra, self.a), (rb, self.b)):
             for r in ('DS', 'SS', 'ES'):
-                if r == 'ES' and 'ES' in case.regs and regs[r] == case.regs['ES']: regs[r] = 'unchanged'
+                if r == 'ES' and 'ES' in case.regs and regs[r] == side.entry['ES']: regs[r] = 'unchanged'
                 elif regs[r] == side.m.data_frame: regs[r] = 'state segment'
         # Preserved registers must come back as the oracle leaves them (its contract);
         # outputs must agree; other registers are scratch for this routine.
@@ -197,6 +210,7 @@ def coverage(names=None, scale=1):
     pair = Pair(); m = pair.a.m
     from fuzz import region_instructions
     code = {name: region_instructions(m, [name]) for name in hybrid.owned_labels()}
+    code = {name: a for name, a in code.items() if a}     # jump-table labels hold no instructions
     hit = set()
     lo = min(min(v) for v in code.values()); hi = max(max(v) for v in code.values())
     m.u.hook_add(UC_HOOK_CODE, lambda u, address, size, _: hit.add(address), None, lo, hi)
