@@ -9427,8 +9427,8 @@ ProbeShipTerrainCollision:
     add word ptr ss:[bp + REC_Y], ax
     lodsw
     add word ptr ss:[bp + REC_X], ax
-; Test the cell row below the hit point (a second row when the point is in the lower
-; part of its cell), and the next column when X is not on a cell boundary.
+; Test one map row at the hit point (two when its Y is more than 10 pixels into the
+; cell), and the next column too when X is not on a cell boundary.
     call ComputeRecordGridOffset
     add bx, MAP_ROW_BYTES
     mov ax, word ptr ds:[GridYSum]
