@@ -337,7 +337,7 @@ public Type4EAnimDescendThenBounce
 public Type4FFallFast4Flicker
 public Type51FollowType51Path
 public Type52ScrollOnly
-public Type53AnimateFromField36
+public Type53AnimateFromSpriteBase
 public Type60FlyAlongAimLine
 public Type68JitterDescendFiring
 public Type69JitterDropToY18
@@ -4211,7 +4211,7 @@ InitAimedShotRecord:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 0Bh
-    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
+    mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     ret
 ; BX = record: REC_DELTA_X/Y = its position minus the player's (X + 9, Y).
 AimAtPlayer:
@@ -6696,27 +6696,27 @@ loc_08BC1:
     jmp near ptr ScrollRecordThenFinish
 ; Starts the waypoint path Type41Path as type 12h (as 43h, 44h, 45h, 4Ah).
 Type41FollowPathType41:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type41Path
+    mov word ptr ss:[bp + REC_PATH], offset Type41Path
     jmp near ptr StartPathFollow
 ; Starts the waypoint path Type43Path as type 12h.
 Type43FollowPathType43:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type43Path
+    mov word ptr ss:[bp + REC_PATH], offset Type43Path
     jmp near ptr StartPathFollow
 ; Starts the waypoint path Type44Path as type 12h.
 Type44FollowPathType44:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type44Path
+    mov word ptr ss:[bp + REC_PATH], offset Type44Path
     jmp near ptr StartPathFollow
 ; Starts the waypoint path Type45Path as type 12h.
 Type45FollowPathType45:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type45Path
+    mov word ptr ss:[bp + REC_PATH], offset Type45Path
     jmp near ptr StartPathFollow
 ; Starts the waypoint path Type4APath as type 12h.
 Type4AFollowPathType4A:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type4APath
+    mov word ptr ss:[bp + REC_PATH], offset Type4APath
     jmp near ptr StartPathFollow
 ; Starts the waypoint path Type51Path as type 12h.
 Type51FollowType51Path:
-    mov word ptr ss:[bp + REC_FIELD_36], offset Type51Path
+    mov word ptr ss:[bp + REC_PATH], offset Type51Path
     jmp near ptr StartPathFollow
 ; Descends 1 px per frame, swaying left and right every 32 frames.
 Type42DescendSway:
@@ -6845,12 +6845,12 @@ Type4FFallFast4Flicker:
 ; Only the scroll tail.
 Type52ScrollOnly:
     jmp near ptr ScrollRecordThenFinish
-; Animates from sprite base REC_FIELD_36.
-Type53AnimateFromField36:
+; Animates from sprite base REC_SPRITE_BASE.
+Type53AnimateFromSpriteBase:
     mov bx, ds:[FrameCount8]
     and bx, -2
     mov bx, ds:[bx + PingPongFrames4]
-    add bx, ss:[bp + REC_FIELD_36]
+    add bx, ss:[bp + REC_SPRITE_BASE]
     mov ss:[bp + REC_SPRITE], bx
     jmp near ptr ScrollRecordThenFinish
 ; CF = 0 and return; no caller found.
@@ -6877,7 +6877,7 @@ Type81SweeperEnterSteer:
 ; Sweeps sideways, descends and climbs back; destroyed after 100 blocked climbs.
 Type93SweepDescendClimb:
     call far ptr Type93SweepBody
-    cmp word ptr ss:[bp + REC_FIELD_36], 064h
+    cmp word ptr ss:[bp + REC_BLOCKED_CLIMBS], 064h
     jae loc_08D6D
     jmp near ptr FinishRecordUpdate
 loc_08D6D:
@@ -7205,7 +7205,7 @@ loc_0FAD8:
     lodsw
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_TYPE], 07Fh
-    mov word ptr ds:[bx + REC_FIELD_1C], 014h
+    mov word ptr ds:[bx + REC_ENTRY_DELAY], 014h
     mov word ptr ds:[bx + REC_HIT_POINTS], 5
     inc word ptr ds:[EncounterLiveCount]
     jmp near ptr loc_0FC38
@@ -7236,10 +7236,10 @@ loc_0FB16:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
 loc_0FB38:
     mov word ptr ds:[bx + REC_TYPE], 081h
-    mov word ptr ds:[bx + REC_FIELD_1C], 019h
+    mov word ptr ds:[bx + REC_ENTRY_DELAY], 019h
     mov word ptr ds:[bx + REC_HIT_POINTS], 5
     mov word ptr ds:[bx + REC_DRAW_PASS], 0
-    mov word ptr ds:[bx + REC_FIELD_36], 0
+    mov word ptr ds:[bx + REC_BLOCKED_CLIMBS], 0
     inc word ptr ds:[EncounterLiveCount]
     jmp near ptr loc_0FC38
 loc_0FB58:
@@ -7259,7 +7259,7 @@ loc_0FB60:
     lodsw
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_TYPE], 020h
-    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
+    mov word ptr ds:[bx + REC_DIVE_PHASE], 0FFFFh
     inc word ptr ds:[EncounterLiveCount]
 loc_0FB90:
     pop cx
@@ -7284,7 +7284,7 @@ loc_0FBAB:
     mov word ptr ds:[bx + REC_TYPE], 01Eh
     mov word ptr ds:[bx + REC_SPRITE], 043h
 loc_0FBCB:
-    mov word ptr ds:[bx + REC_FIELD_1C], 014h
+    mov word ptr ds:[bx + REC_ENTRY_DELAY], 014h
     inc word ptr ds:[EncounterLiveCount]
     jmp short loc_0FC38
 loc_0FBD6:
@@ -7301,13 +7301,13 @@ loc_0FBD6:
     lodsw
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_TYPE], 016h
-    mov word ptr ds:[bx + REC_FIELD_36], offset SweepPath
+    mov word ptr ds:[bx + REC_PATH], offset SweepPath
     cmp word ptr ss:[bp + REC_Y], 040h
     je loc_0FC12
     mov word ptr ds:[bx + REC_TYPE], 017h
-    mov word ptr ds:[bx + REC_FIELD_36], offset SweepPathLeadIn
+    mov word ptr ds:[bx + REC_PATH], offset SweepPathLeadIn
 loc_0FC12:
-    mov word ptr ds:[bx + REC_FIELD_1C], 014h
+    mov word ptr ds:[bx + REC_ENTRY_DELAY], 014h
     mov word ptr ds:[bx + REC_HIT_POINTS], 3
     inc word ptr ds:[EncounterLiveCount]
     jmp short loc_0FC38
@@ -7339,9 +7339,9 @@ Type93SweepBody:
     je loc_0FC6E
     jmp near ptr loc_0FE69
 loc_0FC6E:
-    cmp word ptr ss:[bp + REC_FIELD_1C], 0
+    cmp word ptr ss:[bp + REC_ENTRY_DELAY], 0
     je loc_0FC7C
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_ENTRY_DELAY]
     je loc_0FC7C
     jmp near ptr loc_0FE69
 loc_0FC7C:
@@ -7384,7 +7384,7 @@ loc_0FCDF:
     call Type93BlockedTurnUp
 loc_0FCEC:
     jne loc_0FCF8
-    mov word ptr ss:[bp + REC_FIELD_36], 0
+    mov word ptr ss:[bp + REC_BLOCKED_CLIMBS], 0
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0FCF8:
     cmp word ptr ss:[bp + REC_Y], 020h
@@ -7509,10 +7509,10 @@ loc_0FE69:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
 loc_0FE75:
     retf
-; BP = type 93h: counts a blocked climb (REC_FIELD_36) and turns diagonally up toward
+; BP = type 93h: counts a blocked climb (REC_BLOCKED_CLIMBS) and turns diagonally up toward
 ; the centre.
 Type93BlockedTurnUp:
-    inc word ptr ss:[bp + REC_FIELD_36]
+    inc word ptr ss:[bp + REC_BLOCKED_CLIMBS]
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
     cmp word ptr ss:[bp + REC_X], 060h
     ja loc_0FE89
@@ -7533,9 +7533,9 @@ Type80MarchMemberBody:
     je loc_0FEB0
     jmp near ptr loc_1000C
 loc_0FEB0:
-    cmp word ptr ss:[bp + REC_FIELD_1C], 0
+    cmp word ptr ss:[bp + REC_ENTRY_DELAY], 0
     je loc_0FEBE
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_ENTRY_DELAY]
     je loc_0FEBE
     jmp near ptr loc_1000C
 loc_0FEBE:

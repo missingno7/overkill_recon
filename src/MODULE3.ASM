@@ -519,7 +519,7 @@ extrn Type4EAnimDescendThenBounce:near
 extrn Type4FFallFast4Flicker:near
 extrn Type51FollowType51Path:near
 extrn Type52ScrollOnly:near
-extrn Type53AnimateFromField36:near
+extrn Type53AnimateFromSpriteBase:near
 extrn Type60FlyAlongAimLine:near
 extrn Type68JitterDescendFiring:near
 extrn Type69JitterDropToY18:near
@@ -1795,12 +1795,12 @@ loc_0A128:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     ret
 
-; AllocPlayerShot as type 0Ch with REC_FIELD_1C 7; returns SI = FrontPodRecord, AX =
+; AllocPlayerShot as type 0Ch with REC_SHOT_TIMER 7; returns SI = FrontPodRecord, AX =
 ; its Y.
 AllocFrontPodShot:
     call AllocPlayerShot
     mov word ptr ds:[bx + REC_TYPE], 0Ch
-    mov word ptr ds:[bx + REC_FIELD_1C], 7
+    mov word ptr ds:[bx + REC_SHOT_TIMER], 7
     mov si, word ptr ds:[FrontPodRecord]
     mov ax, word ptr ds:[si + REC_Y]
     ret
@@ -2140,7 +2140,7 @@ SpawnShotAtPod:
     ret
 
 ; BX = a pool B record set up as a player shot: type 2, sprite 32h, heading up,
-; REC_FIELD_1C FFFFh (lives until out of bounds).
+; REC_SHOT_TIMER FFFFh (lives until out of bounds).
 AllocPlayerShot:
     call AllocPoolBRecordEvicting
     mov word ptr ds:[bx + REC_STATUS], 1
@@ -2150,7 +2150,7 @@ AllocPlayerShot:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 2
-    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
+    mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     ret
 
 ; Fires a homing missile (type 0Ah) at FindMissileTarget's record when missiles remain
@@ -2183,7 +2183,7 @@ loc_0A53C:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 0Ah
-    mov word ptr ds:[bx + REC_FIELD_1C], 1
+    mov word ptr ds:[bx + REC_MISSILE_LOCKED], 1
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A568
     mov byte ptr ds:[SfxRequest], 011h
@@ -2395,7 +2395,7 @@ loc_0A6C8:
     mov word ptr ds:[bx + REC_X], ax
     lodsw
     mov word ptr ds:[bx + REC_SPRITE], ax
-    mov word ptr ds:[bx + REC_FIELD_36], ax
+    mov word ptr ds:[bx + REC_SPRITE_BASE], ax
 loc_0A6FA:
     pop cx
     loop loc_0A6C8
@@ -3197,23 +3197,23 @@ Type07RisingShot3:
 ; uncertain.
 Type09ExternallyMovedShot:
     jmp near ptr ShotBoundsCheck
-; 2 px per frame in REC_DIRECTION until REC_FIELD_1C runs out, then the player-hit test.
+; 2 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the player-hit test.
 Type0FTimedShot2:
     mov ax, ds:[FrameCount16]
     shr ax, 1
     add ax, 0
     mov ss:[bp + REC_SPRITE], ax
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_SHOT_TIMER]
     je ExpireShot
     mov ax, 0B250h
     push ax
     jmp near ptr MoveInDirection2
-; 3 px per frame in REC_DIRECTION while REC_FIELD_1C counts down, then turns straight
+; 3 px per frame in REC_DIRECTION while REC_SHOT_TIMER counts down, then turns straight
 ; up.
 Type0CTimedTurnUpShot:
-    cmp word ptr ss:[bp + REC_FIELD_1C], 0
+    cmp word ptr ss:[bp + REC_SHOT_TIMER], 0
     je loc_0AE19
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_SHOT_TIMER]
     jne loc_0AE1D
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0AE19:
@@ -3293,10 +3293,10 @@ loc_0AECD:
     jmp near ptr MoveInDirection4
 loc_0AED6:
     jmp short MoveInDirection8
-; Types 02h/03h: 8 px per frame in REC_DIRECTION until REC_FIELD_1C runs out, then the
+; Types 02h/03h: 8 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the
 ; player-hit test; type 3 hits deal 1/3/5 damage by difficulty.
 Type02TimedStraightShot:
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_SHOT_TIMER]
     jne loc_0AEE0
     jmp near ptr ExpireShot
 loc_0AEE0:
@@ -3622,7 +3622,7 @@ Type0AHomingMissile:
     mov ax, ds:[FrameCount8]
     add ax, 6Dh
     mov ss:[bp + REC_SPRITE], ax
-    cmp word ptr ss:[bp + REC_FIELD_1C], 1
+    cmp word ptr ss:[bp + REC_MISSILE_LOCKED], 1
     je loc_0B227
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     add ax, 0Ah
@@ -3650,7 +3650,7 @@ loc_0B201:
     jmp near ptr ExpireShot
 loc_0B20C:
     mov ss:[bp + REC_TARGET], bx
-    mov word ptr ss:[bp + REC_FIELD_1C], 1
+    mov word ptr ss:[bp + REC_MISSILE_LOCKED], 1
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0B220
     mov byte ptr ds:[SfxRequest], 11h
@@ -3669,7 +3669,7 @@ loc_0B227:
     call StepAlongDelta
     jmp near ptr ShotScrollAndBounds
 loc_0B245:
-    mov word ptr ss:[bp + REC_FIELD_1C], 0
+    mov word ptr ss:[bp + REC_MISSILE_LOCKED], 0
     jmp near ptr ShotScrollAndBounds
 ; 3 px Bresenham steps along REC_DELTA, then the player-hit test.
 Type0BAimedEnemyShot:
@@ -3723,18 +3723,18 @@ loc_0B2B9:
     jmp near ptr HorizontalTerrainPatrol
 ; Starts the waypoint path at DS:A45C as type 12h.
 Type10StartPathFollowerA:
-    mov word ptr ss:[bp + REC_FIELD_36], offset SteerPath10
+    mov word ptr ss:[bp + REC_PATH], offset SteerPath10
     jmp short StartPathFollow
 ; Starts the waypoint path at DS:A43C as type 12h.
 Type11StartPathFollowerB:
-    mov word ptr ss:[bp + REC_FIELD_36], offset SteerPath11
-; Turns BP into a type 12h waypoint follower of the path at REC_FIELD_36.
+    mov word ptr ss:[bp + REC_PATH], offset SteerPath11
+; Turns BP into a type 12h waypoint follower of the path at REC_PATH.
 StartPathFollow:
     mov word ptr ss:[bp + REC_TYPE], 12h
 ; Steers (speed 1, 2 on level 0 and in the demo) through the (Y, X) waypoints at
-; REC_FIELD_36; no end-of-path check and no scroll.
+; REC_PATH; no end-of-path check and no scroll.
 Type12WaypointPathFollower:
-    mov si, ss:[bp + REC_FIELD_36]
+    mov si, ss:[bp + REC_PATH]
     lodsw
     add ax, 20h
     mov ds:[SteerTargetY], ax
@@ -3751,7 +3751,7 @@ loc_0B2F5:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
     je loc_0B304
-    mov ss:[bp + REC_FIELD_36], si
+    mov ss:[bp + REC_PATH], si
     jmp short Type12WaypointPathFollower
 loc_0B304:
     mov ax, ss:[bp + REC_DIRECTION]
@@ -3890,7 +3890,7 @@ loc_0B421:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 3
-    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
+    mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     pop cx
     loop loc_0B421
 loc_0B467:
@@ -4070,7 +4070,7 @@ loc_0B65E:
     mov ax, ds:[RecordTickCounter]
     inc word ptr ds:[RecordTickCounter]
     and ax, 3
-    mov ds:[bx + REC_FIELD_1C], ax
+    mov ds:[bx + REC_FALLER_VARIANT], ax
     jmp near ptr FinishRecordUpdate
 ; BX = new record: REC_SAVED_X = the next FallerColumns entry.
 AssignNextFallerColumn:
@@ -4084,7 +4084,7 @@ loc_0B687:
     mov ds:[bx + REC_SAVED_X], ax
     mov ds:[FallerColumnCursor], si
     ret
-; Steers to its column top, then falls by the FallerVariants[REC_FIELD_1C] profile; on
+; Steers to its column top, then falls by the FallerVariants[REC_FALLER_VARIANT] profile; on
 ; level 2 aims at the player as type 2Ch.
 Type23ColumnFaller:
     mov ax, ss:[bp + REC_X]
@@ -4107,7 +4107,7 @@ loc_0B6A6:
 loc_0B6BE:
     cmp word ptr ds:[LevelIndex], 2
     je loc_0B701
-    mov si, ss:[bp + REC_FIELD_1C]
+    mov si, ss:[bp + REC_FALLER_VARIANT]
     shl si, 1
     shl si, 1
     mov ax, offset FallerVariants
@@ -4159,9 +4159,9 @@ SteerToSaved:
 ; Hops between formation slots; when few remain, moves above the player and drops 4 px
 ; per frame.
 Type20SlotHopperDropper:
-    cmp word ptr ss:[bp + REC_FIELD_1C], -1
+    cmp word ptr ss:[bp + REC_DIVE_PHASE], -1
     je loc_0B791
-    mov bx, word ptr ss:[bp + REC_FIELD_1C]
+    mov bx, word ptr ss:[bp + REC_DIVE_PHASE]
     shl bx, 1
     jmp word ptr cs:[bx + Type20Cases]
 Type20Cases label word
@@ -4177,11 +4177,11 @@ loc_0B75F:
     je loc_0B76A
     jmp near ptr loc_0B85C
 loc_0B76A:
-    inc word ptr ss:[bp + REC_FIELD_1C]
+    inc word ptr ss:[bp + REC_DIVE_PHASE]
     jmp near ptr FinishRecordUpdate
 Type20StartDrop:
     mov word ptr ss:[bp + REC_SPRITE], 079h
-    inc word ptr ss:[bp + REC_FIELD_1C]
+    inc word ptr ss:[bp + REC_DIVE_PHASE]
     jmp near ptr FinishRecordUpdate
 Type20Drop:
     add word ptr ss:[bp + REC_Y], 4
@@ -4225,7 +4225,7 @@ loc_0B7CE:
 loc_0B7D7:
     and word ptr ss:[bp + REC_SAVED_X], 0FFF8h
     mov word ptr ds:[RecordTickCounter], 028h
-    mov word ptr ss:[bp + REC_FIELD_1C], 0
+    mov word ptr ss:[bp + REC_DIVE_PHASE], 0
     mov word ptr ss:[bp + REC_SPRITE], 078h
     mov word ptr ss:[bp + REC_SAVED_Y], 020h
     jmp near ptr FinishRecordUpdate
@@ -4345,7 +4345,7 @@ loc_0B917:
 loc_0B928:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
     jmp near ptr FinishRecordUpdate
-; Types 16h/17h: steers to REC_SAVED, waits REC_FIELD_1C, moves to Y 20h (16h) or 40h
+; Types 16h/17h: steers to REC_SAVED, waits REC_ENTRY_DELAY, moves to Y 20h (16h) or 40h
 ; (17h); becomes type 18h at EncounterTicks 31h.
 Type16SweepLeadIn:
     mov word ptr ds:[SteerSpeed], 1
@@ -4362,9 +4362,9 @@ loc_0B943:
     jne loc_0B956
     jmp near ptr FinishRecordUpdate
 loc_0B956:
-    cmp word ptr ss:[bp + REC_FIELD_1C], 0
+    cmp word ptr ss:[bp + REC_ENTRY_DELAY], 0
     je loc_0B97A
-    dec word ptr ss:[bp + REC_FIELD_1C]
+    dec word ptr ss:[bp + REC_ENTRY_DELAY]
     je loc_0B964
     jmp near ptr FinishRecordUpdate
 loc_0B964:
@@ -4382,7 +4382,7 @@ loc_0B97A:
 loc_0B984:
     mov word ptr ss:[bp + REC_TYPE], 18h
     jmp near ptr FinishRecordUpdate
-; Walks the REC_FIELD_36 waypoints at speed 3 (FFFFh, address = jump); random downward
+; Walks the REC_PATH waypoints at speed 3 (FFFFh, address = jump); random downward
 ; shots and a periodic aimed shot.
 Type18SweepPathLooper:
     mov ax, ds:[RecordTickCounter]
@@ -4392,7 +4392,7 @@ Type18SweepPathLooper:
     call SpawnAimedShot
     inc word ptr ds:[RecordTickCounter]
 loc_0B99E:
-    mov si, ss:[bp + REC_FIELD_36]
+    mov si, ss:[bp + REC_PATH]
     lodsw
     cmp ax, 0FFFFh
     je loc_0B9EA
@@ -4409,7 +4409,7 @@ loc_0B99E:
     jne loc_0B9CD
     jmp near ptr FinishRecordUpdate
 loc_0B9CD:
-    mov ss:[bp + REC_FIELD_36], si
+    mov ss:[bp + REC_PATH], si
     call NextRandomWord
     and bx, 7
     cmp bx, 2
@@ -4421,7 +4421,7 @@ loc_0B9CD:
     jmp short Type18SweepPathLooper
 loc_0B9EA:
     lodsw
-    mov ss:[bp + REC_FIELD_36], ax
+    mov ss:[bp + REC_PATH], ax
     jmp short Type18SweepPathLooper
 ; Sways in its formation slot after the leader script ends; dives at the player when few
 ; remain or on a tick, wraps below D0h and returns to the slot.
@@ -4980,7 +4980,7 @@ loc_0BF01:
     je loc_0BF07
     ret
 loc_0BF07:
-    mov word ptr ds:[bx + REC_FIELD_1C], 0
+    mov word ptr ds:[bx + REC_MISSILE_LOCKED], 0
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
@@ -5358,7 +5358,7 @@ loc_0C277:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 4
-    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
+    mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     cmp word ptr ds:[bx + REC_Y], 8
     jae loc_0C2AE
     ret
@@ -8087,7 +8087,7 @@ TypeHandlers label word
     dw offset Type44FollowPathType44, offset Type45FollowPathType45, offset Type46HoverShootThenDive, offset Type47PatrolDropShooter
     dw offset Type48CreeperAimedFire, offset Type49RadialBurstFaller, offset Type4AFollowPathType4A, offset Type4BDescendThenBounceUpRight
     dw offset Type4CSinkThenRise, offset Type4DSinkRiseThenDash, offset Type4EAnimDescendThenBounce, offset Type4FFallFast4Flicker
-    dw offset Type50SteerHomeThenBecomePod, offset Type51FollowType51Path, offset Type52ScrollOnly, offset Type53AnimateFromField36
+    dw offset Type50SteerHomeThenBecomePod, offset Type51FollowType51Path, offset Type52ScrollOnly, offset Type53AnimateFromSpriteBase
     dw offset Type54ScrollUntilY_B0ThenType56, offset Type55DropFrom_B0, offset Type56CrawlDestroyOnBlock, offset Type57ScrollToY80ThenCrawl
     dw offset Type57ScrollToY80ThenCrawl, offset Type59ScrollThenAnimateThenType5A, offset Type5ACrawlMirrorDiagonal, offset Type5BScrollPastY_B0ThenType5C
     dw offset Type5CRiseFast4, offset Type5DDropFast8, offset Type5ECrawlTurnDownToLeft, offset Type5FCrawlBounceDiagonal
@@ -8536,12 +8536,12 @@ loc_0F50A:
     jmp near ptr ScrollRecordThenFinish
 ; Starts PathType66 with 20 hit points as type 12h.
 Type66FollowPathType66:
-    mov word ptr ss:[bp + REC_FIELD_36], offset PathType66
+    mov word ptr ss:[bp + REC_PATH], offset PathType66
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
     jmp near ptr StartPathFollow
 ; Starts PathType67 (type 66h mirrored) with 20 hit points as type 12h.
 Type67FollowPathType67:
-    mov word ptr ss:[bp + REC_FIELD_36], offset PathType67
+    mov word ptr ss:[bp + REC_PATH], offset PathType67
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
     jmp near ptr StartPathFollow
 ; Descends while sliding 2 px per frame toward X 50h.

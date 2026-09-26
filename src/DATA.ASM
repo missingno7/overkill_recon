@@ -1342,7 +1342,7 @@ Type34SpriteByLevel dw 147h, 0BEh, 0BEh, 145h, 145h, 145h, 147h, 145h
 Type37Speed dw 0
 ; Record fields picked at random for one-axis jitter (types 40h, 68h, 69h).
 JitterAxisFields dw REC_X, REC_Y
-; (Y, X) paths for type 12h movement (REC_FIELD_36), set by the named types.
+; (Y, X) paths for type 12h movement (REC_PATH), set by the named types.
 Type41Path dw 80h, 40h,  40h, 90h,  80h, 90h,  0A0h, 30h
     dw 30h, 0A0h,  50h, 0A0h,  LEADER_END_Y, 60h
 Type43Path dw 0A0h, 60h,  90h, 50h,  0h, 50h,  0h, 10h
@@ -1590,7 +1590,7 @@ TerrainProbeX dw 00000h
 TerrainProbeY dw 00000h
 ; Round-robin cursor over pool A used by the target search at B15A.
 TargetSearchCursor dw 023B4h
-; (Y, X) paths of types 11h and 10h (REC_FIELD_36, followed as type 12h).
+; (Y, X) paths of types 11h and 10h (REC_PATH, followed as type 12h).
 SteerPath11 dw 50h, 0B0h,  90h, 68h,  10h, 68h,  0h, 80h
     dw 40h, 90h,  0A0h, 68h,  0B0h, 0B0h,  LEADER_END_Y, 0B0h
 SteerPath10 dw 50h, 10h,  90h, 58h,  10h, 58h,  0h, 40h
@@ -1630,7 +1630,7 @@ LeaderScript15 dw 20h, 0C0h,  0h, 0B0h,  20h, 0B0h,  40h, 0A0h
     dw 40h, 30h,  20h, 30h,  40h, 20h,  60h, 20h
     dw 40h, 10h,  20h, 10h
 LeaderScript15End dw LEADER_END_Y, 0h
-; Path of the type 16h/17h children (REC_FIELD_36): lead-in, then a loop through
+; Path of the type 16h/17h children (REC_PATH): lead-in, then a loop through
 ; SweepPath (0FFFFh, next address).
 SweepPathLeadIn dw 20h, 0C0h,  0B0h, 0C0h,  0B0h, 0h,  0h, 0h
 SweepPath dw 0h, 0B0h,  10h, 0B0h,  10h, 10h,  20h, 10h
@@ -1720,7 +1720,7 @@ InvaderFormation dw 50h, 0A8h,  50h, 90h,  50h, 78h,  50h, 60h
     dw 20h, 0A8h,  20h, 90h,  20h, 78h,  20h, 60h
     dw 20h, 48h,  20h, 30h,  20h, 18h,  20h, 0h
 InvaderFormationEnd label word
-; Faller variants by REC_FIELD_1C: {animation counter address, Y step per frame};
+; Faller variants by REC_FALLER_VARIANT: {animation counter address, Y step per frame};
 ; FallerVariantsAlt on levels 3 and 5.
 FallerVariants dw 2336h, 2,  2336h, 3,  2328h, 4,  2328h, 5
 FallerVariantsAlt dw 2326h, 5,  2326h, 6,  2326h, 7,  2326h, 8
@@ -2656,7 +2656,7 @@ Type86FramesDir6 dw 0C8h, 0C9h, 0CAh, 0C9h
 Type86Frames dw 0DAh, 0DBh, 0DCh, 0DBh
 Type88FramesDir6 dw 0FDh, 0FEh, 0FFh, 0FEh
 Type88Frames dw 0FAh, 0FBh, 0FCh, 0FBh
-; (Y, X) paths of types 66h and 67h (REC_FIELD_36), the second mirrored (X = B0h - X);
+; (Y, X) paths of types 66h and 67h (REC_PATH), the second mirrored (X = B0h - X);
 ; each ends with an unreachable LEADER_END_Y waypoint.
 PathType66 dw 0h, 0h,  30h, 30h,  30h, 50h,  40h, 50h
     dw 40h, 0h,  70h, 30h,  70h, 50h,  80h, 50h

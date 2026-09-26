@@ -22,7 +22,6 @@ layout argument appears (as the linker padding at far 10162 did).
 
 - DemoStepLaunchFrontPod and DemoStepSpawnPathEnemy51 do not check for FFFFh (pool full).
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
-- Record fields +1C and +36 are type-dependent.
 - Type 2Eh never sets SteerSpeed and inherits the previous handler's value.
 
 ## Next reconstruction targets

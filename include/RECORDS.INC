@@ -82,6 +82,27 @@ REC_SAVED_X equ 32h
 REC_SAVED_Y equ 34h
 ; Type-dependent.
 REC_FIELD_36 equ 36h
+; Roles of REC_FIELD_1C by type.
+; Shots (types 02h, 03h, 04h, 0Bh, 0Ch, 0Fh): frames left, counted down by 02h/03h/0Fh
+; (expire at 0) and 0Ch (turns up at 0); FFFFh = until out of bounds.
+REC_SHOT_TIMER equ REC_FIELD_1C
+; Homing missile (type 0Ah): 0 = riding with the player, 1 = locked on REC_TARGET.
+REC_MISSILE_LOCKED equ REC_FIELD_1C
+; Formation followers 16h/17h, 1Dh/1Eh, 7Fh, 81h: frames to wait before moving off.
+REC_ENTRY_DELAY equ REC_FIELD_1C
+; Type 23h column faller: index 0..3 into FallerVariants.
+REC_FALLER_VARIANT equ REC_FIELD_1C
+; Type 20h: FFFFh = hopping between slots, else Type20Cases index 0..2.
+REC_DIVE_PHASE equ REC_FIELD_1C
+; Roles of REC_FIELD_36 by type.
+; Waypoint followers (type 12h and the types that start it) and sweep loopers
+; 16h/17h/18h: pointer to the next (Y, X) waypoint.
+REC_PATH equ REC_FIELD_36
+; Type 53h: base sprite the animation offsets are added to.
+REC_SPRITE_BASE equ REC_FIELD_36
+; Types 81h/93h: blocked climbs; 100 or more destroys the record.
+REC_BLOCKED_CLIMBS equ REC_FIELD_36
+
 
 ; GroupTable entries (2 bytes): live members, and the item kind dropped when the
 ; last member dies; REC_SLOT_INDEX links a record to its entry.
