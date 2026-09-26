@@ -4707,7 +4707,7 @@ loc_079A1:
 Clear2x2MapCells:
     mov byte ptr es:[si], 1
     mov byte ptr es:[si + 1], 1
-    mov byte ptr es:[si + 0Dh], 1
+    mov byte ptr es:[si + MAP_ROW_BYTES], 1
     mov byte ptr es:[si + 0Eh], 1
     ret
 ; Level 5 byte D9h: large type 48h, facing down, joins group.
@@ -4749,7 +4749,7 @@ loc_07A03:
     ret
 ; Level 1/4 byte C9h: writes the hatch cells 26h..29h, large type 28h.
 SpawnCellHatch28:
-    mov byte ptr es:[si + 0Dh], 026h
+    mov byte ptr es:[si + MAP_ROW_BYTES], 026h
     mov byte ptr es:[si + 0Eh], 027h
     mov byte ptr es:[si], 028h
     mov byte ptr es:[si + 1], 029h

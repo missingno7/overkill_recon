@@ -2989,7 +2989,7 @@ loc_0AC32:
 ; negative-Y result of ComputeRecordGridOffset is not checked (+13 wraps to 000Ch).
 ProbeGridForRecordResponse:
     call ComputeRecordGridOffset
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     jne SetResponseAndStepRecordCounter
     test word ptr ss:[bp + REC_X], 0Fh
@@ -3166,7 +3166,7 @@ loc_0ADAF:
 ; Remove the record when the cell at grid offset + 13 has attribute 1 exactly
 ; (the FFFFh negative-Y result is again not checked).
     call ComputeRecordGridOffset
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     je loc_0ADC8
     dec al
@@ -3452,7 +3452,7 @@ loc_0B039:
     call TerrainStepRight
 TerrainStepDown:
     mov bx, dx
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     jne loc_0B032
     test word ptr ss:[bp + REC_X], 0Fh
@@ -3476,7 +3476,7 @@ loc_0B06A:
     je loc_0B076
     ret
 loc_0B076:
-    sub dx, 0Dh
+    sub dx, MAP_ROW_BYTES
     ret
 loc_0B07A:
     call TerrainStepLeft
@@ -3484,7 +3484,7 @@ TerrainStepUp:
     mov bx, dx
     test word ptr ds:[GridYSum], 0Fh
     jne loc_0B09C
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     jne loc_0B032
     test word ptr ss:[bp + REC_X], 0Fh
@@ -3509,7 +3509,7 @@ loc_0B0B4:
     je loc_0B0C5
     ret
 loc_0B0C5:
-    add dx, 0Dh
+    add dx, MAP_ROW_BYTES
     ret
 loc_0B0C9:
     call TerrainStepUp
@@ -3522,7 +3522,7 @@ TerrainStepRight:
 loc_0B0D7:
     test word ptr ds:[GridYSum], 0Fh
     je loc_0B0EA
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     je loc_0B0EA
     jmp near ptr loc_0B032
@@ -3556,7 +3556,7 @@ TerrainStepLeft:
 loc_0B121:
     test word ptr ds:[GridYSum], 0Fh
     je loc_0B134
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     je loc_0B134
     jmp near ptr loc_0B032
@@ -4648,7 +4648,7 @@ ClimbWalkerStep:
 loc_0BC2B:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     add bx, ds:[WalkerFacingStep]
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
     je loc_0BBE1
     call TryTerrainStep

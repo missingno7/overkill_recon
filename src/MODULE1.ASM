@@ -4988,7 +4988,7 @@ loc_02B05:
 
 DrawMapRowBlocksEga:
     mov bx, dx
-    mov cx, 0Dh
+    mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_02B99
@@ -6380,7 +6380,7 @@ loc_03663:
 
 DrawMapRowBlocksTandy:
     mov bx, dx
-    mov cx, 0Dh
+    mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_036B7
@@ -8557,7 +8557,7 @@ loc_048A2:
 
 DrawMapRowBlocksCga:
     mov bx, dx
-    mov cx, 0Dh
+    mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_048FB
@@ -8841,20 +8841,20 @@ loc_04B4A:
     mov es, word ptr cs:[LevelMapSegment]
     mov ax, word ptr ds:[bx + REC_Y]
     mov bx, word ptr ds:[MapScrollPos]
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     or ax, ax
     je loc_04B92
     js loc_04B86
 loc_04B7A:
     or ax, ax
     je loc_04B92
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     sub ax, 010h
     jmp short loc_04B7A
 loc_04B86:
     or ax, ax
     je loc_04B92
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     add ax, 010h
     jmp short loc_04B86
 loc_04B92:
@@ -9427,10 +9427,10 @@ ProbeShipTerrainCollision:
     add word ptr ss:[bp + REC_Y], ax
     lodsw
     add word ptr ss:[bp + REC_X], ax
-; Convert temporarily adjusted record coordinates to the13-byte-row grid.
-; The next ADD overwrites the grid helper flags; later attribute ZF is live.
+; Test the cell row below the hit point (a second row when the point is in the lower
+; part of its cell), and the next column when X is not on a cell boundary.
     call ComputeRecordGridOffset
-    add bx, 0Dh
+    add bx, MAP_ROW_BYTES
     mov ax, word ptr ds:[GridYSum]
     and ax, 0Fh
     cmp ax, 0Ah
@@ -9449,7 +9449,7 @@ loc_0502E:
     jne loc_05051
 loc_05042:
     pop bx
-    sub bx, 0Dh
+    sub bx, MAP_ROW_BYTES
     pop cx
     loop loc_0502E
     pop word ptr ss:[bp + REC_X]
