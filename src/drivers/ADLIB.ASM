@@ -23,23 +23,86 @@ ADL_STEP_OFF equ 8Dh
 ADL_INSTRUMENT equ 0A0h
 ADL_LENGTH equ 0DFh
 
+; Voice record (AdlibVoice0..8, 20h bytes).
+ADV_NOTE equ 0
+ADV_STEPS_LEFT equ 1
+; Current instrument record and number (FFh = none).
+ADV_INSTRUMENT_PTR equ 2
+ADV_INSTRUMENT equ 4
+; Modulator/carrier operator register offsets and the OPL channel.
+ADV_OP_MOD equ 5
+ADV_OP_CAR equ 6
+ADV_CHANNEL equ 7
+; (B0h + channel, block/F-number high) without key-on: written as a pair it keys off.
+ADV_KEY_OFF equ 8
+ADV_ORDER_PTR equ 0Ah
+ADV_STREAM equ 0Ch
+; Set by instruments and 88h; never read.
+ADV_CARRIER_VOLUME equ 0Eh
+ADV_ACTIVE equ 10h
+; Steps per note/rest (E0h..FFh), transpose (84h, instrument), signed per-step note change.
+ADV_LENGTH equ 11h
+ADV_TRANSPOSE equ 12h
+ADV_NOTE_STEP equ 13h
+ADV_FNUM equ 14h
+; Bend (8Ah): delta, delay ticks, tick count.
+ADV_BEND_DELTA equ 16h
+ADV_BEND_DELAY equ 18h
+ADV_BEND_COUNT equ 19h
+; Detune/slide (8Bh): 8Bh writes ADV_SLIDE_LENGTH over the high byte of ADV_SLIDE_DELTA.
+ADV_DETUNE equ 1Ah
+ADV_SLIDE_DELTA equ 1Ch
+ADV_SLIDE_LENGTH equ 1Dh
+ADV_SLIDE_LEFT equ 1Eh
+; Instrument record (Instrument0..13, 16 bytes): OPL operator registers 60h, 80h, 20h,
+; E0h for modulator/carrier, C0h, volumes 0..7Fh (via LevelToAttenuation), KSL bits.
+ADI_MOD_ATTACK_DECAY equ 0
+ADI_CAR_ATTACK_DECAY equ 1
+ADI_MOD_SUSTAIN_RELEASE equ 2
+ADI_CAR_SUSTAIN_RELEASE equ 3
+ADI_MOD_CHARACTER equ 4
+ADI_CAR_CHARACTER equ 5
+ADI_MOD_WAVEFORM equ 6
+ADI_CAR_WAVEFORM equ 7
+ADI_TRANSPOSE equ 8
+ADI_FEEDBACK equ 9
+ADI_MOD_VOLUME equ 0Ah
+ADI_CAR_VOLUME equ 0Bh
+ADI_KSL equ 0Ch
+ADI_RELEASE_STEPS equ 0Eh
+
 driver segment byte public 'CODE'
 assume cs:driver,ds:nothing,ss:nothing,es:nothing
-Opl2Table04B1 equ 04B1h
-
-Opl2BasePortWord equ 0Eh ; modern name, word at module header +0Eh
-    call loc_00063
+    call MusicTick
     retf
-    call loc_004E9
+    call DetectAdlib
     retf
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,088h,03h,00h,00h,054h,079h,070h,065h,020h,03Ah
-    db 020h,041h,064h,04Ch,069h,062h,0Dh,0Ah,020h,046h,069h,06Ch,065h,020h,03Ah,020h
-    db 04Fh,076h,065h,072h,06Bh,069h,06Ch,06Ch,024h,044h,061h,074h,065h,020h,03Ah,020h
-    db 030h,033h,02Eh,031h,031h,02Eh,039h,032h,024h,04Dh,075h,073h,069h,063h,020h,062h
-    db 079h,020h,053h,06Fh,075h,06Eh,064h,020h,049h,06Dh,061h,067h,065h,073h,020h,028h
-    db 063h,029h,020h,031h,039h,039h,032h,00h,01h,00h,00h
-loc_00063:
+; Module header (the game addresses +8/+9 as MODULE_MUSIC_REQUEST/CURRENT).
+; Written by the game (word write: tune in +8, 0 in +9); 1..0Ah start a tune, above
+; 0Ah stop. Taken on the next tick by HandleMusicRequest.
+MusicRequest db 0
+; Tune now playing, 0 = none.
+MusicCurrent db 0
+; Never touched by the module.
+HeaderUnused0A db 0, 0
+; Timer ticks per sequencer step (from the tune header), and its countdown.
+Tempo db 0
+TempoCountdown db 0
+OplPort dw 0388h
+HeaderUnused10 dw 0
+ModuleIdent db 'Type : AdLib', 0Dh, 0Ah, ' File : Overkill$Date : 03.11.92$'
+    db 'Music by Sound Images (c) 1992'
+; Pending tune latch; its initial zero also ends ModuleIdent. While nonzero every voice
+; is frozen (UpdateVoice) until the next tick starts the tune.
+PendingTune db 0
+; Voice count of the current tune; written, never read.
+VoiceCount dw 1
+; Re-entrancy guard of MusicTick.
+TickBusy db 0
+; Far entry +0, every timer interrupt (about 72.8 Hz). Guarded by TickBusy: handles a
+; music request, counts TempoCountdown down, updates the nine voices, and reloads the
+; countdown from Tempo when it reaches 0 (a sequencer step every Tempo ticks).
+MusicTick:
     push ax
     push bx
     push cx
@@ -49,37 +112,37 @@ loc_00063:
     push ds
     push cs
     pop ds
-    mov si, 062h
+    mov si, offset TickBusy
     cmp byte ptr ds:[si], 0
-    jne loc_000C5
+    jne TickExit
     inc byte ptr ds:[si]
-    call loc_00409
-    dec byte ptr ds:[0Dh]
-    mov di, 05A9h
-    call loc_000CD
-    mov di, 05C9h
-    call loc_000CD
-    mov di, 05E9h
-    call loc_000CD
-    mov di, 0609h
-    call loc_000CD
-    mov di, 0629h
-    call loc_000CD
-    mov di, 0649h
-    call loc_000CD
-    mov di, 0669h
-    call loc_000CD
-    mov di, 0689h
-    call loc_000CD
-    mov di, 06A9h
-    call loc_000CD
-    cmp byte ptr ds:[0Dh], 0
-    jne loc_000C0
-    mov al, byte ptr ds:[0Ch]
-    mov byte ptr ds:[0Dh], al
-loc_000C0:
-    mov byte ptr ds:[062h], 0
-loc_000C5:
+    call HandleMusicRequest
+    dec byte ptr ds:[TempoCountdown]
+    mov di, offset AdlibVoice0
+    call UpdateVoice
+    mov di, offset AdlibVoice1
+    call UpdateVoice
+    mov di, offset AdlibVoice2
+    call UpdateVoice
+    mov di, offset AdlibVoice3
+    call UpdateVoice
+    mov di, offset AdlibVoice4
+    call UpdateVoice
+    mov di, offset AdlibVoice5
+    call UpdateVoice
+    mov di, offset AdlibVoice6
+    call UpdateVoice
+    mov di, offset AdlibVoice7
+    call UpdateVoice
+    mov di, offset AdlibVoice8
+    call UpdateVoice
+    cmp byte ptr ds:[TempoCountdown], 0
+    jne TickClearBusy
+    mov al, byte ptr ds:[Tempo]
+    mov byte ptr ds:[TempoCountdown], al
+TickClearBusy:
+    mov byte ptr ds:[TickBusy], 0
+TickExit:
     pop ds
     pop si
     pop di
@@ -88,153 +151,161 @@ loc_000C5:
     pop bx
     pop ax
     ret
-loc_000CD:
-    cmp byte ptr ds:[05Fh], 0
-    jne loc_000F6
-    mov al, byte ptr ds:[di + 010h]
+; DI = voice. Skipped while PendingTune is set or the voice is inactive. On a step
+; tick: ADV_STEPS_LEFT - 1; at 0 read the stream (no effects that tick), otherwise
+; apply the note step and early release. Every tick: slide and bend.
+UpdateVoice:
+    cmp byte ptr ds:[PendingTune], 0
+    jne UpdateVoiceDone
+    mov al, byte ptr ds:[di + ADV_ACTIVE]
     or al, al
-    je loc_000F6
-    mov bx, word ptr ds:[di + 0Ch]
-    cmp byte ptr ds:[0Dh], 0
-    jne loc_000F0
-    dec byte ptr ds:[di + 1]
-    je loc_000F7
-    call StepIndex13AndWriteA0B0
-    call loc_002AA
-loc_000F0:
-    call loc_002C9
-    call loc_002F6
-loc_000F6:
+    je UpdateVoiceDone
+    mov bx, word ptr ds:[di + ADV_STREAM]
+    cmp byte ptr ds:[TempoCountdown], 0
+    jne UpdateVoiceEffects
+    dec byte ptr ds:[di + ADV_STEPS_LEFT]
+    je ReadStream
+    call StepNoteAndRewrite
+    call EarlyRelease
+UpdateVoiceEffects:
+    call ApplySlide
+    call ApplyBend
+UpdateVoiceDone:
     ret
-loc_000F7:
+; BX = ADV_STREAM. Consumes stream bytes until one takes time (note, rest, tie):
+; a note keys off the old note and sounds the new one for ADV_LENGTH steps.
+ReadStream:
     mov al, byte ptr ds:[bx]
     inc bx
     or al, al
-    js loc_0011B
-    mov byte ptr ds:[di], al
-    mov ax, word ptr ds:[di + 8]
+    js DispatchStreamByte
+    mov byte ptr ds:[di + ADV_NOTE], al
+    mov ax, word ptr ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
-    call WriteRecordA0B0Pair
-loc_00109:
-loc_00109:
-    mov word ptr ds:[di + 0Ch], bx
-    mov al, byte ptr ds:[di + 011h]
-    mov byte ptr ds:[di + 1], al
+    call SoundNote
+; Tie (82h), and the tail of a note: store the stream pointer, reload the step count.
+StreamCmd82:
+    mov word ptr ds:[di + ADV_STREAM], bx
+    mov al, byte ptr ds:[di + ADV_LENGTH]
+    mov byte ptr ds:[di + ADV_STEPS_LEFT], al
     ret
 StreamCmd81:
-    mov ax, word ptr ds:[di + 8]
+    mov ax, word ptr ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
-    jmp short loc_00109
-loc_0011B:
+    jmp short StreamCmd82
+; E0h..FFh length, A0h..DFh instrument, 80h..8Dh command table, 8Eh..9Fh stop all
+; (signed compare, correct because AL is 80h..9Fh here).
+DispatchStreamByte:
     cmp al, 0E0h
-    jae loc_00135
+    jae SetEventLength
     cmp al, 0A0h
-    jae loc_00181
+    jae SelectInstrument
     cmp al, 08Dh
-    jle loc_0012A
-    jmp near ptr loc_00291
-loc_0012A:
+    jle DispatchStreamCommand
+    jmp near ptr StopAllMusic
+DispatchStreamCommand:
     shl al, 1
     xor ah, ah
     mov si, offset StreamCommandHandlers
     add si, ax
     jmp word ptr ds:[si]
-loc_00135:
+SetEventLength:
     sub al, 0DFh
-    mov byte ptr ds:[di + 011h], al
-    jmp short loc_000F7
+    mov byte ptr ds:[di + ADV_LENGTH], al
+    jmp short ReadStream
 StreamCmd88:
     mov al, byte ptr ds:[bx]
     inc bx
-    mov byte ptr ds:[di + 0Eh], al
+    mov byte ptr ds:[di + ADV_CARRIER_VOLUME], al
     push bx
     push si
-    mov si, word ptr ds:[di + 2]
+    mov si, word ptr ds:[di + ADV_INSTRUMENT_PTR]
     mov bl, al
     xor bh, bh
     and bl, 07Fh
-    mov ah, byte ptr ds:[bx + 06C9h]
-    mov al, byte ptr ds:[si + 0Ch]
+    mov ah, byte ptr ds:[bx + LevelToAttenuation]
+    mov al, byte ptr ds:[si + ADI_KSL]
     shl al, 1
     shl al, 1
     and al, 0C0h
     or ah, al
-    mov al, byte ptr ds:[di + 6]
+    mov al, byte ptr ds:[di + ADV_OP_CAR]
     add al, 040h
     call WriteOpl2Register
     pop si
     pop bx
-    jmp short loc_000F7
+    jmp short ReadStream
 ; No reference found: a copy of the 8Bh handler's tail for the other operator.
 UnusedOperatorLevel:
-    mov al, ds:[si + 0Ch]
+    mov al, ds:[si + ADI_KSL]
     shl al, 1
     shl al, 1
     and al, 0C0h
     or ah, al
-    mov al, ds:[di + 5]
+    mov al, ds:[di + ADV_OP_MOD]
     add al, 40h
     call WriteOpl2Register
     pop si
     pop bx
-    jmp near ptr loc_000F7
-loc_00181:
+    jmp near ptr ReadStream
+SelectInstrument:
     sub al, 0A0h
-    cmp al, byte ptr ds:[di + 4]
-    jne loc_0018B
-    jmp near ptr loc_000F7
-loc_0018B:
+    cmp al, byte ptr ds:[di + ADV_INSTRUMENT]
+    jne LoadInstrument
+    jmp near ptr ReadStream
+; Program the voice's operators from Instrument n (ADI_* fields) and take its transpose.
+LoadInstrument:
     push bx
-    mov byte ptr ds:[di + 4], al
+    mov byte ptr ds:[di + ADV_INSTRUMENT], al
     xor ah, ah
     shl al, 1
     shl al, 1
     shl ax, 1
     shl ax, 1
-    mov si, 0869h
+    mov si, offset Instrument0
     add si, ax
-    mov word ptr ds:[di + 2], si
-    mov dx, word ptr ds:[di + 5]
-    mov ah, byte ptr ds:[si]
+    mov word ptr ds:[di + ADV_INSTRUMENT_PTR], si
+    mov dx, word ptr ds:[di + ADV_OP_MOD]
+    mov ah, byte ptr ds:[si + ADI_MOD_ATTACK_DECAY]
     mov al, dl
     add al, 060h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 1]
+    mov ah, byte ptr ds:[si + ADI_CAR_ATTACK_DECAY]
     mov al, dh
     add al, 060h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 2]
+    mov ah, byte ptr ds:[si + ADI_MOD_SUSTAIN_RELEASE]
     mov al, dl
     add al, 080h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 3]
+    mov ah, byte ptr ds:[si + ADI_CAR_SUSTAIN_RELEASE]
     mov al, dh
     add al, 080h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 6]
+    mov ah, byte ptr ds:[si + ADI_MOD_WAVEFORM]
     mov al, dl
     add al, 0E0h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 7]
+    mov ah, byte ptr ds:[si + ADI_CAR_WAVEFORM]
     mov al, dh
     add al, 0E0h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 9]
-    mov al, byte ptr ds:[di + 7]
+    mov ah, byte ptr ds:[si + ADI_FEEDBACK]
+    mov al, byte ptr ds:[di + ADV_CHANNEL]
     add al, 0C0h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 4]
+    mov ah, byte ptr ds:[si + ADI_MOD_CHARACTER]
     mov al, dl
     add al, 020h
     call WriteOpl2Register
-    mov ah, byte ptr ds:[si + 5]
+    mov ah, byte ptr ds:[si + ADI_CAR_CHARACTER]
     mov al, dh
     add al, 020h
     call WriteOpl2Register
-    mov bl, byte ptr ds:[si + 0Ah]
+    mov bl, byte ptr ds:[si + ADI_MOD_VOLUME]
     and bx, 07Fh
-    mov ah, byte ptr ds:[bx + 06C9h]
-    mov al, byte ptr ds:[si + 0Ch]
+    mov ah, byte ptr ds:[bx + LevelToAttenuation]
+    mov al, byte ptr ds:[si + ADI_KSL]
     shl al, 1
     shl al, 1
     and al, 0C0h
@@ -242,11 +313,11 @@ loc_0018B:
     mov al, dl
     add al, 040h
     call WriteOpl2Register
-    mov bl, byte ptr ds:[si + 0Bh]
-    mov byte ptr ds:[di + 0Eh], bl
+    mov bl, byte ptr ds:[si + ADI_CAR_VOLUME]
+    mov byte ptr ds:[di + ADV_CARRIER_VOLUME], bl
     and bx, 07Fh
-    mov ah, byte ptr ds:[bx + 06C9h]
-    mov al, byte ptr ds:[si + 0Ch]
+    mov ah, byte ptr ds:[bx + LevelToAttenuation]
+    mov al, byte ptr ds:[si + ADI_KSL]
     ror al, 1
     ror al, 1
     and al, 0C0h
@@ -254,315 +325,318 @@ loc_0018B:
     mov al, dh
     add al, 040h
     call WriteOpl2Register
-    mov al, byte ptr ds:[si + 8]
-    mov byte ptr ds:[di + 012h], al
+    mov al, byte ptr ds:[si + ADI_TRANSPOSE]
+    mov byte ptr ds:[di + ADV_TRANSPOSE], al
     pop bx
-    jmp near ptr loc_000F7
-loc_00243:
+    jmp near ptr ReadStream
+StepNoteDone:
     ret
-; Load AL=byte DS:[DI+13h]. If zero, branch backward to shared RET0243, leaving AH unchanged and no
-; writes/ports. Otherwise add byte[DI] modulo256, store it at[DI], and fall through into WriteRecordA0B0Pair.
-; Inherits its outputs and hardware effects; must not insert an independent RET at024F.
-StepIndex13AndWriteA0B0:
-    mov al, byte ptr ds:[di + 013h]
+; DI = voice: when ADV_NOTE_STEP is nonzero, add it to ADV_NOTE and fall into SoundNote.
+StepNoteAndRewrite:
+    mov al, byte ptr ds:[di + ADV_NOTE_STEP]
     or al, al
-    je loc_00243
-    add al, byte ptr ds:[di]
-    mov byte ptr ds:[di], al
-; DS=driver,DI=record,DF=0. i=(byte[DI]+byte[DI+12h]) mod256; w=(word DS:[07A9+((2*i) mod256)]+word[DI+1Ah])
-; mod65536; h=high(w) OR byte DS:[0749+i]. Store w at+14h. Write (byte[DI+7] OR A0h,low(w)), then cache word
-; (h<<8)|(byte[DI+7] OR B0h) at+8 and write its high byte OR20h to the B0-derived register. Copy+1Dh to+1Eh and
-; return that byte in AL; AH=h OR20h. BX,SI,CX,DX,DI,BP and segments preserved, flags changed; inherits hardware
-; effects. No index/channel/range validation.
-WriteRecordA0B0Pair:
+    je StepNoteDone
+    add al, byte ptr ds:[di + ADV_NOTE]
+    mov byte ptr ds:[di + ADV_NOTE], al
+; DI = voice: index = ADV_NOTE + ADV_TRANSPOSE; F-number = NoteFnum[index] + ADV_DETUNE
+; (kept in ADV_FNUM), block = NoteBlock[index]; writes A0h and B0h (key on) and keeps
+; the key-off pair in ADV_KEY_OFF; reloads the slide countdown. No range checks.
+SoundNote:
     push bx
     push si
-    mov al, byte ptr ds:[di]
-    add al, byte ptr ds:[di + 012h]
+    mov al, byte ptr ds:[di + ADV_NOTE]
+    add al, byte ptr ds:[di + ADV_TRANSPOSE]
     xor ah, ah
     mov si, ax
-    mov bl, byte ptr ds:[si + 0749h]
+    mov bl, byte ptr ds:[si + NoteBlock]
     shl al, 1
-    mov si, 07A9h
+    mov si, offset NoteFnum
     add si, ax
     lodsw
-    add ax, word ptr ds:[di + 01Ah]
-    mov word ptr ds:[di + 014h], ax
+    add ax, word ptr ds:[di + ADV_DETUNE]
+    mov word ptr ds:[di + ADV_FNUM], ax
     or ah, bl
     push ax
     mov ah, al
-    mov al, byte ptr ds:[di + 7]
+    mov al, byte ptr ds:[di + ADV_CHANNEL]
     or al, 0A0h
     call WriteOpl2Register
     pop ax
-    mov al, byte ptr ds:[di + 7]
+    mov al, byte ptr ds:[di + ADV_CHANNEL]
     or al, 0B0h
-    mov word ptr ds:[di + 8], ax
+    mov word ptr ds:[di + ADV_KEY_OFF], ax
     or ah, 020h
     call WriteOpl2Register
-    mov al, byte ptr ds:[di + 01Dh]
-    mov byte ptr ds:[di + 01Eh], al
+    mov al, byte ptr ds:[di + ADV_SLIDE_LENGTH]
+    mov byte ptr ds:[di + ADV_SLIDE_LEFT], al
     pop si
     pop bx
     ret
-loc_00291:
-loc_00291:
-    mov di, 05A9h
+; Key off all nine voices, mark them inactive and clear MusicRequest/MusicCurrent.
+StopAllMusic:
+    mov di, offset AdlibVoice0
     mov cx, 9
-loc_00297:
-    mov ax, word ptr ds:[di + 8]
+StopAllVoicesLoop:
+    mov ax, word ptr ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
-    mov byte ptr ds:[di + 010h], ch
+    mov byte ptr ds:[di + ADV_ACTIVE], ch
     add di, 020h
-    loop loc_00297
-    mov word ptr ds:[8], cx
+    loop StopAllVoicesLoop
+    mov word ptr ds:[MusicRequest], cx
     ret
-loc_002AA:
+; Key off early when ADI_RELEASE_STEPS equals the steps left and the next byte is not
+; a tie. No instrument in the data uses it.
+EarlyRelease:
     cmp byte ptr ds:[bx], 082h
-    je loc_002C8
-    mov si, word ptr ds:[di + 2]
-    mov al, byte ptr ds:[si + 0Eh]
+    je EarlyReleaseDone
+    mov si, word ptr ds:[di + ADV_INSTRUMENT_PTR]
+    mov al, byte ptr ds:[si + ADI_RELEASE_STEPS]
     or al, al
-    je loc_002C8
-    cmp al, byte ptr ds:[di + 1]
-    jne loc_002C8
-    mov ax, word ptr ds:[di + 8]
+    je EarlyReleaseDone
+    cmp al, byte ptr ds:[di + ADV_STEPS_LEFT]
+    jne EarlyReleaseDone
+    mov ax, word ptr ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
-    mov byte ptr ds:[di + 013h], 0
-loc_002C8:
+    mov byte ptr ds:[di + ADV_NOTE_STEP], 0
+EarlyReleaseDone:
     ret
-loc_002C9:
+; Per tick while ADV_SLIDE_LEFT counts: F-number += ADV_SLIDE_DELTA, renormalised into
+; (1F6h, 3ECh] by moving the block one octave (no clamp).
+ApplySlide:
     xor al, al
-    cmp al, byte ptr ds:[di + 01Dh]
-    je loc_00302
-    cmp al, byte ptr ds:[di + 01Eh]
-    je loc_00302
-    dec byte ptr ds:[di + 01Eh]
-    je loc_00302
+    cmp al, byte ptr ds:[di + ADV_SLIDE_LENGTH]
+    je EffectDone
+    cmp al, byte ptr ds:[di + ADV_SLIDE_LEFT]
+    je EffectDone
+    dec byte ptr ds:[di + ADV_SLIDE_LEFT]
+    je EffectDone
     push cx
-    mov cx, word ptr ds:[di + 8]
+    mov cx, word ptr ds:[di + ADV_KEY_OFF]
     and ch, 01Ch
-    mov ax, word ptr ds:[di + 014h]
-    add ax, word ptr ds:[di + 01Ch]
+    mov ax, word ptr ds:[di + ADV_FNUM]
+    add ax, word ptr ds:[di + ADV_SLIDE_DELTA]
     and ah, 3
     cmp ax, 03ECh
-    jg loc_0032C
+    jg FnumDownOctave
     cmp ax, 01F6h
-    jle loc_00325
-    jmp short loc_00331
-loc_002F6:
+    jle FnumUpOctave
+    jmp short WriteFnumAndBlock
+; After ADV_BEND_DELAY ticks, F-number += ADV_BEND_DELTA for ADV_BEND_COUNT ticks.
+ApplyBend:
     xor al, al
-    cmp al, byte ptr ds:[di + 018h]
-    je loc_00303
-    dec byte ptr ds:[di + 018h]
-    je loc_00303
-loc_00302:
+    cmp al, byte ptr ds:[di + ADV_BEND_DELAY]
+    je BendStep
+    dec byte ptr ds:[di + ADV_BEND_DELAY]
+    je BendStep
+EffectDone:
     ret
-loc_00303:
-    cmp al, byte ptr ds:[di + 019h]
-    je loc_00302
-    dec byte ptr ds:[di + 019h]
+BendStep:
+    cmp al, byte ptr ds:[di + ADV_BEND_COUNT]
+    je EffectDone
+    dec byte ptr ds:[di + ADV_BEND_COUNT]
     push cx
-    mov cx, word ptr ds:[di + 8]
+    mov cx, word ptr ds:[di + ADV_KEY_OFF]
     and ch, 01Ch
-    mov ax, word ptr ds:[di + 014h]
-    add ax, word ptr ds:[di + 016h]
+    mov ax, word ptr ds:[di + ADV_FNUM]
+    add ax, word ptr ds:[di + ADV_BEND_DELTA]
     and ah, 3
     cmp ax, 03ECh
-    jg loc_0032C
+    jg FnumDownOctave
     cmp ax, 01F6h
-    jg loc_00331
-loc_00325:
+    jg WriteFnumAndBlock
+FnumUpOctave:
     shl ax, 1
     sub ch, 4
-    jmp short loc_00331
-loc_0032C:
+    jmp short WriteFnumAndBlock
+FnumDownOctave:
     shr ax, 1
     add ch, 4
-loc_00331:
+WriteFnumAndBlock:
     and ah, 3
-    mov word ptr ds:[di + 014h], ax
+    mov word ptr ds:[di + ADV_FNUM], ax
     push ax
     mov ah, al
-    mov al, byte ptr ds:[di + 7]
+    mov al, byte ptr ds:[di + ADV_CHANNEL]
     add al, 0A0h
     call WriteOpl2Register
     pop ax
     or ah, ch
-    mov al, byte ptr ds:[di + 7]
+    mov al, byte ptr ds:[di + ADV_CHANNEL]
     add al, 0B0h
-    mov word ptr ds:[di + 8], ax
+    mov word ptr ds:[di + ADV_KEY_OFF], ax
     or ah, 020h
     call WriteOpl2Register
     pop cx
     ret
 ; Stream command handlers for bytes 80h..8Dh (index = byte - 80h).
 StreamCommandHandlers label word
-    dw offset StreamCmd80, offset StreamCmd81, offset loc_00109, offset loc_00291
+    dw offset StreamCmd80, offset StreamCmd81, offset StreamCmd82, offset StopAllMusic
     dw offset StreamCmd84, offset StreamCmd85, offset StreamCmd86, offset StreamCmd87
     dw offset StreamCmd88, offset StreamCmd89, offset StreamCmd8A, offset StreamCmd8B
     dw offset StreamCmd8C, offset StreamCmd8D
-loc_00371:
+OrderLoop:
     mov bx, word ptr ds:[bx]
     mov cx, word ptr ds:[bx]
     inc bx
     inc bx
-    mov word ptr ds:[di + 0Ah], bx
-    mov word ptr ds:[di + 0Ch], cx
+    mov word ptr ds:[di + ADV_ORDER_PTR], bx
+    mov word ptr ds:[di + ADV_STREAM], cx
     mov bx, cx
-    jmp near ptr loc_000F7
+    jmp near ptr ReadStream
 StreamCmd80:
-    mov al, byte ptr ds:[8]
+    mov al, byte ptr ds:[MusicRequest]
     or al, al
-    je loc_0038D
-    mov byte ptr ds:[05Fh], al
+    je NextOrderEntry
+    mov byte ptr ds:[PendingTune], al
     ret
-loc_0038D:
-    mov bx, word ptr ds:[di + 0Ah]
+NextOrderEntry:
+    mov bx, word ptr ds:[di + ADV_ORDER_PTR]
     mov cx, word ptr ds:[bx]
     inc bx
     inc bx
-    jcxz loc_00371
-    mov word ptr ds:[di + 0Ah], bx
-    mov word ptr ds:[di + 0Ch], cx
+    jcxz OrderLoop
+    mov word ptr ds:[di + ADV_ORDER_PTR], bx
+    mov word ptr ds:[di + ADV_STREAM], cx
     mov bx, cx
-    jmp near ptr loc_000F7
+    jmp near ptr ReadStream
 StreamCmd84:
     mov al, byte ptr ds:[bx]
     inc bx
-    mov byte ptr ds:[di + 012h], al
-    jmp near ptr loc_000F7
+    mov byte ptr ds:[di + ADV_TRANSPOSE], al
+    jmp near ptr ReadStream
 StreamCmd85:
-    mov ax, ds:[di + 8]
+    mov ax, ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
     xor al, al
-    mov ds:[di + 10h], al
+    mov ds:[di + ADV_ACTIVE], al
     ret
 StreamCmd86:
-    mov byte ptr ds:[di + 13h], 1
-    jmp near ptr loc_000F7
+    mov byte ptr ds:[di + ADV_NOTE_STEP], 1
+    jmp near ptr ReadStream
 StreamCmd87:
-    mov byte ptr ds:[di + 13h], 0FFh
-    jmp near ptr loc_000F7
+    mov byte ptr ds:[di + ADV_NOTE_STEP], 0FFh
+    jmp near ptr ReadStream
 StreamCmd8D:
-    mov byte ptr ds:[di + 13h], 0
-    jmp near ptr loc_000F7
+    mov byte ptr ds:[di + ADV_NOTE_STEP], 0
+    jmp near ptr ReadStream
 StreamCmd89:
     mov bx, word ptr ds:[bx]
-    mov al, byte ptr ds:[8]
-    mov byte ptr ds:[05Fh], al
-    jmp near ptr loc_000F7
+    mov al, byte ptr ds:[MusicRequest]
+    mov byte ptr ds:[PendingTune], al
+    jmp near ptr ReadStream
 StreamCmd8A:
     mov ax, ds:[bx]
-    mov ds:[di + 16h], ax
+    mov ds:[di + ADV_BEND_DELTA], ax
     inc bx
     inc bx
     mov ax, ds:[bx]
-    mov ds:[di + 18h], ax
+    mov ds:[di + ADV_BEND_DELAY], ax
     inc bx
     inc bx
-    jmp near ptr loc_000F7
+    jmp near ptr ReadStream
 StreamCmd8B:
     mov ax, ds:[bx]
-    mov ds:[di + 1Ah], ax
+    mov ds:[di + ADV_DETUNE], ax
     inc bx
     inc bx
     mov ax, ds:[bx]
-    mov ds:[di + 1Ch], ax
+    mov ds:[di + ADV_SLIDE_DELTA], ax
     inc bx
     inc bx
     mov al, ds:[bx]
-    mov ds:[di + 1Dh], al
+    mov ds:[di + ADV_SLIDE_LENGTH], al
     inc bx
-    jmp near ptr loc_000F7
+    jmp near ptr ReadStream
 StreamCmd8C:
     xor ax, ax
-    mov ds:[di + 1Dh], al
-    mov ds:[di + 1Ah], ax
-    jmp near ptr loc_000F7
-loc_00409:
+    mov ds:[di + ADV_SLIDE_LENGTH], al
+    mov ds:[di + ADV_DETUNE], ax
+    jmp near ptr ReadStream
+; Latch MusicRequest into PendingTune when nothing is current, then act on it: above
+; 0Ah stop; otherwise reset the OPL, key off every voice and start the tune: Tempo,
+; voice count and per voice its order list, first stream and cleared effects.
+HandleMusicRequest:
     xor ah, ah
-    cmp ah, byte ptr ds:[9]
-    jne loc_00417
-    mov al, byte ptr ds:[8]
-    mov byte ptr ds:[05Fh], al
-loc_00417:
-    mov al, byte ptr ds:[05Fh]
+    cmp ah, byte ptr ds:[MusicCurrent]
+    jne CheckPendingTune
+    mov al, byte ptr ds:[MusicRequest]
+    mov byte ptr ds:[PendingTune], al
+CheckPendingTune:
+    mov al, byte ptr ds:[PendingTune]
     cmp al, ah
-    jne loc_00421
-    jmp near ptr loc_004A3
-loc_00421:
-    mov byte ptr ds:[8], ah
-    mov byte ptr ds:[05Fh], ah
+    jne TakePendingTune
+    jmp near ptr RequestDone
+TakePendingTune:
+    mov byte ptr ds:[MusicRequest], ah
+    mov byte ptr ds:[PendingTune], ah
     cmp al, 0Ah
-    jbe loc_00430
-    jmp near ptr loc_00291
-loc_00430:
+    jbe StartTune
+    jmp near ptr StopAllMusic
+StartTune:
     push ax
-    call WriteOpl2Table04B1
-    mov di, 05A9h
+    call WriteOplResetTable
+    mov di, offset AdlibVoice0
     mov cx, 9
-loc_0043A:
-    mov ax, word ptr ds:[di + 8]
+KeyOffAllVoices:
+    mov ax, word ptr ds:[di + ADV_KEY_OFF]
     call WriteOpl2Register
-    mov byte ptr ds:[di + 010h], ch
+    mov byte ptr ds:[di + ADV_ACTIVE], ch
     add di, 020h
-    loop loc_0043A
+    loop KeyOffAllVoices
     pop ax
-    mov byte ptr ds:[9], al
+    mov byte ptr ds:[MusicCurrent], al
     shl al, 1
-    mov si, 0947h
+    mov si, offset TuneTable
     add si, ax
     lodsw
     mov si, ax
     lodsb
-    mov byte ptr ds:[0Ch], al
+    mov byte ptr ds:[Tempo], al
     lodsb
     mov cl, al
     xor ch, ch
-    mov word ptr ds:[060h], cx
+    mov word ptr ds:[VoiceCount], cx
     mov dx, 01FFh
-    mov byte ptr ds:[0Dh], dh
-    mov di, 05A9h
-loc_0046D:
+    mov byte ptr ds:[TempoCountdown], dh
+    mov di, offset AdlibVoice0
+StartTuneVoice:
     lodsw
     mov bx, ax
     mov ax, word ptr ds:[bx]
     inc bx
     inc bx
-    mov word ptr ds:[di + 0Ah], bx
-    mov word ptr ds:[di + 0Ch], ax
-    mov byte ptr ds:[di + 013h], ch
-    mov byte ptr ds:[di + 019h], ch
-    mov byte ptr ds:[di + 01Dh], ch
-    mov byte ptr ds:[di + 01Ah], ch
-    mov byte ptr ds:[di + 01Bh], ch
-    mov byte ptr ds:[di + 1], dh
-    mov byte ptr ds:[di + 010h], dh
-    mov byte ptr ds:[di + 4], dl
+    mov word ptr ds:[di + ADV_ORDER_PTR], bx
+    mov word ptr ds:[di + ADV_STREAM], ax
+    mov byte ptr ds:[di + ADV_NOTE_STEP], ch
+    mov byte ptr ds:[di + ADV_BEND_COUNT], ch
+    mov byte ptr ds:[di + ADV_SLIDE_LENGTH], ch
+    mov byte ptr ds:[di + ADV_DETUNE], ch
+    mov byte ptr ds:[di + ADV_DETUNE + 1], ch
+    mov byte ptr ds:[di + ADV_STEPS_LEFT], dh
+    mov byte ptr ds:[di + ADV_ACTIVE], dh
+    mov byte ptr ds:[di + ADV_INSTRUMENT], dl
     add di, 020h
-    loop loc_0046D
+    loop StartTuneVoice
     mov ax, 0BDh
     call WriteOpl2Register
     mov ax, 8
     call WriteOpl2Register
-loc_004A3:
+RequestDone:
     ret
-; DS must address driver; DF=0. Write first word at04B1 unconditionally using AL=index,AH=data; then read words
-; and stop on zero before writing it. Original table has27 pairs plus zero terminator. Returns AX=0,SI=04E9;
-; other general/segment registers preserved. Flags from OR AX,AX. Inherits PIT/port61 effects from
-; WriteOpl2Register.
-WriteOpl2Table04B1:
-    mov si, Opl2Table04B1
+; Write every (register, value) pair of OplResetTable.
+WriteOplResetTable:
+    mov si, offset OplResetTable
     lodsw
-loc_004A8:
+WriteOplResetLoop:
     call WriteOpl2Register
     lodsw
     or ax, ax
-    jne loc_004A8
+    jne WriteOplResetLoop
     ret
-; Reviewed register/data pairs, not reconstructed instructions.
-; Exact original5Dh andB9h entries intentionally preserved; purpose not inferred.
+; (register, value) pairs written at every tune start: total level 7Fh (silent) for the
+; operators and key-off/F-number high 0 for the channels. 5Dh and B9h look like typos
+; for 4Dh and B5h (channel 5 is not silenced here), kept as in the original.
+OplResetTable label word
     dw 07F40h ; OPL2 register 40h, value 7Fh
     dw 07F41h ; OPL2 register 41h, value 7Fh
     dw 07F42h ; OPL2 register 42h, value 7Fh
@@ -591,26 +665,29 @@ loc_004A8:
     dw 000B8h ; OPL2 register B8h, value 00h
     dw 000B9h ; OPL2 register B9h, value 00h
     dw 00000h ; zero terminator (checked after first pair)
-loc_004E9:
+; Far entry +4, called once by the game's LoadSoundModule: the standard OPL2 timer
+; probe at OplPort. AL = 1 when found (then enables waveform select), else 0. Leaves
+; timer 1 running.
+DetectAdlib:
     push bx
     push cx
     push dx
     push ds
     push cs
     pop ds
-    mov dx, word ptr ds:[Opl2BasePortWord]
+    mov dx, word ptr ds:[OplPort]
     mov ax, 1
     call WriteOpl2Register
     mov ax, 06004h
     call WriteOpl2Register
     mov cx, 01000h
-loc_00502:
-    loop loc_00502
+ProbeDelay1:
+    loop ProbeDelay1
     mov ax, 08004h
     call WriteOpl2Register
     mov cx, 01000h
-loc_0050D:
-    loop loc_0050D
+ProbeDelay2:
+    loop ProbeDelay2
     in al, dx
     push ax
     mov ax, 0FF02h
@@ -618,8 +695,8 @@ loc_0050D:
     mov ax, 02104h
     call WriteOpl2Register
     mov cx, 0FFFFh
-loc_00520:
-    loop loc_00520
+ProbeDelay3:
+    loop ProbeDelay3
     in al, dx
     push ax
     mov ax, 06004h
@@ -630,9 +707,9 @@ loc_00520:
     pop bx
     and al, 0E0h
     and bl, 0E0h
-    jne loc_00550
+    jne NoAdlib
     cmp al, 0C0h
-    jne loc_00550
+    jne NoAdlib
     mov ax, 02001h
     call WriteOpl2Register
     mov ax, 02104h
@@ -643,21 +720,18 @@ loc_00520:
     pop cx
     pop bx
     ret
-loc_00550:
+NoAdlib:
     xor al, al
     pop ds
     pop dx
     pop cx
     pop bx
     ret
-; AL register index, AH data, DS points to driver header. OUT base=DS:[000E],AL; call
-; DelayViaPit2Counter(BX=1FFC); AL=AH; OUT base+1,AL; delay(BX=1FEC). Preserves BX/DX and other general/segment
-; registers except AL, which returns equal to AH. FLAGS changed. Inherits PIT/port61 side effects and
-; hardware-dependent termination.
+; AL = OPL register, AH = value: index port, delay, data port, delay (DelayViaPit2Counter).
 WriteOpl2Register:
     push bx
     push dx
-    mov dx, word ptr ds:[Opl2BasePortWord]
+    mov dx, word ptr ds:[OplPort]
     out dx, al
     mov bx, 01FFCh
     call DelayViaPit2Counter
@@ -669,17 +743,15 @@ WriteOpl2Register:
     pop dx
     pop bx
     ret
-; ReadOpl2Status: AL <- IN(DS:[000E]); preserves AH, DX and FLAGS.
+; No reference found: reads the OPL status port.
+UnusedReadOplStatus:
     push dx
-    mov dx, word ptr ds:[Opl2BasePortWord]
+    mov dx, word ptr ds:[OplPort]
     in al, dx
     pop dx
     ret
-; Preserve AX and all general/segment registers. BX is a signed comparison threshold; configure port43=B6, set
-; port61 bits0/1, write1FFFh to port42 on the first iteration and the previous read counter word on each repeat,
-; issue43=86 thenB6, read two bytes from42 and repeat while signed AX>BX. Finally read61 and clear bit0. Changes
-; flags; does not restore PIT configuration or original port61 state. Termination depends on hardware responses;
-; no exact-duration claim.
+; Busy-wait on PIT channel 2 until its counter falls to BX (signed). Reprograms channel
+; 2 and leaves port 61h bit 1 set: shared hardware with the PC-speaker effects.
 DelayViaPit2Counter:
     push ax
     mov al, 0B6h
@@ -688,7 +760,7 @@ DelayViaPit2Counter:
     or al, 3
     out 061h, al
     mov ax, 01FFFh
-loc_00587:
+DelayPollPit:
     out 042h, al
     mov al, ah
     out 042h, al
@@ -701,13 +773,13 @@ loc_00587:
     in al, 042h
     xchg ah, al
     cmp ax, bx
-    jg loc_00587
+    jg DelayPollPit
     in al, 061h
     and al, 0FEh
     out 061h, al
     pop ax
     ret
-; ---- Player data -------------------------------------------------------------
+; ---- Player data ----------------------------------------------------------------
 ; Nine voice records (ADV_* fields), one per OPL2 melodic channel, with their
 ; static channel/operator assignments; the rest is runtime state.
 AdlibVoice0 db 00h,00h,00h,00h,00h,00h,03h,00h,0B0h,00h,00h,00h,00h,00h,00h,00h
