@@ -7,13 +7,17 @@ IN_XMINUS equ 02h
 IN_YPLUS equ 04h
 IN_YMINUS equ 08h
 INPUT_MOVEMENT_MASK equ 00Fh
-; Space/joystick button 1 and Tab/joystick button 2; gameplay roles unclaimed.
+; Primary (key table slot 3, Space, joystick button 1): fire (HandleFireButton) and
+; confirm in menus. Secondary (slot 2, Tab, button 2): ApplySelectedUpgrade each frame it
+; is held past MAP_INTRO_END_POS.
 IN_BUTTON_PRIMARY equ 010h
 IN_BUTTON_SECONDARY equ 020h
 
 ; InputDeviceMode values.
 INPUT_MODE_KEYS_A equ 00h
 INPUT_MODE_JOYSTICK equ 01h
+; Menu key K selects table A, A table B, J the joystick; the fixed arrows, Space and Tab
+; are ORed in whichever key table is active.
 INPUT_MODE_KEYS_B equ 02h
 ; KeyBitScancodesA/B: entries per table, and the slot feeding each InputBits bit.
 KEY_BIT_SCANCODE_COUNT equ 08h

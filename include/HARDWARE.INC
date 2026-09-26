@@ -21,6 +21,7 @@ PPI_KBD_ACK equ 080h
 ; 8259 PIC and the keyboard controller used by the IRQ1 handler.
 PIC1_COMMAND_PORT equ 020h
 PIC_EOI_IRQ1 equ 061h
+PIC_EOI_NONSPECIFIC equ 020h
 KBD_DATA_PORT equ 060h
 
 ; Absolute 0000:041A/041C BIOS keyboard buffer head/tail words (ES=0 at FlushBiosKeyboardBuffer).

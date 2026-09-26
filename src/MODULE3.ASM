@@ -794,6 +794,9 @@ StartLife:
     call ShowLevelIntro
 ; One game frame, paced by the timer (WaitTimerTick): update and draw, act on the
 ; requests raised this frame, then F4 (level skip), F10 (pause) and Esc (quit prompt).
+; Draws the state of the previous update: EGA targets the hidden page, the workspace window
+; goes to the screen, and backgrounds are restored before UpdatePlayerFrame scrolls the ring
+; (REC_WORK_OFS stays valid); the EGA page is shown at the end of the frame.
 GameFrame:
     call ClearTimerTick
     call FlipEgaDrawPage
@@ -838,6 +841,8 @@ ResumeGameFrame:
     jmp short GameFrame
 
 ; Draws panel image 29h into the scroll window while Fuel is 0.
+; Drawn into the workspace and never restored: it stays until the map is redrawn
+; (scrolling stops while Fuel is 0).
 DrawFuelEmptyPanel:
     mov al, 4
     mov ah, 058h
@@ -1032,7 +1037,7 @@ LevelEndPhaseCases label word
     dw offset CountXReturn, offset LevelEndFlyToWaypointA, offset LevelEndFlyToWaypointB, offset LevelEndRefill
     dw offset CountXReturn
 LevelEndRefill:
-    mov byte ptr ds:[InputBits], 8
+    mov byte ptr ds:[InputBits], IN_YMINUS
     call PickupFuel
     call AddEnergyPoint
     cmp word ptr ds:[Fuel], 58h
@@ -1104,19 +1109,19 @@ SteerInputToWaypoint:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_Y], ax
     je @@steerX
-    mov byte ptr ds:[InputBits], 4
+    mov byte ptr ds:[InputBits], IN_YPLUS
     jb @@steerX
-    mov byte ptr ds:[InputBits], 8
+    mov byte ptr ds:[InputBits], IN_YMINUS
 @@steerX:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_X], ax
     je @@done
     pushf
-    or byte ptr ds:[InputBits], 1
+    or byte ptr ds:[InputBits], IN_XPLUS
     popf
     jb @@done
     and byte ptr ds:[InputBits], 0FEh
-    or byte ptr ds:[InputBits], 2
+    or byte ptr ds:[InputBits], IN_XMINUS
 @@done:
     ret
 PlayerDyingTail:
@@ -2354,7 +2359,7 @@ UpdatePlacementXGroupA:
     ret
 
 ; Scrolls one line unless an encounter or the level end holds the map; at MapScrollPos
-; 0EA0h starts the level end (smart bomb, four type 53h records).
+; MAP_END_POS starts the level end (smart bomb, four type 53h records).
 ScrollForwardAndCheckLevelEnd:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     je @@checkEncounter
@@ -2534,13 +2539,13 @@ DrawMapRowIntoScrollBand:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-; DI = workspace band. Forward (up to MapScrollPos 0E52h) also spawns the row's objects
+; DI = workspace band. Forward (up to MAP_LAST_SPAWN_POS) also spawns the row's objects
 ; and runs the level script.
 DrawIncomingMapRow:
     mov bx, word ptr ds:[MapScrollPos]
     cmp word ptr ds:[ScrollingBackward], 1
     jne @@forwardRow
-    sub bx, 0A9h
+    sub bx, 13 * MAP_ROW_BYTES
     jmp near ptr DrawMapRowBlocks
 @@forwardRow:
     mov word ptr ds:[MapRowCursor], bx
@@ -7354,7 +7359,7 @@ RunChooseScreen:
     mov word ptr ds:[LevelIndex], ax
     ret
 
-; Move the 2x3 selection in DS:BEDA with the directions and cycle DS:BEDC (0..2) with
+; Move the 2x3 selection in ChooseSlot with the directions and cycle DifficultySetting (0..2) with
 ; the D key; return on the primary button.
 ReadChooseScreenInput:
     cmp byte ptr ds:[KeyDownTable + SCAN_D], KEY_STATE_DOWN
@@ -7445,6 +7450,8 @@ UnusedByte3F7B db 00h
 ; Called every timer tick. Starts a pending SfxRequest, advances both voices, then
 ; programs the speaker from voice A on even ticks and voice B on odd ones. A silent
 ; voice leaves the speaker playing whatever was programmed last.
+; SfxActive is tested once, before both voices tick: if voice A's END stops the effect,
+; voice B still ticks and may sound, and the speaker then stays on until the next effect.
 SfxTimerTick:
     inc byte ptr ds:[SfxTickPhase]
     and byte ptr ds:[SfxTickPhase], 3
@@ -7602,7 +7609,8 @@ SfxStopAll:
     and al, PPI_SPEAKER_OFF_MASK
     out PPI_PORT_B, al
     ret
-; Commands 82h/83h: step the note down/up one semitone per tick.
+; Commands 82h/83h: step the note down/up one semitone per tick. The step persists for
+; later notes until the next effect starts; a note held d ticks is stepped d - 1 times.
 SfxCmdStepDown:
     mov byte ptr ds:[di + SFX_VOICE_NOTE_STEP], 0FFh
     jmp near ptr SfxStreamNextByte
@@ -9038,6 +9046,8 @@ ResetType21Path:
 ; Next Type21Path waypoint (CS-resident).
 Type21PathCursor dw 0
 
+; Layer 1 moves down a row every 2nd frame, layer 2 every 4th, layer 3 every 8th (nested
+; dividers); Y wraps C0h to 0. Frozen while EnergyTanks is -1.
 MoveStars:
     cmp word ptr ds:[EnergyTanks], -1
     je @@done

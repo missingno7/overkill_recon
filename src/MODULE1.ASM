@@ -439,8 +439,8 @@ CalibrateJoystickWithAbort:
 
 ; Take three stick samples, each after the primary button is released and pressed again,
 ; and derive the four thresholds as unsigned midpoints: LOW/CENTER and CENTER/HIGH.
-; Sample names follow that arithmetic only. 0F7F:0980 and DrawPanelGraphic (probably the prompts)
-; are unreviewed.
+; Sample names follow that arithmetic only. CALIB.ENC (CalibPageList) is shown first; panel
+; graphics 4Eh and 4Fh are drawn after the first and second sample (presumably prompts).
 CalibrateJoystickThresholds:
     mov word ptr ds:[JoyButtonSelect], JOY_BUTTONS_PORT_A
     mov byte ptr ds:[JoyCalByte98BF], 0
@@ -646,6 +646,8 @@ PollInputBits:
 ; Rebuild InputBits from game port A against the calibration thresholds. Loads DS with
 ; the state segment and does not restore it. Buttons read 0 while pressed. The port-B
 ; button masks are unreachable: JoyButtonSelect is set to port A just before the test.
+; Fires the one-shots twice: X comes from the first read, Y from the second. LEFT/UP
+; when the count is below LOW, RIGHT/DOWN above HIGH (unsigned).
 PollJoystickInputBits:
     mov ax, seg StateData
     mov ds, ax
@@ -1112,8 +1114,8 @@ Interrupt08Handler:
     and byte ptr ds:[TimerTickPhase], 3
     je @@chainBiosTimer
     pop ds
-    mov al, 020h
-    out 020h, al
+    mov al, PIC_EOI_NONSPECIFIC
+    out PIC1_COMMAND_PORT, al
     pop ax
     iret
 @@chainBiosTimer:
@@ -4472,6 +4474,8 @@ ClearEgaPages:
     rep stosw
     ret
 
+; Copies 192 rows from ScrollWindowOffset to screen rows 4..195, the left 208 pixels;
+; each plane row through map mask 1/2/4/8.
 CopyWorkspaceToScreenEga:
     mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
@@ -5604,7 +5608,7 @@ CopyPackedRowsToTandyBanks:
     ret
 
 ; Copy a packed image (DS:SI: row count, width units) into the 104-byte-wide workspace
-; at ES=CS:9598, DI advancing 104 bytes per row. DF=0; no clipping.
+; at ES = WorkspaceSegment, DI advancing 104 bytes per row. DF=0; no clipping.
 CopyPackedRowsStride104:
     mov es, word ptr cs:[WorkspaceSegment]
     lodsw
@@ -5926,7 +5930,7 @@ ClearTandy32K:
     rep stosw
     ret
 
-; Copy 192 rows of the 104-byte workspace (source offset from DS:234C, segment CS:9598)
+; Copy 192 rows of the 104-byte workspace (source offset ScrollWindowOffset, segment WorkspaceSegment)
 ; into the left 104 bytes of Tandy rows 4..195. Leaves DS = state segment, whatever
 ; DS was on entry.
 CopyWorkspace104x192ToTandy:
@@ -7988,6 +7992,8 @@ ClearCga16K:
     rep stosw
     ret
 
+; Copies 192 rows from ScrollWindowOffset to screen rows 4..195, the left 208 pixels,
+; across the two interleaved CGA banks.
 CopyWorkspaceToScreenCga:
     mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
@@ -9052,6 +9058,8 @@ DrawStars:
 
 ; CX stars from DS:SI: plots each on a clear workspace byte and logs its offset at DS:DI
 ; for EraseStars.
+; Y is a playfield row (RecordRowOffsets entry Y + 20h). EGA: layer 1 colour 15, layers
+; 2-3 colour 7; a star plots only where all plane bytes are 0, so EraseStars zeroes it.
 DrawStarGroup:
     lodsw
     mov bx, ax
@@ -9387,7 +9395,7 @@ CgaSelectPalette0:
     out dx, al
     mov byte ptr es:[066h], al
 
-; CGA colour-select register (3D9h, mirrored in BIOS 0040:0066): set or clear bit 4
+; CGA colour-select register (3D9h, mirrored in BIOS 0040:0066): set bit 4
 ; (intensity).
 CgaIntensityOn:
     mov ax, 040h
@@ -9667,6 +9675,7 @@ ShowEgaDrawPage:
     sti
     ret
 
+; SS:BP = message: characters and TEXT_* codes, 0 ends (PrintTextChar each).
 PrintMessageBP:
     mov al, byte ptr ss:[bp]
     or al, al

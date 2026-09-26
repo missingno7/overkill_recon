@@ -848,6 +848,8 @@ DrawPanelGraphic:
 
 ; Title menu: input mode, sound, key redefinition, info pages, boss key; alternates with
 ; the high scores and the intro when idle. Returns on the primary button.
+; Keys K, A and M act once per press (latches clear when no menu key is down); J and R
+; wait for release. The primary button counts only alone (no direction held).
 RunOptionsMenu:
     mov word ptr ds:[MenuShowingHiscores], 0
 @@redrawMenu:
@@ -2082,6 +2084,8 @@ RetreatDrawColumnTandy:
     ret
 
 ; Draws score, lives, energy gauge and level number (on both pages on EGA).
+; The HUD lives outside the workspace: gameplay redraws only the changed parts, straight
+; to video memory.
 DrawHud:
     call DrawScore
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA

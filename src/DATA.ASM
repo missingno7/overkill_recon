@@ -1490,6 +1490,8 @@ KeyDownTableHigh db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h
+; INT 10h modes per VideoAdapter: CGA 04h, EGA 0Dh, Tandy/PCjr 09h (all 320x200), set
+; at startup and after the boss key.
 VideoBiosModeTable db 04h,0Dh,09h
 ; The 90h filler byte is the assembler's word alignment (NOP) before the next table.
     even
@@ -1966,7 +1968,7 @@ PageListPtr dw 0
 LevelIntroFrames dw 0
 ; Choose-screen slot 0..5 (RunChooseScreen; saved in hiscore.dat).
 ChooseSlot dw 0
-; 0..2, cycled in the options menu and saved in hiscore.dat. Throttles enemy child
+; 0..2, cycled with D on the choose screen and saved in hiscore.dat. Throttles enemy child
 ; spawns (SpawnThrottledChild) and gates other behaviour.
 DifficultySetting dw 1
 ; Screen positions (AH row, AL 8-pixel column) of the six choose-screen slot images
@@ -1982,12 +1984,16 @@ UnusedSfxWord db 00h,00h
 ; the timer interrupt (SfxTimerTick) starts it and keeps SfxActive = the playing
 ; effect, 0 when idle (some callers wait on it).
 SfxActive db 00h
-; Effect requested of SfxTimerTick (below 20h); lower IDs pre-empt higher ones.
+; Effect requested of SfxTimerTick (below 20h); lower IDs pre-empt higher ones. A single
+; mailbox: the last write before the next tick wins; priority applies only against the
+; playing effect.
 SfxRequest db 00h
 ; PC-speaker effect player (SfxTimerTick, run every timer tick). An effect is a pair of
 ; byte streams, one per voice; the voices take turns driving the speaker tick by tick.
 SfxTickPhase db 00h
-; PIT divisors a semitone apart, starting near 65.4 Hz; indexed by note, unchecked.
+; 84 PIT divisors a semitone apart (notes 0..53h), from about 65.4 Hz. Unchecked: effect
+; 19h's voice B steps its note from 6 down past 0 during its hold, so its last 9 ticks
+; read words past the table (stream data); layout-dependent.
 SfxNoteDivisors dw 18243, 17219, 16253, 15340, 14479, 13667, 12900, 12176, 11492, 10847, 10239, 9664
     dw 9122, 8610, 8126, 7670, 7240, 6833, 6450, 6088, 5746, 5424, 5119, 4832
     dw 4561, 4305, 4063, 3835, 3620, 3417, 3225, 3044, 2873, 2712, 2560, 2416
@@ -2011,7 +2017,6 @@ SfxVoiceB db 0, 0
     db 1, 0, 0, 0
     dw 0
     db 0, 0
-; SFX_EFFECT_COUNT entries of two stream pointers (voice A, voice B); entry 0 unused.
 ; SFX_EFFECT_COUNT entries of two stream pointers (voice A, voice B); entry 0 unused.
 SfxEffectTable label word
     dw 0, 0
@@ -2046,7 +2051,8 @@ SfxEffectTable label word
     dw offset SfxStream24, offset SfxStream58
     dw offset SfxStream30, offset SfxStream31
     dw offset SfxStream25, offset SfxStream58
-; Effect streams: notes 0..7Fh (SfxNoteDivisors index), SFX_DURATION_BIAS + ticks,
+; Effect streams: notes 0..7Fh (SfxNoteDivisors index; above 53h, or stepped out of range,
+; reads past the table), SFX_DURATION_BIAS + ticks,
 ; and commands; SFX_SLIDE is followed by a word delta and a byte tick count.
 SfxStream00 db SFX_DURATION_BIAS + 8, SFX_SLIDE
     dw 12
@@ -2393,7 +2399,8 @@ Stars dw 7, 28, 0,  33, 62, 0,  50, 5, 0,  66, 60, 0,  81, 41, 0
 StarDrawnOffsets dw 40 dup (0)
     dw 0FFFFh
 ; Pixel masks by X within the byte: CGA 2 bits, EGA 1 bit, Tandy 4 bits (the Tandy
-; masks become 07h/70h after StarBrightCount stars, dimming the rest).
+; masks become 07h/70h after StarBrightCount stars, dimming the rest). Index 0 is the
+; rightmost pixel (masks run LSB first).
 StarMasksCga db 03h, 0Ch, 30h, 0C0h
 StarMasksEga db 01h, 02h, 04h, 08h, 10h, 20h, 40h, 80h
 StarMasksTandy db 0Fh, 0F0h
