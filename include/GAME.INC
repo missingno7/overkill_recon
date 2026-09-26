@@ -52,3 +52,16 @@ WEAPON_BEAM equ 5
 ; decides which way edge-spawned enemies face.
 PLAYFIELD_MAX_X equ 0C0h
 PLAYFIELD_CENTER_X equ 60h
+; PANEL.ENC images (PanelImageOffsets indices) drawn by the HUD code.
+PANEL_UPGRADE_FRAME equ 17h
+; + cell value 0..4.
+PANEL_ENERGY_CELL equ 19h
+PANEL_SHIP_ICON equ 1Eh
+PANEL_NO_SHIP_ICON equ 1Fh
+; + EnergyTanks.
+PANEL_TANK_GAUGE equ 20h
+PANEL_HUD_FRAME equ 25h
+PANEL_PAUSE_LOWER equ 26h
+PANEL_PAUSE_UPPER equ 27h
+PANEL_QUIT_PROMPT equ 28h
+PANEL_FUEL_EMPTY equ 29h

@@ -1209,7 +1209,7 @@ DrawStatusPanel:
     call ResetEgaPages
     mov ax, 01Bh
     call DrawOffsetFromScreenRow
-    mov si, 025h
+    mov si, PANEL_HUD_FRAME
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]

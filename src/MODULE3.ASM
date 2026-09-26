@@ -830,7 +830,7 @@ DrawFuelEmptyPanel:
     mov ah, 058h
     call DrawOffsetFromPlayfieldRow
     add di, word ptr ds:[ScrollWindowOffset]
-    mov si, 029h
+    mov si, PANEL_FUEL_EMPTY
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -867,7 +867,7 @@ QuitPrompt:
     mov al, 4
     mov ah, 05Ch
     call DrawOffsetFromScreenRow
-    mov si, 028h
+    mov si, PANEL_QUIT_PROMPT
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -947,7 +947,7 @@ PauseGame:
     mov al, 4
     mov ah, 048h
     call DrawOffsetFromScreenRow
-    mov si, 027h
+    mov si, PANEL_PAUSE_UPPER
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -957,7 +957,7 @@ PauseGame:
     mov al, 4
     mov ah, 070h
     call DrawOffsetFromScreenRow
-    mov si, 026h
+    mov si, PANEL_PAUSE_LOWER
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]

@@ -1509,7 +1509,7 @@ StretchInHudPanel:
     call ResetPageAndClearScreen
     mov ax, 01Bh
     call DrawOffsetFromScreenRow
-    mov si, 025h
+    mov si, PANEL_HUD_FRAME
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -1999,13 +1999,13 @@ DrawLivesIcons:
     mov al, 01Fh
     mov ah, 050h
     call DrawOffsetFromScreenRow
-    mov si, 01Eh
+    mov si, PANEL_SHIP_ICON
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
     mov cx, word ptr ds:[LivesLeft]
     call DrawPanelImageRow
-    mov si, 01Fh
+    mov si, PANEL_NO_SHIP_ICON
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -2161,7 +2161,7 @@ DrawEnergyGauge:
     je @@drawTank
     mov si, word ptr ds:[EnergyTanks]
 @@drawTank:
-    add si, 020h
+    add si, PANEL_TANK_GAUGE
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -2171,7 +2171,7 @@ DrawEnergyGauge:
     mov al, 021h
     mov ah, 018h
     call DrawOffsetFromScreenRow
-    mov si, 01Eh
+    mov si, PANEL_SHIP_ICON
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -2184,7 +2184,7 @@ DrawEnergyGauge:
 
 ; SI = cell value 0..4: draws panel image 19h + SI at DI and advances DI one column.
 DrawEnergyCell:
-    add si, 019h
+    add si, PANEL_ENERGY_CELL
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -6122,7 +6122,7 @@ DrawUpgradeSlot:
     pop di
     call RetreatDrawColumn
     pop si
-    add si, 017h
+    add si, PANEL_UPGRADE_FRAME
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
