@@ -505,7 +505,7 @@ extrn Type3BFallRandomFlicker:near
 extrn Type3CDescendThenBounceAlt:near
 extrn Type3DAnimatedTerrainBouncer:near
 extrn Type3EDropThenAimedDash:near
-extrn Type3FStraightLineToAimPoint:near
+extrn Type3FFlyAlongAimLine:near
 extrn Type40JitterFallShooter:near
 extrn Type41FollowPathType41:near
 extrn Type42DescendSway:near
@@ -513,8 +513,8 @@ extrn Type43FollowPathType43:near
 extrn Type44FollowPathType44:near
 extrn Type45FollowPathType45:near
 extrn Type46HoverShootThenDive:near
-extrn Type47PatrolDropShooter:near
-extrn Type48CreeperAimedFire:near
+extrn Type47PatrolShootDown32B:near
+extrn Type48DescendAimedFire:near
 extrn Type49RadialBurstFaller:near
 extrn Type4AFollowPathType4A:near
 extrn Type4BDescendThenBounceUpRight:near
@@ -527,7 +527,7 @@ extrn Type52ScrollOnly:near
 extrn Type53AnimateFromSpriteBase:near
 extrn Type60FlyAlongAimLine:near
 extrn Type68JitterDescendFiring:near
-extrn Type69JitterDropToY18:near
+extrn Type69JitterBelowY18:near
 extrn Type71FireThenDiveBelow60:near
 extrn Type7AAimLineFlyer:near
 extrn Type7BDropThenAim:near
@@ -3237,8 +3237,8 @@ Type0FTimedShot2:
     mov ax, offset ShotHitPlayerCheck
     push ax
     jmp near ptr MoveInDirection2
-; 3 px per frame in REC_DIRECTION while REC_SHOT_TIMER counts down, then turns straight
-; up.
+; 3 px per frame in REC_DIRECTION while REC_SHOT_TIMER counts down, then straight up at
+; 5 px per frame.
 Type0CTimedTurnUpShot:
     cmp word ptr ss:[bp + REC_SHOT_TIMER], 0
     je @@rise
@@ -3253,7 +3253,8 @@ Type0CTimedTurnUpShot:
     mov ss:[bp + REC_SPRITE], ax
     call MoveInDirection3
     jmp near ptr ShotBoundsCheck
-; Mirror of type 05h drifting up-right; removed at X = C0h.
+; Mirror of type 05h drifting up-right (probes the map at X mod 16 = 8); removed at
+; X = C8h.
 Type06SideShotUpRight:
     cmp word ptr ss:[bp + REC_X], 0C8h
     je ExpireShot
@@ -3649,8 +3650,8 @@ FindMissileTarget:
     mov word ptr ds:[TargetSearchCursor], bx
     pop bx
     ret
-; Rides with the player, then locks the next live KIND_ENEMY record and chases it 3 px
-; per step; back to the player when the target is lost.
+; Steers (speed 2) to the player, then locks the next live enemy (sfx 11h) or expires;
+; chases it by 3 px Bresenham steps; returns to the player when the target is lost.
 Type0AHomingMissile:
     mov ax, ds:[FrameCount8]
     add ax, 6Dh
@@ -3866,7 +3867,7 @@ SetSwaySprite:
     mov ss:[bp + REC_SPRITE], ax
     ret
 ; As type 22h falling 2 px per frame.
-Type36SwayFallThenBurst:
+Type36FallThenBurst:
     call SetSwaySprite
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ss:[bp + REC_Y], 0A0h
@@ -3874,8 +3875,8 @@ Type36SwayFallThenBurst:
     jmp near ptr ScrollRecordThenFinish
 @@reachedBurstY:
     jmp short DescendBurstTail
-; Types 22h/35h: sways down (1 px, 2 on level 0) to Y A0h, then destroys itself in an
-; eight-way burst of type 3 shots.
+; Types 22h/35h: falls 1 px (2 on level 0) with a SwayDirX-facing sprite to Y A0h,
+; then DestroyRecord and an eight-way burst of type 3 shots.
 Type22DescendThenBurst:
     call SetSwaySprite
     inc word ptr ss:[bp + REC_Y]
@@ -4014,6 +4015,8 @@ EncounterSegBossLevel:
 ; Type21LeaderPath. Levels 1/2/5: a 23h faller on each FrameCount8 = 7 until EncounterTicks
 ; C8h, at F0h boss 22h (HP 0Ah * (LevelIndex + 1)). Level 3: fallers, then one invader per
 ; update. Level 0: the segmented boss once CountLiveEnemies == 1 (itself; equality).
+; Level 3: once InvaderFormationEnd is reached it becomes type 64h (sprite 8Eh) at the
+; player's X, Y 0, leaving the encounter count. Level 0: it becomes the boss core 78h.
 Type21EncounterDirector:
     cmp word ptr ds:[LevelIndex], 4
     jne @@checkLevel3
@@ -4197,6 +4200,9 @@ SteerToSaved:
     ret
 ; Hops between formation slots; when few remain, moves above the player and drops 4 px
 ; per frame.
+; Fires random aimed shots while RecordTickCounter is 2BCh..2D0h. The drop sets the
+; global RecordTickCounter = 28h, targets (player X + 8) & ~7 unless CountGate2324 = 1,
+; and keeps falling 4 px per frame past A0h.
 Type20SlotHopperDropper:
     cmp word ptr ss:[bp + REC_DIVE_PHASE], -1
     je Type20SlotHopper
@@ -4423,6 +4429,7 @@ Type16SweepLeadIn:
     jmp near ptr FinishRecordUpdate
 ; Walks the REC_PATH waypoints at speed 3 (FFFFh, address = jump); random downward
 ; shots and a periodic aimed shot.
+; A throttled down shot writes DIR_DOWN through the stale BX = 2 (SpawnThrottledChild).
 Type18SweepPathLooper:
     mov ax, ds:[RecordTickCounter]
     and ax, 3FFh
@@ -7194,8 +7201,8 @@ DemoLaunchPod:
     mov word ptr ss:[bp + REC_TYPE], 050h
     mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     ret
-; Steers to REC_SAVED; on arrival becomes KIND_POD (sfx 0Eh) and returns without the
-; scroll tail.
+; Steers to REC_SAVED; on arrival becomes KIND_POD (sfx 0Eh). Returns with a bare ret:
+; never reaches FinishRecordUpdate (no clamp, bounds or collision checks).
 Type50SteerHomeThenBecomePod:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
     mov word ptr ds:[SteerTargetX], ax
@@ -8123,6 +8130,8 @@ RunTypeHandler:
     shl bx, 1
     jmp word ptr cs:[bx + TypeHandlers]
 ; Behaviour handler per REC_TYPE (0..94h), entered with BP = record.
+; In handler comments "destroyed" means DestroyRecord (explosion, score, sfx 19h, drop),
+; never a silent removal; a `jmp DestroyRecord` skips the finish tail that frame.
 TypeHandlers label word
     dw offset ScrollRecordThenFinish, offset Type01ExplosionAnimation, offset Type02TimedStraightShot, offset Type02TimedStraightShot
     dw offset Type04StraightShot, offset Type05SideShotUpLeft, offset Type06SideShotUpRight, offset Type07RisingShot3
@@ -8137,30 +8146,30 @@ TypeHandlers label word
     dw offset Type28EnemyHatch, offset Type29EmergeThenDart, offset Type28EnemyHatch, offset Type2BAimedDart
     dw offset Type2CAimedDrifter, offset Type2DHoverFireThenPlunge, offset Type2EPlungeAtPlayerColumn, offset Type2FScrollingShuttle
     dw offset Type30AnimatedShooter, offset Type31FallFast3, offset Type32DescendThenBounce, offset Type33TerrainBouncer
-    dw offset Type34SideFiringTurret, offset Type22DescendThenBurst, offset Type36SwayFallThenBurst, offset Type37VerticalBouncerShooter
+    dw offset Type34SideFiringTurret, offset Type22DescendThenBurst, offset Type36FallThenBurst, offset Type37VerticalBouncerShooter
     dw offset Type38WallBounceDescend, offset Type39DashRightAtRow80, offset Type3AHomeOnPlayerBelow80, offset Type3BFallRandomFlicker
-    dw offset Type3CDescendThenBounceAlt, offset Type3DAnimatedTerrainBouncer, offset Type3EDropThenAimedDash, offset Type3FStraightLineToAimPoint
+    dw offset Type3CDescendThenBounceAlt, offset Type3DAnimatedTerrainBouncer, offset Type3EDropThenAimedDash, offset Type3FFlyAlongAimLine
     dw offset Type40JitterFallShooter, offset Type41FollowPathType41, offset Type42DescendSway, offset Type43FollowPathType43
-    dw offset Type44FollowPathType44, offset Type45FollowPathType45, offset Type46HoverShootThenDive, offset Type47PatrolDropShooter
-    dw offset Type48CreeperAimedFire, offset Type49RadialBurstFaller, offset Type4AFollowPathType4A, offset Type4BDescendThenBounceUpRight
+    dw offset Type44FollowPathType44, offset Type45FollowPathType45, offset Type46HoverShootThenDive, offset Type47PatrolShootDown32B
+    dw offset Type48DescendAimedFire, offset Type49RadialBurstFaller, offset Type4AFollowPathType4A, offset Type4BDescendThenBounceUpRight
     dw offset Type4CSinkThenRise, offset Type4DSinkRiseThenDash, offset Type4EAnimDescendThenBounce, offset Type4FFallFast4Flicker
     dw offset Type50SteerHomeThenBecomePod, offset Type51FollowType51Path, offset Type52ScrollOnly, offset Type53AnimateFromSpriteBase
     dw offset Type54ScrollUntilY_B0ThenType56, offset Type55DropFrom_B0, offset Type56CrawlDestroyOnBlock, offset Type57ScrollToY80ThenCrawl
     dw offset Type57ScrollToY80ThenCrawl, offset Type59ScrollThenAnimateThenType5A, offset Type5ACrawlMirrorDiagonal, offset Type5BScrollPastY_B0ThenType5C
-    dw offset Type5CRiseFast4, offset Type5DDropFast8, offset Type5ECrawlTurnDownToLeft, offset Type5FCrawlBounceDiagonal
+    dw offset Type5CRiseFast4, offset Type5DDropFast8, offset Type5ECrawlTurnDownToLeft, offset Type5FCrawlTurnDiagonalDown
     dw offset Type60FlyAlongAimLine, offset Type61InvaderSteerToSlot, offset Type62InvaderMarch, offset Type63ScriptedSlideThenDrop
-    dw offset Type64DropSlow, offset Type65InvaderDiveFiring, offset Type66FollowPathType66, offset Type67FollowPathType67
-    dw offset Type68JitterDescendFiring, offset Type69JitterDropToY18, offset Type6AScrollUntilY50ThenType56, offset Type6BDescendToX50
+    dw offset Type64Drop4, offset Type65InvaderDiveFiring, offset Type66FollowPathType66, offset Type67FollowPathType67
+    dw offset Type68JitterDescendFiring, offset Type69JitterBelowY18, offset Type6AScrollUntilY50ThenType56, offset Type6BDescendToX50
     dw offset Type6CDescendToX60Firing, offset Type6DDescendToX70, offset Type6ECrawlStaircase, offset Type6FWaitThenType70
     dw offset Type70CruiseFiring, offset Type71FireThenDiveBelow60, offset Type72DescendFiringAimed, offset Type73WaitThenRunRight
     dw offset Type74WaitThenRunLeft, offset Type75DescendSpreadShot, offset Type76SegBossPart0, offset Type77SegBossPart1
-    dw offset Type78SegBossGunPart, offset Type79SegBossPart3, offset Type7AAimLineFlyer, offset Type7BDropThenAim
+    dw offset Type78SegBossCore, offset Type79SegBossPart3, offset Type7AAimLineFlyer, offset Type7BDropThenAim
     dw offset Type7CAimLineFlyerAlt, offset Type13FormationLeader, offset Type13FormationLeader, offset Type7FMarchEnterSteer
     dw offset Type80MarchFormationMember, offset Type81SweeperEnterSteer, offset ScrollRecordThenFinish, offset Type83PatrolShootDown64
     dw offset Type84LurkUntilAligned, offset Type85ChargeUntilBlocked, offset Type86LaunchAimedEnemy, offset Type87AnimFireBurstA
     dw offset Type88WaitThenFireBurst, offset Type89PatrolShootDown32, offset Type8APatrolShootDown32Alt, offset Type8BClimbWalkerA
     dw offset Type8CClimbWalkerAFlipped, offset Type8DClimbWalkerB, offset Type8EClimbWalkerBFlipped, offset Type8FAnimFireBurstB
-    dw offset Type90TurretVolley, offset Type91TurretVolleyAlt, offset Type92FireWhenPlayerLevel, offset Type93SweepDescendClimb
+    dw offset Type90TurretVolley, offset Type91TurretVolleyAlt, offset Type92FireWhenPlayerOnRow, offset Type93SweepDescendClimb
     dw offset ScrollRecordThenFinish
 ; Animates, then launches an aimed type 60h enemy.
 Type86LaunchAimedEnemy:
@@ -8249,6 +8258,7 @@ Type56CrawlDestroyOnBlock:
     call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
 ; Fires a burst while its animation is in phase 3.
+; A throttled spawn writes sprite 44h through the stale BX (see SpawnThrottledChild).
 Type87AnimFireBurstA:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -8284,6 +8294,7 @@ Type55DropFrom_B0:
     jmp near ptr FinishRecordUpdate
 ; Types 57h/58h: scrolls to Y 80h, then crawls two steps per frame and is destroyed when
 ; blocked.
+; Only the second terrain step is tested; at Y = 80h exactly the sprite goes up by 1.
 Type57ScrollToY80ThenCrawl:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae @@reachedY80
@@ -8378,8 +8389,8 @@ Type5DDropFast8:
     mov ss:[bp + REC_SPRITE], ax
     add word ptr ss:[bp + REC_Y], 8
     jmp near ptr ScrollRecordThenFinish
-; Crawls four steps per frame, turning down, then down-left, then left; destroyed when
-; blocked after that.
+; Four terrain steps per frame (only the last tested); when blocked: down -> down-left
+; -> left; blocked in any other direction: DestroyRecord.
 Type5ECrawlTurnDownToLeft:
     call TryTerrainStep
     call TryTerrainStep
@@ -8418,9 +8429,9 @@ Type6ECrawlStaircase:
 @@turnRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
-; Crawls four steps per frame, bouncing between the two downward diagonals; destroyed
-; otherwise when blocked.
-Type5FCrawlBounceDiagonal:
+; Once X + Y >= 60h: four terrain steps per frame; blocked while left/right it turns
+; down-right/down-left, otherwise DestroyRecord.
+Type5FCrawlTurnDiagonalDown:
     mov ax, ds:[FrameCount4]
     add ax, 0F6h
     mov ss:[bp + REC_SPRITE], ax
@@ -8462,7 +8473,10 @@ Type61InvaderSteerToSlot:
 @@arrived:
     mov word ptr ss:[bp + REC_TYPE], 62h
     jmp near ptr ScrollRecordThenFinish
-; Marches with the invader block (March* state).
+; Marches with the Invader* block (step 1..10h px by EncounterLiveCount); an edge sets the
+; next reversal/drop. Below D0h it reverts to type 61h (re-entry at slot Y 20h); when
+; its X equals the player's and a 1/32 roll passes it becomes 65h and runs type 63h's
+; code this frame; fires down (sprite 63h) on a RecordTickCounter/FrameCount128 match.
 Type62InvaderMarch:
     cmp word ptr ds:[FramesSinceInvaderSpawn], 18h
     jae @@march
@@ -8584,7 +8598,7 @@ Type63ScriptedSlideThenDrop:
     inc word ptr ss:[bp + REC_SPRITE]
     jmp near ptr ScrollRecordThenFinish
 ; Drops 4 px per frame (2 on level 4).
-Type64DropSlow:
+Type64Drop4:
     mov ax, 2
     cmp word ptr ds:[LevelIndex], 4
     je @@drop
@@ -8742,6 +8756,8 @@ Type85ChargeUntilBlocked:
     jmp near ptr ScrollRecordThenFinish
 ; Waits until the player lines up with REC_DIRECTION, then becomes type 85h; the
 ; switching frame returns without the scroll tail.
+; Row test: player Y & ~3 == (REC_Y + 14h) & ~3. The switch frame skips
+; FinishRecordUpdate entirely.
 Type84LurkUntilAligned:
     mov bx, ss:[bp + REC_DIRECTION]
     shr bx, 1
@@ -8806,8 +8822,9 @@ Type84FacingLeft:
     jmp near ptr ScrollRecordThenFinish
 @@checkRow:
     jmp short Type84SameRow
-; Fires two shots when the player is on its row.
-Type92FireWhenPlayerLevel:
+; Each frame the player's Y (4-px aligned) equals REC_Y + 14h, fires throttled shots
+; from Y - 4 and Y + 4 (sprite 44h).
+Type92FireWhenPlayerOnRow:
     mov bx, ss:[bp + REC_Y]
     add bx, 14h
     and bx, -4
@@ -8855,9 +8872,9 @@ Type76SegBossPart0:
 Type77SegBossPart1:
     mov si, offset BossPartOffsets + 4
     jmp short SegBossPlacePart
-; Segmented boss part at BossPartOffsets[2]; fires aimed shots early in each 128-frame
-; cycle.
-Type78SegBossGunPart:
+; Segmented boss core (the former type 21h director) at BossPartOffsets[2]; fires aimed
+; shots during FrameCount128 0..0Fh.
+Type78SegBossCore:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     cmp word ptr ds:[FrameCount128], 0Fh
     ja @@placePart

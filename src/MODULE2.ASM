@@ -342,7 +342,7 @@ public Type3BFallRandomFlicker
 public Type3CDescendThenBounceAlt
 public Type3DAnimatedTerrainBouncer
 public Type3EDropThenAimedDash
-public Type3FStraightLineToAimPoint
+public Type3FFlyAlongAimLine
 public Type40JitterFallShooter
 public Type41FollowPathType41
 public Type42DescendSway
@@ -350,8 +350,8 @@ public Type43FollowPathType43
 public Type44FollowPathType44
 public Type45FollowPathType45
 public Type46HoverShootThenDive
-public Type47PatrolDropShooter
-public Type48CreeperAimedFire
+public Type47PatrolShootDown32B
+public Type48DescendAimedFire
 public Type49RadialBurstFaller
 public Type4AFollowPathType4A
 public Type4BDescendThenBounceUpRight
@@ -364,7 +364,7 @@ public Type52ScrollOnly
 public Type53AnimateFromSpriteBase
 public Type60FlyAlongAimLine
 public Type68JitterDescendFiring
-public Type69JitterDropToY18
+public Type69JitterBelowY18
 public Type71FireThenDiveBelow60
 public Type7AAimLineFlyer
 public Type7BDropThenAim
@@ -5692,6 +5692,7 @@ InitEnemyRecordHere:
     mov word ptr ds:[bx + REC_FLASH_TIMER], 0
     ret
 ; Fires SpawnThrottledChild every 32 frames; its wreck becomes type 26h facing left.
+; A throttled spawn writes the sprite through the stale BX (see SpawnThrottledChild).
 Type24TurretLeftFire32:
     cmp word ptr ds:[FrameCount32], 1Fh
     je @@fire
@@ -5717,7 +5718,8 @@ Type25TurretRightFire32:
 @@setShotSprite:
     mov word ptr ds:[bx + REC_SPRITE], 1Ah
     jmp near ptr ScrollRecordThenFinish
-; Types 90h/91h: turret alternating shots above and below every 32 frames.
+; Types 90h/91h: every 64 frames fires one shot, alternately 4 px above and 4 px below;
+; the sprite animates by FrameCount128 phase.
 Type90TurretVolley:
     mov ax, 88h
     cmp word ptr ds:[LevelIndex], 4
@@ -5770,8 +5772,9 @@ TurretRemnantFlickerTail:
     mov ss:[bp + REC_X], ax
     dec word ptr ss:[bp + REC_SPRITE]
     jmp near ptr ScrollRecordThenFinish
-; What a destroyed wall turret (24h/25h) leaves: slides out along REC_DIRECTION until
-; blocked, stepping its sprite, then flickers in place. Harmless: no collision, never a
+; What a destroyed wall turret (24h/25h) leaves: slides 1 px per frame in REC_DIRECTION;
+; when blocked (or at X >= C0h) sprite + 1 and sfx 1Eh; at sprite 98h/92h, every 4th
+; frame it snaps back to REC_SAVED_X (sprite - 1) and repeats. No collision, never a
 ; missile target.
 Type26TurretRemnant:
     cmp word ptr ss:[bp + REC_SPRITE], 98h
@@ -6229,7 +6232,7 @@ Type2BAimedDart:
 AimedFlyerSetSpriteTail:
     mov ss:[bp + REC_SPRITE], ax
     jmp short Type60FlyAlongAimLine
-; Emerges over four frames, then aims at the player and flies like type 60h.
+; Steps its sprite A1h..A4h once per 8 frames, then aims at the player and flies as type 60h.
 Type29EmergeThenDart:
     cmp word ptr ss:[bp + REC_SPRITE], 0A4h
     je Type60FlyAlongAimLine
@@ -6257,7 +6260,7 @@ Type60FlyAlongAimLine:
 @@offscreen:
     call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
-; As type 87h with sprite base 0BFh.
+; As type 87h (sprite base 0BFh), but the +3 facing sprite is used at X <= 60h.
 Type8FAnimFireBurstB:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -6358,6 +6361,8 @@ Type2FScrollingShuttle:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
     jmp near ptr ScrollRecordThenFinish
 ; Fires when FrameCount16 is 15 (every 4 frames on level 5).
+; On level 5 it freezes at sprite 46h unless the player's X is within 0Ch; adds sfx 0Eh
+; on top of the child's.
 Type30AnimatedShooter:
     cmp word ptr ds:[LevelIndex], 5
     jne @@animate
@@ -6408,7 +6413,8 @@ DescendUntilBounceRowTail:
 @@startBounce:
     mov word ptr ss:[bp + REC_TYPE], 33h
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
-; Three terrain steps per frame on a diagonal, reflecting on a blocked step.
+; Three terrain steps per frame on a diagonal; a blocked step flips only its vertical
+; component (XOR 2); X is never reversed.
 Type33TerrainBouncer:
     call TryTerrainStep
     jne @@reflect
@@ -6422,6 +6428,8 @@ Type33TerrainBouncer:
     jmp near ptr ScrollRecordThenFinish
 ; Fires sideways with sfx 13h from FrameCount64 32h on; level 0 waits until Y 50h (the
 ; compare with 6 never matches).
+; The shot alternates each frame (CountGate2324) between horizontal and diagonal-down;
+; fires every frame while FrameCount64 >= 32h, subject to the throttle.
 Type34SideFiringTurret:
     mov bx, ds:[LevelIndex]
     shl bx, 1
@@ -6589,6 +6597,7 @@ Type3BFallRandomFlicker:
     add word ptr ss:[bp + REC_Y], 2
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls until Y is exactly B0h, then becomes type 3Dh heading up-left.
+; Plays sfx 1Dh on the conversion.
 Type3CDescendThenBounceAlt:
     mov word ptr ss:[bp + REC_SPRITE], 0C5h
     cmp word ptr ss:[bp + REC_Y], 0B0h
@@ -6621,7 +6630,7 @@ Type3EDropThenAimedDash:
     mov bx, bp
     call AimAtPlayer
 ; Type 60h flight along the aim line.
-Type3FStraightLineToAimPoint:
+Type3FFlyAlongAimLine:
     jmp near ptr Type60FlyAlongAimLine
 ; Jitters one random axis by 1 px; below Y 80h descends 2 px per frame and fires every
 ; 32 frames.
@@ -6676,8 +6685,8 @@ JitterThenFireBelow80:
 @@fall:
     add word ptr ss:[bp + REC_Y], 2
     jmp near ptr ScrollRecordThenFinish
-; Jitters one random axis by 4 px, keeping below Y 18h.
-Type69JitterDropToY18:
+; Jitters one random axis by 4 px; pushed down 8 px whenever Y <= 18h.
+Type69JitterBelowY18:
     mov ax, ds:[FrameCount16]
     shr ax, 1
     shr ax, 1
@@ -6757,7 +6766,7 @@ Type46HoverShootThenDive:
     add ax, 4Bh
     jmp near ptr HoverFirePlungeTail
 ; Terrain patrol firing down every 32 frames.
-Type47PatrolDropShooter:
+Type47PatrolShootDown32B:
     mov ax, ds:[SlowCount6]
     add ax, 51h
     jmp near ptr PatrolSpriteShootDown32
@@ -6870,11 +6879,12 @@ Type53AnimateFromSpriteBase:
     clc
     ret
 ; Descends 1 px per frame and fires an aimed shot whenever a shot slot is free.
-Type48CreeperAimedFire:
+; Level 5 also drifts 1 px per frame toward the player's X.
+Type48DescendAimedFire:
     call far ptr Type48CreeperBody
     call SpawnAimedShot
     jmp near ptr ScrollRecordThenFinish
-; Falls to Y 90h, aims at the player and becomes type 7Ch.
+; Scrolls to Y 90h, then aims at the player and becomes type 7Ch.
 Type7BDropThenAim:
     call far ptr Type7BDropThenAimBody
     jmp near ptr ScrollRecordThenFinish
@@ -6888,6 +6898,8 @@ Type81SweeperEnterSteer:
     call far ptr Type81SweeperEnterBody
     jmp near ptr FinishRecordUpdate
 ; Sweeps sideways, descends and climbs back; destroyed after 100 blocked climbs.
+; Shots: down when RecordTickCounter & FFh = FFh, aimed at ticks 0 and 2BDh. Drops five
+; terrain steps on Type93KilledPulse; the climb counter resets on a free third step.
 Type93SweepDescendClimb:
     call far ptr Type93SweepBody
     cmp word ptr ss:[bp + REC_BLOCKED_CLIMBS], 064h
@@ -7091,7 +7103,7 @@ RestoreAllocStrategy:
     int 021h
 @@done:
     retf
-; Far body of Type48CreeperAimedFire: sprite by level (level 5 also drifts toward the
+; Far body of Type48DescendAimedFire: sprite by level (level 5 also drifts toward the
 ; player), REC_Y + 1.
 Type48CreeperBody:
     cmp word ptr ds:[LevelIndex], 5
