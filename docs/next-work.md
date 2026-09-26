@@ -5,27 +5,23 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
 
 ## Unclassified bytes
 
-- Code still without a proven entry: MODULE1 1AEB..2193 and 3E12.. (blit code; find the
-  remaining pointer tables that reach them), MODULE2 83D7.., MODULE3 EE06.. (a table of
-  (value, 4E65h) word pairs), far code at 0F7F:FEA5.. and SEG153A 153E0... Decode only
-  by recursive descent from proven entries; bytes nothing reaches stay UNKNOWN.
-- The largest DATA runs: DS:1514.. (after PlaqueFiles), DS:A47E.., DS:C04A..
-  (8-byte records starting E7h 84h), DS:C601..C85C, DS:D1BC.. and DS:95EA...
-- 13 original relocations are still inside UNKNOWN db (far calls in undecoded code).
+- SEG153A 0040..04D7 and 0D3A..: far library routines; only 153A:0000 and
+  OpenResourceFile (04D7) are ever called, so no entry is proven for the rest.
+- MAIN EE06..: a table of (value, 4E65h/4E5Fh) word pairs with FFFFh separators; find
+  its reader. MAIN 5960, 58F9, 5AF4 (CS variables of the packed-row drawer), 050CC and
+  051FB (small helpers with no known caller).
+- DATA: 1514..1816 (zero, no reader found), 96AA.., 9828.., 9944 (zero), BB85..,
+  BCC5.., BD53.., C440 (zero), 20A6.., 215C.., 2283.., 22D0...
 - GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
 - `[bx + N]` in the decoded REC_TYPE handlers: where BX is a record (after
   FindFreeRecordPool*), write REC_* fields.
 - Effects of WhatOilShortageFlag and AllCheatsFlag: no reader found yet.
 
-## Data
+## Data still to name
 
-- DATA.ASM is the game's state segment (DS). Scalars and known tables are named data;
-  known strings are literals. Next, bottom-up by class: remaining `$`/NUL-terminated
-  strings, pointer tables (`dw offset X`), fixed-size numeric tables, then record
-  arrays; only where the byte class is proven by a reader.
-- SFX tables at DS:BEF0..C2FC (command table, divisors, effect table, streams).
-- Level scripts and formations (LevelScript0..5, Formation00..52) are structured; name
-  the event state at DS:2070/209A..20A0 and the per-trigger table at DS:C81A.
+- Level script event state at DS:2070/209A..20A0; the second copy of the script cursor
+  pointers at DS:20CA; DS:2306/2304/2308/230A (steering target and arrival flag used
+  by loc_05DB2).
 
 ## Open questions worth settling statically
 
@@ -34,8 +30,8 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - 1534:004E critical-error continuation and its saved stack relation.
-- DS:BEDA (choose-screen slot; saved with DifficultySetting), DS:235A, DS:2350 (9Ch gates
-  RunTimedSequenceUntilPrimary), A95A/A95C and A97A (HUD meters, roles unproven).
+- DS:235A, A95A/A95C and A97A (HUD meters, roles unproven); MapScrollPos 9Ch gates
+  RunTimedSequenceUntilPrimary.
 - CS:9594 holds B800h; its reader has not been reviewed.
 - Record fields +1C and +36 are type-dependent; REC_KIND values 0, 2, 6 are unexplained.
 

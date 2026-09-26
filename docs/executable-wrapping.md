@@ -132,9 +132,8 @@ module after the backward ones, which leaves 2 of the linked relocations out of 
 original relative order. A two-pass assembler such as MASM would not; this is weak
 evidence about the original toolchain, not a requirement. Therefore:
 
-- Final closure: the set of relocations TLINK emits equals the original 123 sites.
-- Transitional (now): every emitted site is original, and every missing site lies in
-  an undecoded `db` row (a relocated word written as a number anywhere else fails).
+- Acceptance: the set of relocations TLINK emits equals the original 123 sites (closed;
+  until it was, each missing site had to lie in an UNKNOWN `db` row).
 - Relocation order is reported as evidence only.
 
 All 18 `jmp word ptr cs:[bx + table]` tables in MAIN are preceded by one 90h byte and

@@ -65,9 +65,9 @@ disassembly-dump look, no extra infrastructure needed to read it.
 - Keep the build independent of neighboring projects: TASM 1.0 under the local nmlgc
   MS-DOS Player, TLINK 2.0 under the local i86 player.
 - Acceptance is exact identity: the linked EXE's load module equals a fresh extraction
-  pinned by metadata/oracle.json, its entry point matches, every relocation TLINK emits is
-  an original one (missing ones only inside undecoded `db`; final closure is set
-  equality, see docs/executable-wrapping.md), and both optional sound modules match.
+  pinned by metadata/oracle.json, its entry point matches, TLINK emits exactly the
+  original relocation set (see docs/executable-wrapping.md), and both optional sound
+  modules match.
   Never pull original bytes in via INCBIN or asset includes: unclassified or executable
   bytes must stay visible in the source.
 - Two separate questions: *classification* (what kind of bytes?) and *semantics*
