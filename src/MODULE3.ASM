@@ -279,6 +279,7 @@ extrn loc_0F980:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public BlueBitsSegment
+public FinishRecordUpdate
 public LevelBlocksSegment
 public LevelMapSegment
 public LevelSpritesSegment
@@ -301,10 +302,12 @@ public PerFileFlagsEnabled
 public PlaqueSegment
 public PlayfieldRowBytes
 public ReleaseEmsCache
+public RemoveRecordAtBX
 public RequestModuleMusic
 public ScreenSegment
 public ScrollBandBytes
 public ScrollMirrorDistance
+public ScrollRecordThenFinish
 public ScrollStartOffset
 public ScrollWrapOffset
 public SfxCmdRest
@@ -337,9 +340,6 @@ public loc_0B2C8
 public loc_0B729
 public loc_0BAE1
 public loc_0BB03
-public loc_0BC45
-public loc_0BC4B
-public loc_0BD0D
 public loc_0BEC5
 public loc_0BFC7
 public loc_0C57C
@@ -2669,7 +2669,7 @@ loc_0A9E0:
 loc_0A9FB:
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0AA04
-    call loc_0AA2B
+    call UpdateRecordByKind
 loc_0AA04:
     pop cx
     loop loc_0A9E0
@@ -2682,21 +2682,22 @@ loc_0AA10:
     mov bp, word ptr ds:[bx + PoolBPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0AA22
-    call loc_0AA2B
+    call UpdateRecordByKind
 loc_0AA22:
     pop cx
     loop loc_0AA10
     call far ptr MoveStars
     ret
 
-loc_0AA2B:
+; BP = record: run its REC_KIND handler (KindHandlers).
+UpdateRecordByKind:
     mov bx, word ptr ss:[bp + REC_KIND]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0AA2BCases]
+    jmp word ptr cs:[bx + KindHandlers]
     even
-loc_0AA2BCases label word
-    dw offset loc_0BC45, offset loc_0AD04, offset loc_0EFAE, offset CountXReturn
-    dw offset loc_0EFAE, offset loc_0AAC2, offset loc_0AB10
+KindHandlers label word
+    dw offset ScrollRecordThenFinish, offset loc_0AD04, offset RunTypeHandler, offset CountXReturn
+    dw offset RunTypeHandler, offset loc_0AAC2, offset loc_0AB10
 loc_0AA44:
     clc
     ret
@@ -2753,10 +2754,10 @@ loc_0AAC2:
     inc word ptr ss:[bp + REC_Y]
     call loc_0AA46
     jb loc_0AACD
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0AACD:
     call loc_0AAD3
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0AAD3:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AADB
@@ -2779,7 +2780,7 @@ loc_0AAE7Cases label word
     dw offset loc_09DB9, offset loc_0AB0C
 loc_0AB0C:
     pop bp
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0AB10:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AB1A
@@ -3055,15 +3056,15 @@ loc_0AD5A:
 loc_0AD60:
     cmp word ptr ss:[bp + REC_Y], 8
     jae loc_0AD69
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0AD69:
     cmp word ptr ss:[bp + REC_Y], 0E0h
     jbe loc_0AD73
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0AD73:
     cmp word ptr ss:[bp + REC_X], 0C8h
     jbe loc_0AD7D
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0AD7D:
     cmp word ptr ss:[bp + REC_KIND], 2
     jne loc_0ADC8
@@ -3093,7 +3094,7 @@ loc_0ADAF:
     je loc_0ADC8
     dec al
     jne loc_0ADC8
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0ADC8:
     ret
 loc_0ADC9:
@@ -3653,7 +3654,7 @@ loc_0B304:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[DemoActive], 1
     jne loc_0B317
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B317:
     cmp word ptr ds:[LevelIndex], 5
     je loc_0B32C
@@ -3667,55 +3668,55 @@ loc_0B32C:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[MapScrollPos], 0E52h
     je loc_0B340
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B340:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 105h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 0
     jne loc_0B353
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B353:
     cmp word ptr ds:[LevelIndex], 6
     jne loc_0B35D
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B35D:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 2Ah
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 1
     jne loc_0B370
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B370:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0D2h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 2
     jne loc_0B383
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B383:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 3
     jne loc_0B396
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B396:
     cmp word ptr ds:[LevelIndex], 7
     jne loc_0B3A0
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B3A0:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 4
     jne loc_0B3B3
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B3B3:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B3BF:
     mov ax, ds:[SwayDirX]
     inc ax
@@ -3728,7 +3729,7 @@ TypeHandler36:
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ss:[bp + REC_Y], 0A0h
     jae loc_0B3DD
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0B3DD:
     jmp short loc_0B3F9
 TypeHandler22:
@@ -3740,11 +3741,11 @@ TypeHandler22:
 loc_0B3EF:
     cmp word ptr ss:[bp + REC_Y], 0A0h
     jae loc_0B3F9
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0B3F9:
     call loc_0BFC7
     call loc_0B402
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0B402:
     mov dx, 0Ch
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
@@ -3812,14 +3813,14 @@ loc_0B48B:
 loc_0B495:
     cmp word ptr ds:[EncounterTicks], 5Ah
     jae loc_0B49F
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B49F:
     jmp near ptr loc_0B5D8
 loc_0B4A2:
     call loc_0B468
     cmp ax, 1
     je loc_0B4AD
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B4AD:
     mov word ptr ds:[SegBossX], 0
     mov word ptr ds:[SegBossY], 0
@@ -3856,11 +3857,11 @@ loc_0B4AD:
     mov word ptr ds:[bx + 8], 23h
     mov word ptr ds:[bx + 4], 20h
     mov ds:[SegBossPart79], bx
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B54A:
     mov word ptr ds:[EncounterLiveCount], 0
     call loc_062AA
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler21:
     cmp word ptr ds:[LevelIndex], 4
     jne loc_0B560
@@ -3880,7 +3881,7 @@ loc_0B574:
 loc_0B57F:
     cmp word ptr ds:[EncounterTicks], 0F0h
     jae loc_0B58A
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B58A:
     mov word ptr ss:[bp + REC_TYPE], 22h
     mov word ptr ss:[bp + REC_SPRITE], 71h
@@ -3890,7 +3891,7 @@ loc_0B58A:
     mul cx
     mov ss:[bp + REC_HIT_POINTS], ax
     mov word ptr ss:[bp + REC_X], 60h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 
 loc_0B5A9:
     mov word ptr ds:[InvaderSlotCursor], offset InvaderFormation
@@ -3904,7 +3905,7 @@ loc_0B5BC:
     mov ss:[bp + REC_X], ax
     mov word ptr ss:[bp + REC_Y], 0
     mov word ptr ss:[bp + REC_SPRITE], 8Eh
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0B5D8:
     mov word ptr ds:[FramesSinceInvaderSpawn], 0
     cmp word ptr ds:[InvaderSlotCursor], offset InvaderFormationEnd
@@ -3925,16 +3926,16 @@ loc_0B5D8:
     inc word ptr ds:[EncounterLiveCount]
     add word ptr ds:[InvaderSlotCursor], 4
 loc_0B612:
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B615:
     cmp word ptr ds:[FrameCount8], 7
     je loc_0B61F
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B61F:
     call loc_081E9
     cmp bx, -1
     jne loc_0B62A
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B62A:
     call loc_0B673
     mov word ptr ds:[bx + 34h], 10h
@@ -3947,17 +3948,17 @@ loc_0B62A:
     je loc_0B65E
     cmp word ptr ds:[LevelIndex], 5
     je loc_0B65E
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B656:
     mov word ptr ds:[bx + 20h], 1
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B65E:
     mov word ptr ds:[bx + 20h], 0FFFFh
     mov ax, ds:[RecordTickCounter]
     inc word ptr ds:[RecordTickCounter]
     and ax, 3
     mov ds:[bx + 1Ch], ax
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B673:
     mov si, ds:[FallerColumnCursor]
     cmp si, offset FallerColumnsEnd
@@ -4015,12 +4016,12 @@ loc_0B6E9:
     lodsw
     add ss:[bp + REC_Y], ax
     add ss:[bp + REC_SAVED_Y], ax
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B701:
     mov bx, bp
     call loc_074E2
     mov word ptr ss:[bp + REC_TYPE], 2Ch
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler2C:
     mov ax, ds:[SlowCount4]
     add ax, 0B9h
@@ -4028,7 +4029,7 @@ TypeHandler2C:
     mov word ptr ds:[ChaseStepPixels], 2
     call loc_05E42
     mov word ptr ds:[ChaseStepPixels], 3
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B729:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
     mov word ptr ds:[SteerTargetX], ax
@@ -4057,19 +4058,19 @@ loc_0B75F:
     jmp near ptr loc_0B85C
 loc_0B76A:
     inc word ptr ss:[bp + REC_FIELD_1C]
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B770:
     mov word ptr ss:[bp + REC_SPRITE], 079h
     inc word ptr ss:[bp + REC_FIELD_1C]
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B77B:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ss:[bp + REC_Y], 0A0h
     jae loc_0B789
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B789:
     mov word ptr ss:[bp + REC_SPRITE], 077h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B791:
     mov ax, word ptr ds:[SlowCount6]
     cmp word ptr ss:[bp + REC_X], 060h
@@ -4093,7 +4094,7 @@ loc_0B7B2:
 loc_0B7BD:
     cmp word ptr ds:[EncounterTicks], 023h
     jae loc_0B7F3
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B7C7:
     cmp word ptr ds:[CountGate2324], 1
     je loc_0B7D7
@@ -4107,7 +4108,7 @@ loc_0B7D7:
     mov word ptr ss:[bp + REC_FIELD_1C], 0
     mov word ptr ss:[bp + REC_SPRITE], 078h
     mov word ptr ss:[bp + REC_SAVED_Y], 020h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B7F3:
     cmp word ptr ds:[RecordTickCounter], 02BCh
     jb loc_0B80E
@@ -4124,7 +4125,7 @@ loc_0B80E:
     jb loc_0B7CE
     cmp word ptr ds:[FrameCount64], 03Fh
     je loc_0B826
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B826:
     mov si, word ptr ds:[FormationSlotCursor]
     cmp si, 0A894h
@@ -4145,12 +4146,12 @@ loc_0B83A:
     cmp ax, word ptr ss:[bp + REC_SAVED_X]
     je loc_0B826
 loc_0B859:
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B85C:
     mov word ptr ds:[SteerSpeed], 2
     call loc_0B729
     mov word ptr ss:[bp + REC_DIRECTION], 4
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler1D:
     cmp word ptr ds:[EncounterLiveCount], 2
     ja loc_0B877
@@ -4168,10 +4169,10 @@ loc_0B877:
     and word ptr ss:[bp + REC_Y], -2
     call loc_0B729
     jne loc_0B8A8
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B8A8:
     mov word ptr ss:[bp + REC_DIRECTION], 4
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B8B0:
     cmp word ptr ds:[RecordTickCounter], 2EFh
     jne loc_0B8BB
@@ -4196,30 +4197,30 @@ loc_0B8E5:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount8], 7
     je loc_0B8F2
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B8F2:
     inc word ptr ss:[bp + REC_Y]
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B8F8:
     mov bx, 237Ch
     call loc_05E1B
     call loc_05E42
     mov word ptr ss:[bp + REC_SPRITE], 76h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler1E:
     mov word ptr ds:[SteerSpeed], 2
     call loc_0B729
     jne loc_0B917
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B917:
     call loc_07476
     cmp word ptr ss:[bp + REC_SAVED_X], 0
     je loc_0B928
     mov word ptr ss:[bp + REC_SAVED_X], 0
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B928:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler16:
     mov word ptr ds:[SteerSpeed], 1
     cmp word ptr ds:[LevelIndex], 0
@@ -4233,28 +4234,28 @@ loc_0B943:
     mov ss:[bp + REC_SPRITE], ax
     popf
     jne loc_0B956
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B956:
     cmp word ptr ss:[bp + REC_FIELD_1C], 0
     je loc_0B97A
     dec word ptr ss:[bp + REC_FIELD_1C]
     je loc_0B964
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B964:
     mov word ptr ss:[bp + REC_SAVED_Y], 20h
     cmp word ptr ss:[bp + REC_TYPE], 16h
     jne loc_0B972
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B972:
     mov word ptr ss:[bp + REC_SAVED_Y], 40h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B97A:
     cmp word ptr ds:[EncounterTicks], 31h
     je loc_0B984
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B984:
     mov word ptr ss:[bp + REC_TYPE], 18h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler18:
     mov ax, ds:[RecordTickCounter]
     and ax, 3FFh
@@ -4278,7 +4279,7 @@ loc_0B99E:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[SteerArrived], 0
     jne loc_0B9CD
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0B9CD:
     mov ss:[bp + REC_FIELD_36], si
     call NextRandomWord
@@ -4341,7 +4342,7 @@ loc_0BA67:
     mov ax, ds:[SlowCount4]
     add ax, 1Ch
     mov ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0BA73:
     mov ax, ss:[bp + REC_SAVED_X]
     and ax, 0FFFEh
@@ -4353,7 +4354,7 @@ loc_0BA73:
     mov ds:[SteerTargetY], ax
     mov word ptr ds:[SteerSpeed], 1
     call SteerTowardTarget
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0BA99:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
@@ -4367,10 +4368,10 @@ loc_0BA99:
 loc_0BAB5:
     cmp word ptr ss:[bp + REC_Y], 0D0h
     ja loc_0BABF
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 loc_0BABF:
     mov word ptr ss:[bp + REC_Y], 10h
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler1B:
     mov ax, ds:[SlowCount6]
     shr ax, 1
@@ -4405,20 +4406,20 @@ loc_0BB03:
     je loc_0BB1C
     call loc_0AFD8
     jne loc_0BB1C
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BB1C:
     mov word ptr ss:[bp + REC_DIRECTION], 2
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BB24:
     mov word ptr ss:[bp + REC_DIRECTION], 2
     cmp word ptr ss:[bp + REC_X], 0C0h
     je loc_0BB38
     call loc_0AFD8
     jne loc_0BB38
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BB38:
     mov word ptr ss:[bp + REC_DIRECTION], 6
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler8D:
     mov word ptr ds:[WalkerFacingStep], 0FFFFh
     jmp short loc_0BB4E
@@ -4469,15 +4470,15 @@ loc_0BBB2:
     cmp word ptr ds:[FrameCount128], 6Bh
     je loc_0BBCA
     cmp word ptr ds:[FrameCount128], 57h
-    jne loc_0BC45
+    jne ScrollRecordThenFinish
 loc_0BBCA:
     call loc_07476
     cmp bx, -1
-    je loc_0BC45
+    je ScrollRecordThenFinish
     mov word ptr ds:[bx + REC_SPRITE], 3
     sub word ptr ds:[bx + REC_X], 8
     sub word ptr ds:[bx + REC_Y], 8
-    jmp short loc_0BC45
+    jmp short ScrollRecordThenFinish
 loc_0BBE1:
     mov word ptr ds:[0A430h], 1
     cmp word ptr ds:[0A430h], 1
@@ -4511,11 +4512,15 @@ loc_0BC2B:
     call loc_0AFD8
     cmp word ptr ds:[0A430h], 1
     ret
-loc_0BC45:
+; BP = record: move it with the playfield scroll (REC_Y += ScrollDeltaY), then
+; FinishRecordUpdate. The common tail of most REC_TYPE handlers.
+ScrollRecordThenFinish:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
-loc_0BC4B:
-    call loc_0BCB1
+; Clamp X, remove the record when it leaves the screen vertically (some types
+; exempt), then run the collision checks unless MoveModeA47C is set.
+FinishRecordUpdate:
+    call ClampRecordX
     cmp word ptr ds:[MoveModeA47C], 0
     jne loc_0BC96
     cmp word ptr ss:[bp + REC_TYPE], 0
@@ -4534,18 +4539,18 @@ loc_0BC4B:
     je loc_0BC96
     cmp word ptr ss:[bp + REC_Y], 0FF40h
     jge loc_0BC8A
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0BC8A:
     cmp word ptr ss:[bp + REC_Y], 0F0h
     jl loc_0BC94
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0BC94:
     jmp short loc_0BCA3
 loc_0BC96:
     cmp word ptr ss:[bp + REC_Y], -014h
-    jl loc_0BD17
+    jl RemoveRecord
     cmp word ptr ss:[bp + REC_Y], 0F0h
-    jge loc_0BD17
+    jge RemoveRecord
 loc_0BCA3:
     cmp word ptr ds:[MoveModeA47C], 0
     jne loc_0BCB0
@@ -4554,7 +4559,8 @@ loc_0BCA3:
 loc_0BCB0:
     ret
 
-loc_0BCB1:
+; Clamp REC_X to 0..0C0h.
+ClampRecordX:
     cmp word ptr ss:[bp + REC_X], 0C0h
     jg loc_0BCBF
     cmp word ptr ss:[bp + REC_X], 0
@@ -4603,15 +4609,18 @@ loc_0BCFF:
 loc_0BD09:
     call loc_09E69
     ret
-loc_0BD0D:
+; RemoveRecord for the record at BX.
+RemoveRecordAtBX:
     push bp
     mov bp, bx
-    call loc_0BD17
+    call RemoveRecord
     mov bx, bp
     pop bp
     ret
 
-loc_0BD17:
+; BP = record: free it (REC_STATUS = 0) and update the live counters its kind and
+; type belong to (shots, encounter, companion).
+RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], 4
     je loc_0BD5C
@@ -4741,7 +4750,7 @@ loc_0BE3A:
 TypeHandler01:
     cmp word ptr ds:[CountGate2324], 1
     je loc_0BE46
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BE46:
     inc word ptr ss:[bp + REC_ANIM_COUNTER]
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
@@ -4749,7 +4758,7 @@ loc_0BE46:
     jmp word ptr cs:[bx + loc_0BE46Cases]
     even
 loc_0BE46Cases label word
-    dw offset loc_0BC45, offset loc_0BE5A, offset loc_0BEB0
+    dw offset ScrollRecordThenFinish, offset loc_0BE5A, offset loc_0BEB0
 loc_0BE5A:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 9
     jne loc_0BEA4
@@ -4757,7 +4766,7 @@ loc_0BE5A:
     je loc_0BE6F
     cmp word ptr ss:[bp + REC_PREV_TYPE], 025h
     je loc_0BE84
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0BE6F:
     mov word ptr ss:[bp + REC_DIRECTION], 6
     mov word ptr ss:[bp + REC_TYPE], 026h
@@ -4779,16 +4788,16 @@ loc_0BEA4:
     mov ax, word ptr ss:[bp + REC_ANIM_COUNTER]
     add ax, 0
     mov word ptr ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BEB0:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 0Ch
     jne loc_0BEB9
-    jmp near ptr loc_0BD17
+    jmp near ptr RemoveRecord
 loc_0BEB9:
     mov ax, ss:[bp + REC_ANIM_COUNTER]
     add ax, 3
     mov ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0BEC5:
     cmp word ptr ds:[bx + 018h], 7
     jne loc_0BECE
@@ -4871,10 +4880,10 @@ loc_0BF90:
     pop bp
     ret
 loc_0BF92:
-    call loc_0BD0D
+    call RemoveRecordAtBX
     jmp short loc_0BF25
 loc_0BF97:
-    call loc_0BD0D
+    call RemoveRecordAtBX
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
@@ -4904,7 +4913,7 @@ loc_0BFD5:
     mov bx, 060h
 loc_0BFE1:
     call loc_05F0D
-    call loc_0BCB1
+    call ClampRecordX
     push bp
     cmp word ptr ss:[bp + REC_SLOT_INDEX], -1
     je loc_0C017
@@ -7843,7 +7852,8 @@ MapResetList5 dw 0D7h, offset SetMapTile1,  0D8h, offset SetMapTile1,  0D9h, off
     dw 0EBh, offset SetMapTile1,  0ECh, offset SetMapTile1,  0EDh, offset SetMapTile1,  0EEh, offset SetMapTile1
     dw 0EFh, offset SetMapTile1
     dw 0FFFFh
-loc_0EFAE:
+; REC_KIND 2 and 4: run the REC_TYPE handler (TypeHandlers).
+RunTypeHandler:
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[DispatchRecordX], ax
     mov ax, word ptr ss:[bp + REC_Y]
@@ -7853,10 +7863,10 @@ loc_0EFAE:
     jmp word ptr cs:[bx + TypeHandlers]
 ; Behaviour handler per REC_TYPE (0..94h), entered with BP = record.
 TypeHandlers label word
-    dw offset loc_0BC45, offset TypeHandler01, offset TypeHandler02, offset TypeHandler02
+    dw offset ScrollRecordThenFinish, offset TypeHandler01, offset TypeHandler02, offset TypeHandler02
     dw offset TypeHandler04, offset TypeHandler05, offset TypeHandler06, offset TypeHandler07
     dw offset TypeHandler08, offset TypeHandler09, offset TypeHandler0A, offset TypeHandler0B
-    dw offset TypeHandler0C, offset loc_0BC45, offset loc_0BC45, offset TypeHandler0F
+    dw offset TypeHandler0C, offset ScrollRecordThenFinish, offset ScrollRecordThenFinish, offset TypeHandler0F
     dw offset TypeHandler10, offset TypeHandler11, offset TypeHandler12, offset TypeHandler13
     dw offset TypeHandler14, offset TypeHandler13, offset TypeHandler16, offset TypeHandler16
     dw offset TypeHandler18, offset TypeHandler19, offset TypeHandler1A, offset TypeHandler1B
@@ -7885,12 +7895,12 @@ TypeHandlers label word
     dw offset TypeHandler74, offset TypeHandler75, offset TypeHandler76, offset TypeHandler77
     dw offset TypeHandler78, offset TypeHandler79, offset TypeHandler7A, offset TypeHandler7B
     dw offset TypeHandler7C, offset TypeHandler13, offset TypeHandler13, offset TypeHandler7F
-    dw offset TypeHandler80, offset TypeHandler81, offset loc_0BC45, offset TypeHandler83
+    dw offset TypeHandler80, offset TypeHandler81, offset ScrollRecordThenFinish, offset TypeHandler83
     dw offset TypeHandler84, offset TypeHandler85, offset TypeHandler86, offset TypeHandler87
     dw offset TypeHandler88, offset TypeHandler89, offset TypeHandler8A, offset TypeHandler8B
     dw offset TypeHandler8C, offset TypeHandler8D, offset TypeHandler8E, offset TypeHandler8F
     dw offset TypeHandler90, offset TypeHandler91, offset TypeHandler92, offset TypeHandler93
-    dw offset loc_0BC45
+    dw offset ScrollRecordThenFinish
 TypeHandler86:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -7908,25 +7918,25 @@ loc_0F108:
     mov ss:[bp + REC_SPRITE], bx
     cmp ax, 4
     je loc_0F117
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F117:
     cmp word ptr ds:[FrameCount64], 26h
     je loc_0F121
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F121:
     call loc_081F4
     cmp bx, -1
     jne loc_0F12C
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F12C:
     call loc_074E2
     mov word ptr ds:[bx + 8], 0CBh
     mov word ptr ds:[bx + 18h], 60h
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler88:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F146
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F146:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -7944,21 +7954,21 @@ loc_0F160:
     mov ss:[bp + REC_SPRITE], bx
     cmp ax, 4
     je loc_0F16F
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F16F:
     call SpawnThrottledChild
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler6A:
     cmp word ptr ss:[bp + REC_Y], 50h
     je loc_0F17E
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F17E:
     mov word ptr ss:[bp + REC_TYPE], 56h
     jmp short TypeHandler56
 TypeHandler54:
     cmp word ptr ss:[bp + REC_Y], 0B0h
     je loc_0F18F
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F18F:
     mov word ptr ss:[bp + REC_TYPE], 56h
 TypeHandler56:
@@ -7968,10 +7978,10 @@ TypeHandler56:
     jne loc_0F1A6
     call loc_0AFD8
     jne loc_0F1A6
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F1A6:
     call loc_0BFC7
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler87:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -7995,7 +8005,7 @@ TypeHandler55:
     mov word ptr ss:[bp + REC_SPRITE], 73h
     cmp word ptr ss:[bp + REC_Y], 0B0h
     je loc_0F1EC
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F1EC:
     mov word ptr ss:[bp + REC_DIRECTION], 4
 loc_0F1F1:
@@ -8003,11 +8013,11 @@ loc_0F1F1:
     add ax, 77h
     mov ss:[bp + REC_SPRITE], ax
     add word ptr ss:[bp + REC_Y], 4
-    jmp near ptr loc_0BC4B
+    jmp near ptr FinishRecordUpdate
 TypeHandler57:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F20B
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F20B:
     jne loc_0F210
     call loc_0F221
@@ -8015,7 +8025,7 @@ loc_0F210:
     call loc_0AFD8
     call loc_0AFD8
     jne loc_0F21B
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F21B:
     jmp near ptr loc_0BFC7
     jmp near ptr loc_0BB03
@@ -8035,13 +8045,13 @@ TypeHandler59:
 loc_0F249:
     cmp word ptr ss:[bp + REC_Y], 80h
     jg loc_0F253
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F253:
     mov ax, ds:[FrameCount4]
     add ss:[bp + REC_SPRITE], ax
     cmp word ptr ss:[bp + REC_Y], 0C0h
     jg loc_0F263
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F263:
     mov word ptr ss:[bp + REC_TYPE], 5Ah
 TypeHandler5A:
@@ -8067,37 +8077,37 @@ loc_0F28C:
     jng loc_0F2B1
     cmp word ptr ss:[bp + REC_X], 0C0h
     jnl loc_0F2B1
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F2B1:
     xor word ptr ss:[bp + REC_DIRECTION], 6
     call loc_0AFD8
     je loc_0F2BD
     jmp near ptr loc_0BFC7
 loc_0F2BD:
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler5B:
     cmp word ptr ss:[bp + REC_Y], 0B0h
     jg loc_0F2CA
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F2CA:
     mov word ptr ss:[bp + REC_TYPE], 5Ch
 TypeHandler5C:
     mov word ptr ss:[bp + REC_SPRITE], 73h
     sub word ptr ss:[bp + REC_Y], 4
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler5D:
     mov ax, ds:[SlowCount8]
     add ax, 77h
     mov ss:[bp + REC_SPRITE], ax
     add word ptr ss:[bp + REC_Y], 8
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler5E:
     call loc_0AFD8
     call loc_0AFD8
     call loc_0AFD8
     call loc_0AFD8
     jne loc_0F2FC
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F2FC:
     cmp word ptr ss:[bp + REC_DIRECTION], 4
     je loc_0F30B
@@ -8106,10 +8116,10 @@ loc_0F2FC:
     jmp near ptr loc_0BFC7
 loc_0F30B:
     mov word ptr ss:[bp + REC_DIRECTION], 5
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F313:
     mov word ptr ss:[bp + REC_DIRECTION], 6
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler6E:
     mov bx, ds:[SlowCount4]
     shl bx, 1
@@ -8119,15 +8129,15 @@ TypeHandler6E:
     call loc_0AFD8
     call loc_0AFD8
     jne loc_0F337
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F337:
     cmp word ptr ss:[bp + REC_DIRECTION], 4
     je loc_0F345
     mov word ptr ss:[bp + REC_DIRECTION], 4
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F345:
     mov word ptr ss:[bp + REC_DIRECTION], 2
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler5F:
     mov ax, ds:[FrameCount4]
     add ax, 0F6h
@@ -8136,14 +8146,14 @@ TypeHandler5F:
     add ax, ss:[bp + REC_X]
     cmp ax, 60h
     jae loc_0F364
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F364:
     call loc_0AFD8
     call loc_0AFD8
     call loc_0AFD8
     call loc_0AFD8
     jne loc_0F375
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F375:
     cmp word ptr ss:[bp + REC_DIRECTION], 6
     je loc_0F384
@@ -8152,10 +8162,10 @@ loc_0F375:
     jmp near ptr loc_0BFC7
 loc_0F384:
     mov word ptr ss:[bp + REC_DIRECTION], 3
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F38C:
     mov word ptr ss:[bp + REC_DIRECTION], 5
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler61:
     mov ax, ss:[bp + REC_SAVED_Y]
     mov ds:[SteerTargetY], ax
@@ -8165,14 +8175,14 @@ TypeHandler61:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
     jne loc_0F3B3
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F3B3:
     mov word ptr ss:[bp + REC_TYPE], 62h
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler62:
     cmp word ptr ds:[FramesSinceInvaderSpawn], 18h
     jae loc_0F3C5
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F3C5:
     mov ax, ds:[InvaderDropStep]
     add ss:[bp + REC_Y], ax
@@ -8230,38 +8240,38 @@ loc_0F45D:
     and ax, 7Fh
     cmp ax, ds:[FrameCount128]
     je loc_0F46C
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F46C:
     cmp word ptr ds:[FrameCount4], 0
     je loc_0F476
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F476:
     inc word ptr ds:[RecordTickCounter]
     mov word ptr ss:[bp + REC_DIRECTION], 4
     call SpawnThrottledChild
     cmp bx, -1
     jne loc_0F48A
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F48A:
     mov word ptr ds:[bx + REC_SPRITE], 63h
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler65:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ds:[FrameCount4], 3
     je loc_0F4A0
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4A0:
     cmp word ptr ss:[bp + REC_SPRITE], 0EBh
     jne loc_0F4AA
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4AA:
     inc word ptr ss:[bp + REC_SPRITE]
     call loc_07476
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler63:
     cmp word ptr ss:[bp + REC_Y], 50h
     jae loc_0F4BC
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4BC:
     cmp word ptr ss:[bp + REC_SPRITE], 0E7h
     je loc_0F4EE
@@ -8272,21 +8282,21 @@ loc_0F4BC:
     cmp word ptr ss:[bp + REC_SPRITE], 0EAh
     je loc_0F4EE
     add word ptr ss:[bp + REC_Y], 4
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4DF:
     add word ptr ss:[bp + REC_X], 2
     cmp word ptr ss:[bp + REC_X], 60h
     je loc_0F4EC
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4EC:
     jmp short loc_0F4F8
 loc_0F4EE:
     cmp word ptr ds:[FrameCount4], 3
     je loc_0F4F8
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F4F8:
     inc word ptr ss:[bp + REC_SPRITE]
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler64:
     mov ax, 2
     cmp word ptr ds:[LevelIndex], 4
@@ -8294,7 +8304,7 @@ TypeHandler64:
     add al, 2
 loc_0F50A:
     add ss:[bp + REC_Y], ax
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler66:
     mov word ptr ss:[bp + REC_FIELD_36], 0D222h
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
@@ -8324,7 +8334,7 @@ TypeHandler6C:
 loc_0F55A:
     cmp word ptr ss:[bp + REC_Y], 40h
     jae loc_0F563
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F563:
     mov ax, ds:[DescentTargetX]
     cmp ss:[bp + REC_X], ax
@@ -8338,7 +8348,7 @@ loc_0F577:
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ss:[bp + REC_TYPE], 6Ch
     je loc_0F583
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F583:
     cmp word ptr ss:[bp + REC_X], 60h
     je loc_0F596
@@ -8346,23 +8356,23 @@ loc_0F583:
     jne loc_0F593
     call SpawnThrottledChild
 loc_0F593:
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F596:
     cmp word ptr ds:[FrameCount4], 3
     jne loc_0F5A0
     call SpawnThrottledChild
 loc_0F5A0:
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler6F:
     cmp word ptr ss:[bp + REC_Y], 50h
     jae loc_0F5AC
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F5AC:
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     sub ax, ss:[bp + REC_Y]
     cmp ax, 20h
     jae loc_0F5BA
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F5BA:
     mov word ptr ss:[bp + REC_TYPE], 70h
 TypeHandler70:
@@ -8376,7 +8386,7 @@ TypeHandler70:
     jne loc_0F5D9
     call SpawnThrottledChild
 loc_0F5D9:
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler72:
     mov ax, ds:[FrameCount8]
     shr ax, 1
@@ -8387,11 +8397,11 @@ TypeHandler72:
     jne loc_0F5F4
     call loc_07476
 loc_0F5F4:
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler73:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F601
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F601:
     mov word ptr ss:[bp + REC_DIRECTION], 2
     mov bx, ds:[SlowCount4]
@@ -8403,7 +8413,7 @@ loc_0F601:
 TypeHandler74:
     cmp word ptr ss:[bp + REC_Y], 90h
     jae loc_0F623
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F623:
     mov word ptr ss:[bp + REC_DIRECTION], 6
     mov bx, ds:[SlowCount4]
@@ -8427,10 +8437,10 @@ loc_0F652:
     call loc_0AFD8
     call loc_0AFD8
     jne loc_0F663
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F663:
     call loc_0BFC7
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler84:
     mov bx, ss:[bp + REC_DIRECTION]
     shr bx, 1
@@ -8444,7 +8454,7 @@ loc_0F66E:
     mul byte ptr ds:[bx + di + 237Eh]
     cmp ax, ss:[bp + REC_Y]
     jna loc_0F689
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F689:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
@@ -8457,20 +8467,20 @@ loc_0F699:
     and bx, -10h
     cmp ax, bx
     je loc_0F6A9
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F6A9:
     mov word ptr ss:[bp + REC_TYPE], 85h
     ret
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     cmp ax, ss:[bp + REC_Y]
     jae loc_0F6BA
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F6BA:
     jmp short loc_0F689
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ax, ss:[bp + REC_X]
     jae loc_0F6C7
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F6C7:
     mov bx, ss:[bp + REC_Y]
     add bx, 14h
@@ -8479,14 +8489,14 @@ loc_0F6C7:
     and ax, 0FFFCh
     cmp ax, bx
     je loc_0F6DD
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F6DD:
     mov word ptr ss:[bp + REC_TYPE], 85h
     ret
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ax, ss:[bp + REC_X]
     jna loc_0F6EE
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F6EE:
     jmp short loc_0F6C7
 TypeHandler92:
@@ -8497,14 +8507,14 @@ TypeHandler92:
     and ax, 0FFFCh
     cmp ax, bx
     je loc_0F706
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F706:
     sub word ptr ss:[bp + REC_Y], 4
     call loc_0F71B
     add word ptr ss:[bp + REC_Y], 8
     call loc_0F71B
     sub word ptr ss:[bp + REC_Y], 4
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F71B:
     call SpawnThrottledChild
     cmp bx, -1
@@ -8516,7 +8526,7 @@ TypeHandler75:
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ds:[FrameCount4], 3
     je loc_0F737
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F737:
     push word ptr ss:[bp + REC_DIRECTION]
     mov word ptr ss:[bp + REC_DIRECTION], 5
@@ -8526,7 +8536,7 @@ loc_0F737:
     mov word ptr ss:[bp + REC_DIRECTION], 4
     call loc_0C21D
     pop word ptr ss:[bp + REC_DIRECTION]
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 TypeHandler76:
     mov si, 0D2C4h
     jmp short loc_0F779
@@ -8554,7 +8564,7 @@ loc_0F78C:
     lodsw
     add ax, ds:[SegBossX]
     mov ss:[bp + REC_X], ax
-    jmp near ptr loc_0BC45
+    jmp near ptr ScrollRecordThenFinish
 loc_0F797:
     mov bp, ds:[SegBossAnchor]
     push word ptr ds:[SegBossX]
