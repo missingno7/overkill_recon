@@ -996,19 +996,16 @@ ClosePackedFile:
     jmp near ptr FailPackedLoad
 @@closed:
     ret
-; Incremented by the timer interrupt (IncrementTimerTick); waited on by WaitTimerTick.
+; Frame pacing (platform seam): written asynchronously by Interrupt08Handler every
+; second timer tick (about 36.4 Hz); the game loop clears it (ClearTimerTick) and
+; spins until it is nonzero again (WaitTimerTick).
 TimerTickCount db 0
-; Increment TimerTickCount modulo 256; INC preserves incoming CF. Near return.
 IncrementTimerTick:
     inc byte ptr cs:[TimerTickCount]
     ret
-; ClearTimerTick
-; Write zero to CS:066B. Registers and flags unchanged; near return.
 ClearTimerTick:
     mov byte ptr cs:[TimerTickCount], 0
     ret
-; Poll CS:066B until nonzero. Requires asynchronous mutation to terminate from zero; near
-; return leaves CMP flags.
 WaitTimerTick:
     cmp byte ptr cs:[TimerTickCount], 0
     je WaitTimerTick
@@ -1037,7 +1034,7 @@ InstallTimerVector08:
     push ds
     push cs
     pop ds
-    mov dx, 06E5h
+    mov dx, offset Interrupt08Handler
     mov ax, DOS_SET_VECTOR*256 + 08h
     int 021h
     pop ds
@@ -1070,9 +1067,11 @@ RestoreTimerVector08:
     ret
 ; Unreferenced zero bytes between routines.
 UnusedBeforeInt08 db 00h,00h
-; Interrupt08Handler
-; Entry installed by InstallTimerVector08. Calls counter/music helpers and can chain a
-; previous vector; inspect full CFG and unresolved far calls before changing it.
+; Timer interrupt at about 72.8 Hz (TIMER_DIVISOR). Every tick: the loaded sound
+; module's tick entry, then the PC-speaker effect player (SfxTimerTick). Every second
+; tick (TimerTickPhase even): the game-frame tick. Every fourth tick chains the saved
+; BIOS handler, which keeps the BIOS clock at 18.2 Hz; otherwise it sends the EOI itself.
+Interrupt08Handler:
     push ax
     push ds
     push bx

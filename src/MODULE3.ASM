@@ -6377,6 +6377,9 @@ LoadSoundModule:
     mov byte ptr ds:[SoundModuleLoaded], 1
     mov al, MUSIC_TITLE
 
+; Music seam: AL = MUSIC_* tune. Written into the loaded module's header word
+; MODULE_MUSIC_REQUEST unless it is already MODULE_MUSIC_CURRENT; the module's own
+; timer tick picks it up.
 RequestModuleMusic:
     mov byte ptr ds:[ModuleSoundRequest], al
     cmp byte ptr ds:[ModuleSoundEnabled], 0

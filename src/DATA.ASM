@@ -1436,6 +1436,9 @@ MarchWord98AC dw 0FFFFh
 ; Unreferenced 16-byte zero area before the input state.
 UnusedInputArea db 00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+; Input seam: the normalized controls gameplay reads (IN_* bits: directions, primary
+; and secondary button), rebuilt by PollInputBits from the keyboard table or the
+; joystick, or synthesized by the level-end autopilot and the demo.
 InputBits db 00h
 ; Cleared by the joystick calibration routines; no reader found.
 JoyCalByte98BF db 0h
@@ -1443,9 +1446,12 @@ JoyCalByte98BF db 0h
 SfxEnabled db 01h
 ; Gates CB1C's copy of ModuleSoundRequest into module header word +8.
 ModuleSoundEnabled db 01h
+; Last tune passed to RequestModuleMusic (re-sent after the boss key and options).
 ModuleSoundRequest db 00h
+; Interrupt-written (IRQ 1): the last make code seen, until a reader clears it.
 KeyLastMakeCode db 00h
-; One byte per scancode, KEY_STATE_DOWN while held; kept by Interrupt09KeyboardHandler.
+; Interrupt-written (IRQ 1): one byte per scancode, KEY_STATE_DOWN while held. Menus,
+; pause and cheats read it directly; gameplay goes through InputBits.
 KeyDownTable db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -1948,6 +1954,9 @@ SfxCommandTable dw offset SfxStopAll, offset SfxCmdRest, offset SfxCmdStepDown
     dw offset SfxCmdStepUp, offset SfxCmdSlide, offset SfxStreamStoreAndWait
 ; Unreferenced word after SfxCommandTable (commands 80h..85h have 6 entries).
 UnusedSfxWord db 00h,00h
+; Sound seam: gameplay writes an effect ID to SfxRequest (only when SfxEnabled);
+; the timer interrupt (SfxTimerTick) starts it and keeps SfxActive = the playing
+; effect, 0 when idle (some callers wait on it).
 SfxActive db 00h
 ; Effect requested of SfxTimerTick (below 20h); lower IDs pre-empt higher ones.
 SfxRequest db 00h
