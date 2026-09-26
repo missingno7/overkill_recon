@@ -1071,6 +1071,8 @@ UnusedBeforeInt08 db 00h,00h
 ; module's tick entry, then the PC-speaker effect player (SfxTimerTick). Every second
 ; tick (TimerTickPhase even): the game-frame tick. Every fourth tick chains the saved
 ; BIOS handler, which keeps the BIOS clock at 18.2 Hz; otherwise it sends the EOI itself.
+; The AdLib module's OPL delay reprograms PIT channel 2 and port 61h, the same hardware
+; SfxTimerTick uses for the speaker, right before it in this handler.
 Interrupt08Handler:
     push ax
     push ds

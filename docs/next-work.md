@@ -5,9 +5,8 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
 
 ## Unclassified bytes
 
-None in the main image. Unreferenced bytes are named Unused*/…Slack with the reason
-(allocation slack, unused table half, filler between routines). The sound modules
-(src/drivers) are still mostly unclassified.
+None in the main image or the sound modules. Unreferenced bytes are named Unused*/…Slack
+(allocation slack, unused table half, filler between routines).
 
 ## Semantics still open
 
