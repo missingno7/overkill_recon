@@ -12,7 +12,8 @@ build/hybrid/ and every routine the C side owns is cut out of the copy:
     labels become `extrn`, so the rest of the ASM reaches the same labels, now
     defined by the region's bridge c/<region>.asm (ASM calling contract -> C function).
 
-Then TASM assembles the derived ASM and the bridge, the C compiler compiles c/*.c,
+Then TASM assembles the derived ASM and the bridge, the C compiler compiles c/*.c
+(into MAIN, or into the far code segment a `SEGMENT: NAME` line names; see far_bridge),
 TLINK links everything into one EXE with the oracle's link order, and
 tools/package.py makes it runnable next to the original launcher.
 
@@ -40,6 +41,11 @@ def owned_labels(c_dir=ROOT/'c'):
         for m in re.finditer(r'OWNS:([^\n*]*)', path.read_bytes().decode('latin-1')):
             for name in m[1].split(): owned[name.upper()] = path.name
     return owned
+
+def code_segment(path):
+    """Code segment of a C region: MAIN, or the far segment named by a `SEGMENT: NAME` line."""
+    m = re.search(r'SEGMENT:[ \t]*(\w+)', path.read_bytes().decode('latin-1'))
+    return m[1].upper() if m else 'MAIN'
 
 def code(line):
     return line.split(';', 1)[0]
@@ -159,10 +165,11 @@ def publish_labels(text):
     at = re.search(r'^locals[ \t]*\r?\n', text, re.M).end()
     return text[:at] + ''.join(f'public {n}\r\n' for n in dict.fromkeys(names)) + text[at:]
 
-def check_c_object(path):
-    """C objects must add code to MAIN only: no data segments with content, no local
-    (static) symbols, no communal data (TLINK 2.0 cannot link LPUBDEF/LEXTDEF/COMDEF)."""
-    data = path.read_bytes(); names = ['']; i = 0
+def check_c_object(path, segment='MAIN'):
+    """C objects must add code to their code segment only: no data segments with content,
+    no local (static) symbols, no communal data (TLINK 2.0 cannot link LPUBDEF/LEXTDEF/
+    COMDEF). Returns the public names (the C functions)."""
+    data = path.read_bytes(); names = ['']; publics = []; i = 0
     while i < len(data):
         kind, size = data[i], struct.unpack_from('<H', data, i + 1)[0]
         body = data[i + 3:i + 3 + size - 1]
@@ -173,9 +180,32 @@ def check_c_object(path):
             while j < len(body): n = body[j]; names.append(body[j + 1:j + 1 + n].decode('latin-1')); j += 1 + n
         if kind == 0x98:
             length = struct.unpack_from('<H', body, 1)[0]; name = names[body[3]]
-            if length and name != 'MAIN':
+            if length and name != segment:
                 raise ValueError(f'{path.name}: C data in segment {name} ({length} bytes); C owns no data')
+        if kind == 0x90:
+            j = 2 if body[1] else 4    # group and segment index (one byte each here), frame if absolute
+            while j < len(body):
+                n = body[j]; publics.append(body[j + 1:j + 1 + n].decode('latin-1').upper()); j += 1 + n + 3
         i += 3 + size
+    return publics
+
+def far_bridge(text, functions, segment):
+    """Bridge of a region placed in a far code segment: the stubs stay in MAIN (the oracle
+    labels and their near contracts are unchanged), each `call` to a C function becomes a
+    far call to a generated far entry `<FUNCTION>_FAR: call <FUNCTION> / retf` in the
+    region's segment, next to the C code."""
+    targets = set()
+    def far_call(m):
+        if m[3].upper() not in functions: return m[0]
+        if m[2].lower() != 'call': raise ValueError(f'bridge jumps into far C code: {m[0].strip()!r}')
+        targets.add(m[3].upper()); return f'{m[1]}call far ptr {m[3].upper()}_FAR'
+    lines = [re.sub(r'^(\s+)(j\w+|call)\s+(?:short\s+|near\s+ptr\s+)?([A-Za-z_]\w*)\s*(?=;|$)', far_call, line, flags=re.I)
+             for line in text.split('\r\n')]
+    at = max(i for i, l in enumerate(lines) if re.match(r'^end\b', l, re.I))
+    entries = [f'{segment} segment byte public \'CODE\'', f'assume cs:{segment}']
+    for name in sorted(targets):
+        entries += [f'public {name}_FAR', f'{name}_FAR:', f'    call {name}', '    retf']
+    return '\r\n'.join(lines[:at] + entries + [f'{segment} ends'] + lines[at:])
 
 def watcom(args, cwd):
     for row in read_json(ROOT/'metadata/c-toolchain-lock.json')['files']:
@@ -188,7 +218,7 @@ def watcom(args, cwd):
     if p.returncode: raise RuntimeError('WCC failed:\n' + text)
     return text
 
-WCC_OPTIONS = ['-ms', '-0', '-s', '-zl', '-zld', '-zq', '-ox', '-w4', '-we', '-nt=MAIN', '-nc=CODE']
+WCC_OPTIONS = ['-ms', '-0', '-s', '-zl', '-zld', '-zq', '-ox', '-w4', '-we', '-nc=CODE']
 
 def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
     """Derive, compile, assemble and link. with_c=False builds the symbol-complete oracle
@@ -204,17 +234,28 @@ def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
         objects.append(path.stem)
     missing = sorted(set(owned) - {n.upper() for n in removed_all})
     if missing: raise ValueError('OWNS names no oracle label: ' + ' '.join(missing))
+    c_objects, far_objects, functions = [], [], {}
+    for k, source in enumerate(sorted(c_dir.glob('*.c')) if with_c else (), 1):
+        stem = f'C{k:02}'; obj = out/(stem + '.OBJ'); obj.unlink(missing_ok=True)
+        segment = code_segment(source)
+        watcom([str(source), *WCC_OPTIONS, f'-nt={segment}', f'-i={c_dir}', f'-i={out}',
+                f'-nm={source.stem.upper()}', f'-fo={obj}'], out)
+        functions[source.stem.lower()] = (segment, set(check_c_object(obj, segment)))
+        (c_objects if segment == 'MAIN' else far_objects).append(stem)
     # One bridge per C region (c/<region>.asm); DOS 8.3 names in the build directory.
     for k, bridge in enumerate(sorted(c_dir.glob('*.asm')) if with_c else (), 1):
-        shutil.copyfile(bridge, out/f'B{k:02}.ASM'); objects.append(f'B{k:02}')
+        text = bridge.read_bytes().decode('latin-1')
+        segment, names = functions.get(bridge.stem.lower(), ('MAIN', set()))
+        if segment != 'MAIN': text = far_bridge(text, names, segment)
+        (out/f'B{k:02}.ASM').write_bytes(text.encode('latin-1')); objects.append(f'B{k:02}')
     for stem in objects:
         (out/(stem + '.OBJ')).unlink(missing_ok=True)
         log = dos('TASM.EXE', [f'{stem}.ASM,{stem}.OBJ,{stem}.LST'], out)
         if not (out/(stem + '.OBJ')).exists(): raise ValueError(f'TASM failed for {stem}:\n{log}')
-    for k, source in enumerate(sorted(c_dir.glob('*.c')) if with_c else (), 1):
-        stem = f'C{k:02}'; obj = out/(stem + '.OBJ'); obj.unlink(missing_ok=True)
-        watcom([str(source), *WCC_OPTIONS, f'-i={c_dir}', f'-i={out}', f'-nm={source.stem.upper()}', f'-fo={obj}'], out)
-        check_c_object(obj); objects.append(stem)
+    # Segments are placed in order of first appearance: far C segments must precede DATA,
+    # because the image (the DOS block the game keeps) ends with DATA and IMAGE_END.
+    at = objects.index('DATA')
+    objects = objects[:at] + far_objects + objects[at:] + c_objects
     (out/'OVERKILL.EXE').unlink(missing_ok=True)
     (out/'LINK.RSP').write_text('+\n'.join(s + '.OBJ' for s in objects) + '\nOVERKILL.EXE\nOVERKILL.MAP\n')
     log = dos('TLINK.EXE', ['/s', '@LINK.RSP'], out)
@@ -236,5 +277,9 @@ if __name__ == '__main__':
     oracle, exe, removed = build_all()
     print('Symbol-complete oracle (exact image):', oracle)
     print('Linked', exe, '-', len(removed), 'oracle labels owned by C')
+    # Code segments that hold C (MAIN is limited to 64 KiB; see docs/dos-hybrid.md).
+    segments = {code_segment(p) for p in (ROOT/'c').glob('*.c')} | {'MAIN'}
+    for m in re.finditer(r'^ \w+H \w+H (\w+)H (\w+)', exe.with_suffix('.MAP').read_text(), re.M):
+        if m[2] in segments: print(f'  segment {m[2]}: {m[1].lstrip("0")}h bytes')
     print('Runnable:', package(exe, ROOT/'build/run/hybrid'))
     print('Oracle for comparison:', package(oracle, ROOT/'build/run/oracle'))

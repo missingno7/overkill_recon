@@ -66,7 +66,8 @@ game's DATA symbols with DS = SS. Watcom was chosen because:
 
 Pinned by metadata/c-toolchain-lock.json: `toolchain/watcom/BINNT/WCC.EXE` (Win32 loader)
 and `toolchain/watcom/BINB/WCC.EXE` (the compiler), copied from C:\tools\watcom-10.0a;
-private like TASM/TLINK. Options: `-ms -0 -s -zl -zld -zq -ox -w4 -we -nt=MAIN -nc=CODE`.
+private like TASM/TLINK. Options: `-ms -0 -s -zl -zld -zq -ox -w4 -we -nc=CODE` and
+`-nt=MAIN` (or `-nt=<far segment>`, see "Growing the C region").
 
 ## ABI and rules for C code
 
@@ -76,7 +77,7 @@ private like TASM/TLINK. Options: `-ms -0 -s -zl -zld -zq -ox -w4 -we -nt=MAIN -
 | Arguments / result | SI, then DI; result in AX |
 | Preserved | everything but AX (`modify exact [ax]`); flags are scratch |
 | Segments | DS = SS = the game state segment, DF = 0 (the game keeps both); ES never assumed |
-| Code | segment MAIN (near calls both ways); MAIN is now F797h bytes of 64 KiB |
+| Code | segment MAIN (near calls both ways; `python tools/hybrid.py` prints its size, now F799h of 64 KiB), or a far segment the region opts into |
 | Data | C owns none: no statics, no string literals, no tentative definitions; tools/hybrid.py rejects C objects with data or local/communal symbols (TLINK 2.0 cannot link LPUBDEF/COMDEF) |
 | Arithmetic | 16-bit types from GAME_GEN.H (`word` unsigned, casts to `sword` where the oracle compares signed); no 32-bit multiply/divide (runtime helpers) |
 | Behaviour | the oracle's, including its bugs: comment deliberate quirks as intentional |
@@ -107,3 +108,60 @@ ASM boundary. Bridge stubs exist only where remaining ASM enters C; as callers m
 they disappear. If bridge code grows with C coverage, stop and redraw the boundary.
 MAIN has 64 KiB: C code replaces the ASM it owns, so space grows only by the size
 difference; if C outgrows it, the island moves to its own code segment behind far entries.
+
+### Far code segment (opt-in per region)
+
+A line `SEGMENT: CGAME` in `c/<region>.c` (next to `OWNS:`) compiles the region with
+`-nt=CGAME`; without it the region stays in MAIN. Same memory model and convention (small
+model: near C-to-C calls, DS = SS = the state segment, data fixups in DATA's frame, no
+runtime library). What changes, all done by tools/hybrid.py:
+
+- Placement: TLINK orders segments by first appearance, and the image the game keeps
+  (it shrinks its DOS block to `seg ImageEnd`) ends with DATA and IMAGE_END, so far C
+  objects are linked just before DATA.OBJ: MAIN, FAR0F7F, SLOT1022, SEG1534, SEG153A,
+  CGAME, DATA, IMAGE_END. Every segment behind MAIN only moves (its references are
+  relocated); nothing depends on its paragraph.
+- Entry: the bridge `c/<region>.asm` is written once, in the near form above, and stays in
+  MAIN (the oracle labels keep their near contracts, flag results and tails). Its
+  `call <c function>` become `call far ptr <C FUNCTION>_FAR`, and a generated
+  `<C FUNCTION>_FAR: call <c function> / retf` is placed in CGAME: +2 bytes of MAIN,
+  4 bytes of CGAME and one relocation per C function the bridge calls. A bridge `jmp`
+  into far C is rejected.
+- ASM from far C: near calls cannot cross segments (TLINK reports "Fixup overflow",
+  it cannot silently mislink). Far C reaches a MAIN routine the way the oracle's far code
+  does, through `FarCallMainNearViaAX` (AX = near target, all other registers and the
+  flags pass through), with one pragma per register contract, e.g.
+
+  ```c
+  typedef void (__near *main_routine)(void);
+  extern void __far FarCallMainNearViaAX(void);
+  extern void NextRandomWord(void);          /* BX out */
+  word call_main_bx(main_routine target);
+  #pragma aux call_main_bx "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx]
+  /* BP-input routines: Watcom cannot pass BP, so load it inline. */
+  void call_main_si_bp(main_routine target, Record *r);
+  #pragma aux call_main_si_bp = "push bp" "mov bp, si" "call far ptr FarCallMainNearViaAX" \
+      "pop bp" parm [ax] [si] modify exact [ax bx cx dx di es]
+  ```
+
+  `call_main_bx(NextRandomWord)` is `mov ax, offset NextRandomWord / call far ptr
+  FarCallMainNearViaAX`: 8 bytes and one relocation per call, no MAIN bytes, and it works
+  in either placement. The callee must not take input in AX.
+- Tails: the oracle's shared tails (`jmp ScrollRecordThenFinish`, `jmp FinishRecordUpdate`)
+  stay in the bridge, after the far call returns, exactly like the oracle's own far bodies
+  (`call far ptr Type80MarchMemberBody / jmp FinishRecordUpdate`); a conditional tail is a
+  result the bridge tests. Calling a tail from C and returning also works for tails that
+  return normally, but it leaves the tail's register and flag results to the C epilogue.
+- Regions that call each other directly must share a segment.
+
+Measured on the movement region (`SEGMENT: CGAME`; not the committed default): MAIN
+F799h -> F5FEh (-411 bytes: the C code, 1A7h, leaves; the bridge grows 50h -> 5Ch), CGAME
+1BFh (C 1A7h + six far entries 18h), relocations 123 -> 129, all suites and the movement
+mutants pass. A spike region (Type3BFallRandomFlicker in CGAME: NextRandomWord through
+the trampoline, bridge tail to ScrollRecordThenFinish; also the call-and-return tail
+through `call_main_si_bp`) passed 3000 cases against the oracle.
+
+Rule: a region stays in MAIN while MAIN keeps room (at least 1 KiB free after the
+region). Large islands entered from few labels and calling few ASM routines, e.g. the
+record handler bodies, go to CGAME; write their ASM calls through the trampoline from
+the start so the placement stays a one-line switch.
