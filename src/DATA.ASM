@@ -1465,7 +1465,8 @@ InputBits db 00h
 JoyCalUnusedByte db 0h
 ; Every one of its 52 tests gates an SfxRequest write or waits on SfxActive.
 SfxEnabled db 01h
-; Gates CB1C's copy of ModuleSoundRequest into module header word +8.
+; Gates RequestModuleMusic's write of the tune into the module header (the menu's music
+; option).
 ModuleSoundEnabled db 01h
 ; Last tune passed to RequestModuleMusic (re-sent after the boss key and options).
 ModuleSoundRequest db 00h
