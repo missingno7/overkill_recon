@@ -22,6 +22,7 @@ python tools/hybrid.py        # build/oracle-sym, build/hybrid, build/run/{oracl
 python tools/difftest.py      # all suites (tests/*.py); a number scales the case count
 python tools/difftest.py --mutants    # every listed mutant must be detected
 python tools/difftest.py --coverage   # oracle instructions of C-owned code reached
+python tools/graph.py         # migration graph + ranked candidate C regions: build/graph/report.md, graph.json
 ```
 
 `build/run/hybrid` (and `build/run/oracle`) hold a runnable `OVERKILL`: the linked EXE,
