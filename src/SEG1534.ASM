@@ -40,19 +40,14 @@ CriticalErrorHandler:
     push word ptr cs:[ErrorFlagsOrTarget]
     iret
 
-; Far entry. Set AL=24h and DX=0006h; near-call SetInterruptVectorToCS then RETF. Requests DOS INT21h/AH25h
-; vector24h -> current CS:0006. DS restored by helper; AX/DX and DOS-visible effects are not hidden. Remaining
-; register/flag guarantees are conditional on DOS service behavior. Normal far return; not a complete contract
-; for the nonlocal handler at0006.
+; Point DOS INT 24h (critical error) at CriticalErrorHandler.
 InstallCriticalErrorVector:
     mov al, 024h
     mov dx, offset CriticalErrorHandler
     call SetInterruptVectorToCS
     retf
 
-; Near leaf. Save DS; set DS=CS, AH=25h, invoke INT21h with caller AL(vector) and DX(handler offset); restore DS
-; and RET. No algorithm beyond DOS vector installation request. Register/flag effects of DOS are passed through
-; except restored DS. Valid DOS service and stack required; IF/DF not modified by surrounding instructions.
+; Set interrupt vector AL to CS:DX via DOS INT 21h/25h; DS preserved.
 SetInterruptVectorToCS:
     push ds
     push cs

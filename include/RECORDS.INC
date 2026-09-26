@@ -16,8 +16,8 @@ REC_Y equ 02h
 REC_X equ 04h
 ; 0..7 clockwise from up (0 up, 2 right, 4 down, 6 left), see DirectionFromQuadrant.
 REC_DIRECTION equ 06h
-; Sprite-table index for drawing. On the primary record it also serves as a state and
-; offset-pair index (OFFSET_PAIR_INDEX_08).
+; Sprite-table index for drawing. On the primary record it is the ship form (0..2,
+; 3 or more = destroyed), which also indexes the pod and exhaust offset tables.
 REC_SPRITE equ 08h
 ; Drawn in the first pass when 0, in the second when 1.
 REC_DRAW_PASS equ 0Ah

@@ -557,7 +557,7 @@ PollJoystickPrimaryOrAbort:
     pop ax
     ret
 
-; Wait until the joystick primary button is released, then pause for 25 calls of WaitVerticalRetrace.
+; Wait until the joystick primary button is released, then pause 25 vertical retraces.
 WaitJoystickPrimaryRelease:
     push ax
     push bx
@@ -1134,9 +1134,9 @@ loc_00752:
     call loc_0C57C
     ret
 
-; F9 boss key: loc_0CB3E (module word +8 = FFh, five module ticks), text mode and show BossKeyScreen (colouring its
-; rows), wait for F9 release, any key and F9 release again, then restore the game's
-; BIOS video mode.
+; F9 boss key: silence the sound module (loc_0CB3E), switch to text mode and show
+; BossKeyScreen with coloured rows, wait for F9 release, any key and F9 release again,
+; then restore the game's BIOS video mode.
 ShowBossKeyScreen:
     call loc_0CB3E
     mov ax, 3
@@ -9407,11 +9407,8 @@ loc_05059:
     stc
     ret
 
-; Near leaf. ES=word CS:9592. Read byte ES:BX as unsigned index; read byte DS:[C3AA+index]. Return AX=zero-
-; extended attribute, SI=C3AA+index, ES=selected segment. Final OR AL,AL sets ZF/SF/PF from attribute and clears
-; CF/OF (AF unspecified). Preserve BX,CX,DX,BP,DI,DS,SS and IF/DF. No memory writes except ordinary call stack.
-; Requires valid segment/lookup storage; no tile or entity identity asserted.
-; Lookup chain: source byte -> attribute byte; callers consume zero/nonzero.
+; BX = cell offset in the level map. Returns AX = ByteAttributeTable[map byte] and
+; ZF set when it is zero (callers test only zero/nonzero). ES = LevelMapSegment on exit.
 ReadIndexedByteAttribute:
     mov si, offset ByteAttributeTable
     mov es, word ptr cs:[LevelMapSegment]
@@ -9425,12 +9422,10 @@ GridOffsetNegativeY:
     mov bx, 0FFFFh
     ret
 
-; Near entry5073 plus shared return tail506F. AX=wrapped16-bit(DS:234E + SS:[BP+REC_Y]); store it to DS:215A. If
-; its sign bit is set, return BX=FFFF via506F, preserving CX/DX and leaving AX=sum. Otherwise row=AX>>4
-; unsigned; DX=row, CX=4*row, AX=SS:[BP+REC_X]>>4 unsigned; BX=DS:2350-13*row+AX modulo65536. Preserve
-; SI,DI,BP,DS,ES,SS and IF/DF. Flags on negative path come from Y ADD; normal path from final BX ADD.
-; Caller4FF9 needs no returned flags;4FF9 immediately overwrites them at501A. Memory writes only215A, apart
-; from stack. Ordinary record and state are disjoint; no silent saturation or signed division.
+; BP = record. Map the record's position to a level-map cell (13-byte rows, 16-pixel
+; cells): GridYSum = ScrollSubRow + REC_Y; returns BX = MapScrollPos - 13*(GridYSum>>4)
+; + REC_X>>4, or BX = FFFFh via GridOffsetNegativeY when GridYSum is negative.
+; Some callers do not check FFFFh (see ProbeGridForRecordResponse).
 ComputeRecordGridOffset:
     mov ax, word ptr ds:[ScrollSubRow]
     add ax, word ptr ss:[bp + REC_Y]
@@ -9734,9 +9729,9 @@ MAIN ends
 
 FAR0F7F segment para public 'CODE'
 assume cs:FAR0F7F,ds:nothing,ss:nothing,es:nothing
-; Far. Write the 27 settings bytes at SavedSettings: sound option, joystick
-; thresholds, input mode, key table A, video adapter (from BX), sound module letter and
-; words DS:BEDA/BEDC (roles unknown).
+; Write the 27 settings bytes at SavedSettings: sound option, joystick thresholds,
+; input mode, key table A, video adapter (from BX), sound module letter, ChooseSlot
+; and DifficultySetting.
 SaveSettingsToHiscoreBlock:
     mov di, offset SavedSettings
     mov ax, seg StateData
@@ -9761,7 +9756,7 @@ SaveSettingsToHiscoreBlock:
     stosw
     retf
 
-; Far. Mirror of SaveSettingsToHiscoreBlock. Also derives SfxEnabled and
+; Mirror of SaveSettingsToHiscoreBlock. Also derives SfxEnabled and
 ; ModuleSoundEnabled from the sound option, copies key-table A slot 2 to table B, and
 ; returns the saved video adapter in BX instead of storing it.
 LoadSettingsFromHiscoreBlock:
@@ -9795,7 +9790,7 @@ LoadSettingsFromHiscoreBlock:
     mov word ptr ds:[DifficultySetting], ax
     retf
 
-; Far. Self-inverse obfuscation of the high-score block: each byte is XORed with AAh and
+; Self-inverse obfuscation of the high-score block: each byte is XORed with AAh and
 ; with its countdown index (ACh..1). Returns AX = 16-bit sum of the resulting bytes,
 ; used as the file checksum.
 XorCodeHiscoreBlock:

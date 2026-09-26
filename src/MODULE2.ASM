@@ -4186,11 +4186,9 @@ loc_07519:
 loc_07521:
     jmp near ptr RemoveRecordAtBX
 
-; Near leaf. DS:95D8 supplies the first candidate. Inspect at most35 status words at stride38h in23B4..2B5B,
-; wrapping BX after increment equals2B5C. Return BX=first zero-status record, CX=35-skipped; save BX to DS:95D8
-; without activating record. Full pool returns BX=FFFF,CX=0 and leaves cursor unchanged. Requires aligned in-
-; pool cursor; unlike poolB, end cursor is not normalized before first read. AX,DX,SI,DI,BP,segments preserved;
-; flags changed.
+; Round-robin search of PoolA from PoolACursor for a record with REC_STATUS = 0.
+; Returns BX = free record (saved as the new PoolACursor, record not claimed) or
+; BX = FFFFh when all POOL_A_COUNT records are busy.
 FindFreeRecordPoolA:
     mov cx, POOL_A_COUNT
     mov bx, word ptr ds:[PoolACursor]
@@ -4233,10 +4231,8 @@ loc_07568:
 loc_07570:
     jmp near ptr RemoveRecordAtBX
 
-; Near leaf. DS:95DA supplies cursor. Normalize BX==32CCh to2B5Ch before reading; inspect at most34 zero-status
-; records at stride38h. Success returns BX and CX=34-skipped and saves cursor; failure BX=FFFF,CX=0 leaves
-; cursor unchanged. Accept aligned pool cursor or exact end32CC; other pointers not validated. Does not activate
-; or clear records. AX,DX,SI,DI,BP,segments preserved; flags changed.
+; PoolB counterpart of FindFreeRecordPoolA, from PoolBCursor. Unlike pool A, the
+; wrap to PoolB happens before each read, so a cursor equal to PoolBEnd is accepted.
 FindFreeRecordPoolB:
     mov cx, POOL_B_COUNT
     mov bx, word ptr ds:[PoolBCursor]
@@ -6742,20 +6738,13 @@ loc_08D83:
     call far ptr loc_1009C
     jmp near ptr FinishRecordUpdate
 
-; Far entry in main code frame. CALL AX invokes a near target in the same CS, then RETF returns to the outer far
-; caller. Requires AX to name valid main-frame near code that returns with a balanced stack. No register,
-; segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below
-; bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on
-; callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+; Far-call trampoline: lets far code call the main-frame near routine at offset AX.
+; All registers and flags pass through both ways.
 FarCallMainNearViaAX:
     call ax
     retf
 
-; Far entry in main code frame. CALL BP invokes a near target in the same CS, then RETF returns to the outer far
-; caller. Requires BP to name valid main-frame near code that returns with a balanced stack. No register,
-; segment or flag marshalling: all callee effects pass through. During near callee entry SP is two bytes below
-; bridge-entry SP; normal outer return advances entry SP by4. Stack-depth and asynchronous safety depend on
-; callees/environment. This is original ASM control-flow glue, not a reconstructed C adapter.
+; Same trampoline with the near target offset in BP.
 FarCallMainNearViaBP:
     call bp
     retf
@@ -6974,7 +6963,7 @@ StartLeaderScript:
     call loc_10108
     retf
 
-; Far. Spin until no KeyDownTable entry is set; only the keyboard IRQ can end the wait.
+; Spin until no KeyDownTable entry is set; only the keyboard IRQ can end the wait.
 WaitAllKeysReleased:
     push ax
     push cx

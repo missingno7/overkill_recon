@@ -528,7 +528,8 @@ StateData label byte
 ; UNKNOWN: not yet classified as code or data
     db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
     db 0FFh,0FFh,0FFh,0FFh
-; CalibrateJoystickWithAbort saves SP here; Esc during calibration (PollJoystickPrimaryOrAbort) restores it at AbortJoystickCalibration.
+; CalibrateJoystickWithAbort saves SP here; Esc during calibration
+; (PollJoystickPrimaryOrAbort) restores it at AbortJoystickCalibration.
 JoyCalAbortSp dw 00000h
 ; Selects the PollInputBits source; values other than 1 (joystick) and 2 (table B)
 ; use key table A.

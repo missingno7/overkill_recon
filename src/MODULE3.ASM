@@ -978,11 +978,9 @@ PauseGame:
     je @@wait_f10_release_again
     ret
 
-; Near leaf. Set ES=CS:9596, BP=237Ch. With DF=0 fill48 four-byte pairs at ES:A27A with (SS:[237E]+8,
-; SS:[2380]+9), modulo65536. Then DS:A33A/A33C/A33E/A340 become A27A/A2FE/A2BE/A27E. CX=0,DI=A33A,AX=last X+9;
-; BX,DX,SI,DS,SS preserved. Flags from final ADD. Requires valid buffers and source not overwritten by
-; destination for uniform-fill interpretation; loads repeat each iteration. Unlike later writes, initial X bias
-; is9, not8.
+; Fill every HistoryPairs entry with PrimaryRecord's (Y+8, X+9) and reset the write
+; cursor and the three lagged read cursors. Sets BP = PrimaryRecord. Note the X bias is
+; 9 here but 8 in StorePositionHistory.
 InitPositionHistory:
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset HistoryPairs
@@ -1180,17 +1178,13 @@ loc_09BCA:
 loc_09BDF:
     call AdvancePositionHistoryIfRequested
 
-; Near entry9BE2 and fallthrough from9BDF. StorePositionHistory, then ApplyPositionHistoryToRecords, then
-; PlaceSidePods iff word DS:BDAC!=0 OR unsigned word DS:2350>B6h. Normal RET9BFA; no cursor
-; advance at this entry. Requires reviewed callee memory/segment/DF preconditions, including valid source record
-; and selected table/index pairs. Preserve BP,CX,DX,DS,SS; ES becomes CS:9596 and DI follows the history store.
-; AX,BX,SI and flags are path-dependent as documented in callees; not declared dead. Skipping placement
-; preserves old clamp feedback and A398. No external hardware effects; shared state makes reentrancy unproved.
+; Separate entry, also reached by fallthrough from the code above. BP = record.
+; Record its position in the history, move the trailing pods along it, then place the
+; side pods unless the map has scrolled to MapScrollPos <= B6h outside the demo.
 StoreApplyHistoryAndConditionalPlacement:
     call StorePositionHistory
     call ApplyPositionHistoryToRecords
-; Placement runs if BDAC != 0 OR unsigned [2350] > B6h. Otherwise the
-; previous clamp feedback survives; history writes do not clear it.
+; When placement is skipped, the previous ClampXLowSeen/ClampXHighSeen survive.
     cmp word ptr ds:[DemoActive], 0
     jne loc_09BF7
     cmp word ptr ds:[MapScrollPos], 0B6h
@@ -1208,14 +1202,10 @@ CountRightPod:
     inc al
     ret
 
-; Near entry; DS holds input/state, SS:BP the record. Clear DS:A360. If bit2 of DS:98BE absent and byte A39E==1,
-; apply IncRecordXTwice and set A360=1. Then if bit1 absent and A39F==1, apply DecRecordXTwice and set A360=1.
-; AH counts words A966/A96A notFFFF; AL counts A968/A96C notFFFF. If counts equal, return via shared44AF RET.
-; Otherwise, if count difference magnitude2 or DS:2324!=1, set A360=1 and tail to one-step X increment for
-; AH>AL, decrement otherwise. FlagA360 records taking an adjustment path even if bound prevents movement. Return
-; AX=(AHcount<<8)|ALcount,BX=2*(ALcount+3*AHcount); CX,DX,SI,DI,BP and segments preserved. Flags are path-
-; dependent; caller9BDF ignores them before overwrite in9CF1. Assumes normal entry and no asynchronous register
-; corruption.
+; BP = record. Push X two steps away from an edge where a side pod was clamped (unless
+; the player steers that way), then one step towards the side with fewer pods (skipped for a
+; difference of one while CountGate2324 = 1). XAdjustPathTaken = 1 when any nudge path
+; was taken, even if the bound kept X unchanged; it triggers a history advance.
 AdjustRecordXFromCounts:
     mov word ptr ds:[XAdjustPathTaken], 0
     test byte ptr ds:[InputBits], IN_XMINUS
@@ -1307,10 +1297,7 @@ loc_09CD1:
     pop bp
     ret
 
-; Near leaf. ES=CS:9596, DI=DS:A33A; with DF=0 store SS:[BP+2]+8 then SS:[BP+4]+8 to ES:DI/DI+2, modulo65536. DI
-; advances4; AX holds X+8, flags from final ADD. BX,CX,DX,SI,BP,DS,SS preserved. Does not move the ring cursor.
-; Assumes valid nonoverlapping record/history for pair semantics; the second source load occurs after the first
-; store. DF is preserved, not cleared.
+; BP = record. Store its (Y+8, X+8) at HistoryWriteCursor without advancing the cursor.
 StorePositionHistory:
     mov es, word ptr cs:[MainDataSegment]
     mov di, word ptr ds:[HistoryWriteCursor]
@@ -1322,14 +1309,9 @@ StorePositionHistory:
     stosw
     ret
 
-; Near leaf. If low nibble of DS:98BE is zero and word DS:A360 is zero, return without writes. Otherwise advance
-; each of four word cursors DS:A33A/A33C/A33E/A340 by4 modulo65536, replacing exactly A33Ah with A27Ah. Ring
-; interpretation requires each cursor aligned within A27A..A336. No validation or >= wrap; invalid cursors
-; remain mechanically advanced. All general/segment registers preserved. Flags changed by final TEST/CMP;
-; caller9BDF falls through9BE2, whose9CD9 ADD kills them before use. Trigger means requested input/adjustment,
-; not proof that a coordinate changed.
-; Movement input or a prior adjustment path triggers advancement, not a
-; comparison of old/new coordinates. A360 can survive a skipped AdjustRecordXFromCounts call.
+; Advance the write cursor and the three lagged cursors one entry around the
+; HistoryPairs ring. Triggered by movement input or XAdjustPathTaken, not by an actual
+; position change; XAdjustPathTaken can be stale when AdjustRecordXFromCounts was skipped.
 AdvancePositionHistoryIfRequested:
     test byte ptr ds:[InputBits], INPUT_MOVEMENT_MASK
     jne loc_09D00
@@ -1601,12 +1583,10 @@ loc_09F88:
     dec word ptr ds:[SidePodsToAdd]
     ret
 
-; Closed near-entry cluster ending through shared9FEA leaf tail. Clear bytes DS:A39E/A39F. Set A398=A39A, apply
-; PlaceRecordFromOffsetPair to slots A96C then A968 using tables A38C/A374. Set A398=A39C, apply to A96A then
-; fall through for A966 using A380/A368. FFFF slots skipped. Clamp bytes aggregate whether any present record hit
-; signed X clamp; they do not count records or report actual source movement. Preserve CX,DX,DI,BP and segments;
-; AX,BX,SI scratch with path-dependent returns. No internal index bound; requires each selected table/index and
-; record valid. Shared global A398 means non-reentrant without external protection.
+; BP = record the pods follow. Position the four side pods from their offset tables,
+; right pair spread by SidePodSpreadRight, left pair by SidePodSpreadLeft; empty slots
+; are skipped. ClampXLowSeen/ClampXHighSeen report whether any pod hit the X clamp.
+; Falls through into PlaceRecordFromOffsetPair for the last pod.
 PlaceSidePods:
     mov byte ptr ds:[ClampXLowSeen], 0
     mov byte ptr ds:[ClampXHighSeen], 0
@@ -1626,22 +1606,17 @@ PlaceSidePods:
     mov si, offset SidePodOffsetsLeftInner
     mov bx, word ptr ds:[SidePodLeftInner]
 
-; Near callable leaf and fallthrough tail of9FAF. BX=FFFF returns unchanged registers, flags CMP(BX,FFFF).
-; Otherwise with DF=0 select pair at DS:(SI+4*SS:[BP+8]) modulo65536. Store Y=pair.word0+SS:[BP+2] modulo65536
-; to DS:[BX+2], then raw X=pair.word1+SS:[BP+4]+2*DS:A398 modulo65536 to DS:[BX+4]. Clamp signed raw X to0..192;
-; set byte A39E on lower clamp, A39F on upper, never clear them. AX retains raw unclamped X; SI advances past
-; pair; BX,CX,DX,DI,BP,segments preserved. Final flags compare post-lower-clamp X with192, before optional upper
-; store. Requires valid index/pointers and nonaliasing for pair formula; actual sequential loads/stores remain
-; authoritative.
+; BX = pod record or FFFFh (no-op), SI = (Y, X) offset table, BP = anchor record.
+; Pod position = anchor + table[anchor REC_SPRITE] + 2*OffsetXWork in X, with X clamped
+; to 0..PLACEMENT_X_SIGNED_MAX; a clamp sets ClampXLowSeen/ClampXHighSeen (never clears).
 PlaceRecordFromOffsetPair:
     cmp bx, -1
     jne loc_09FF0
     ret
-; Full word index, no bound check. Primary field 2384 can be assigned 3
-; (9EB0/9EFC); D183 increments then D19C jumps to9FAF. Three pairs per
-; adjacent group do NOT prove a 0..2 caller bound.
+; The pair index is the anchor's REC_SPRITE (ship form).
+; Tables hold three pairs, but no bound check: the primary sprite can be set to 3.
 loc_09FF0:
-    mov ax, word ptr ss:[bp + OFFSET_PAIR_INDEX_08]
+    mov ax, word ptr ss:[bp + REC_SPRITE]
     shl ax, 1
     shl ax, 1
     add si, ax
@@ -1649,10 +1624,6 @@ loc_09FF0:
     add ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[bx + REC_Y], ax
 
-; Fields scoped to the SetResponseAndStepRecordCounter response path; no entity/health identity asserted.
-; Offset-placement use of field+8 does not define its role in other record types.
-; Continuation of PlaceRecordFromOffsetPair across the physical
-; chunk boundary: same routine, not a separate clamp/feedback producer.
     lodsw
     add ax, word ptr ss:[bp + REC_X]
     add ax, word ptr ds:[OffsetXWork]
@@ -1670,12 +1641,8 @@ loc_0A01F:
 loc_0A030:
     ret
 
-; Near leaf. If DS:A962 !=FFFF, copy two sequential words from DS:[DS:A33C] to record DS:[DS:A962]+2/+4. Then
-; independently do the same for A964/A33E. With DF=0 these are Y/X pairs and SI advances4 after the last copy;
-; AX=last X,BX=last destination. If neither slot exists AX/BX/SI unchanged. Flags are always CMP(A964,FFFF),
-; even on copy; caller9BE8 overwrites them. CX,DX,DI,BP and segments preserved. Requires valid selected
-; pointers; pair abstraction assumes destinations do not alias cursors/slots/source. Actual load/store order
-; remains significant; no activation/type checks.
+; Move the trailing pods (slots TrailingPodNear/Far, FFFFh = empty) to the lagged
+; history positions at HistoryReadCursor15 and HistoryReadCursor31.
 ApplyPositionHistoryToRecords:
     cmp word ptr ds:[TrailingPodNear], -1
     je loc_0A048
@@ -2242,16 +2209,14 @@ loc_0A5A4:
     mov word ptr ds:[bx + REC_TYPE], 6
     ret
 
-; DS:A47C==0: apply DecRecordYUnlessAtMin twice via CALL into next instruction then fallthrough re-entry. Otherwise
-; decrement SS:[BP+2] once modulo65536 without boundary guard. Near return; registers/segments preserved; flags
-; changed, IF/DF preserved. Mode-zero y21h becomes20h, not1Fh. Nested call consumes two stack bytes temporarily.
+; BP = record. MoveModeA47C = 0: two guarded REC_Y decrements (call, then fall through
+; into DecRecordYUnlessAtMin again); otherwise one unguarded decrement.
 DecRecordYByMode:
     cmp word ptr ds:[MoveModeA47C], 0
     jne loc_0A5E6
     call DecRecordYUnlessAtMin
-; Decrement word SS:[BP+2] modulo 65536 unless it equals 0020h. This is NOT a saturating
-; lower-bound clamp: values below 20h also decrement. CMP always overwrites CF; DEC
-; preserves that CF.
+; Decrement REC_Y unless it equals RECORD_Y_MIN. Equality guard only: smaller values
+; still decrement.
 DecRecordYUnlessAtMin:
     cmp word ptr ss:[bp + REC_Y], RECORD_Y_MIN
     jne loc_0A5E2
@@ -2263,13 +2228,11 @@ loc_0A5E6:
     dec word ptr ss:[bp + REC_Y]
     ret
 
-; Call IncRecordYUnlessAtMax, then fall through into it again. Two equality-guarded increments of SS:[BP+2]; BFh
-; becomesC0h, values aboveC0h still increment modulo65536. Registers/segments preserved; flags changed, IF/DF
-; preserved; normal outer near return.
+; Two guarded REC_Y increments: call IncRecordYUnlessAtMax, then fall through into it.
 IncRecordYTwice:
     call IncRecordYUnlessAtMax
-; Increment word SS:[BP+2] modulo 65536 unless it equals 00C0h; values above C0h also
-; increment.
+; Increment REC_Y unless it equals RECORD_Y_MAX. Equality guard only: larger values
+; still increment.
 IncRecordYUnlessAtMax:
     cmp word ptr ss:[bp + REC_Y], RECORD_Y_MAX
     jne loc_0A5F5
@@ -2278,13 +2241,10 @@ loc_0A5F5:
     inc word ptr ss:[bp + REC_Y]
     ret
 
-; Call DecRecordXUnlessZero then fall through into it again; SS:[BP+4]=max(original-2,0) for unsigned word.
-; Registers/segments preserved; flags changed, IF/DF preserved. Outer near return; inner call/return must remain
-; in ASM.
+; REC_X = max(REC_X - 2, 0): call DecRecordXUnlessZero, then fall through into it.
 DecRecordXTwice:
     call DecRecordXUnlessZero
-; Decrement unsigned word SS:[BP+4] unless zero; register state preserved, flags changed by
-; CMP/DEC.
+; Decrement REC_X unless it is zero.
 DecRecordXUnlessZero:
     cmp word ptr ss:[bp + REC_X], 0
     jne loc_0A603
@@ -2293,13 +2253,10 @@ loc_0A603:
     dec word ptr ss:[bp + REC_X]
     ret
 
-; Call IncRecordXBelowMax then fall through into it again. Unsigned SS:[BP+4] increases up toB0h if initially below
-; it; values>=B0h unchanged. General/segment registers preserved; flags changed, IF/DF preserved; outer near
-; return.
+; REC_X += 2, saturating at RECORD_X_MAX: call IncRecordXBelowMax, then fall through.
 IncRecordXTwice:
     call IncRecordXBelowMax
-; Increment unsigned word SS:[BP+4] iff below 00B0h; values at or above B0h remain
-; unchanged.
+; Increment REC_X while it is below RECORD_X_MAX (unsigned).
 IncRecordXBelowMax:
     cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
     jb loc_0A612
@@ -2308,12 +2265,9 @@ loc_0A612:
     inc word ptr ss:[bp + REC_X]
     ret
 
-; Near entry. If unsigned DS:2350<=B6 return. Otherwise call UpdatePlacementXGroupA, then re-read SS:[BP+REC_X].
-; If X==B0 and IN_XPLUS set, increment DS:SidePodSpreadLeft unless exactly8; otherwise decrement it unless
-; exactly0. Group A is updated first, preserving sequential alias effects of the original loads. Word operations
-; wrap at16 bits; guards are equality-only, not saturation. Preserve all general/segment registers and IF/DF;
-; arithmetic flags depend on final path. Normal near return; only group-A/B words may be written, apart from
-; call stack. Requires valid callee state; normal caller record/state do not overlap.
+; BP = record; no-op while MapScrollPos <= B6h. Pushing against the right edge (REC_X =
+; RECORD_X_MAX with IN_XPLUS) widens SidePodSpreadLeft by one up to 8; otherwise it
+; relaxes back towards 0. UpdatePlacementXGroupA does the mirror for the left edge first.
 UpdatePlacementXOffsetsAtRecordEdges:
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A61F
@@ -2336,11 +2290,9 @@ loc_0A63C:
 loc_0A647:
     ret
 
-; Near leaf. Read SS:[BP+REC_X] and DS:InputBits. If X==0 and IN_XMINUS set, decrement DS:SidePodSpreadRight
-; unless exactlyFFF8h; otherwise increment it unless exactly0. All arithmetic wraps at16 bits. Equality
-; sentinels do not validate or clamp arbitrary accumulator values. Preserve all general and segment registers,
-; IF/DF; arithmetic flags path-dependent. Normal near return; only group-A word may be written. Requires valid
-; record/state storage; no hardware effects.
+; BP = record. Pushing against the left edge (REC_X = 0 with IN_XMINUS) moves
+; SidePodSpreadRight down by one to -8; otherwise it relaxes back towards 0.
+; Guards are equality checks, not clamps.
 UpdatePlacementXGroupA:
     cmp word ptr ss:[bp + REC_X], 0
     jne loc_0A662
@@ -2991,10 +2943,9 @@ loc_0AC32:
     cmp word ptr ds:[DemoActive], 1
     jne ProbeGridForRecordResponse
     jmp near ptr loc_0AA44
-; ProbeGridForRecordResponse: internal entry after AC28 gates, not a separate proven function.
-; Probe base+13, then base+14 only if first attribute is zero and X low nibble !=0.
-; Negative-Y FFFF sentinel is NOT checked here: +13 wraps to 000C.
-; Attribute ZF controls response entry; source/table gameplay identities remain unknown.
+; Part of PodTerrainHit. Test the map cell at grid offset + 13 and, when X is not
+; cell-aligned, its right neighbour; a nonzero attribute is a hit. The FFFFh
+; negative-Y result of ComputeRecordGridOffset is not checked (+13 wraps to 000Ch).
 ProbeGridForRecordResponse:
     call ComputeRecordGridOffset
     add bx, 0Dh
@@ -3005,15 +2956,13 @@ ProbeGridForRecordResponse:
     inc bx
     call ReadIndexedByteAttribute
     jne SetResponseAndStepRecordCounter
-; Shared clear-carry return for both grid probe and independently called response helper.
+; Shared NC return of the probe and of SetResponseAndStepRecordCounter.
 RecordResponseReturnClear:
     clc
     ret
-; SetResponseAndStepRecordCounter: also CALLed from ACF1 in the record scan.
-; SS:BP record; DS state. Set +24=5; decrement +20 only when BEDC!=0 or 2324==1.
-; CF=1 only on decremented zero, also clearing +24; otherwise CF=0. Zero wraps to FFFF.
-; If DS:98C0!=0, write BEFF=0E. Other flag values are path-dependent.
-; No general/segment register changes in this entry; shared return at RecordResponseReturnClear.
+; BP = pod that was hit (by terrain, or from PodCollideRecords). Request sound 0Eh and
+; flash 5 frames; lose a hit point unless DifficultySetting = 0 and CountGate2324 != 1.
+; CF = 1 when the last hit point is lost (flash cancelled); 0 HP would wrap to FFFFh.
 SetResponseAndStepRecordCounter:
     cmp byte ptr ds:[SfxEnabled], 0
     je SetRecordResponseWord
@@ -3173,8 +3122,8 @@ loc_0AD7D:
 loc_0ADAF:
     cmp word ptr ds:[DemoActive], 1
     je loc_0ADC8
-; Sibling grid probe: unlike ProbeGridForRecordResponse, distinguishes attribute 1 from other nonzero bytes.
-; The FFFF grid sentinel is again not checked before adding 13.
+; Remove the record when the cell at grid offset + 13 has attribute 1 exactly
+; (the FFFFh negative-Y result is again not checked).
     call ComputeRecordGridOffset
     add bx, 0Dh
     call ReadIndexedByteAttribute
@@ -7815,9 +7764,10 @@ EncRingBuffer db 01000h dup (0)
     db 00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h
 
-; Decode the ENC (LZSS: flag bytes, literals, 12-bit position + 4-bit length-3 pairs, a
-; zero pair followed by a zero byte ends) file open on EncFileHandle to EncDestSegment:EncDestOffset, then close
-; it. EncOutputBytes counts the output; DS preserved. CF set if the first read fails.
+; Decode the ENC file open on EncFileHandle to EncDestSegment:EncDestOffset, then close
+; it. Format is LZSS: flag bytes, literals, 12-bit position + 4-bit (length-3) pairs; a
+; zero pair followed by a zero byte ends. EncOutputBytes counts the output; DS preserved.
+; CF set if the first read fails.
 DecodeEncFile:
     push ds
     push cs
