@@ -94,10 +94,12 @@ loc_000F7:
     call WriteOpl2Register
     call WriteRecordA0B0Pair
 loc_00109:
+loc_00109:
     mov word ptr ds:[di + 0Ch], bx
     mov al, byte ptr ds:[di + 011h]
     mov byte ptr ds:[di + 1], al
     ret
+StreamCmd81:
     mov ax, word ptr ds:[di + 8]
     call WriteOpl2Register
     jmp short loc_00109
@@ -112,13 +114,14 @@ loc_0011B:
 loc_0012A:
     shl al, 1
     xor ah, ah
-    mov si, 0355h
+    mov si, offset StreamCommandHandlers
     add si, ax
     jmp word ptr ds:[si]
 loc_00135:
     sub al, 0DFh
     mov byte ptr ds:[di + 011h], al
     jmp short loc_000F7
+StreamCmd88:
     mov al, byte ptr ds:[bx]
     inc bx
     mov byte ptr ds:[di + 0Eh], al
@@ -140,9 +143,19 @@ loc_00135:
     pop si
     pop bx
     jmp short loc_000F7
-; UNKNOWN: not yet classified as code or data
-    db 08Ah,044h,0Ch,0D0h,0E0h,0D0h,0E0h,024h,0C0h,0Ah,0E0h,08Ah,045h,05h,04h,040h
-    db 0E8h,0DBh,03h,05Eh,05Bh,0E9h,076h,0FFh
+; No reference found: a copy of the 8Bh handler's tail for the other operator.
+UnusedOperatorLevel:
+    mov al, ds:[si + 0Ch]
+    shl al, 1
+    shl al, 1
+    and al, 0C0h
+    or ah, al
+    mov al, ds:[di + 5]
+    add al, 40h
+    call WriteOpl2Register
+    pop si
+    pop bx
+    jmp near ptr loc_000F7
 loc_00181:
     sub al, 0A0h
     cmp al, byte ptr ds:[di + 4]
@@ -271,6 +284,7 @@ WriteRecordA0B0Pair:
     pop bx
     ret
 loc_00291:
+loc_00291:
     mov di, 05A9h
     mov cx, 9
 loc_00297:
@@ -360,9 +374,12 @@ loc_00331:
     call WriteOpl2Register
     pop cx
     ret
-; UNKNOWN: not yet classified as code or data
-    db 082h,03h,013h,01h,09h,01h,091h,02h,0A1h,03h,0AAh,03h,0B6h,03h,0BDh,03h
-    db 03Ch,01h,0CBh,03h,0D6h,03h,0E7h,03h,0FEh,03h,0C4h,03h
+; Stream command handlers for bytes 80h..8Dh (index = byte - 80h).
+StreamCommandHandlers label word
+    dw offset StreamCmd80, offset StreamCmd81, offset loc_00109, offset loc_00291
+    dw offset StreamCmd84, offset StreamCmd85, offset StreamCmd86, offset StreamCmd87
+    dw offset StreamCmd88, offset StreamCmd89, offset StreamCmd8A, offset StreamCmd8B
+    dw offset StreamCmd8C, offset StreamCmd8D
 loc_00371:
     mov bx, word ptr ds:[bx]
     mov cx, word ptr ds:[bx]
@@ -372,6 +389,7 @@ loc_00371:
     mov word ptr ds:[di + 0Ch], cx
     mov bx, cx
     jmp near ptr loc_000F7
+StreamCmd80:
     mov al, byte ptr ds:[8]
     or al, al
     je loc_0038D
@@ -387,23 +405,59 @@ loc_0038D:
     mov word ptr ds:[di + 0Ch], cx
     mov bx, cx
     jmp near ptr loc_000F7
+StreamCmd84:
     mov al, byte ptr ds:[bx]
     inc bx
     mov byte ptr ds:[di + 012h], al
     jmp near ptr loc_000F7
-; UNKNOWN: not yet classified as code or data
-    db 08Bh,045h,08h,0E8h,0A7h,01h,032h,0C0h,088h,045h,010h,0C3h,0C6h,045h,013h,01h
-    db 0E9h,03Ah,0FDh,0C6h,045h,013h,0FFh,0E9h,033h,0FDh,0C6h,045h,013h,00h,0E9h,02Ch
-    db 0FDh
+StreamCmd85:
+    mov ax, ds:[di + 8]
+    call WriteOpl2Register
+    xor al, al
+    mov ds:[di + 10h], al
+    ret
+StreamCmd86:
+    mov byte ptr ds:[di + 13h], 1
+    jmp near ptr loc_000F7
+StreamCmd87:
+    mov byte ptr ds:[di + 13h], 0FFh
+    jmp near ptr loc_000F7
+StreamCmd8D:
+    mov byte ptr ds:[di + 13h], 0
+    jmp near ptr loc_000F7
+StreamCmd89:
     mov bx, word ptr ds:[bx]
     mov al, byte ptr ds:[8]
     mov byte ptr ds:[05Fh], al
     jmp near ptr loc_000F7
-; UNKNOWN: not yet classified as code or data
-    db 08Bh,07h,089h,045h,016h,043h,043h,08Bh,07h,089h,045h,018h,043h,043h,0E9h,010h
-    db 0FDh,08Bh,07h,089h,045h,01Ah,043h,043h,08Bh,07h,089h,045h,01Ch,043h,043h,08Ah
-    db 07h,088h,045h,01Dh,043h,0E9h,0F9h,0FCh,033h,0C0h,088h,045h,01Dh,089h,045h,01Ah
-    db 0E9h,0EEh,0FCh
+StreamCmd8A:
+    mov ax, ds:[bx]
+    mov ds:[di + 16h], ax
+    inc bx
+    inc bx
+    mov ax, ds:[bx]
+    mov ds:[di + 18h], ax
+    inc bx
+    inc bx
+    jmp near ptr loc_000F7
+StreamCmd8B:
+    mov ax, ds:[bx]
+    mov ds:[di + 1Ah], ax
+    inc bx
+    inc bx
+    mov ax, ds:[bx]
+    mov ds:[di + 1Ch], ax
+    inc bx
+    inc bx
+    mov al, ds:[bx]
+    mov ds:[di + 1Dh], al
+    inc bx
+    jmp near ptr loc_000F7
+StreamCmd8C:
+    xor ax, ax
+    mov ds:[di + 1Dh], al
+    mov ds:[di + 1Ah], ax
+    jmp near ptr loc_000F7
 loc_00409:
     xor ah, ah
     cmp ah, byte ptr ds:[9]
