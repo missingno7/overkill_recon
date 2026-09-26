@@ -109,7 +109,7 @@ def cases(rng, scale, pair):
         w = world(rng, pair)
         if rng.randrange(3) == 0: w.fill('PoolA', K.POOL_A_COUNT)
         w.word('MapCellX', rng.randrange(0, 0xD0, 0x10))
-        regs = {'ES': 0xB800, 'SI': rng.randrange(0x100, 0x1000), 'AX': 0xF9}
+        regs = {'ES': 'LevelMapSegment', 'SI': rng.randrange(0x100, 0x1000), 'AX': 0xF9}
         yield Case('SpawnCellFuelPickup', regs, w.writes(), ('DI', 'BP', 'SP', 'DS', 'SS'), outputs=('SI',), name=f'#{i}')
     for i in range(n):
         w = world(rng, pair)
@@ -241,7 +241,7 @@ def quirks(pair):
 
     # InitPickupRecord leaves SI = DropKind + 46h; through SpawnCellFuelPickup that becomes
     # SpawnFromMapRow's map cursor, so the rest of the row is read from ES:004Bh on.
-    yield Case('SpawnCellFuelPickup', {'ES': 0xB800, 'SI': 0x0123, 'AX': 0xF9},
+    yield Case('SpawnCellFuelPickup', {'ES': 'LevelMapSegment', 'SI': 0x0123, 'AX': 0xF9},
                [(s('MapCellX'), W(0x40)), (s('PoolACursor'), W(a0))], ('DI', 'BP', 'SP', 'DS', 'SS'), outputs=('SI',),
                name='fuel pickup moves the map cursor',
                expect=lambda m, r: check(r['SI'] == 0x4A and m.word(a0 + 0x16) == K.KIND_PICKUP, 'SI = 4Ah after the pickup'))

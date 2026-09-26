@@ -305,7 +305,8 @@ def main(argv):
         targets = getattr(module, 'FUZZ', ())
         hit, region = set(), set()
         for target in targets:
-            fz = Fuzzer(Pair(), target, random.Random(zlib.crc32(target.name.encode())))
+            pair = Pair(); pair.set_map(getattr(module, 'MAP', None))
+            fz = Fuzzer(pair, target, random.Random(zlib.crc32(target.name.encode())))
             stats = fz.fuzz(its)
             h, total, _ = fz.instruction_coverage()
             hit |= fz.hit; region |= set(region_instructions(fz.pair.a.m, target.region))

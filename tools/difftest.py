@@ -28,9 +28,14 @@ import bisect, importlib, itertools, random, re, shutil, sys, time
 
 STATE_BYTES = 0xD330
 ALL_REGS = ('AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS')
-# Game state a case may place outside the state segment, by image label (the links differ
-# in address, not in label): the level map (LevelMapSegment is SlotBuffer's paragraph) and
-# CS-resident variables. A write key far(label, offset) = (index + 1) << 16 | offset.
+# The level map: the game loads it into a buffer whose address differs between the links,
+# and 16-bit cell offsets reach 64 KiB past it, so both sides read one common window
+# instead: LevelMapSegment = MAP_SEGMENT in both runtimes. Its content is a baseline (zeros,
+# or a suite's MAP bytes, see Pair.set_map) restored before every case; cases write the rows
+# they need with far('SlotBuffer', offset) ('SlotBuffer' names the level map window).
+MAP_SEGMENT = 0x9000
+# Game state a case may place outside the state segment: the level map window and
+# CS-resident variables by image label. A write key far(label, offset) = (index + 1) << 16 | offset.
 FAR_LABELS = ('SlotBuffer', 'Type21PathCursor')
 def far(label, offset=0): return (FAR_LABELS.index(label) + 1) << 16 | offset
 
@@ -50,6 +55,8 @@ class Side:
     def __init__(self, exe):
         self.m = Machine(exe)
         self.m.start_runtime()
+        self.m.poke('LevelMapSegment', MAP_SEGMENT)
+        self.map = bytes(0x10000); self.m.u.mem_write(MAP_SEGMENT * 16, self.map)
         self.pristine = self.m.state()
         base, end = self.m.data_frame * 16, self.m.data_frame * 16 + STATE_BYTES
         self.image = (LOAD * 16, LOAD * 16 + len(self.m.image))
@@ -78,9 +85,11 @@ class Side:
         keep: leave writes outside the state segment in place for a following step."""
         if fresh:
             self.m.set_state(self.pristine); self.undo = []
+            self.m.u.mem_write(MAP_SEGMENT * 16, self.map)
         for off, data in case.writes:
             if off >> 16:     # far(label, offset): undone like the routine's own outside writes
-                at = self.m.linear(FAR_LABELS[(off >> 16) - 1]) + (off & 0xFFFF)
+                label = FAR_LABELS[(off >> 16) - 1]
+                at = (MAP_SEGMENT * 16 if label == 'SlotBuffer' else self.m.linear(label)) + (off & 0xFFFF)
                 self.undo.append((at, bytes(self.m.u.mem_read(at, len(data)))))
                 self.m.u.mem_write(at, bytes(data))
             else: self.m.write(off, data)
@@ -109,6 +118,12 @@ class Pair:
         self.mask = bytes(1 if pa[i] != pb[i] else 0 for i in range(STATE_BYTES))
         self.stack_area = self.a.m.offset('StackArea')
         self.sym = self.a.m.offset
+
+    def set_map(self, data=None):
+        """The level map baseline both sides start every case from (default: zeros)."""
+        data = bytes(data or bytes(0x10000)).ljust(0x10000, b'\0')
+        for side in (self.a, self.b):
+            side.map = data; side.m.u.mem_write(MAP_SEGMENT * 16, data)
 
     def sequence(self, steps, sp=None):
         """Run steps in order on both sides, each from the state the previous step left, and
@@ -166,6 +181,7 @@ def run_suites(names=None, scale=1, seed=0x0F67C9B, pair=None, quiet=False):
     total = 0
     for name in names or suite_names():
         module = importlib.import_module(name)
+        pair.set_map(getattr(module, 'MAP', None))
         rng = random.Random(seed); t = time.time(); n = 0
         cases = module.cases(rng, scale, pair) if hasattr(module, 'cases') else ()
         if getattr(module, 'FUZZ', ()):

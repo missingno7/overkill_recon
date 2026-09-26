@@ -5,9 +5,9 @@ CheckRecordHitsPlayer via FinishRecordUpdate, UpdatePlayerFrame) and whole-pass 
 The level map is read through the CS word LevelMapSegment. Its load buffer lies at a
 different linear address in each link, and 16-bit cell offsets reach 64 KiB past it (into
 the state segment in the oracle), so both sides are pointed at one common 64 KiB window of
-free test memory holding a fixed random map (install_map); ByteAttributeTable (state) then
-decides which map bytes are open, walls (1) or other solids per case. The window stays
-installed for the rest of the run (corpus replays need it); both sides read the same map.
+free test memory (difftest's level map window) holding this suite's fixed random map (MAP);
+ByteAttributeTable (state) then decides which map bytes are open, walls (1) or other solids
+per case. Both sides read the same map.
 """
 from difftest import Case, ALL_REGS
 from world import World, K, RECORD, POOLS
@@ -26,15 +26,11 @@ SHOT_TYPES = tuple(HANDLERS)
 WALKER_TYPES = (0x8B, 0x8C, 0x8D, 0x8E)
 
 def map_bytes(): return random.Random(0x5107).randbytes(0x10000)
+MAP = map_bytes()      # this suite's level map baseline (difftest and fuzz install it)
 
 def install_map(pair):
-    """Point LevelMapSegment of both machines at one common window with a fixed map."""
-    if getattr(pair, 'shots_map', False): return
-    data = map_bytes()
-    for side in (pair.a, pair.b):
-        side.m.poke('LevelMapSegment', MAP_SEGMENT)
-        side.m.u.mem_write(MAP_SEGMENT * 16, data)
-    pair.shots_map = True
+    """This suite's map as the baseline of both sides (idempotent)."""
+    if pair.a.map is not MAP: pair.set_map(MAP)
 
 def terrain(w, open_share=None):
     """The map view: attribute table (share of open bytes), scroll position and sub-row."""
@@ -332,7 +328,7 @@ def _pod_seed(w):
     return {'BP': w.record('PoolA', w.rng.randrange(POOLS['PoolA'])).live(kind=K.KIND_POD, size=1).at}
 
 ENERGY = ('EnergyPoints', 'EnergyTanks', 'LevelEndPhase', 'DifficultySetting')
-MAP = ('MapScrollPos', 'ScrollSubRow', 'ScrollDeltaY', 'DemoActive')
+MAP_GLOBALS = ('MapScrollPos', 'ScrollSubRow', 'ScrollDeltaY', 'DemoActive')
 # Preconditions: RunTypeHandler's table (entered only with these types here) and REC_DIRECTION
 # (0..7: MoveInDirectionN and TerrainStepCases are unchecked tables); TargetSearchCursor and
 # REC_TARGET only ever hold pool A slot addresses. The energy gauge (RedrawEnergyGauge, platform)
@@ -344,7 +340,7 @@ DOMAINS = {'direction': range(8), 'target': _slots, 'TargetSearchCursor': _slots
            'DifficultySetting': range(3), 'LevelEndPhase': range(5), 'LevelIndex': range(K.LEVEL_COUNT),
            'DemoActive': (0, 1), 'ScrollDeltaY': range(4), 'ScrollSubRow': range(16), 'MissilesLive': range(4),
            'FrameCount4': range(4), 'FrameCount8': range(8), 'FrameCount16': range(16), 'FrameCount128': range(128)}
-SHOT_GLOBALS = ENERGY + MAP + ('LevelIndex', 'FrameCount4', 'FrameCount16')
+SHOT_GLOBALS = ENERGY + MAP_GLOBALS + ('LevelIndex', 'FrameCount4', 'FrameCount16')
 FAMILIES = {'shots_hit': (2, 3, 4, 0x0B, 0x0F), 'shots_side': (5, 6), 'shots_rise': (7, 8, 9, 0x0C),
             'shots_missile': (0x0A,)}
 FUZZ = [Target(name, 'RunTypeHandler', _shot_seed(types), REGION, LOOP, types=types,
@@ -355,14 +351,14 @@ FUZZ += [
     Target('shots_energy', 'LosePlayerEnergyTank', _energy_seed, REGION, LOOP,
            globals=ENERGY, watch=('EnergyPoints', 'EnergyTanks'), domains=DOMAINS),
     Target('shots_shipterrain', 'DamagePlayerOnTerrainContact', _ship_seed, REGION, LOOP,
-           globals=ENERGY + MAP, watch=('EnergyPoints', 'EnergyTanks'), domains=DOMAINS),
+           globals=ENERGY + MAP_GLOBALS, watch=('EnergyPoints', 'EnergyTanks'), domains=DOMAINS),
     Target('shots_terrain', 'TryTerrainStep', _terrain_seed, REGION, LOOP, flags=('ZF',),
-           globals=MAP, domains=DOMAINS),
+           globals=MAP_GLOBALS, domains=DOMAINS),
     Target('shots_crowd', 'TryTerrainStep', _crowd_seed, REGION, LOOP, flags=('ZF',),
-           globals=MAP, domains=DOMAINS),
+           globals=MAP_GLOBALS, domains=DOMAINS),
     Target('shots_climb', 'RunTypeHandler', _climb_seed, REGION, LOOP, types=WALKER_TYPES,
-           globals=ENERGY + MAP + ('FrameCount128',), watch=('TerrainBlocked', 'EnergyTanks'),
+           globals=ENERGY + MAP_GLOBALS + ('FrameCount128',), watch=('TerrainBlocked', 'EnergyTanks'),
            domains=dict(DOMAINS, type=WALKER_TYPES)),
     Target('shots_pod', 'PodTerrainHit', _pod_seed, REGION, LOOP, flags=('CF',),
-           globals=MAP + ('LevelEndPhase', 'DifficultySetting'), domains=DOMAINS),
+           globals=MAP_GLOBALS + ('LevelEndPhase', 'DifficultySetting'), domains=DOMAINS),
 ]

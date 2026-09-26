@@ -45,7 +45,15 @@ next to the original launcher. Run `OVERKILL.EXE /T /A` there (Tandy + AdLib; `/
 - `build/hybrid/GAME_GEN.H` is generated from include/*.INC and src/DATA.ASM: every
   constant, the 38h-byte `Record` (size and each field offset checked at compile time),
   role aliases, and an `extern` for every state-segment label. Nothing is kept by hand.
+- All C regions compile as one unit (build/hybrid/ISLAND.C includes every c/*.c, module
+  CISLAND) and all bridges assemble as one module (BRIDGES.ASM): TLINK 2.0 under the DOS
+  player keeps every object open and hangs past 13 objects when it writes a map, so the
+  object count must not grow with the regions. File-scope C names and bridge labels are
+  therefore unique across regions.
 - TLINK links the derived objects, the bridge and the C objects in the oracle's order.
+- After linking, every far call in the C code must carry a relocation (tools/hybrid.py
+  decodes CISLAND recursively, following switch tables): Watcom -ox cross-jumping once split
+  an inline `call far ptr FarCallMainNearViaAX` sequence and dropped its segment fixup.
 - The same tool builds `build/oracle-sym`, the oracle with every label public, and
   refuses it unless its image and relocations equal the exact oracle.
 
@@ -126,7 +134,11 @@ path, bridge preservation) are caught. As C regions merge, prefer higher entry p
 
 Each C region is proven on its own, through its entry labels and its real ASM callers;
 whole-game runs are a manual play check, not a test method (no set of runs covers all
-states and levels). Limits of the cases: graphics files are not loaded (allocated
+states and levels). The level map: both sides read one common window (difftest
+MAP_SEGMENT) as LevelMapSegment, restored before every case to a baseline of zeros or the
+suite's `MAP` bytes; cases write rows with `far('SlotBuffer', offset)`, and routines that take
+the map segment in ES get ES = 'LevelMapSegment' (a register given as a label name is that
+image word on each side). Limits of the cases: graphics files are not loaded (allocated
 buffers hold a fixed pattern) and no interrupt runs inside a case.
 
 ## Growing the C region

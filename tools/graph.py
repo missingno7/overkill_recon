@@ -856,12 +856,12 @@ def health(M):
         for m in re.finditer(r'^ [0-9A-F]{5}H [0-9A-F]{5}H ([0-9A-F]{5})H (MAIN|CGAME)\b', text, re.M):
             h[f'hybrid segment {m[2]} bytes'] = int(m[1], 16)
         mods = re.findall(r'^[0-9A-F]{4}:[0-9A-F]{4} ([0-9A-F]{4}) C=\w+ S=(\w+) .*M=([\w.]+)', text, re.M)
-        bridge = [(int(n, 16), s) for n, s, mod in mods if re.fullmatch(r'B\d\d\.ASM', mod)]
+        bridge = [(int(n, 16), s) for n, s, mod in mods if mod.upper() == 'BRIDGES.ASM']
         h['bridge bytes in MAIN (c/*.asm stubs)'] = sum(n for n, s in bridge if s == 'MAIN')
         h['bridge bytes in CGAME (generated far entries)'] = sum(n for n, s in bridge if s != 'MAIN')
         c = [(int(n, 16), mod) for n, s, mod in mods if '.' not in mod and int(n, 16)]
         h['C code bytes'] = sum(n for n, _ in c)
-        h['C regions'] = len({mod for _, mod in c})
+        h['C regions (c/*.c)'] = len(list((ROOT / 'c').glob('*.c')))
     return h
 
 def show(M, name, regof):

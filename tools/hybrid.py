@@ -273,7 +273,48 @@ def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
         oracle = read_json(ROOT/'metadata/oracle.json')
         if image != extract()[0] or sorted(relocations) != sorted(oracle['relocations']):
             raise ValueError('symbol-complete oracle build differs from the exact oracle')
+    if with_c: check_far_calls(out/'OVERKILL.EXE')
     return out/'OVERKILL.EXE', removed_all
+
+def check_far_calls(exe):
+    """Every far call in the C code must be relocated. Watcom's -ox cross-jumping can merge
+    the tail of one inline `call far ptr X` into another copy starting inside the
+    instruction, losing the segment fixup (seen with inline FarCallMainNearViaAX pragmas):
+    such a call reaches a random segment at run time. Returns the number of far calls."""
+    import capstone
+    _, image, relocations, _ = mz(exe.read_bytes())
+    text = exe.with_suffix('.MAP').read_text(errors='replace')
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16); md.detail = True
+    count, relocated = 0, set(relocations)
+    publics = [(int(s, 16) * 16 + int(o, 16)) for s, o in re.findall(r'^ ([0-9A-F]{4}):([0-9A-F]{4})\s+\w+', text, re.M)]
+    for m in re.finditer(r'^([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=\w+ S=\w+ .*M=CISLAND\b', text, re.M):
+        seg = int(m[1], 16) * 16; begin = seg + int(m[2], 16); end = begin + int(m[3], 16)
+        # Recursive descent from every public entry: Watcom keeps switch tables in the code
+        # segment, which a linear sweep would decode as instructions.
+        todo, seen = [a for a in publics if begin <= a < end], set()
+        while todo:
+            at = todo.pop()
+            while begin <= at < end and at not in seen:
+                ins = next(md.disasm(image[at:at + 8], at - seg), None)   # addresses as CS offsets
+                if ins is None: break
+                seen.add(at)
+                if ins.bytes[0] == 0x9A:
+                    count += 1
+                    if at + 3 not in relocated:
+                        raise ValueError(f'far call without relocation at image {at:05X} '
+                                         f'({ins.mnemonic} {ins.op_str}): miscompiled far call in C')
+                ops = ins.operands
+                if ins.group(capstone.CS_GRP_JUMP) or ins.mnemonic == 'call':
+                    if ops and ops[0].type == capstone.x86.X86_OP_IMM and ins.bytes[0] != 0x9A:
+                        todo.append(seg + (ops[0].imm & 0xFFFF))
+                    elif ops and ops[0].type == capstone.x86.X86_OP_MEM and ins.mnemonic == 'jmp' \
+                            and ins.reg_name(ops[0].mem.segment) == 'cs':
+                        t = seg + (ops[0].mem.disp & 0xFFFF)          # a switch table: follow its words
+                        while begin <= t < end - 1 and begin <= seg + int.from_bytes(image[t:t + 2], 'little') < end:
+                            todo.append(seg + int.from_bytes(image[t:t + 2], 'little')); t += 2
+                if ins.mnemonic in ('ret', 'retf', 'iret', 'jmp', 'ljmp'): break
+                at += ins.size
+    return count
 
 def build_all():
     """build/oracle-sym (the exact oracle, all labels public) and build/hybrid."""
