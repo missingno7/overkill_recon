@@ -300,6 +300,7 @@ extrn PanelImageOffsets:word
 extrn PanelSegment:word
 extrn PollInputBits:near
 extrn ReleaseEmsCache:near
+extrn RequestModuleMusic:near
 extrn RestoreKeyboardVector09:near
 extrn RestoreTimerVector08:near
 extrn SaveHiscoreFile:near
@@ -442,7 +443,6 @@ extrn loc_0BC4B:near
 extrn loc_0BD0D:near
 extrn loc_0BEC5:near
 extrn loc_0BFC7:near
-extrn loc_0CB1C:near
 extrn loc_0CB3E:near
 extrn loc_0CBE8:near
 ; Load hiscore.dat: verify the checksum word over the encoded block, copy the block to
@@ -825,7 +825,7 @@ loc_05675:
     call loc_0CB3E
     call CalibrateJoystickWithAbort
     mov al, byte ptr ds:[ModuleSoundRequest]
-    call loc_0CB1C
+    call RequestModuleMusic
     cmp byte ptr ds:[KeyDownTable + SCAN_ESC], KEY_STATE_DOWN
     jne loc_056A5
     cmp byte ptr ds:[SfxEnabled], 0
@@ -874,7 +874,7 @@ loc_056EB:
     call loc_0CB3E
 loc_05714:
     mov al, 2
-    call loc_0CB1C
+    call RequestModuleMusic
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_05725
     mov byte ptr ds:[SfxRequest], 01Ch
@@ -1575,7 +1575,7 @@ loc_05F43:
     mov al, byte ptr ds:[LevelIndex]
     xlat
 loc_05F5E:
-    jmp near ptr loc_0CB1C
+    jmp near ptr RequestModuleMusic
 
 
 ; Modern record/state symbols.
@@ -1593,7 +1593,7 @@ loc_05F61:
     jb loc_05F86
     mov al, 6
 loc_05F86:
-    call loc_0CB1C
+    call RequestModuleMusic
 loc_05F89:
     cmp word ptr ds:[02328h], 7
     jne loc_05FBA
@@ -6600,12 +6600,35 @@ loc_0F99D:
 loc_0F9B1:
     retf
 loc_0F9B2:
-; UNKNOWN: not yet classified as code or data
-    db 083h,03Eh,056h,023h,05h,074h,014h,0B8h,01Ch,00h,083h,03Eh,056h,023h,03h,074h
-    db 02Fh,0A1h,028h,023h,0D1h,0E8h,05h,022h,00h,0EBh,025h,0B9h,01h,00h,08Bh,046h
-    db 04h,03Bh,06h,080h,023h,072h,08h,09Ch,0F7h,0D9h,09Dh,077h,02h,033h,0C9h,01h
-    db 04Eh,04h,08Bh,01Eh,036h,023h,083h,0E3h,0FEh,08Bh,087h,0D2h,096h,05h,026h,00h
-    db 089h,046h,08h,0FFh,046h,02h,0CBh
+    cmp word ptr ds:[LevelIndex], 5
+    je loc_0F9CD
+    mov ax, 1Ch
+    cmp word ptr ds:[LevelIndex], 3
+    je loc_0F9F2
+    mov ax, ds:[2328h]
+    shr ax, 1
+    add ax, 22h
+    jmp short loc_0F9F2
+loc_0F9CD:
+    mov cx, 1
+    mov ax, ss:[bp + REC_X]
+    cmp ax, ds:[2380h]
+    jb loc_0F9E1
+    pushf
+    neg cx
+    popf
+    ja loc_0F9E1
+    xor cx, cx
+loc_0F9E1:
+    add ss:[bp + REC_X], cx
+    mov bx, ds:[2336h]
+    and bx, -2
+    mov ax, ds:[bx - 692Eh]
+    add ax, 26h
+loc_0F9F2:
+    mov ss:[bp + REC_SPRITE], ax
+    inc word ptr ss:[bp + REC_Y]
+    retf
 
 loc_0F9F9:
     mov word ptr ds:[LeaderScriptCursor], ax
@@ -6641,9 +6664,15 @@ loc_0FA43:
     pop ax
     retf
 loc_0FA4E:
-; UNKNOWN: not yet classified as code or data
-    db 0C7h,046h,08h,05Ch,01h,081h,07Eh,02h,090h,00h,07Ch,0Fh,0C7h,046h,018h,07Ch
-    db 00h,08Bh,0DDh,0B8h,0E2h,074h,09Ah,08Bh,08Dh,00h,00h,0CBh
+    mov word ptr ss:[bp + REC_SPRITE], 15Ch
+    cmp word ptr ss:[bp + REC_Y], 90h
+    jl loc_0FA69
+    mov word ptr ss:[bp + REC_TYPE], 7Ch
+    mov bx, bp
+    mov ax, 74E2h
+    call far ptr FarCallMainNearViaAX
+loc_0FA69:
+    retf
 loc_0FA6A:
     mov si, word ptr ds:[LeaderScriptCursor]
     lodsw
@@ -7006,35 +7035,143 @@ loc_0FE76:
 loc_0FE89:
     ret
 loc_0FE8A:
-; UNKNOWN: not yet classified as code or data
-    db 0C7h,046h,08h,062h,01h,0C7h,06h,08h,023h,01h,00h,0B8h,029h,0B7h,09Ah,08Bh
-    db 08Dh,00h,00h,074h,05h,0C7h,046h,018h,080h,00h,0CBh
+    mov word ptr ss:[bp + REC_SPRITE], 162h
+    mov word ptr ds:[2308h], 1
+    mov ax, 0B729h
+    call far ptr FarCallMainNearViaAX
+    je loc_0FEA4
+    mov word ptr ss:[bp + REC_TYPE], 80h
+loc_0FEA4:
+    retf
 loc_0FEA5:
-; UNKNOWN: not yet classified as code or data
-    db 081h,03Eh,082h,0A4h,09Ch
-    db 0A7h,074h,03h,0E9h,05Ch,01h,083h,07Eh,01Ch,00h,074h,08h,0FFh,04Eh,01Ch,074h
-    db 03h,0E9h,04Eh,01h,080h,03Eh,0A3h,098h,00h,074h,06h,0A1h,0AAh,098h,01h,046h
-    db 032h,08Bh,046h,08h,03Dh,064h,01h,072h,03h,0E9h,0C8h,00h,0A1h,040h,023h,025h
-    db 0FFh,00h,03Dh,07Dh,00h,074h,04h,0Bh,0C0h,075h,011h,0FFh,06h,040h,023h,0C7h
-    db 046h,08h,064h,01h,0C7h,046h,020h,03h,00h,0E9h,016h,01h,080h,03Eh,0A6h,098h
-    db 00h,074h,011h,0C6h,06h,0A6h,098h,00h,0B8h,076h,074h,09Ah,08Bh,08Dh,00h,00h
-    db 0FFh,06h,040h,023h,080h,03Eh,0A3h,098h,00h,074h,017h,0A1h,0AAh,098h,01h,046h
-    db 04h,083h,07Eh,04h,00h,074h,07h,081h,07Eh,04h,0C0h,00h,075h,04h,0FEh,06h
-    db 0A2h,098h,08Bh,046h,034h,03Bh,046h,02h,074h,03Fh,08Bh,046h,032h,025h,0FEh,0FFh
-    db 083h,066h,04h,0FEh,0A3h,04h,023h,08Bh,046h,034h,025h,0FEh,0FFh,083h,066h,02h
-    db 0FEh,0A3h,06h,023h,0C7h,06h,08h,023h,01h,00h,0B8h,0B2h,05Dh,09Ah,08Bh,08Dh
-    db 00h,00h,0C7h,046h,08h,060h,01h,0A1h,028h,023h,0D1h,0E8h,0D1h,0E8h,075h,03h
-    db 0E9h,09Fh,00h,0FFh,046h,08h,0E9h,099h,00h,080h,03Eh,0A4h,098h,00h,074h,014h
-    db 083h,046h,02h,0Ch,083h,046h,034h,0Ch,081h,07Eh,02h,0B0h,00h,072h,05h,0C7h
-    db 046h,034h,020h,00h,08Bh,046h,04h,0D1h,0E8h,025h,01h,00h,05h,062h,01h,089h
-    db 046h,08h,0EBh,06Eh,080h,03Eh,0A4h,098h,00h,074h,010h,083h,046h,034h,0Ch,081h
-    db 07Eh,034h,0B0h,00h,072h,05h,0C7h,046h,034h,020h,00h,03Dh,068h,01h,073h,0Ch
-    db 083h,03Eh,026h,023h,03h,075h,04Bh,0FFh,046h,08h,0EBh,046h,083h,046h,02h,05h
-    db 0C7h,046h,08h,068h,01h,0A1h,028h,023h,0D1h,0E8h,0D1h,0E8h,074h,03h,0FFh,046h
-    db 08h,081h,07Eh,02h,0E0h,00h,076h,02Ah,0C7h,046h,02h,00h,00h,083h,03Eh,026h
-    db 023h,03h,074h,014h,0B8h,095h,04Dh,09Ah,08Bh,08Dh,00h,00h,080h,0FBh,0C0h,077h
-    db 0F3h,032h,0FFh,089h,05Eh,04h
-; UNKNOWN: not yet classified as code or data
-    db 0EBh,0Ah,0C7h,046h,08h,060h,01h,0C7h,046h,020h,05h,00h,0CBh
+    cmp word ptr ds:[LeaderScriptCursor], 0A79Ch
+    je loc_0FEB0
+    jmp near ptr loc_1000C
+loc_0FEB0:
+    cmp word ptr ss:[bp + REC_FIELD_1C], 0
+    je loc_0FEBE
+    dec word ptr ss:[bp + REC_FIELD_1C]
+    je loc_0FEBE
+    jmp near ptr loc_1000C
+loc_0FEBE:
+    cmp byte ptr ds:[98A3h], 0
+    je loc_0FECB
+    mov ax, ds:[98AAh]
+    add ss:[bp + REC_SAVED_X], ax
+loc_0FECB:
+    mov ax, ss:[bp + REC_SPRITE]
+    cmp ax, 164h
+    jb loc_0FED6
+    jmp near ptr loc_0FF9E
+loc_0FED6:
+    mov ax, ds:[2340h]
+    and ax, 0FFh
+    cmp ax, 7Dh
+    je loc_0FEE5
+    or ax, ax
+    jne loc_0FEF6
+loc_0FEE5:
+    inc word ptr ds:[2340h]
+    mov word ptr ss:[bp + REC_SPRITE], 164h
+    mov word ptr ss:[bp + REC_HIT_POINTS], 3
+    jmp near ptr loc_1000C
+loc_0FEF6:
+    cmp byte ptr ds:[98A6h], 0
+    je loc_0FF0E
+    mov byte ptr ds:[98A6h], 0
+    mov ax, 7476h
+    call far ptr FarCallMainNearViaAX
+    inc word ptr ds:[2340h]
+loc_0FF0E:
+    cmp byte ptr ds:[98A3h], 0
+    je loc_0FF2C
+    mov ax, ds:[98AAh]
+    add ss:[bp + REC_X], ax
+    cmp word ptr ss:[bp + REC_X], 0
+    je loc_0FF28
+    cmp word ptr ss:[bp + REC_X], 0C0h
+    jne loc_0FF2C
+loc_0FF28:
+    inc byte ptr ds:[98A2h]
+loc_0FF2C:
+    mov ax, ss:[bp + REC_SAVED_Y]
+    cmp ax, ss:[bp + REC_Y]
+    je loc_0FF73
+    mov ax, ss:[bp + REC_SAVED_X]
+    and ax, 0FFFEh
+    and word ptr ss:[bp + REC_X], -2
+    mov ds:[2304h], ax
+    mov ax, ss:[bp + REC_SAVED_Y]
+    and ax, 0FFFEh
+    and word ptr ss:[bp + REC_Y], -2
+    mov ds:[2306h], ax
+    mov word ptr ds:[2308h], 1
+    mov ax, 5DB2h
+    call far ptr FarCallMainNearViaAX
+    mov word ptr ss:[bp + REC_SPRITE], 160h
+    mov ax, ds:[2328h]
+    shr ax, 1
+    shr ax, 1
+    jne loc_0FF6D
+    jmp near ptr loc_1000C
+loc_0FF6D:
+    inc word ptr ss:[bp + REC_SPRITE]
+    jmp near ptr loc_1000C
+loc_0FF73:
+    cmp byte ptr ds:[98A4h], 0
+    je loc_0FF8E
+    add word ptr ss:[bp + REC_Y], 0Ch
+    add word ptr ss:[bp + REC_SAVED_Y], 0Ch
+    cmp word ptr ss:[bp + REC_Y], 0B0h
+    jb loc_0FF8E
+    mov word ptr ss:[bp + REC_SAVED_Y], 20h
+loc_0FF8E:
+    mov ax, ss:[bp + REC_X]
+    shr ax, 1
+    and ax, 1
+    add ax, 162h
+    mov ss:[bp + REC_SPRITE], ax
+    jmp short loc_1000C
+loc_0FF9E:
+    cmp byte ptr ds:[98A4h], 0
+    je loc_0FFB5
+    add word ptr ss:[bp + REC_SAVED_Y], 0Ch
+    cmp word ptr ss:[bp + REC_SAVED_Y], 0B0h
+    jb loc_0FFB5
+    mov word ptr ss:[bp + REC_SAVED_Y], 20h
+loc_0FFB5:
+    cmp ax, 168h
+    jae loc_0FFC6
+    cmp word ptr ds:[2326h], 3
+    jne loc_1000C
+    inc word ptr ss:[bp + REC_SPRITE]
+    jmp short loc_1000C
+loc_0FFC6:
+    add word ptr ss:[bp + REC_Y], 5
+    mov word ptr ss:[bp + REC_SPRITE], 168h
+    mov ax, ds:[2328h]
+    shr ax, 1
+    shr ax, 1
+    je loc_0FFDB
+    inc word ptr ss:[bp + REC_SPRITE]
+loc_0FFDB:
+    cmp word ptr ss:[bp + REC_Y], 0E0h
+    jna loc_1000C
+    mov word ptr ss:[bp + REC_Y], 0
+    cmp word ptr ds:[2326h], 3
+    je loc_10002
+loc_0FFEE:
+    mov ax, 4D95h
+    call far ptr FarCallMainNearViaAX
+    cmp bl, 0C0h
+    ja loc_0FFEE
+    xor bh, bh
+    mov ss:[bp + REC_X], bx
+    jmp short loc_1000C
+loc_10002:
+    mov word ptr ss:[bp + REC_SPRITE], 160h
+    mov word ptr ss:[bp + REC_HIT_POINTS], 5
+loc_1000C:
+    retf
 FAR0F7F ends
 end

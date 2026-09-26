@@ -34,3 +34,9 @@ SFX_VOICE_SOUNDING equ 09h
 SFX_VOICE_NOTE_STEP equ 0Bh
 SFX_VOICE_SLIDE_DELTA equ 0Ch
 SFX_VOICE_SLIDE_TICKS equ 0Eh
+
+; Fields in a loaded sound module (segment of SoundModuleSlot): the requested and
+; the current music number, and a byte written only by an unreferenced routine.
+MODULE_MUSIC_REQUEST equ 08h
+MODULE_MUSIC_CURRENT equ 09h
+MODULE_BYTE_0A equ 0Ah

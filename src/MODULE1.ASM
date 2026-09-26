@@ -319,6 +319,7 @@ extrn ManExplSegment:word
 extrn PanelSegment:word
 extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
+extrn RequestModuleMusic:near
 extrn ScreenSegment:word
 extrn SfxTimerTick:near
 extrn ShipSegment:word
@@ -344,7 +345,6 @@ extrn loc_077DF:near
 extrn loc_0859E:near
 extrn loc_0A781:near
 extrn loc_0C57C:near
-extrn loc_0CB1C:near
 extrn loc_0CB3E:near
 ; Palette index treated as transparent when sprites are loaded and drawn.
 TransparentColor db 05h
@@ -1133,7 +1133,7 @@ loc_007D7:
     xlat
     int 010h
     mov al, byte ptr ds:[ModuleSoundRequest]
-    call loc_0CB1C
+    call RequestModuleMusic
     ret
 
 loc_007EF:

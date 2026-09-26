@@ -180,6 +180,7 @@ public PanelSegment
 public PlaqueSegment
 public PlayfieldRowBytes
 public ReleaseEmsCache
+public RequestModuleMusic
 public ScreenSegment
 public SfxCmdRest
 public SfxCmdSlide
@@ -221,7 +222,6 @@ public loc_0BD0D
 public loc_0BEC5
 public loc_0BFC7
 public loc_0C57C
-public loc_0CB1C
 public loc_0CB3E
 public loc_0CBE8
 public loc_10044
@@ -561,7 +561,7 @@ loc_096C5:
 ; first level. GameOver returns here.
 StartNewGame:
     mov al, 2
-    call loc_0CB1C
+    call RequestModuleMusic
     call loc_04FC3
     call loc_05145
     call loc_05559
@@ -2286,7 +2286,7 @@ loc_0A765:
     mov al, 5
     cmp word ptr ds:[LevelScriptClock], 4
     jne loc_0A77A
-    call loc_0CB1C
+    call RequestModuleMusic
 loc_0A77A:
     mov word ptr ds:[02354h], 0
     ret
@@ -6036,16 +6036,16 @@ LoadSoundModule:
     mov byte ptr ds:[SoundModuleLoaded], 1
     mov al, 2
 
-loc_0CB1C:
+RequestModuleMusic:
     mov byte ptr ds:[ModuleSoundRequest], al
     cmp byte ptr ds:[ModuleSoundEnabled], 0
     je loc_0CB3D
     xor ah, ah
     mov bx, seg SoundModuleSlot
     mov es, bx
-    cmp al, byte ptr es:[9]
+    cmp al, byte ptr es:[MODULE_MUSIC_CURRENT]
     je loc_0CB3D
-    mov word ptr es:[8], ax
+    mov word ptr es:[MODULE_MUSIC_REQUEST], ax
     mov ds, word ptr cs:[MainDataSegment]
 loc_0CB3D:
     ret
@@ -6057,7 +6057,7 @@ loc_0CB3E:
 loc_0CB46:
     mov ax, seg SoundModuleSlot
     mov es, ax
-    mov word ptr es:[8], 0FFh
+    mov word ptr es:[MODULE_MUSIC_REQUEST], 0FFh
     mov cx, 5
 loc_0CB55:
     push cx
@@ -6066,11 +6066,35 @@ loc_0CB55:
     loop loc_0CB55
     mov ds, word ptr cs:[MainDataSegment]
     ret
-; UNKNOWN: not yet classified as code or data
-    db 080h,03Eh,055h,00h,00h,075h,01h,0C3h,06h,053h,0BBh,022h,010h,08Eh,0C3h,026h
-    db 0A2h,0Ah,00h,05Bh,07h,0C3h,080h,03Eh,055h,00h,00h,075h,01h,0C3h,06h,053h
-    db 0BBh,022h,010h,08Eh,0C3h,026h,0C7h,06h,08h,00h,0FFh,00h,026h,0A2h,08h,00h
-    db 05Bh,07h,0C3h
+; Store AL at the module's MODULE_BYTE_0A. No caller found in this image.
+SetModuleByte0A:
+    cmp byte ptr ds:[SoundModuleLoaded], 0
+    jne loc_0CB6A
+    ret
+loc_0CB6A:
+    push es
+    push bx
+    mov bx, seg SoundModuleSlot
+    mov es, bx
+    mov byte ptr es:[MODULE_BYTE_0A], al
+    pop bx
+    pop es
+    ret
+; Request music AL even if it is current (high byte FFh first). No caller found.
+ForceModuleMusic:
+    cmp byte ptr ds:[SoundModuleLoaded], 0
+    jne loc_0CB80
+    ret
+loc_0CB80:
+    push es
+    push bx
+    mov bx, seg SoundModuleSlot
+    mov es, bx
+    mov word ptr es:[MODULE_MUSIC_REQUEST], 0FFh
+    mov byte ptr es:[MODULE_MUSIC_REQUEST], al
+    pop bx
+    pop es
+    ret
 
 loc_0CB95:
     mov word ptr ds:[FileNamePtr], dx
@@ -8443,19 +8467,49 @@ loc_10044:
     mov byte ptr ds:[098A9h], 0
     ret
 loc_10079:
-; UNKNOWN: not yet classified as code or data
-    db 0C7h,047h,020h,0C8h,00h,0C7h,047h,04h,00h,00h,0C7h,047h,02h,00h,00h,0C7h
-    db 047h,014h,02h,00h,0C7h,047h,028h,0FFh,0FFh,0C7h,07h,01h,00h,0C7h,047h,016h
-    db 04h,00h,0CBh
+    mov word ptr ds:[bx + 20h], 0C8h
+    mov word ptr ds:[bx + 4], 0
+    mov word ptr ds:[bx + 2], 0
+    mov word ptr ds:[bx + 14h], 2
+    mov word ptr ds:[bx + 28h], 0FFFFh
+    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + 16h], 4
+    retf
 loc_1009C:
-; UNKNOWN: not yet classified as code or data
-    db 02Eh,08Bh,036h,020h,09h,0ADh,03Dh,0FFh,0FFh,074h,05Ch,05h,020h
-    db 00h,0A3h,06h,023h,0ADh,0A3h,04h,023h,0C7h,06h,08h,023h,03h,00h,0B8h,0B2h
-    db 05Dh,09Ah,08Bh,08Dh,00h,00h,083h,03Eh,0Ah,023h,00h,074h,033h,0C7h,046h,020h
-    db 02h,00h,02Eh,083h,06h,020h,09h,04h,0B8h,0F4h,081h,09Ah,08Bh,08Dh,00h,00h
-    db 083h,0FBh,0FFh,074h,01Bh,08Bh,046h,02h,089h,047h,034h,08Bh,046h,04h,089h,047h
-    db 032h,0C7h,047h,018h,064h,00h,0C7h,047h,020h,03h,00h,0C7h,047h,08h,08Eh,00h
-    db 08Bh,046h,06h,05h,03Bh,00h,089h,046h,08h,0CBh,0E8h,02h,00h,0EBh,094h
+    mov si, cs:[920h]
+    lodsw
+    cmp ax, 0FFFFh
+    je loc_10103
+    add ax, 20h
+    mov ds:[2306h], ax
+    lodsw
+    mov ds:[2304h], ax
+    mov word ptr ds:[2308h], 3
+    mov ax, 5DB2h
+    call far ptr FarCallMainNearViaAX
+    cmp word ptr ds:[230Ah], 0
+    je loc_100F9
+    mov word ptr ss:[bp + REC_HIT_POINTS], 2
+    add word ptr cs:[920h], 4
+    mov ax, 81F4h
+    call far ptr FarCallMainNearViaAX
+    cmp bx, -1
+    je loc_100F9
+    mov ax, ss:[bp + REC_Y]
+    mov ds:[bx + 34h], ax
+    mov ax, ss:[bp + REC_X]
+    mov ds:[bx + 32h], ax
+    mov word ptr ds:[bx + 18h], 64h
+    mov word ptr ds:[bx + 20h], 3
+    mov word ptr ds:[bx + 8], 8Eh
+loc_100F9:
+    mov ax, ss:[bp + REC_DIRECTION]
+    add ax, 3Bh
+    mov ss:[bp + REC_SPRITE], ax
+    retf
+loc_10103:
+    call loc_10108
+    jmp short loc_1009C
 
 loc_10108:
     mov word ptr cs:[0920h], 09828h
