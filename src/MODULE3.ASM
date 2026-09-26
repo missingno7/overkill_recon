@@ -324,6 +324,7 @@ public SfxStopAll
 public SfxStreamStoreAndWait
 public SfxTimerTick
 public ShipSegment
+public ShotHitsRecord
 public SpawnShotDown
 public SpawnThrottledChild
 public Sprites1x1Segment
@@ -345,7 +346,6 @@ public loc_09F5F
 public loc_0A781
 public loc_0AF22
 public loc_0B2AC
-public loc_0BEC5
 public loc_0C57C
 public loc_0CB3E
 public loc_0CBE8
@@ -391,6 +391,7 @@ extrn PackedNamePtr:word
 extrn PackedOutputBytes:word
 extrn PanelImageOffsets:word
 extrn PlaqueImageOffset:word
+extrn PlayerShotsHitRecord:near
 extrn PollInputBits:near
 extrn PrintMessageBP:near
 extrn ReadIndexedByteAttribute:near
@@ -504,7 +505,6 @@ extrn loc_060AC:near
 extrn loc_06176:near
 extrn loc_061DC:near
 extrn loc_062AA:near
-extrn loc_062F6:near
 extrn loc_07420:near
 extrn loc_074FE:near
 extrn loc_07547:near
@@ -3822,7 +3822,8 @@ loc_0B421:
     loop loc_0B421
 loc_0B467:
     ret
-loc_0B468:
+; AX = number of live KIND_ENEMY records in pool A.
+CountLiveEnemies:
     push bp
     mov cx, 23h
     xor ax, ax
@@ -3831,7 +3832,7 @@ loc_0B46E:
     push ax
     mov bx, cx
     shl bx, 1
-    mov bp, ds:[bx + 32CAh]
+    mov bp, ds:[bx + PoolAPointers - 2]
     pop ax
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0B486
@@ -3854,7 +3855,7 @@ loc_0B495:
 loc_0B49F:
     jmp near ptr loc_0B5D8
 loc_0B4A2:
-    call loc_0B468
+    call CountLiveEnemies
     cmp ax, 1
     je loc_0B4AD
     jmp near ptr FinishRecordUpdate
@@ -4620,7 +4621,7 @@ loc_0BCA3:
     cmp word ptr ds:[MoveModeA47C], 0
     jne loc_0BCB0
     call loc_0BCCB
-    call loc_062F6
+    call PlayerShotsHitRecord
 loc_0BCB0:
     ret
 
@@ -4865,45 +4866,49 @@ loc_0BEB9:
     add ax, 3
     mov ss:[bp + REC_SPRITE], ax
     jmp near ptr ScrollRecordThenFinish
-loc_0BEC5:
-    cmp word ptr ds:[bx + 018h], 7
+; BX = player shot that hit BP. Types 7, 8, 0Ch and 9 pierce: they destroy BP outright
+; (against the segmented boss they only damage it, and 7/8/0Ch are then used up).
+; Types 5 and 6 are used up and destroy BP; type 2 is used up and takes 1..4 hit points
+; by sprite and DifficultySetting; any other shot only hits its REC_TARGET.
+ShotHitsRecord:
+    cmp word ptr ds:[bx + REC_TYPE], 7
     jne loc_0BECE
     jmp near ptr loc_0BFB9
 loc_0BECE:
-    cmp word ptr ds:[bx + 018h], 8
+    cmp word ptr ds:[bx + REC_TYPE], 8
     jne loc_0BED7
     jmp near ptr loc_0BFB9
 loc_0BED7:
-    cmp word ptr ds:[bx + 018h], 0Ch
+    cmp word ptr ds:[bx + REC_TYPE], 0Ch
     jne loc_0BEE0
     jmp near ptr loc_0BFB9
 loc_0BEE0:
-    cmp word ptr ds:[bx + 018h], 9
+    cmp word ptr ds:[bx + REC_TYPE], 9
     jne loc_0BEE9
     jmp near ptr loc_0BFA8
 loc_0BEE9:
-    cmp word ptr ds:[bx + 018h], 2
+    cmp word ptr ds:[bx + REC_TYPE], 2
     je loc_0BF1B
-    cmp word ptr ds:[bx + 018h], 6
+    cmp word ptr ds:[bx + REC_TYPE], 6
     jne loc_0BEF8
     jmp near ptr loc_0BF97
 loc_0BEF8:
-    cmp word ptr ds:[bx + 018h], 5
+    cmp word ptr ds:[bx + REC_TYPE], 5
     jne loc_0BF01
     jmp near ptr loc_0BF97
 loc_0BF01:
-    cmp bp, word ptr ds:[bx + 030h]
+    cmp bp, word ptr ds:[bx + REC_TARGET]
     je loc_0BF07
     ret
 loc_0BF07:
-    mov word ptr ds:[bx + 01Ch], 0
+    mov word ptr ds:[bx + REC_FIELD_1C], 0
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp near ptr DestroyRecord
 loc_0BF1B:
-    mov word ptr ds:[bx], 0
-    cmp word ptr ds:[bx + 8], 033h
+    mov word ptr ds:[bx + REC_STATUS], 0
+    cmp word ptr ds:[bx + REC_SPRITE], 033h
     jne loc_0BF2D
 loc_0BF25:
     dec word ptr ss:[bp + REC_HIT_POINTS]

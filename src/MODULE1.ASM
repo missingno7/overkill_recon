@@ -4269,7 +4269,7 @@ DrawOffsetFromWideRowEga:
 loc_025E9:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
-    mov bx, ds:[bx - 6118h]
+    mov bx, ds:[bx + ScreenRowOffsets]
     mov ax, ss:[bp + REC_X]
     shr ax, 1
     shr ax, 1
@@ -5651,7 +5651,7 @@ TandyOffsetFromWideRow:
 loc_03142:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
-    mov bx, ds:[bx - 6118h]
+    mov bx, ds:[bx + ScreenRowOffsets]
     mov ax, ss:[bp + REC_X]
     shr ax, 1
     add ax, bx
@@ -7697,7 +7697,7 @@ DrawOffsetFromWideRowCga:
 loc_04264:
     mov bx, ss:[bp + REC_Y]
     shl bx, 1
-    mov bx, ds:[bx - 6118h]
+    mov bx, ds:[bx + ScreenRowOffsets]
     mov ax, ss:[bp + REC_X]
     shr ax, 1
     shr ax, 1

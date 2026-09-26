@@ -15,6 +15,12 @@ TEXTROW macro attr, text
 endm
 locals
 extrn CountXReturn:far
+extrn Level0MapCell:far
+extrn Level1MapCell:far
+extrn Level2MapCell:far
+extrn Level3MapCell:far
+extrn Level4MapCell:far
+extrn Level5MapCell:far
 extrn MapResetList0:word
 extrn MapResetList1:word
 extrn MapResetList2:word
@@ -27,12 +33,6 @@ extrn SfxCmdStepDown:far
 extrn SfxCmdStepUp:far
 extrn SfxStopAll:far
 extrn SfxStreamStoreAndWait:far
-extrn loc_07977:far
-extrn loc_07B06:far
-extrn loc_07BCB:far
-extrn loc_07C3F:far
-extrn loc_07CA2:far
-extrn loc_07DC8:far
 extrn loc_083D7:far
 extrn loc_083DE:far
 extrn loc_083E4:far
@@ -1241,7 +1241,7 @@ PoolBCursor dw 02B5Ch
 ; Screen offset of the fuel gauge (loc_077F6); no reader found.
 FuelGaugeOffset dw 0h
 ; Per LevelIndex: handler called with AL = level map byte while a map row is set up.
-LevelMapCellHandlers dw offset loc_07BCB, offset loc_07977, offset loc_07B06, offset loc_07C3F, offset loc_07CA2, offset loc_07DC8
+LevelMapCellHandlers dw offset Level0MapCell, offset Level1MapCell, offset Level2MapCell, offset Level3MapCell, offset Level4MapCell, offset Level5MapCell
 ; Sprite frame and case per DS:2330 >> 5 (types 90h, 91h).
 TurretPhaseTable dw 1, 0, 1, 2
 ; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the

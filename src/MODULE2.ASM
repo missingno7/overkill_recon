@@ -217,7 +217,14 @@ public DrawPanelGraphic
 public FarCallMainNearViaAX
 public FindFreeRecordPoolA
 public FindFreeRecordPoolB
+public Level0MapCell
+public Level1MapCell
+public Level2MapCell
+public Level3MapCell
+public Level4MapCell
+public Level5MapCell
 public LoadHiscoreFile
+public PlayerShotsHitRecord
 public SetDeltaToward
 public ShutdownGame
 public SpawnAimedShot
@@ -321,7 +328,6 @@ public loc_060AC
 public loc_06176
 public loc_061DC
 public loc_062AA
-public loc_062F6
 public loc_07420
 public loc_074FE
 public loc_07547
@@ -330,12 +336,6 @@ public loc_07746
 public loc_077C5
 public loc_077DF
 public loc_07948
-public loc_07977
-public loc_07B06
-public loc_07BCB
-public loc_07C3F
-public loc_07CA2
-public loc_07DC8
 public loc_08209
 public loc_08331
 public loc_0837A
@@ -427,6 +427,7 @@ extrn SaveHiscoreFile:near
 extrn ScreenSegment:word
 extrn ScrollRecordThenFinish:near
 extrn ScrollStartOffset:word
+extrn ShotHitsRecord:near
 extrn ShowBossKeyScreen:near
 extrn SpawnShotDown:near
 extrn SpawnThrottledChild:near
@@ -555,7 +556,6 @@ extrn loc_09F5F:near
 extrn loc_0A781:near
 extrn loc_0AF22:near
 extrn loc_0B2AC:near
-extrn loc_0BEC5:near
 extrn loc_0CB3E:near
 extrn loc_0CBE8:near
 ; Load hiscore.dat: verify the checksum word over the encoded block, copy the block to
@@ -1223,7 +1223,7 @@ loc_05968:
     mov cs:[WipeStep], cx
     mov bx, cs:[VideoAdapter]
     shl bx, 1
-    call word ptr cs:[bx + 595Ah]
+    call word ptr cs:[bx + AdapterDrawHandlers]
     push ds
     mov ds, cs:[MainDataSegment]
     cmp byte ptr ds:[KeyLastMakeCode], 0
@@ -1247,7 +1247,7 @@ loc_059B6:
     add word ptr cs:[WipeStep], 2
     mov bx, cs:[VideoAdapter]
     shl bx, 1
-    call word ptr cs:[bx + 595Ah]
+    call word ptr cs:[bx + AdapterDrawHandlers]
     push ds
     mov ds, cs:[MainDataSegment]
     call PollInputBits
@@ -2171,30 +2171,33 @@ loc_062E7:
 loc_062EE:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp near ptr DestroyRecord
-loc_062F6:
+; BP = record: tests every live player shot in pool B (unrolled over all 34 records)
+; against BP's 8-pixel cells (two columns and rows, four for size class 2) and hands
+; the first hit to ShotHitsRecord.
+PlayerShotsHitRecord:
     cmp word ptr ss:[bp + REC_STATUS], 0
     jne loc_062FF
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_062FF:
     cmp word ptr ss:[bp + REC_Y], 020h
     jge loc_06308
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_06308:
     cmp word ptr ss:[bp + REC_KIND], KIND_SCENERY
     jne loc_06311
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_06311:
     cmp word ptr ss:[bp + REC_TYPE], 0
     jne loc_0631A
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_0631A:
     cmp word ptr ss:[bp + REC_TYPE], 1
     jne loc_06323
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_06323:
     cmp word ptr ss:[bp + REC_TYPE], 026h
     jne loc_0632C
-    jmp near ptr loc_0741F
+    jmp near ptr PlayerShotsMissed
 loc_0632C:
     mov si, word ptr ss:[bp + REC_KIND]
     mov di, word ptr ss:[bp + REC_DRAW_PASS]
@@ -2203,11 +2206,11 @@ loc_0632C:
     mov cx, word ptr ss:[bp + REC_Y]
     and cx, 0FFF8h
     mov bx, offset PoolB
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_063BD
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_063BD
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06361
     and ax, 0FFF8h
@@ -2230,16 +2233,16 @@ loc_06361:
     cmp ax, dx
     jne loc_063BD
 loc_06380:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0638D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0638D:
     sub ax, 8
     cmp ax, cx
     jne loc_06397
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06397:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_063BD
@@ -2250,19 +2253,19 @@ loc_06397:
     sub ax, 8
     cmp ax, cx
     jne loc_063B3
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_063B3:
     sub ax, 8
     cmp ax, cx
     jne loc_063BD
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_063BD:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0643C
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0643C
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_063E0
     and ax, 0FFF8h
@@ -2285,16 +2288,16 @@ loc_063E0:
     cmp ax, dx
     jne loc_0643C
 loc_063FF:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0640C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0640C:
     sub ax, 8
     cmp ax, cx
     jne loc_06416
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06416:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0643C
@@ -2305,19 +2308,19 @@ loc_06416:
     sub ax, 8
     cmp ax, cx
     jne loc_06432
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06432:
     sub ax, 8
     cmp ax, cx
     jne loc_0643C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0643C:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_064BB
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_064BB
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_0645F
     and ax, 0FFF8h
@@ -2340,16 +2343,16 @@ loc_0645F:
     cmp ax, dx
     jne loc_064BB
 loc_0647E:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0648B
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0648B:
     sub ax, 8
     cmp ax, cx
     jne loc_06495
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06495:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_064BB
@@ -2360,19 +2363,19 @@ loc_06495:
     sub ax, 8
     cmp ax, cx
     jne loc_064B1
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_064B1:
     sub ax, 8
     cmp ax, cx
     jne loc_064BB
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_064BB:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0653A
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0653A
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_064DE
     and ax, 0FFF8h
@@ -2395,16 +2398,16 @@ loc_064DE:
     cmp ax, dx
     jne loc_0653A
 loc_064FD:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0650A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0650A:
     sub ax, 8
     cmp ax, cx
     jne loc_06514
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06514:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0653A
@@ -2415,19 +2418,19 @@ loc_06514:
     sub ax, 8
     cmp ax, cx
     jne loc_06530
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06530:
     sub ax, 8
     cmp ax, cx
     jne loc_0653A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0653A:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_065B9
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_065B9
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_0655D
     and ax, 0FFF8h
@@ -2450,16 +2453,16 @@ loc_0655D:
     cmp ax, dx
     jne loc_065B9
 loc_0657C:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06589
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06589:
     sub ax, 8
     cmp ax, cx
     jne loc_06593
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06593:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_065B9
@@ -2470,19 +2473,19 @@ loc_06593:
     sub ax, 8
     cmp ax, cx
     jne loc_065AF
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_065AF:
     sub ax, 8
     cmp ax, cx
     jne loc_065B9
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_065B9:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06638
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06638
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_065DC
     and ax, 0FFF8h
@@ -2505,16 +2508,16 @@ loc_065DC:
     cmp ax, dx
     jne loc_06638
 loc_065FB:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06608
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06608:
     sub ax, 8
     cmp ax, cx
     jne loc_06612
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06612:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06638
@@ -2525,19 +2528,19 @@ loc_06612:
     sub ax, 8
     cmp ax, cx
     jne loc_0662E
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0662E:
     sub ax, 8
     cmp ax, cx
     jne loc_06638
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06638:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_066B7
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_066B7
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_0665B
     and ax, 0FFF8h
@@ -2560,16 +2563,16 @@ loc_0665B:
     cmp ax, dx
     jne loc_066B7
 loc_0667A:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06687
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06687:
     sub ax, 8
     cmp ax, cx
     jne loc_06691
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06691:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_066B7
@@ -2580,19 +2583,19 @@ loc_06691:
     sub ax, 8
     cmp ax, cx
     jne loc_066AD
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_066AD:
     sub ax, 8
     cmp ax, cx
     jne loc_066B7
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_066B7:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06736
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06736
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_066DA
     and ax, 0FFF8h
@@ -2615,16 +2618,16 @@ loc_066DA:
     cmp ax, dx
     jne loc_06736
 loc_066F9:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06706
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06706:
     sub ax, 8
     cmp ax, cx
     jne loc_06710
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06710:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06736
@@ -2635,19 +2638,19 @@ loc_06710:
     sub ax, 8
     cmp ax, cx
     jne loc_0672C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0672C:
     sub ax, 8
     cmp ax, cx
     jne loc_06736
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06736:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_067B5
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_067B5
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06759
     and ax, 0FFF8h
@@ -2670,16 +2673,16 @@ loc_06759:
     cmp ax, dx
     jne loc_067B5
 loc_06778:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06785
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06785:
     sub ax, 8
     cmp ax, cx
     jne loc_0678F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0678F:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_067B5
@@ -2690,19 +2693,19 @@ loc_0678F:
     sub ax, 8
     cmp ax, cx
     jne loc_067AB
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_067AB:
     sub ax, 8
     cmp ax, cx
     jne loc_067B5
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_067B5:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06834
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06834
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_067D8
     and ax, 0FFF8h
@@ -2725,16 +2728,16 @@ loc_067D8:
     cmp ax, dx
     jne loc_06834
 loc_067F7:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06804
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06804:
     sub ax, 8
     cmp ax, cx
     jne loc_0680E
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0680E:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06834
@@ -2745,19 +2748,19 @@ loc_0680E:
     sub ax, 8
     cmp ax, cx
     jne loc_0682A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0682A:
     sub ax, 8
     cmp ax, cx
     jne loc_06834
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06834:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_068B3
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_068B3
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06857
     and ax, 0FFF8h
@@ -2780,16 +2783,16 @@ loc_06857:
     cmp ax, dx
     jne loc_068B3
 loc_06876:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06883
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06883:
     sub ax, 8
     cmp ax, cx
     jne loc_0688D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0688D:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_068B3
@@ -2800,19 +2803,19 @@ loc_0688D:
     sub ax, 8
     cmp ax, cx
     jne loc_068A9
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_068A9:
     sub ax, 8
     cmp ax, cx
     jne loc_068B3
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_068B3:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06932
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06932
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_068D6
     and ax, 0FFF8h
@@ -2835,16 +2838,16 @@ loc_068D6:
     cmp ax, dx
     jne loc_06932
 loc_068F5:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06902
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06902:
     sub ax, 8
     cmp ax, cx
     jne loc_0690C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0690C:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06932
@@ -2855,19 +2858,19 @@ loc_0690C:
     sub ax, 8
     cmp ax, cx
     jne loc_06928
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06928:
     sub ax, 8
     cmp ax, cx
     jne loc_06932
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06932:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_069B1
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_069B1
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06955
     and ax, 0FFF8h
@@ -2890,16 +2893,16 @@ loc_06955:
     cmp ax, dx
     jne loc_069B1
 loc_06974:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06981
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06981:
     sub ax, 8
     cmp ax, cx
     jne loc_0698B
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0698B:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_069B1
@@ -2910,19 +2913,19 @@ loc_0698B:
     sub ax, 8
     cmp ax, cx
     jne loc_069A7
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_069A7:
     sub ax, 8
     cmp ax, cx
     jne loc_069B1
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_069B1:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06A30
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06A30
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_069D4
     and ax, 0FFF8h
@@ -2945,16 +2948,16 @@ loc_069D4:
     cmp ax, dx
     jne loc_06A30
 loc_069F3:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06A00
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A00:
     sub ax, 8
     cmp ax, cx
     jne loc_06A0A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A0A:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06A30
@@ -2965,19 +2968,19 @@ loc_06A0A:
     sub ax, 8
     cmp ax, cx
     jne loc_06A26
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A26:
     sub ax, 8
     cmp ax, cx
     jne loc_06A30
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A30:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06AAF
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06AAF
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06A53
     and ax, 0FFF8h
@@ -3000,16 +3003,16 @@ loc_06A53:
     cmp ax, dx
     jne loc_06AAF
 loc_06A72:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06A7F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A7F:
     sub ax, 8
     cmp ax, cx
     jne loc_06A89
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06A89:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06AAF
@@ -3020,19 +3023,19 @@ loc_06A89:
     sub ax, 8
     cmp ax, cx
     jne loc_06AA5
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06AA5:
     sub ax, 8
     cmp ax, cx
     jne loc_06AAF
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06AAF:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06B2E
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06B2E
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06AD2
     and ax, 0FFF8h
@@ -3055,16 +3058,16 @@ loc_06AD2:
     cmp ax, dx
     jne loc_06B2E
 loc_06AF1:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06AFE
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06AFE:
     sub ax, 8
     cmp ax, cx
     jne loc_06B08
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06B08:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06B2E
@@ -3075,19 +3078,19 @@ loc_06B08:
     sub ax, 8
     cmp ax, cx
     jne loc_06B24
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06B24:
     sub ax, 8
     cmp ax, cx
     jne loc_06B2E
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06B2E:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06BAD
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06BAD
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06B51
     and ax, 0FFF8h
@@ -3110,16 +3113,16 @@ loc_06B51:
     cmp ax, dx
     jne loc_06BAD
 loc_06B70:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06B7D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06B7D:
     sub ax, 8
     cmp ax, cx
     jne loc_06B87
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06B87:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06BAD
@@ -3130,19 +3133,19 @@ loc_06B87:
     sub ax, 8
     cmp ax, cx
     jne loc_06BA3
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06BA3:
     sub ax, 8
     cmp ax, cx
     jne loc_06BAD
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06BAD:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06C2C
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06C2C
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06BD0
     and ax, 0FFF8h
@@ -3165,16 +3168,16 @@ loc_06BD0:
     cmp ax, dx
     jne loc_06C2C
 loc_06BEF:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06BFC
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06BFC:
     sub ax, 8
     cmp ax, cx
     jne loc_06C06
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06C06:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06C2C
@@ -3185,19 +3188,19 @@ loc_06C06:
     sub ax, 8
     cmp ax, cx
     jne loc_06C22
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06C22:
     sub ax, 8
     cmp ax, cx
     jne loc_06C2C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06C2C:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06CAB
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06CAB
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06C4F
     and ax, 0FFF8h
@@ -3220,16 +3223,16 @@ loc_06C4F:
     cmp ax, dx
     jne loc_06CAB
 loc_06C6E:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06C7B
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06C7B:
     sub ax, 8
     cmp ax, cx
     jne loc_06C85
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06C85:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06CAB
@@ -3240,19 +3243,19 @@ loc_06C85:
     sub ax, 8
     cmp ax, cx
     jne loc_06CA1
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06CA1:
     sub ax, 8
     cmp ax, cx
     jne loc_06CAB
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06CAB:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06D2A
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06D2A
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06CCE
     and ax, 0FFF8h
@@ -3275,16 +3278,16 @@ loc_06CCE:
     cmp ax, dx
     jne loc_06D2A
 loc_06CED:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06CFA
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06CFA:
     sub ax, 8
     cmp ax, cx
     jne loc_06D04
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D04:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06D2A
@@ -3295,19 +3298,19 @@ loc_06D04:
     sub ax, 8
     cmp ax, cx
     jne loc_06D20
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D20:
     sub ax, 8
     cmp ax, cx
     jne loc_06D2A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D2A:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06DA9
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06DA9
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06D4D
     and ax, 0FFF8h
@@ -3330,16 +3333,16 @@ loc_06D4D:
     cmp ax, dx
     jne loc_06DA9
 loc_06D6C:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06D79
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D79:
     sub ax, 8
     cmp ax, cx
     jne loc_06D83
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D83:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06DA9
@@ -3350,19 +3353,19 @@ loc_06D83:
     sub ax, 8
     cmp ax, cx
     jne loc_06D9F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06D9F:
     sub ax, 8
     cmp ax, cx
     jne loc_06DA9
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06DA9:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06E28
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06E28
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06DCC
     and ax, 0FFF8h
@@ -3385,16 +3388,16 @@ loc_06DCC:
     cmp ax, dx
     jne loc_06E28
 loc_06DEB:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06DF8
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06DF8:
     sub ax, 8
     cmp ax, cx
     jne loc_06E02
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E02:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06E28
@@ -3405,19 +3408,19 @@ loc_06E02:
     sub ax, 8
     cmp ax, cx
     jne loc_06E1E
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E1E:
     sub ax, 8
     cmp ax, cx
     jne loc_06E28
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E28:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06EA7
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06EA7
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06E4B
     and ax, 0FFF8h
@@ -3440,16 +3443,16 @@ loc_06E4B:
     cmp ax, dx
     jne loc_06EA7
 loc_06E6A:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06E77
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E77:
     sub ax, 8
     cmp ax, cx
     jne loc_06E81
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E81:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06EA7
@@ -3460,19 +3463,19 @@ loc_06E81:
     sub ax, 8
     cmp ax, cx
     jne loc_06E9D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06E9D:
     sub ax, 8
     cmp ax, cx
     jne loc_06EA7
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06EA7:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06F26
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06F26
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06ECA
     and ax, 0FFF8h
@@ -3495,16 +3498,16 @@ loc_06ECA:
     cmp ax, dx
     jne loc_06F26
 loc_06EE9:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06EF6
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06EF6:
     sub ax, 8
     cmp ax, cx
     jne loc_06F00
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F00:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06F26
@@ -3515,19 +3518,19 @@ loc_06F00:
     sub ax, 8
     cmp ax, cx
     jne loc_06F1C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F1C:
     sub ax, 8
     cmp ax, cx
     jne loc_06F26
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F26:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_06FA5
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_06FA5
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06F49
     and ax, 0FFF8h
@@ -3550,16 +3553,16 @@ loc_06F49:
     cmp ax, dx
     jne loc_06FA5
 loc_06F68:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06F75
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F75:
     sub ax, 8
     cmp ax, cx
     jne loc_06F7F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F7F:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_06FA5
@@ -3570,19 +3573,19 @@ loc_06F7F:
     sub ax, 8
     cmp ax, cx
     jne loc_06F9B
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06F9B:
     sub ax, 8
     cmp ax, cx
     jne loc_06FA5
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06FA5:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_07024
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_07024
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_06FC8
     and ax, 0FFF8h
@@ -3605,16 +3608,16 @@ loc_06FC8:
     cmp ax, dx
     jne loc_07024
 loc_06FE7:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_06FF4
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06FF4:
     sub ax, 8
     cmp ax, cx
     jne loc_06FFE
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_06FFE:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_07024
@@ -3625,19 +3628,19 @@ loc_06FFE:
     sub ax, 8
     cmp ax, cx
     jne loc_0701A
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0701A:
     sub ax, 8
     cmp ax, cx
     jne loc_07024
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07024:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_070A3
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_070A3
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_07047
     and ax, 0FFF8h
@@ -3660,16 +3663,16 @@ loc_07047:
     cmp ax, dx
     jne loc_070A3
 loc_07066:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_07073
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07073:
     sub ax, 8
     cmp ax, cx
     jne loc_0707D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0707D:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_070A3
@@ -3680,19 +3683,19 @@ loc_0707D:
     sub ax, 8
     cmp ax, cx
     jne loc_07099
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07099:
     sub ax, 8
     cmp ax, cx
     jne loc_070A3
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_070A3:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_07122
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_07122
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_070C6
     and ax, 0FFF8h
@@ -3715,16 +3718,16 @@ loc_070C6:
     cmp ax, dx
     jne loc_07122
 loc_070E5:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_070F2
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_070F2:
     sub ax, 8
     cmp ax, cx
     jne loc_070FC
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_070FC:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_07122
@@ -3735,19 +3738,19 @@ loc_070FC:
     sub ax, 8
     cmp ax, cx
     jne loc_07118
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07118:
     sub ax, 8
     cmp ax, cx
     jne loc_07122
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07122:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_071A1
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_071A1
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_07145
     and ax, 0FFF8h
@@ -3770,16 +3773,16 @@ loc_07145:
     cmp ax, dx
     jne loc_071A1
 loc_07164:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_07171
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07171:
     sub ax, 8
     cmp ax, cx
     jne loc_0717B
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0717B:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_071A1
@@ -3790,19 +3793,19 @@ loc_0717B:
     sub ax, 8
     cmp ax, cx
     jne loc_07197
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07197:
     sub ax, 8
     cmp ax, cx
     jne loc_071A1
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_071A1:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_07220
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_07220
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_071C4
     and ax, 0FFF8h
@@ -3825,16 +3828,16 @@ loc_071C4:
     cmp ax, dx
     jne loc_07220
 loc_071E3:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_071F0
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_071F0:
     sub ax, 8
     cmp ax, cx
     jne loc_071FA
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_071FA:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_07220
@@ -3845,19 +3848,19 @@ loc_071FA:
     sub ax, 8
     cmp ax, cx
     jne loc_07216
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07216:
     sub ax, 8
     cmp ax, cx
     jne loc_07220
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07220:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0729F
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0729F
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_07243
     and ax, 0FFF8h
@@ -3880,16 +3883,16 @@ loc_07243:
     cmp ax, dx
     jne loc_0729F
 loc_07262:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0726F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0726F:
     sub ax, 8
     cmp ax, cx
     jne loc_07279
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07279:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0729F
@@ -3900,19 +3903,19 @@ loc_07279:
     sub ax, 8
     cmp ax, cx
     jne loc_07295
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07295:
     sub ax, 8
     cmp ax, cx
     jne loc_0729F
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0729F:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0731E
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0731E
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_072C2
     and ax, 0FFF8h
@@ -3935,16 +3938,16 @@ loc_072C2:
     cmp ax, dx
     jne loc_0731E
 loc_072E1:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_072EE
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_072EE:
     sub ax, 8
     cmp ax, cx
     jne loc_072F8
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_072F8:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0731E
@@ -3955,19 +3958,19 @@ loc_072F8:
     sub ax, 8
     cmp ax, cx
     jne loc_07314
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07314:
     sub ax, 8
     cmp ax, cx
     jne loc_0731E
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0731E:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0739D
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0739D
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_07341
     and ax, 0FFF8h
@@ -3990,16 +3993,16 @@ loc_07341:
     cmp ax, dx
     jne loc_0739D
 loc_07360:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_0736D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0736D:
     sub ax, 8
     cmp ax, cx
     jne loc_07377
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07377:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0739D
@@ -4010,19 +4013,19 @@ loc_07377:
     sub ax, 8
     cmp ax, cx
     jne loc_07393
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07393:
     sub ax, 8
     cmp ax, cx
     jne loc_0739D
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0739D:
     add bx, RECORD_SIZE
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0741C
-    cmp word ptr ds:[bx + 01Eh], 0
+    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
     je loc_0741C
-    mov ax, word ptr ds:[bx + 4]
+    mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
     je loc_073C0
     and ax, 0FFF8h
@@ -4045,16 +4048,16 @@ loc_073C0:
     cmp ax, dx
     jne loc_0741C
 loc_073DF:
-    mov ax, word ptr ds:[bx + 2]
+    mov ax, word ptr ds:[bx + REC_Y]
     and ax, 0FFF8h
     cmp ax, cx
     jne loc_073EC
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_073EC:
     sub ax, 8
     cmp ax, cx
     jne loc_073F6
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_073F6:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     jne loc_0741C
@@ -4065,15 +4068,15 @@ loc_073F6:
     sub ax, 8
     cmp ax, cx
     jne loc_07412
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_07412:
     sub ax, 8
     cmp ax, cx
     jne loc_0741C
-    jmp near ptr loc_0BEC5
+    jmp near ptr ShotHitsRecord
 loc_0741C:
     add bx, RECORD_SIZE
-loc_0741F:
+PlayerShotsMissed:
     ret
 
 loc_07420:
@@ -4582,7 +4585,7 @@ loc_0795D:
     dec word ptr ds:[0A406h]
     jne loc_0795D
     ret
-loc_07977:
+Level1MapCell:
     cmp al, 4
     jne loc_0797E
     jmp near ptr loc_07A6E
@@ -4750,7 +4753,7 @@ loc_07AF6:
     mov word ptr ds:[bx + 8], 08Ch
     mov word ptr ds:[bx + 6], 2
     ret
-loc_07B06:
+Level2MapCell:
     cmp al, 30h
     je loc_07B13
     cmp al, 0C4h
@@ -4824,7 +4827,7 @@ loc_07BB1:
     mov word ptr ds:[bx + 18h], 74h
     mov word ptr ds:[bx + 8], 14Fh
     ret
-loc_07BCB:
+Level0MapCell:
     cmp word ptr ds:[0A40Ah], 60h
     ja loc_07BD8
     cmp al, 0BCh
@@ -4845,7 +4848,7 @@ loc_07BE6:
     push ax
     mov bx, si
     and bx, 3Fh
-    mov bl, ds:[bx - 37E6h]
+    mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
     call far ptr loc_0F953
@@ -4853,9 +4856,12 @@ loc_07BE6:
     mov bl, al
     xor bh, bh
     shl bx, 1
-    jmp word ptr cs:[bx + 7C08h]
+    jmp word ptr cs:[bx + Level0CellCases]
 ; NOP filler (word alignment).
     db 90h
+; Map bytes E1h..F9h; the range check also admits FAh and FBh, which would index past
+; the table into code (those bytes presumably never occur in level 0 maps).
+Level0CellCases label word
     dw offset loc_07ED7, offset loc_07ED7, offset loc_08143, offset loc_08137
     dw offset loc_07F86, offset loc_07F86, offset loc_07F5D, offset loc_07F69
     dw offset loc_07F7A, offset loc_07FEA, offset loc_07F14, offset loc_07FFB
@@ -4866,7 +4872,7 @@ loc_07BE6:
 loc_07C3A:
     mov byte ptr es:[si], 1
     ret
-loc_07C3F:
+Level3MapCell:
     sub al, 0CEh
     jns loc_07C44
     ret
@@ -4878,7 +4884,7 @@ loc_07C49:
     push ax
     mov bx, si
     and bx, 3Fh
-    mov bl, ds:[bx - 37E6h]
+    mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
     call far ptr loc_0F953
@@ -4886,7 +4892,9 @@ loc_07C49:
     mov bl, al
     xor bh, bh
     shl bx, 1
-    jmp word ptr cs:[bx + 7C6Ah]
+    jmp word ptr cs:[bx + Level3CellCases]
+; Map bytes CEh..E9h; the range check also admits EAh and EBh (past the table).
+Level3CellCases label word
     dw offset loc_07EB0, offset loc_07EB0, offset loc_07F36, offset loc_07F36
     dw offset loc_080B7, offset loc_080B7, offset loc_080DE, offset loc_08107
     dw offset loc_0806E, offset loc_07EFE, offset loc_0804C, offset loc_08172
@@ -4894,7 +4902,7 @@ loc_07C49:
     dw offset loc_07A6E, offset CountXReturn, offset loc_08113, offset loc_080FB
     dw offset loc_0802A, offset loc_07FD4, offset loc_080A1, offset loc_080EF
     dw offset loc_080EF, offset loc_0808B, offset loc_0803B, offset loc_0812B
-loc_07CA2:
+Level4MapCell:
     cmp al, 0ACh
     jne loc_07CA9
     jmp near ptr loc_07ADA
@@ -5013,7 +5021,7 @@ loc_07DB8:
     mov word ptr ds:[bx + 18h], 84h
     mov word ptr ds:[bx + 8], 159h
     ret
-loc_07DC8:
+Level5MapCell:
     cmp al, 30h
     jne loc_07DCF
     jmp near ptr loc_07B13
@@ -5053,7 +5061,7 @@ loc_07E05:
     push ax
     mov bx, si
     and bx, 3Fh
-    mov bl, ds:[bx - 37E6h]
+    mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
     call far ptr loc_0F953
@@ -5061,7 +5069,9 @@ loc_07E05:
     mov bl, al
     xor bh, bh
     shl bx, 1
-    jmp word ptr cs:[bx + 7E26h]
+    jmp word ptr cs:[bx + Level5CellCases]
+; Map bytes D7h..EFh; the range check also admits F0h and F1h (past the table).
+Level5CellCases label word
     dw offset loc_07AA2, offset loc_07A86, offset loc_079BA, offset loc_07E84
     dw offset loc_07E9A, offset loc_07D2A, offset loc_07D4D, offset loc_080B7
     dw offset loc_080B7, offset loc_080A1, offset loc_07E58, offset loc_07E58
