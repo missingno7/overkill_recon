@@ -334,6 +334,7 @@ public MoveInDirection3
 public MoveInDirection4
 public MoveInDirection8
 public PanelSegment
+public PatrolSpriteShootDown32
 public PerFileFlagsEnabled
 public PlaqueSegment
 public PlayfieldRowBytes
@@ -375,7 +376,6 @@ public VideoAdapter
 public WaitVerticalRetracePulse
 public WideRowBytes
 public WorkspaceSegment
-public loc_0B2AC
 extrn AddScoreBcd:near
 extrn AdvanceToAvailableUpgrade:near
 extrn AimAtPlayer:near
@@ -394,6 +394,7 @@ extrn CgaSelectBrightPalette0:near
 extrn CgaSelectBrightPalette1:near
 extrn CgaSelectBrightPaletteNoBurst:near
 extrn CheckBossKey:near
+extrn CheckFirePhase:near
 extrn ClearScreen104x200:near
 extrn ClearTimerTick:near
 extrn ClearWorkspace:near
@@ -464,6 +465,7 @@ extrn SetMapTile1:near
 extrn SetMapTile28:near
 extrn ShowEgaDrawPage:near
 extrn ShowFatalErrorAndExit:near
+extrn ShutdownWithError:near
 extrn SmartBombAll:near
 extrn SpawnAimedShot:near
 extrn SpawnEnemyHere:near
@@ -478,6 +480,7 @@ extrn StretchInWindowImage:near
 extrn TickFrameTimers:near
 extrn TickRefuel:near
 extrn Type13FormationLeader:near
+extrn Type21LeaderPath:near
 extrn Type24TurretLeftFire32:near
 extrn Type25TurretRightFire32:near
 extrn Type26TurretRemnant:near
@@ -542,9 +545,6 @@ extrn UpdateRefuelTimersAndScore:near
 extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
 extrn loc_05059:near
-extrn loc_05D0B:near
-extrn loc_0878C:near
-extrn loc_08D83:near
 ; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer).
 LevelMapSegment dw seg SoundModuleSlot + SLOT_BUFFER_PARAGRAPH
 ; Colour text-mode video segment, used when printing without graphics (TextInGraphics = 0).
@@ -622,9 +622,9 @@ ProgramEntry:
     mov ah, DOS_RESIZE_MEMORY
     int 021h
     mov dx, offset MsgDeallocError
-    jae loc_09600
+    jae @@memoryResized
     jmp near ptr ShowFatalErrorAndExit
-loc_09600:
+@@memoryResized:
     call BuildByteToNibbleMaskTable
     mov ds, word ptr cs:[EntryDsPsp]
     mov si, PSP_COMMAND_TAIL
@@ -635,9 +635,9 @@ loc_09600:
     lodsb
     xor ah, ah
     cmp ax, 2
-    jbe loc_09620
+    jbe @@storeVideoAdapter
     mov al, 1
-loc_09620:
+@@storeVideoAdapter:
     mov word ptr cs:[VideoAdapter], ax
     push ax
     lodsb
@@ -648,21 +648,21 @@ loc_09620:
     pop ax
     pop bx
     cmp byte ptr cs:[LauncherOverrideMask], LAUNCHER_OVERRIDE_VIDEO
-    je loc_0964C
+    je @@applyOverrides
     cmp byte ptr cs:[LauncherOverrideMask], LAUNCHER_OVERRIDE_SOUND
-    je loc_0964C
+    je @@applyOverrides
     cmp byte ptr cs:[LauncherOverrideMask], LAUNCHER_OVERRIDE_BOTH
-    jne loc_0966E
-loc_0964C:
+    jne StartupAfterOverrides
+@@applyOverrides:
     test byte ptr cs:[LauncherOverrideMask], LAUNCHER_OVERRIDE_VIDEO
-    je loc_09657
+    je @@checkSoundOverride
     call ApplyLauncherVideoOverride
-loc_09657:
+@@checkSoundOverride:
     test byte ptr cs:[LauncherOverrideMask], LAUNCHER_OVERRIDE_SOUND
-    je loc_09662
+    je @@overridesDone
     call ApplyLauncherSoundOverride
-loc_09662:
-    jmp short loc_0966E
+@@overridesDone:
+    jmp short StartupAfterOverrides
 
 ApplyLauncherVideoOverride:
     mov word ptr cs:[VideoAdapter], bx
@@ -671,7 +671,7 @@ ApplyLauncherVideoOverride:
 ApplyLauncherSoundOverride:
     mov byte ptr ds:[SoundModuleSelect], al
     ret
-loc_0966E:
+StartupAfterOverrides:
     call EnableFileFlagsIfVgaDac
     call VerifyStartupChecksums
     push ds
@@ -699,9 +699,9 @@ loc_0966E:
     call CollapseScreenAndClear
     call StretchInWindowImage
     mov cx, 0FAh
-loc_096C5:
+@@pauseLoop:
     call WaitVerticalRetrace
-    loop loc_096C5
+    loop @@pauseLoop
     mov ax, word ptr cs:[VideoAdapter]
     mov bx, offset VideoBiosModeTable
     xlat
@@ -990,14 +990,14 @@ InitPositionHistory:
     mov di, offset HistoryPairs
     mov cx, HISTORY_PAIR_COUNT
     mov bp, offset PrimaryRecord
-loc_099CD:
+@@fillEntry:
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, 8
     stosw
     mov ax, word ptr ss:[bp + REC_X]
     add ax, 9
     stosw
-    loop loc_099CD
+    loop @@fillEntry
     mov word ptr ds:[HistoryWriteCursor], offset HistoryPairs
     mov word ptr ds:[HistoryReadCursor15], offset HistoryPairs + HISTORY_LAG15_START
     mov word ptr ds:[HistoryReadCursor31], offset HistoryPairs + HISTORY_LAG31_START
@@ -1021,55 +1021,55 @@ LevelEndRefill:
     call PickupFuel
     call AddEnergyPoint
     cmp word ptr ds:[Fuel], 58h
-    je loc_09A29
+    je @@checkTanks
     ret
-loc_09A29:
+@@checkTanks:
     cmp word ptr ds:[EnergyTanks], 3
-    je loc_09A31
+    je @@checkEnergy
     ret
-loc_09A31:
+@@checkEnergy:
     cmp word ptr ds:[EnergyPoints], 18h
-    je loc_09A39
+    je @@refillDone
     ret
-loc_09A39:
+@@refillDone:
     inc word ptr ds:[LevelEndPhase]
     ret
 ; Also spreads the side pods out.
 LevelEndFlyToWaypointB:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
-    jne loc_09A5D
+    jne @@widenSpread
     cmp word ptr ds:[SidePodSpreadLeft], 8
-    je loc_09A50
+    je @@narrowRightSpread
     inc word ptr ds:[SidePodSpreadLeft]
-loc_09A50:
+@@narrowRightSpread:
     cmp word ptr ds:[SidePodSpreadRight], -8
-    je loc_09A73
+    je @@steerToB
     dec word ptr ds:[SidePodSpreadRight]
-    jmp short loc_09A73
-loc_09A5D:
+    jmp short @@steerToB
+@@widenSpread:
     cmp word ptr ds:[SidePodSpreadLeft], 0Fh
-    je loc_09A68
+    je @@widenRightSpread
     inc word ptr ds:[SidePodSpreadLeft]
-loc_09A68:
+@@widenRightSpread:
     cmp word ptr ds:[SidePodSpreadRight], -0Fh
-    je loc_09A73
+    je @@steerToB
     dec word ptr ds:[SidePodSpreadRight]
-loc_09A73:
+@@steerToB:
     mov si, offset AutopilotWaypointB
-    jmp short loc_09A7B
+    jmp short Steer
 LevelEndFlyToWaypointA:
     mov si, offset AutopilotWaypointA
-loc_09A7B:
+Steer:
     call SteerInputToWaypoint
     cmp byte ptr ds:[InputBits], 0
-    je loc_09A86
+    je @@waypointReached
     ret
-loc_09A86:
+@@waypointReached:
     inc word ptr ds:[LevelEndPhase]
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_B
-    je loc_09A94
+    je @@spawnLevelEndRecord
     jmp near ptr RunLevelEndSequence
-loc_09A94:
+@@spawnLevelEndRecord:
     mov word ptr ds:[SidePodSpreadRight], 0
     mov word ptr ds:[SidePodSpreadLeft], 0
     call FindFreeRecordPoolA
@@ -1087,39 +1087,39 @@ loc_09A94:
 SteerInputToWaypoint:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_Y], ax
-    je loc_09AE4
+    je @@steerX
     mov byte ptr ds:[InputBits], 4
-    jb loc_09AE4
+    jb @@steerX
     mov byte ptr ds:[InputBits], 8
-loc_09AE4:
+@@steerX:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_X], ax
-    je loc_09AFE
+    je @@done
     pushf
     or byte ptr ds:[InputBits], 1
     popf
-    jb loc_09AFE
+    jb @@done
     and byte ptr ds:[InputBits], 0FEh
     or byte ptr ds:[InputBits], 2
-loc_09AFE:
+@@done:
     ret
-loc_09AFF:
+PlayerDyingTail:
     cmp word ptr ds:[FrameCount4], 3
-    je loc_09B07
+    je @@nextDeathFrame
     ret
-loc_09B07:
+@@nextDeathFrame:
     inc word ptr ss:[bp + REC_SPRITE]
     cmp word ptr ss:[bp + REC_SPRITE], 0Fh
-    je loc_09B11
+    je @@deathAnimDone
     ret
-loc_09B11:
+@@deathAnimDone:
     mov word ptr ss:[bp + REC_STATUS], 0
     call RestartAtCheckpoint
     mov word ptr ds:[LifeLostRequest], 1
     cmp word ptr ds:[Fuel], 0
-    je loc_09B27
+    je @@gameOver
     ret
-loc_09B27:
+@@gameOver:
     mov word ptr ds:[GameOverRequest], 1
     ret
 
@@ -1130,62 +1130,62 @@ UpdatePlayerFrame:
     mov word ptr ds:[NextLevelRequest], 0
     call PollInputBits
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    je loc_09B47
+    je @@checkLevelEndDone
     call RunLevelEndSequence
-loc_09B47:
+@@checkLevelEndDone:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_DONE
-    jne loc_09B55
+    jne @@updateShip
     mov word ptr ds:[NextLevelRequest], 1
     ret
-loc_09B55:
+@@updateShip:
     mov word ptr ds:[ScrollDeltaY], 0
     mov bp, offset PrimaryRecord
     call UpdateBeam
     cmp word ptr ds:[EnergyTanks], -1
-    je loc_09AFF
+    je PlayerDyingTail
     cmp word ptr ds:[Fuel], 0
-    je loc_09AFF
+    je PlayerDyingTail
     test byte ptr ds:[InputBits], IN_YMINUS
-    je loc_09B79
+    je @@checkYPlus
     call DecRecordYByMode
-loc_09B79:
+@@checkYPlus:
     test byte ptr ds:[InputBits], IN_YPLUS
-    je loc_09B83
+    je @@checkXPlus
     call IncRecordYTwice
-loc_09B83:
+@@checkXPlus:
     test byte ptr ds:[InputBits], IN_XPLUS
-    je loc_09B8D
+    je @@checkXMinus
     call IncRecordXTwice
-loc_09B8D:
+@@checkXMinus:
     test byte ptr ds:[InputBits], IN_XMINUS
-    je loc_09B97
+    je @@checkUpgradeButton
     call DecRecordXTwice
-loc_09B97:
+@@checkUpgradeButton:
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    jbe loc_09BA9
+    jbe @@scrollAndFire
     test byte ptr ds:[InputBits], IN_BUTTON_SECONDARY
-    je loc_09BA9
+    je @@scrollAndFire
     call ApplySelectedUpgrade
-loc_09BA9:
+@@scrollAndFire:
     call ScrollForwardAndCheckLevelEnd
     call HandleFireButton
     cmp byte ptr ds:[BonusKeysEnabled], 0
-    je loc_09BC0
+    je @@checkEdgeSpread
     cmp byte ptr ds:[KeyDownTable + SCAN_3], KEY_STATE_DOWN
-    jne loc_09BC0
+    jne @@checkEdgeSpread
     call PickupUpgradeSelector
-loc_09BC0:
+@@checkEdgeSpread:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
-    ja loc_09BCA
+    ja @@checkTerrain
     call UpdatePlacementXOffsetsAtRecordEdges
-loc_09BCA:
+@@checkTerrain:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    jne loc_09BDF
+    jne @@advanceHistory
     call DamagePlayerOnTerrainContact
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    jbe loc_09BDF
+    jbe @@advanceHistory
     call AdjustRecordXFromCounts
-loc_09BDF:
+@@advanceHistory:
     call AdvancePositionHistoryIfRequested
 
 ; Separate entry, also reached by fallthrough from the code above. BP = record.
@@ -1196,12 +1196,12 @@ StoreApplyHistoryAndConditionalPlacement:
     call ApplyPositionHistoryToRecords
 ; When placement is skipped, the previous ClampXLowSeen/ClampXHighSeen survive.
     cmp word ptr ds:[DemoActive], 0
-    jne loc_09BF7
+    jne @@placePods
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    jbe loc_09BFA
-loc_09BF7:
+    jbe @@done
+@@placePods:
     call PlaceSidePods
-loc_09BFA:
+@@done:
     ret
 
 CountLeftPod:
@@ -1219,36 +1219,36 @@ CountRightPod:
 AdjustRecordXFromCounts:
     mov word ptr ds:[XAdjustPathTaken], 0
     test byte ptr ds:[InputBits], IN_XMINUS
-    jne loc_09C1E
+    jne @@checkHighClamp
     cmp byte ptr ds:[ClampXLowSeen], 1
-    jne loc_09C1E
+    jne @@checkHighClamp
     call IncRecordXTwice
     mov word ptr ds:[XAdjustPathTaken], 1
-loc_09C1E:
+@@checkHighClamp:
     test byte ptr ds:[InputBits], IN_XPLUS
-    jne loc_09C35
+    jne @@countPods
     cmp byte ptr ds:[ClampXHighSeen], 1
-    jne loc_09C35
+    jne @@countPods
     call DecRecordXTwice
     mov word ptr ds:[XAdjustPathTaken], 1
-loc_09C35:
+@@countPods:
     xor ax, ax
     cmp word ptr ds:[SidePodLeftInner], -1
-    je loc_09C41
+    je @@checkRightInner
     call CountLeftPod
-loc_09C41:
+@@checkRightInner:
     cmp word ptr ds:[SidePodRightInner], -1
-    je loc_09C4B
+    je @@checkLeftOuter
     call CountRightPod
-loc_09C4B:
+@@checkLeftOuter:
     cmp word ptr ds:[SidePodLeftOuter], -1
-    je loc_09C55
+    je @@checkRightOuter
     call CountLeftPod
-loc_09C55:
+@@checkRightOuter:
     cmp word ptr ds:[SidePodRightOuter], -1
-    je loc_09C5F
+    je @@dispatchCounts
     call CountRightPod
-loc_09C5F:
+@@dispatchCounts:
     mov bl, al
     xor bh, bh
     add bl, ah
@@ -1269,9 +1269,9 @@ CountXTable:
     dw CountXReturn ; CS-relative code pointer; counts AH=2, AL=2
 CountXIncIfGate:
     cmp word ptr ds:[CountGate2324], 1
-    jne loc_09C8A
+    jne @@nudgeRight
     ret
-loc_09C8A:
+@@nudgeRight:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr IncRecordXBelowMax
 CountXInc:
@@ -1279,9 +1279,9 @@ CountXInc:
     jmp near ptr IncRecordXBelowMax
 CountXDecIfGate:
     cmp word ptr ds:[CountGate2324], 1
-    jne loc_09CA4
+    jne @@nudgeLeft
     ret
-loc_09CA4:
+@@nudgeLeft:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr DecRecordXUnlessZero
 CountXDec:
@@ -1292,18 +1292,18 @@ CountXDec:
 ; DifficultySetting. Preserves BP.
 DamagePlayerOnTerrainContact:
     call ProbeShipTerrainCollision
-    jb loc_09CBC
+    jb @@terrainHit
     ret
-loc_09CBC:
+@@terrainHit:
     push bp
     cmp word ptr ds:[DifficultySetting], 0
-    je loc_09CD1
+    je @@damageTwice
     cmp word ptr ds:[DifficultySetting], 1
-    je loc_09CCE
+    je @@damageThreeTimes
     call DamagePlayerEnergy
-loc_09CCE:
+@@damageThreeTimes:
     call DamagePlayerEnergy
-loc_09CD1:
+@@damageTwice:
     call DamagePlayerEnergy
     call DamagePlayerEnergy
     pop bp
@@ -1326,68 +1326,68 @@ StorePositionHistory:
 ; position change; XAdjustPathTaken can be stale when AdjustRecordXFromCounts was skipped.
 AdvancePositionHistoryIfRequested:
     test byte ptr ds:[InputBits], INPUT_MOVEMENT_MASK
-    jne loc_09D00
+    jne @@advanceWrite
     cmp word ptr ds:[XAdjustPathTaken], 0
-    jne loc_09D00
+    jne @@advanceWrite
     ret
-loc_09D00:
+@@advanceWrite:
     add word ptr ds:[HistoryWriteCursor], HISTORY_PAIR_BYTES
     cmp word ptr ds:[HistoryWriteCursor], offset HistoryEnd
-    jne loc_09D13
+    jne @@advanceLag15
     mov word ptr ds:[HistoryWriteCursor], offset HistoryPairs
-loc_09D13:
+@@advanceLag15:
     add word ptr ds:[HistoryReadCursor15], HISTORY_PAIR_BYTES
     cmp word ptr ds:[HistoryReadCursor15], offset HistoryEnd
-    jne loc_09D26
+    jne @@advanceLag31
     mov word ptr ds:[HistoryReadCursor15], offset HistoryPairs
-loc_09D26:
+@@advanceLag31:
     add word ptr ds:[HistoryReadCursor31], HISTORY_PAIR_BYTES
     cmp word ptr ds:[HistoryReadCursor31], offset HistoryEnd
-    jne loc_09D39
+    jne @@advanceLag47
     mov word ptr ds:[HistoryReadCursor31], offset HistoryPairs
-loc_09D39:
+@@advanceLag47:
     add word ptr ds:[HistoryCursor47], HISTORY_PAIR_BYTES
     cmp word ptr ds:[HistoryCursor47], offset HistoryEnd
-    jne loc_09D4C
+    jne @@done
     mov word ptr ds:[HistoryCursor47], offset HistoryPairs
-loc_09D4C:
+@@done:
     ret
 
 ; Item 1: advances SelectedUpgradeSlot (0..3) and refreshes the upgrade display.
 PickupUpgradeSelector:
     cmp byte ptr ds:[BonusKeysEnabled], 0
-    je loc_09D5B
-loc_09D54:
+    je @@nextSlot
+@@waitKeyRelease:
     cmp byte ptr ds:[KeyDownTable + SCAN_3], KEY_STATE_DOWN
-    je loc_09D54
-loc_09D5B:
+    je @@waitKeyRelease
+@@nextSlot:
     inc word ptr ds:[SelectedUpgradeSlot]
     and word ptr ds:[SelectedUpgradeSlot], 3
-    jmp near ptr loc_0AC19
+    jmp near ptr RefreshUpgradeDisplay
 ; Item 2: an energy tank, or refilled energy when all three are held.
 PickupEnergy:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09D73
+    je @@addTank
     mov byte ptr ds:[SfxRequest], 1Ch
-loc_09D73:
+@@addTank:
     cmp word ptr ds:[EnergyTanks], 3
-    je loc_09D84
+    je @@fillEnergy
     inc word ptr ds:[EnergyTanks]
-loc_09D7E:
+@@redrawGauge:
     push bp
     call RedrawEnergyGauge
     pop bp
     ret
-loc_09D84:
+@@fillEnergy:
     cmp word ptr ds:[EnergyPoints], 18h
-    je loc_09D7E
+    je @@redrawGauge
     inc word ptr ds:[EnergyPoints]
-    jmp short loc_09D84
+    jmp short @@fillEnergy
 AddFrontPod:
     cmp word ptr ds:[FrontPodRecord], -1
-    je loc_09D99
+    je @@allocPod
     ret
-loc_09D99:
+@@allocPod:
     call AllocRecordEvicting
     mov ds:[FrontPodRecord], bx
     mov word ptr ds:[bx + REC_STATUS], 1
@@ -1400,40 +1400,40 @@ loc_09D99:
 ; Item 4: starts refuelling unless the tank is full or already refilling.
 PickupFuel:
     cmp word ptr ds:[Fuel], 058h
-    jne loc_09DC1
+    jne @@checkRefuelling
     ret
-loc_09DC1:
+@@checkRefuelling:
     cmp word ptr ds:[RefuelActive], 1
-    jne loc_09DC9
+    jne @@startRefuel
     ret
-loc_09DC9:
+@@startRefuel:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jae loc_09DE9
+    jae @@done
     mov word ptr ds:[RefuelActive], 1
     cmp word ptr ds:[DemoActive], 1
-    je loc_09DE9
+    je @@done
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09DE9
+    je @@done
     mov byte ptr ds:[SfxRequest], 0Dh
-loc_09DE9:
+@@done:
     ret
 ; Level-end refill step: EnergyPoints + 1; a full bar becomes a new tank unless three
 ; are held.
 AddEnergyPoint:
     cmp word ptr ds:[EnergyPoints], 18h
-    jne loc_09E12
+    jne @@addPoint
     cmp word ptr ds:[EnergyTanks], 3
-    jne loc_09DF9
+    jne @@newTank
     ret
-loc_09DF9:
+@@newTank:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09E05
+    je @@addTank
     mov byte ptr ds:[SfxRequest], 1Ch
-loc_09E05:
+@@addTank:
     inc word ptr ds:[EnergyTanks]
     mov word ptr ds:[EnergyPoints], 0
     jmp near ptr RedrawEnergyGauge
-loc_09E12:
+@@addPoint:
     inc word ptr ds:[EnergyPoints]
     jmp near ptr RedrawEnergyGauge
 
@@ -1442,64 +1442,64 @@ loc_09E12:
 ; LosePlayerEnergyTank.
 DamagePlayerEnergy:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
-    jne loc_09E21
+    jne @@checkShipAlive
     ret
-loc_09E21:
+@@checkShipAlive:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jb loc_09E29
+    jb @@checkTanksLeft
     ret
-loc_09E29:
+@@checkTanksLeft:
     cmp word ptr ds:[EnergyTanks], -1
-    jne loc_09E31
+    jne @@takeHit
     ret
-loc_09E31:
+@@takeHit:
     mov word ptr ds:[PrimaryRecord + REC_FLASH_TIMER], 8
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09E43
+    je @@applyDamage
     mov byte ptr ds:[SfxRequest], 0Fh
-loc_09E43:
+@@applyDamage:
     cmp word ptr ds:[DifficultySetting], 0
-    je loc_09E5D
+    je @@damageOne
     cmp word ptr ds:[DifficultySetting], 1
-    je loc_09E57
+    je @@damageTwo
     dec word ptr ds:[EnergyPoints]
-    je loc_09E63
-loc_09E57:
+    je @@barEmpty
+@@damageTwo:
     dec word ptr ds:[EnergyPoints]
-    je loc_09E63
-loc_09E5D:
+    je @@barEmpty
+@@damageOne:
     dec word ptr ds:[EnergyPoints]
     jne RedrawEnergyGauge
-loc_09E63:
+@@barEmpty:
     mov word ptr ds:[EnergyPoints], 018h
 ; Also called on body contact. Without tanks left the ship dies (form 3), unless
 ; AllCheatsFlag refills.
 LosePlayerEnergyTank:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
-    jne loc_09E71
+    jne @@checkShipAlive
     ret
-loc_09E71:
+@@checkShipAlive:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jb loc_09E79
+    jb @@loseTank
     ret
-loc_09E79:
+@@loseTank:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09E85
+    je @@checkEasyToggle
     mov byte ptr ds:[SfxRequest], 3
-loc_09E85:
+@@checkEasyToggle:
     cmp word ptr ds:[DifficultySetting], 0
-    jne loc_09E98
+    jne @@decTanks
     inc byte ptr ds:[EasyHitToggle]
     and byte ptr ds:[EasyHitToggle], 1
-    je loc_09E98
+    je @@decTanks
     ret
-loc_09E98:
+@@decTanks:
     dec word ptr ds:[EnergyTanks]
     cmp word ptr ds:[EnergyTanks], -1
     jne RedrawEnergyGauge
     mov word ptr ds:[EnergyPoints], 0
     cmp byte ptr ds:[AllCheatsFlag], 1
-    je loc_09ED7
+    je CheatRefill
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     cmp byte ptr ds:[SfxEnabled], 0
     je RedrawEnergyGauge
@@ -1508,13 +1508,13 @@ loc_09E98:
 RedrawEnergyGauge:
     call DrawEnergyGauge
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    jne loc_09ED6
+    jne @@done
     call FlipEgaDrawPage
     call DrawEnergyGauge
     call FlipEgaDrawPage
-loc_09ED6:
+@@done:
     ret
-loc_09ED7:
+CheatRefill:
     mov word ptr ds:[EnergyTanks], 3
     mov word ptr ds:[EnergyPoints], 018h
     ret
@@ -1522,22 +1522,22 @@ loc_09ED7:
 ; Fuel - 1; at 0 the ship dies unless WhatOilShortageFlag refills it. Redraws the gauge.
 DrainFuelUnit:
     cmp word ptr ds:[Fuel], 0
-    jne loc_09EEC
+    jne @@drain
     ret
-loc_09EEC:
+@@drain:
     dec word ptr ds:[Fuel]
-    je loc_09EF5
+    je @@fuelEmpty
     jmp near ptr DrawFuelGauge
-loc_09EF5:
+@@fuelEmpty:
     cmp byte ptr ds:[WhatOilShortageFlag], 1
-    je loc_09F11
+    je @@cheatRefuel
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_09F0E
+    je @@redrawGauge
     mov byte ptr ds:[SfxRequest], 019h
-loc_09F0E:
+@@redrawGauge:
     jmp near ptr DrawFuelGauge
-loc_09F11:
+@@cheatRefuel:
     mov word ptr ds:[Fuel], 058h
     jmp near ptr DrawFuelGauge
 AddTrailingPod:
@@ -1548,17 +1548,17 @@ AddTrailingPod:
 ; Body of AddTrailingPod: fills TrailingPodNear, else TrailingPodFar.
 AddTrailingPodBody:
     cmp word ptr ds:[TrailingPodNear], -1
-    jne loc_09F30
+    jne @@tryFarSlot
     call AllocRecordEvicting
     mov ds:[TrailingPodNear], bx
     jmp short InitPodRecord
-loc_09F30:
+@@tryFarSlot:
     cmp word ptr ds:[TrailingPodFar], -1
-    jne loc_09F40
+    jne @@done
     call AllocRecordEvicting
     mov ds:[TrailingPodFar], bx
     jmp short InitPodRecord
-loc_09F40:
+@@done:
     ret
 ; BX = record: a live KIND_POD, size class 1, sprite 14h, 80 hit points, second draw
 ; pass.
@@ -1578,19 +1578,19 @@ AddSidePods:
     call FillSidePodSlotIfEmpty
     mov bx, offset SidePodRightInner
     call FillSidePodSlotIfEmpty
-    je loc_09F81
+    je @@done
     mov bx, offset SidePodLeftOuter
     call FillSidePodSlotIfEmpty
-    je loc_09F81
+    je @@done
     mov bx, offset SidePodRightOuter
     call FillSidePodSlotIfEmpty
-loc_09F81:
+@@done:
     ret
 FillSidePodSlotIfEmpty:
     cmp word ptr ds:[bx], -1
-    je loc_09F88
+    je @@fillSlot
     ret
-loc_09F88:
+@@fillSlot:
     mov word ptr ds:[SidePodSlotPtr], bx
     push bp
     mov bp, offset PrimaryRecord
@@ -1633,11 +1633,11 @@ PlaceSidePods:
 ; to 0..PLACEMENT_X_SIGNED_MAX; a clamp sets ClampXLowSeen/ClampXHighSeen (never clears).
 PlaceRecordFromOffsetPair:
     cmp bx, -1
-    jne loc_09FF0
+    jne @@placePod
     ret
 ; The pair index is the anchor's REC_SPRITE (ship form).
 ; Tables hold three pairs, but no bound check: the primary sprite can be set to 3.
-loc_09FF0:
+@@placePod:
     mov ax, word ptr ss:[bp + REC_SPRITE]
     shl ax, 1
     shl ax, 1
@@ -1652,38 +1652,38 @@ loc_09FF0:
     add ax, word ptr ds:[OffsetXWork]
     mov word ptr ds:[bx + REC_X], ax
     cmp word ptr ds:[bx + REC_X], 0
-    jge loc_0A01F
+    jge @@checkHighClamp
     mov word ptr ds:[bx + REC_X], 0
     mov byte ptr ds:[ClampXLowSeen], 1
-loc_0A01F:
+@@checkHighClamp:
     cmp word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
-    jle loc_0A030
+    jle @@done
     mov word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
     mov byte ptr ds:[ClampXHighSeen], 1
-loc_0A030:
+@@done:
     ret
 
 ; Move the trailing pods (slots TrailingPodNear/Far, FFFFh = empty) to the lagged
 ; history positions at HistoryReadCursor15 and HistoryReadCursor31.
 ApplyPositionHistoryToRecords:
     cmp word ptr ds:[TrailingPodNear], -1
-    je loc_0A048
+    je @@placeFarPod
     mov bx, word ptr ds:[TrailingPodNear]
     mov si, word ptr ds:[HistoryReadCursor15]
     lodsw
     mov word ptr ds:[bx + REC_Y], ax
     lodsw
     mov word ptr ds:[bx + REC_X], ax
-loc_0A048:
+@@placeFarPod:
     cmp word ptr ds:[TrailingPodFar], -1
-    je loc_0A05F
+    je @@done
     mov bx, word ptr ds:[TrailingPodFar]
     mov si, word ptr ds:[HistoryReadCursor31]
     lodsw
     mov word ptr ds:[bx + REC_Y], ax
     lodsw
     mov word ptr ds:[bx + REC_X], ax
-loc_0A05F:
+@@done:
     ret
 ClearFireLatch:
     mov word ptr ds:[FireLatch], 0
@@ -1697,24 +1697,24 @@ HandleFireButton:
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je ClearFireLatch
     cmp word ptr ds:[FireLatch], 0
-    je loc_0A084
+    je @@fire
     cmp byte ptr ds:[RapidFireEnabled], 1
-    je loc_0A084
+    je @@fire
     cmp word ptr ds:[FrameCount16], 0Fh
-    je loc_0A084
+    je @@fire
     ret
-loc_0A084:
+@@fire:
     mov word ptr ds:[FireLatch], 1
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0A0A6
+    ja @@fullSalvo
     cmp word ptr ds:[DemoActive], 0
-    jne loc_0A0A6
+    jne @@fullSalvo
     cmp word ptr ds:[WeaponMode], WEAPON_FORK
-    jne loc_0A0A3
+    jne @@singleShot
     jmp near ptr FireForkShot
-loc_0A0A3:
+@@singleShot:
     jmp near ptr FireSingleShot
-loc_0A0A6:
+@@fullSalvo:
     mov ax, word ptr ds:[ShotsLiveMain]
     mov word ptr ds:[ShotsAtFireMain], ax
     mov ax, word ptr ds:[ShotsLiveType9]
@@ -1724,15 +1724,15 @@ loc_0A0A6:
     mov ax, word ptr ds:[ShotsLiveFrontPod]
     mov word ptr ds:[ShotsAtFireFrontPod], ax
     cmp word ptr ds:[DemoActive], 1
-    jne loc_0A0D8
+    jne @@fireAll
     cmp word ptr ds:[DemoStep], 8
-    jne loc_0A0CE
+    jne @@checkDemoMissile
     jmp short FireFrontPodBurst
-loc_0A0CE:
+@@checkDemoMissile:
     cmp word ptr ds:[DemoStep], 0Fh
-    jbe loc_0A0D8
+    jbe @@fireAll
     jmp near ptr FireMissile
-loc_0A0D8:
+@@fireAll:
     call FireMissile
     call FirePlayerSideShots
     call FireTrailingPodShots
@@ -1744,18 +1744,18 @@ loc_0A0D8:
 ; pattern.
 FireMainWeapon:
     cmp word ptr ds:[WeaponMode], WEAPON_BEAM
-    jne loc_0A0F2
+    jne @@checkFrontPod
     call StartBeam
-loc_0A0F2:
+@@checkFrontPod:
     cmp word ptr ds:[FrontPodRecord], -1
-    je loc_0A0FC
+    je @@firePattern
     call FireFrontPodBurst
-loc_0A0FC:
+@@firePattern:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0A0FCCases]
+    jmp word ptr cs:[bx + WeaponPatternCases]
     even
-loc_0A0FCCases label word
+WeaponPatternCases label word
     dw offset FireSingleShot, offset FireHeavyShot, offset FireForkShot, offset FireTwinRising3
     dw offset FireTwinRising16, offset CountXReturn
 
@@ -1763,13 +1763,13 @@ loc_0A0FCCases label word
 ; time.
 FireFrontPodBurst:
     cmp word ptr ds:[ShotsAtFireFrontPod], 0
-    je loc_0A11C
+    je @@spawnBurst
     ret
-loc_0A11C:
+@@spawnBurst:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A128
+    je @@spawnShots
     mov byte ptr ds:[SfxRequest], 018h
-loc_0A128:
+@@spawnShots:
     inc word ptr ds:[ShotsLiveFrontPod]
     call AllocFrontPodShot
     sub ax, 6
@@ -1810,9 +1810,9 @@ FireHeavyShot:
     call SpawnShotAtMuzzle
     mov word ptr ds:[bx + REC_SPRITE], 33h
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A19E
+    je @@done
     mov byte ptr ds:[SfxRequest], 14h
-loc_0A19E:
+@@done:
     ret
 ; WeaponMode 0: one type 2 shot straight up from the muzzle.
 FireSingleShot:
@@ -1839,9 +1839,9 @@ PlaceShotAtMuzzle:
 ; or up).
 FireForkShot:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A1D4
+    je @@spawnShots
     mov byte ptr ds:[SfxRequest], 015h
-loc_0A1D4:
+@@spawnShots:
     call AllocPlayerShot
     mov word ptr ds:[bx + REC_SPRITE], 018h
     call PlaceShotAtMuzzle
@@ -1850,36 +1850,36 @@ loc_0A1D4:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_SPRITE], 01Fh
     test byte ptr ds:[InputBits], IN_XMINUS
-    jne loc_0A211
+    jne @@done
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 019h
     test byte ptr ds:[InputBits], IN_XPLUS
-    jne loc_0A211
+    jne @@done
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 018h
-loc_0A211:
+@@done:
     ret
 
 ; Grows the beam (BeamList) by a link every other frame while it has room, raises the
 ; head 4 px and lines the other links up beside it.
 UpdateBeam:
     cmp word ptr ds:[ShotsLiveType9], 0
-    jne loc_0A21A
+    jne @@checkGrowFrame
     ret
-loc_0A21A:
+@@checkGrowFrame:
     cmp word ptr ds:[CountGate2324], 1
-    jne loc_0A258
+    jne @@alignLinks
     cmp word ptr ds:[BeamListEnd], offset BeamListTerminator
-    jne loc_0A22A
+    jne @@checkHead
     ret
-loc_0A22A:
+@@checkHead:
     mov bx, word ptr ds:[BeamList]
     cmp bx, -1
-    jne loc_0A234
+    jne @@growBeam
     ret
-loc_0A234:
+@@growBeam:
     cmp word ptr ds:[bx + REC_X], 0
-    je loc_0A255
+    je @@addLink
     call SpawnBeamLink
     mov bx, word ptr ds:[BeamList]
     sub word ptr ds:[bx + REC_X], 8
@@ -1887,32 +1887,32 @@ loc_0A234:
     sub bx, 4
     mov bx, word ptr ds:[bx]
     cmp word ptr ds:[bx + REC_X], 0C8h
-    je loc_0A258
-loc_0A255:
+    je @@alignLinks
+@@addLink:
     call SpawnBeamLink
-loc_0A258:
+@@alignLinks:
     mov si, offset BeamList
     lodsw
     cmp ax, 0FFFFh
-    jne loc_0A262
+    jne @@raiseHead
     ret
-loc_0A262:
+@@raiseHead:
     mov bx, ax
     sub word ptr ds:[bx + REC_Y], 4
     mov cx, word ptr ds:[bx + REC_X]
     add cx, 8
     mov di, word ptr ds:[bx + REC_Y]
-loc_0A271:
+@@nextLink:
     lodsw
     cmp ax, 0FFFFh
-    je loc_0A289
+    je @@markTail
     mov bx, ax
     mov word ptr ds:[bx + REC_X], cx
     add cx, 8
     mov word ptr ds:[bx + REC_Y], di
     mov word ptr ds:[bx + REC_SPRITE], 06Bh
-    jmp short loc_0A271
-loc_0A289:
+    jmp short @@nextLink
+@@markTail:
     sub si, 4
     mov bx, word ptr ds:[si]
     mov word ptr ds:[bx + REC_SPRITE], 06Ch
@@ -1927,13 +1927,13 @@ AppendBeamLink:
 ; WeaponMode 5: resets BeamList and spawns its first two links (one beam at a time).
 StartBeam:
     cmp word ptr ds:[ShotsAtFireBeam], 0
-    je loc_0A2A8
+    je @@start
     ret
-loc_0A2A8:
+@@start:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A2B4
+    je @@resetList
     mov byte ptr ds:[SfxRequest], 011h
-loc_0A2B4:
+@@resetList:
     mov es, word ptr cs:[MainDataSegment]
     mov word ptr ds:[BeamListEnd], offset BeamList
     mov di, offset BeamList
@@ -1957,13 +1957,13 @@ SpawnBeamLink:
 ; WeaponMode 4: two type 8 shots, one burst at a time.
 FireTwinRising16:
     cmp word ptr ds:[ShotsAtFireMain], 0
-    je loc_0A2FE
+    je @@start
     ret
-loc_0A2FE:
+@@start:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A30A
+    je @@spawnShots
     mov byte ptr ds:[SfxRequest], 17h
-loc_0A30A:
+@@spawnShots:
     inc word ptr ds:[ShotsLiveMain]
     call AllocPlayerShot
     mov word ptr ds:[bx + REC_TYPE], 8
@@ -1979,13 +1979,13 @@ loc_0A30A:
 ; WeaponMode 3: two type 7 shots, one burst at a time.
 FireTwinRising3:
     cmp word ptr ds:[ShotsAtFireMain], 0
-    je loc_0A33F
+    je @@start
     ret
-loc_0A33F:
+@@start:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A34B
+    je @@spawnShots
     mov byte ptr ds:[SfxRequest], 16h
-loc_0A34B:
+@@spawnShots:
     inc word ptr ds:[ShotsLiveMain]
     call AllocPlayerShot
     mov word ptr ds:[bx + REC_TYPE], 7
@@ -2003,26 +2003,26 @@ loc_0A34B:
 ; are enabled.
 FirePodSideShots:
     cmp si, -1
-    jne loc_0A37E
+    jne @@checkEnabled
     ret
-loc_0A37E:
+@@checkEnabled:
     cmp word ptr ds:[SideShotsEnabled], 0
-    jne loc_0A386
+    jne @@checkLive
     ret
-loc_0A386:
+@@checkLive:
     cmp word ptr ds:[ShotsAtFireSide], 0
-    je loc_0A38E
+    je @@spawnPair
     ret
-loc_0A38E:
+@@spawnPair:
     call SpawnSideShotFromSI
     mov word ptr ds:[bx + REC_TYPE], 6
 
 SpawnSideShotFromSI:
     inc word ptr ds:[ShotsLiveSide]
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A3A6
+    je @@spawnShot
     mov byte ptr ds:[SfxRequest], 012h
-loc_0A3A6:
+@@spawnShot:
     call AllocPlayerShot
     mov ax, word ptr ds:[si + REC_X]
     add ax, 4
@@ -2066,21 +2066,21 @@ FireTrailingPodShots:
 ; SI = pod record (FFFFh = none): its WeaponMode pattern (no beam).
 FirePodWeapon:
     cmp si, -1
-    jne loc_0A420
+    jne @@dispatchPattern
     ret
-loc_0A420:
+@@dispatchPattern:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0A420Cases]
+    jmp word ptr cs:[bx + PodWeaponPatternCases]
     even
-loc_0A420Cases label word
+PodWeaponPatternCases label word
     dw offset SpawnShotAtPod, offset PodHeavyShot, offset PodForkShot, offset PodTwinRising3
     dw offset PodTwinRising16, offset CountXReturn
 PodTwinRising16:
     cmp word ptr ds:[ShotsAtFireMain], 0
-    je loc_0A440
+    je @@spawnShots
     ret
-loc_0A440:
+@@spawnShots:
     add word ptr ds:[ShotsLiveMain], 2
     call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 8
@@ -2092,9 +2092,9 @@ loc_0A440:
     ret
 PodTwinRising3:
     cmp word ptr ds:[ShotsAtFireMain], 0
-    je loc_0A46C
+    je @@spawnShots
     ret
-loc_0A46C:
+@@spawnShots:
     add word ptr ds:[ShotsLiveMain], 2
     call SpawnShotAtPod
     mov word ptr ds:[bx + REC_TYPE], 7
@@ -2118,17 +2118,17 @@ PodForkShot:
     mov ax, ds:[PodShotDirection]
     mov ds:[bx + REC_DIRECTION], ax
     cmp ax, 0FFFFh
-    jne loc_0A4C6
+    jne @@setSprite
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     cmp word ptr ds:[si + REC_X], 58h
-    jna loc_0A4C6
+    jna @@setSprite
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
-loc_0A4C6:
+@@setSprite:
     cmp word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 19h
-    je loc_0A4D6
+    je @@done
     mov word ptr ds:[bx + REC_SPRITE], 1Fh
-loc_0A4D6:
+@@done:
     ret
 SpawnShotAtPod:
     call AllocPlayerShot
@@ -2158,13 +2158,13 @@ AllocPlayerShot:
 ; REC_DIRECTION and REC_SPRITE are not set.
 FireMissile:
     cmp word ptr ds:[MissileAmmo], 0
-    jne loc_0A51D
+    jne @@checkLive
     ret
-loc_0A51D:
+@@checkLive:
     cmp word ptr ds:[MissilesLive], 1
-    jne loc_0A525
+    jne @@spawnMissile
     ret
-loc_0A525:
+@@spawnMissile:
     call AllocPoolBRecordEvicting
     call CopyRecordPositionPlus10
     push bp
@@ -2174,9 +2174,9 @@ loc_0A525:
     mov bx, bp
     pop bp
     cmp ax, 0FFFFh
-    jne loc_0A53C
+    jne @@lockTarget
     ret
-loc_0A53C:
+@@lockTarget:
     mov word ptr ds:[bx + REC_TARGET], ax
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIDE_FLAG], 1
@@ -2185,9 +2185,9 @@ loc_0A53C:
     mov word ptr ds:[bx + REC_TYPE], 0Ah
     mov word ptr ds:[bx + REC_MISSILE_LOCKED], 1
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A568
+    je @@countMissile
     mov byte ptr ds:[SfxRequest], 011h
-loc_0A568:
+@@countMissile:
     inc word ptr ds:[MissilesLive]
     dec word ptr ds:[MissileAmmo]
     ret
@@ -2206,18 +2206,18 @@ CopyRecordPositionPlus10:
 ; time.
 FirePlayerSideShots:
     cmp word ptr ds:[SideShotsEnabled], 0
-    jne loc_0A58C
+    jne @@checkLive
     ret
-loc_0A58C:
+@@checkLive:
     cmp word ptr ds:[ShotsAtFireSide], 0
-    je loc_0A594
+    je @@spawnShots
     ret
-loc_0A594:
+@@spawnShots:
     inc word ptr ds:[ShotsLiveSide]
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A5A4
+    je @@spawnPair
     mov byte ptr ds:[SfxRequest], 012h
-loc_0A5A4:
+@@spawnPair:
     call AllocPlayerShot
     call CopyRecordPositionPlus10
     and word ptr ds:[bx + REC_X], 0FFFCh
@@ -2235,18 +2235,18 @@ loc_0A5A4:
 ; into DecRecordYUnlessAtMin again); otherwise one unguarded decrement.
 DecRecordYByMode:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    jne loc_0A5E6
+    jne DecYUnguarded
     call DecRecordYUnlessAtMin
 ; Decrement REC_Y unless it equals RECORD_Y_MIN. Equality guard only: smaller values
 ; still decrement.
 DecRecordYUnlessAtMin:
     cmp word ptr ss:[bp + REC_Y], RECORD_Y_MIN
-    jne loc_0A5E2
+    jne @@decY
     ret
-loc_0A5E2:
+@@decY:
     dec word ptr ss:[bp + REC_Y]
     ret
-loc_0A5E6:
+DecYUnguarded:
     dec word ptr ss:[bp + REC_Y]
     ret
 
@@ -2257,9 +2257,9 @@ IncRecordYTwice:
 ; still increment.
 IncRecordYUnlessAtMax:
     cmp word ptr ss:[bp + REC_Y], RECORD_Y_MAX
-    jne loc_0A5F5
+    jne @@incY
     ret
-loc_0A5F5:
+@@incY:
     inc word ptr ss:[bp + REC_Y]
     ret
 
@@ -2269,9 +2269,9 @@ DecRecordXTwice:
 ; Decrement REC_X unless it is zero.
 DecRecordXUnlessZero:
     cmp word ptr ss:[bp + REC_X], 0
-    jne loc_0A603
+    jne @@decX
     ret
-loc_0A603:
+@@decX:
     dec word ptr ss:[bp + REC_X]
     ret
 
@@ -2281,9 +2281,9 @@ IncRecordXTwice:
 ; Increment REC_X while it is below RECORD_X_MAX (unsigned).
 IncRecordXBelowMax:
     cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
-    jb loc_0A612
+    jb @@incX
     ret
-loc_0A612:
+@@incX:
     inc word ptr ss:[bp + REC_X]
     ret
 
@@ -2292,24 +2292,24 @@ loc_0A612:
 ; relaxes back towards 0. UpdatePlacementXGroupA does the mirror for the left edge first.
 UpdatePlacementXOffsetsAtRecordEdges:
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0A61F
+    ja @@updateSpread
     ret
-loc_0A61F:
+@@updateSpread:
     call UpdatePlacementXGroupA
     cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
-    jne loc_0A63C
+    jne @@relaxLeftSpread
     test byte ptr ds:[InputBits], IN_XPLUS
-    je loc_0A63C
+    je @@relaxLeftSpread
     cmp word ptr ds:[SidePodSpreadLeft], 8
-    je loc_0A63B
+    je @@atMax
     inc word ptr ds:[SidePodSpreadLeft]
-loc_0A63B:
+@@atMax:
     ret
-loc_0A63C:
+@@relaxLeftSpread:
     cmp word ptr ds:[SidePodSpreadLeft], 0
-    je loc_0A647
+    je @@atZero
     dec word ptr ds:[SidePodSpreadLeft]
-loc_0A647:
+@@atZero:
     ret
 
 ; BP = record. Pushing against the left edge (REC_X = 0 with IN_XMINUS) moves
@@ -2317,20 +2317,20 @@ loc_0A647:
 ; Guards are equality checks, not clamps.
 UpdatePlacementXGroupA:
     cmp word ptr ss:[bp + REC_X], 0
-    jne loc_0A662
+    jne @@relaxRightSpread
     test byte ptr ds:[InputBits], IN_XMINUS
-    je loc_0A662
+    je @@relaxRightSpread
     cmp word ptr ds:[SidePodSpreadRight], -8
-    jne loc_0A65D
+    jne @@decSpread
     ret
-loc_0A65D:
+@@decSpread:
     dec word ptr ds:[SidePodSpreadRight]
     ret
-loc_0A662:
+@@relaxRightSpread:
     cmp word ptr ds:[SidePodSpreadRight], 0
-    jne loc_0A66A
+    jne @@incSpread
     ret
-loc_0A66A:
+@@incSpread:
     inc word ptr ds:[SidePodSpreadRight]
     ret
 
@@ -2338,16 +2338,16 @@ loc_0A66A:
 ; 0EA0h starts the level end (smart bomb, four type 53h records).
 ScrollForwardAndCheckLevelEnd:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    je loc_0A679
-    jmp near ptr loc_0A6FD
-loc_0A679:
+    je @@checkEncounter
+    jmp near ptr @@done
+@@checkEncounter:
     cmp word ptr ds:[EncounterLiveCount], 0
-    jne loc_0A6FD
+    jne @@done
     cmp word ptr ds:[EncounterEndDelay], 0
-    jne loc_0A6FD
+    jne @@done
     call ScrollForwardOneLine
     cmp word ptr ds:[ScrollSubRow], 0
-    jne loc_0A6FD
+    jne @@done
     push ax
     push bx
     push cx
@@ -2359,9 +2359,9 @@ loc_0A679:
     push ds
     mov si, offset DacColor6Default
     cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
-    jne loc_0A6A8
+    jne @@restoreRegs
     call SetDacColor6
-loc_0A6A8:
+@@restoreRegs:
     pop ds
     pop es
     pop bp
@@ -2372,18 +2372,18 @@ loc_0A6A8:
     pop bx
     pop ax
     cmp word ptr ds:[MapScrollPos], MAP_END_POS
-    jne loc_0A6FD
+    jne @@done
     mov word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     call SmartBombAll
     mov si, offset Type53SpawnTable
     mov cx, 4
-loc_0A6C8:
+@@spawnNext:
     push cx
     push si
     call FindFreeRecordPoolA
     pop si
     cmp bx, -1
-    je loc_0A6FA
+    je @@nextSpawn
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 2
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
@@ -2396,10 +2396,10 @@ loc_0A6C8:
     lodsw
     mov word ptr ds:[bx + REC_SPRITE], ax
     mov word ptr ds:[bx + REC_SPRITE_BASE], ax
-loc_0A6FA:
+@@nextSpawn:
     pop cx
-    loop loc_0A6C8
-loc_0A6FD:
+    loop @@spawnNext
+@@done:
     ret
 
 ; ScrollDeltaY + 1; moves ScrollWindowOffset up one row, entering a new map row every 16
@@ -2409,25 +2409,25 @@ ScrollForwardOneLine:
     add word ptr ds:[ScrollDeltaY], 1
     mov word ptr ds:[ScrollingBackward], 0
     cmp word ptr ds:[ScrollSubRow], 0
-    jne loc_0A714
+    jne @@stepSubRow
     call EnterNextMapRowForward
-loc_0A714:
+@@stepSubRow:
     dec word ptr ds:[ScrollSubRow]
     and word ptr ds:[ScrollSubRow], 0Fh
-    jne loc_0A72F
+    jne @@checkWindowWrap
     cmp word ptr ds:[LastTileStepBackward], 0
-    je loc_0A72F
+    je @@checkWindowWrap
     add word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     dec word ptr ds:[LevelScriptClock]
-loc_0A72F:
+@@checkWindowWrap:
     mov ax, word ptr cs:[ScrollBandBytes]
     cmp word ptr ds:[ScrollWindowOffset], ax
-    jne loc_0A73C
+    jne @@moveWindow
     call WrapScrollWindowForward
-loc_0A73C:
+@@moveWindow:
     mov ax, word ptr cs:[PlayfieldRowBytes]
     sub word ptr ds:[ScrollWindowOffset], ax
-loc_0A744:
+ScrollLineDone:
     pop bp
     ret
 
@@ -2440,18 +2440,18 @@ WrapScrollWindowForward:
 EnterNextMapRowForward:
     call DrawMapRowIntoScrollBand
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0A765
+    ja @@advanceMapRow
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A765
+    je @@advanceMapRow
     mov byte ptr ds:[SfxRequest], 7
-loc_0A765:
+@@advanceMapRow:
     add word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     dec word ptr ds:[LevelScriptClock]
     mov al, 5
     cmp word ptr ds:[LevelScriptClock], 4
-    jne loc_0A77A
+    jne @@clearBackwardStep
     call RequestModuleMusic
-loc_0A77A:
+@@clearBackwardStep:
     mov word ptr ds:[LastTileStepBackward], 0
     ret
 
@@ -2460,25 +2460,25 @@ ScrollBackwardOneLine:
     push bp
     mov word ptr ds:[ScrollingBackward], 1
     cmp word ptr ds:[MapScrollPos], 0
-    je loc_0A744
+    je ScrollLineDone
     add word ptr ds:[ScrollDeltaY], -1
     cmp word ptr ds:[ScrollSubRow], 0
-    jne loc_0A79E
+    jne @@stepSubRow
     call EnterPreviousMapRowBackward
-loc_0A79E:
+@@stepSubRow:
     inc word ptr ds:[ScrollSubRow]
     and word ptr ds:[ScrollSubRow], 0Fh
-    jne loc_0A7B9
+    jne @@checkWindowWrap
     cmp word ptr ds:[LastTileStepBackward], 1
-    je loc_0A7B9
+    je @@checkWindowWrap
     sub word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     inc word ptr ds:[LevelScriptClock]
-loc_0A7B9:
+@@checkWindowWrap:
     mov ax, word ptr cs:[ScrollWrapOffset]
     cmp word ptr ds:[ScrollWindowOffset], ax
-    jne loc_0A7C6
+    jne @@moveWindow
     call WrapScrollWindowBackward
-loc_0A7C6:
+@@moveWindow:
     mov ax, word ptr cs:[PlayfieldRowBytes]
     add word ptr ds:[ScrollWindowOffset], ax
     pop bp
@@ -2519,16 +2519,16 @@ DrawMapRowIntoScrollBand:
 DrawIncomingMapRow:
     mov bx, word ptr ds:[MapScrollPos]
     cmp word ptr ds:[ScrollingBackward], 1
-    jne loc_0A82D
+    jne @@forwardRow
     sub bx, 0A9h
     jmp near ptr DrawMapRowBlocks
-loc_0A82D:
+@@forwardRow:
     mov word ptr ds:[MapRowCursor], bx
     cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
-    ja loc_0A83F
+    ja @@drawBlocks
     call SpawnFromMapRow
     call RunLevelScriptEvents
-loc_0A83F:
+@@drawBlocks:
     mov bx, word ptr ds:[MapScrollPos]
     jmp near ptr DrawMapRowBlocks
 
@@ -2536,121 +2536,121 @@ loc_0A83F:
 ; workspace, by pool and draw pass.
 DrawRecordsToWorkspace:
     mov cx, POOL_A_POINTER_COUNT
-loc_0A849:
+@@saveNextA:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A85B
+    je @@nextSaveA
     call SaveRecordBackground
-loc_0A85B:
+@@nextSaveA:
     pop cx
-    loop loc_0A849
+    loop @@saveNextA
     mov cx, POOL_B_COUNT
-loc_0A861:
+@@saveNextB:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolBPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A873
+    je @@nextSaveB
     call SaveRecordBackground
-loc_0A873:
+@@nextSaveB:
     pop cx
-    loop loc_0A861
+    loop @@saveNextB
     call DrawStars
     mov cx, POOL_B_COUNT
-loc_0A87C:
+@@drawNextB:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolBPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A88E
+    je @@nextDrawB
     call DrawSprite8Record
-loc_0A88E:
+@@nextDrawB:
     pop cx
-    loop loc_0A87C
+    loop @@drawNextB
     mov cx, POOL_A_COUNT
-loc_0A894:
+@@drawNextPass0:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A8C1
+    je @@nextPass0
     cmp word ptr ds:[DemoActive], 1
-    je loc_0A8B8
+    je @@checkPass0
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0A8B8
+    ja @@checkPass0
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
-    je loc_0A8C1
-loc_0A8B8:
+    je @@nextPass0
+@@checkPass0:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 0
-    jne loc_0A8C1
+    jne @@nextPass0
     call DrawRecordSprite
-loc_0A8C1:
+@@nextPass0:
     pop cx
-    loop loc_0A894
+    loop @@drawNextPass0
     mov cx, POOL_A_POINTER_COUNT
-loc_0A8C7:
+@@drawNextPass1:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A8F4
+    je @@nextPass1
     cmp word ptr ds:[DemoActive], 1
-    je loc_0A8EB
+    je @@checkPass1
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0A8EB
+    ja @@checkPass1
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
-    je loc_0A8F4
-loc_0A8EB:
+    je @@nextPass1
+@@checkPass1:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 1
-    jne loc_0A8F4
+    jne @@nextPass1
     call DrawRecordSprite
-loc_0A8F4:
+@@nextPass1:
     pop cx
-    loop loc_0A8C7
+    loop @@drawNextPass1
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    jne loc_0A8FF
+    jne @@drawExtraRecord
     ret
-loc_0A8FF:
+@@drawExtraRecord:
     mov bp, word ptr ds:[AutoMoveExtraRecord]
     cmp bp, -1
-    je loc_0A90B
+    je @@done
     call DrawRecordSprite
-loc_0A90B:
+@@done:
     ret
 
 ; Undoes DrawRecordsToWorkspace from each record's REC_SAVE_BUFFER, then EraseStars.
 RestoreRecordBackgrounds:
     mov cx, POOL_B_COUNT
-loc_0A90F:
+@@restoreNextB:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolBPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A921
+    je @@nextRestoreB
     call RestoreRecordBackground
-loc_0A921:
+@@nextRestoreB:
     pop cx
-    loop loc_0A90F
+    loop @@restoreNextB
     mov cx, POOL_A_POINTER_COUNT
-loc_0A927:
+@@restoreNextA:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0A939
+    je @@nextRestoreA
     call RestoreRecordBackground
-loc_0A939:
+@@nextRestoreA:
     pop cx
-    loop loc_0A927
+    loop @@restoreNextA
     call EraseStars
     ret
 
@@ -2658,90 +2658,90 @@ loc_0A939:
 ; A and pool B, then MoveStars.
 UpdateAllRecords:
     cmp word ptr ds:[FramesSinceInvaderSpawn], -1
-    je loc_0A94B
+    je @@latchMarch
     inc word ptr ds:[FramesSinceInvaderSpawn]
-loc_0A94B:
+@@latchMarch:
     mov ax, word ptr ds:[InvaderNextMarchLeft]
     mov word ptr ds:[InvaderMarchLeft], ax
     mov ax, word ptr ds:[InvaderNextDropStep]
     mov word ptr ds:[InvaderDropStep], ax
     mov word ptr ds:[InvaderNextDropStep], 0
     cmp word ptr ds:[LevelIndex], 5
-    jne loc_0A9BD
+    jne @@type93Pulse
     cmp byte ptr ds:[MarchEdgeHit], 0
-    je loc_0A97B
+    je @@noDrop
     neg word ptr ds:[MarchStepX]
     mov byte ptr ds:[MarchEdgeHit], 0
     mov byte ptr ds:[MarchDropNow], 1
-    jmp short loc_0A980
-loc_0A97B:
+    jmp short @@stepMarchDelay
+@@noDrop:
     mov byte ptr ds:[MarchDropNow], 0
-loc_0A980:
+@@stepMarchDelay:
     xor cl, cl
     cmp byte ptr ds:[MarchDelay], 0
-    je loc_0A9A9
+    je @@reloadMarchDelay
     dec byte ptr ds:[MarchDelay]
-    jne loc_0A9B3
+    jne @@noMarchStep
     mov ax, word ptr ds:[EncounterLiveCount]
     mov cl, 0Ah
     cmp ax, 010h
-    ja loc_0A9A9
+    ja @@reloadMarchDelay
     mov cl, 6
     cmp ax, 8
-    ja loc_0A9A9
+    ja @@reloadMarchDelay
     mov cl, 4
     cmp ax, 4
-    ja loc_0A9A9
+    ja @@reloadMarchDelay
     mov cl, 1
-loc_0A9A9:
+@@reloadMarchDelay:
     mov byte ptr ds:[MarchDelay], cl
     inc byte ptr ds:[MarchStepNow]
-    jmp short loc_0A9B8
-loc_0A9B3:
+    jmp short @@stepFireDelay
+@@noMarchStep:
     mov byte ptr ds:[MarchStepNow], 0
-loc_0A9B8:
+@@stepFireDelay:
     call far ptr StepMarchFireDelay
-loc_0A9BD:
+@@type93Pulse:
     mov byte ptr ds:[Type93KilledPulse], 0
     cmp byte ptr ds:[Type93KilledLatch], 0
-    je loc_0A9D3
+    je @@checkSegBoss
     mov byte ptr ds:[Type93KilledLatch], 0
     mov byte ptr ds:[Type93KilledPulse], 1
-loc_0A9D3:
+@@checkSegBoss:
     cmp word ptr ds:[SegBossActive], 1
-    jne loc_0A9DD
+    jne @@updatePoolA
     call SteerSegBossAlongPath
-loc_0A9DD:
+@@updatePoolA:
     mov cx, POOL_A_COUNT
-loc_0A9E0:
+@@nextRecordA:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     inc word ptr ds:[RecordTickCounter]
     cmp word ptr ds:[RecordTickCounter], 05DCh
-    jb loc_0A9FB
+    jb @@updateRecordA
     mov word ptr ds:[RecordTickCounter], 0
-loc_0A9FB:
+@@updateRecordA:
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0AA04
+    je @@loopA
     call UpdateRecordByKind
-loc_0AA04:
+@@loopA:
     pop cx
-    loop loc_0A9E0
+    loop @@nextRecordA
     mov word ptr ds:[SwayDropY], 0
     mov cx, POOL_B_COUNT
-loc_0AA10:
+@@nextRecordB:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolBPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0AA22
+    je @@loopB
     call UpdateRecordByKind
-loc_0AA22:
+@@loopB:
     pop cx
-    loop loc_0AA10
+    loop @@nextRecordB
     call far ptr MoveStars
     ret
 
@@ -2754,7 +2754,7 @@ UpdateRecordByKind:
 KindHandlers label word
     dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
     dw offset RunTypeHandler, offset UpdatePickup, offset UpdateExhaust
-loc_0AA44:
+ReturnNoHit:
     clc
     ret
 ; BP = record: CF when within 10h of the player's hit point; NC above the playfield or
@@ -2762,10 +2762,10 @@ loc_0AA44:
 SmallRecordHitsPlayer:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
-    js loc_0AA44
+    js ReturnNoHit
     mov si, word ptr ds:[PrimaryRecord + REC_SPRITE]
     cmp si, 3
-    jae loc_0AA44
+    jae ReturnNoHit
     shl si, 1
     shl si, 1
     add si, offset PlayerHitOffsets
@@ -2780,52 +2780,52 @@ SmallRecordHitsPlayer:
 LargeRecordHitsPlayer:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
-    js loc_0AA44
+    js ReturnNoHit
     mov ax, word ptr ss:[bp + REC_X]
     add ax, 018h
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
-    jl loc_0AA44
+    jl ReturnNoHit
     sub ax, 02Ch
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
-    jg loc_0AA44
+    jg ReturnNoHit
     cmp word ptr ds:[SegBossActive], 1
-    jne loc_0AAAB
+    jne @@normalBox
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, 8
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    jb loc_0AA44
+    jb ReturnNoHit
     sub ax, 0Ch
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    ja loc_0AA44
+    ja ReturnNoHit
     stc
     ret
-loc_0AAAB:
+@@normalBox:
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, 018h
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    jb loc_0AA44
+    jb ReturnNoHit
     sub ax, 02Ch
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    ja loc_0AA44
+    ja ReturnNoHit
     stc
     ret
 UpdatePickup:
     inc word ptr ss:[bp + REC_Y]
     call SmallRecordHitsPlayer
-    jb loc_0AACD
+    jb @@collect
     jmp near ptr ScrollRecordThenFinish
-loc_0AACD:
+@@collect:
     call CollectPickup
     jmp near ptr ScrollRecordThenFinish
 CollectPickup:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jb loc_0AADB
+    jb @@collect
     ret
-loc_0AADB:
+@@collect:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0AAE7
+    je @@scoreAndDispatch
     mov byte ptr ds:[SfxRequest], 7
-loc_0AAE7:
+@@scoreAndDispatch:
     mov bx, 020h
     call AddScoreBcd
     push bp
@@ -2845,13 +2845,13 @@ PickupDone:
 ; 3 or more (destroyed) or LevelEndPhase is 3 or more.
 UpdateExhaust:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jb loc_0AB1A
+    jb @@checkLevelEnd
     jmp near ptr FreeRecordSilently
-loc_0AB1A:
+@@checkLevelEnd:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_REFILL
-    jb loc_0AB24
+    jb @@animate
     jmp near ptr FreeRecordSilently
-loc_0AB24:
+@@animate:
     mov ax, word ptr ds:[SlowCount8]
     mov bx, offset ExhaustFrames
     xlat
@@ -2895,16 +2895,16 @@ UpdateSidePodLeftInner:
 ; group count twice).
 UpdateSidePod:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jae loc_0AB8F
+    jae @@losePod
     call AnimateSidePodSprite
     call PodTerrainHit
-    jb loc_0AB8F
+    jb @@losePod
     call PodCollideRecords
-    jb loc_0AB8C
+    jb @@destroyEnemy
     ret
-loc_0AB8C:
+@@destroyEnemy:
     call DestroyRecordAtBX
-loc_0AB8F:
+@@losePod:
     mov bx, word ptr ds:[CurrentSidePodSlot]
     mov word ptr ds:[bx], 0FFFFh
     jmp short ExplodePod
@@ -2920,52 +2920,52 @@ DestroyRecordAtBX:
 UpdateTrailingPod:
     mov word ptr ds:[CurrentTrailingPodSlot], bx
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jae loc_0ABC0
+    jae @@losePod
     mov ax, word ptr ds:[SlowCount4]
     add ax, 014h
     mov word ptr ss:[bp + REC_SPRITE], ax
     call PodCollideRecords
-    jb loc_0ABBD
+    jb @@destroyEnemy
     ret
-loc_0ABBD:
+@@destroyEnemy:
     call DestroyRecordAtBX
-loc_0ABC0:
+@@losePod:
     mov bx, word ptr ds:[CurrentTrailingPodSlot]
     mov word ptr ds:[bx], 0FFFFh
     jmp short ExplodePod
 UpdateFrontPod:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
-    jae loc_0ABDC
+    jae @@losePod
     mov dx, offset FrontPodOffsets
     call PlaceAtPlayerOffset
     call PodTerrainHit
-    jae loc_0ABE4
-loc_0ABDC:
+    jae @@checkCollision
+@@losePod:
     mov word ptr ds:[FrontPodRecord], 0FFFFh
     jmp short ExplodePod
-loc_0ABE4:
+@@checkCollision:
     call PodCollideRecords
-    jb loc_0ABEA
+    jb @@podHitEnemy
     ret
-loc_0ABEA:
+@@podHitEnemy:
     mov word ptr ds:[FrontPodRecord], 0FFFFh
     call DestroyRecordAtBX
 ; Shared tail: turns the lost pod BP into a dying enemy (type 1), then refreshes the
 ; upgrade display.
 ExplodePod:
     cmp bp, -1
-    jne loc_0ABF9
+    jne @@explode
     ret
-loc_0ABF9:
+@@explode:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0AC05
+    je @@becomeDyingEnemy
     mov byte ptr ds:[SfxRequest], 019h
-loc_0AC05:
+@@becomeDyingEnemy:
     mov word ptr ss:[bp + REC_TYPE], 1
     mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     mov word ptr ss:[bp + REC_ANIM_COUNTER], 0
     mov word ptr ss:[bp + REC_SPRITE], 0
-loc_0AC19:
+RefreshUpgradeDisplay:
     push bp
     call AdvanceToAvailableUpgrade
     call DrawUpgradeSlots
@@ -2978,12 +2978,12 @@ FreeRecordSilently:
 ; LevelEndPhase is not 0.
 PodTerrainHit:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    je loc_0AC32
-    jmp near ptr loc_0AA44
-loc_0AC32:
+    je @@checkDemo
+    jmp near ptr ReturnNoHit
+@@checkDemo:
     cmp word ptr ds:[DemoActive], 1
     jne ProbeGridForRecordResponse
-    jmp near ptr loc_0AA44
+    jmp near ptr ReturnNoHit
 ; Part of PodTerrainHit. Test the map cell at grid offset + 13 and, when X is not
 ; cell-aligned, its right neighbour; a nonzero attribute is a hit. The FFFFh
 ; negative-Y result of ComputeRecordGridOffset is not checked (+13 wraps to 000Ch).
@@ -3025,61 +3025,61 @@ StepRecordResponseCounter:
 ; NC in the demo.
 PodCollideRecords:
     cmp word ptr ds:[DemoActive], 1
-    jne loc_0AC8B
-    jmp near ptr loc_0AA44
-loc_0AC8B:
+    jne @@scan
+    jmp near ptr ReturnNoHit
+@@scan:
     mov cx, POOL_A_COUNT
     mov bx, offset PoolA
     mov ax, word ptr ss:[bp + REC_X]
     mov di, word ptr ss:[bp + REC_Y]
-loc_0AC97:
+@@checkRecord:
     cmp word ptr ds:[bx + REC_STATUS], 0
-    je loc_0ACD2
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 1
-    je loc_0ACD2
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
-    jne loc_0ACD2
+    jne @@nextRecord
     mov si, word ptr ds:[bx + REC_Y]
     add si, 010h
     cmp di, si
-    jg loc_0ACD2
+    jg @@nextRecord
     sub si, 020h
     cmp di, si
-    jl loc_0ACD2
+    jl @@nextRecord
     mov si, word ptr ds:[bx + REC_X]
     add si, 010h
     cmp ax, si
-    jg loc_0ACD2
+    jg @@nextRecord
     sub si, 020h
     cmp ax, si
-    jl loc_0ACD2
+    jl @@nextRecord
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     cmp si, word ptr ds:[bx + REC_SAVE_BUFFER]
-    jne loc_0ACD9
-loc_0ACD2:
+    jne @@hit
+@@nextRecord:
     add bx, RECORD_SIZE
-    loop loc_0AC97
+    loop @@checkRecord
     clc
     ret
-loc_0ACD9:
+@@hit:
     cmp word ptr ds:[bx + REC_KIND], KIND_PICKUP
-    je loc_0ACF9
+    je @@collectPickup
 ; Always taken: the scan only accepts size class 1.
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
-    je loc_0ACE8
+    je @@checkEnemy
     jmp near ptr loc_05059
-loc_0ACE8:
+@@checkEnemy:
     cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
-    jne loc_0ACD2
+    jne @@nextRecord
     call DestroyRecordAtBX
 ; Record scan shares the same response/counter path as the grid attribute probe.
     call SetResponseAndStepRecordCounter
-    jb loc_0ACF7
+    jb @@podDestroyed
     ret
-loc_0ACF7:
+@@podDestroyed:
     stc
     ret
-loc_0ACF9:
+@@collectPickup:
     push bp
     mov bp, bx
     call CollectPickup
@@ -3089,41 +3089,41 @@ loc_0ACF9:
     ret
 UpdatePod:
     cmp word ptr ds:[DemoActive], 1
-    je loc_0AD14
+    je @@dispatchPod
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
-    ja loc_0AD14
+    ja @@dispatchPod
     ret
-loc_0AD14:
+@@dispatchPod:
     cmp word ptr ss:[bp + REC_SPRITE], 0Fh
-    jne loc_0AD1D
+    jne @@checkLeftInner
     jmp near ptr UpdateFrontPod
-loc_0AD1D:
+@@checkLeftInner:
     cmp bp, word ptr ds:[SidePodLeftInner]
-    jne loc_0AD26
+    jne @@checkRightInner
     jmp near ptr UpdateSidePodLeftInner
-loc_0AD26:
+@@checkRightInner:
     cmp bp, word ptr ds:[SidePodRightInner]
-    jne loc_0AD2F
+    jne @@checkLeftOuter
     jmp near ptr UpdateSidePodRightInner
-loc_0AD2F:
+@@checkLeftOuter:
     cmp bp, word ptr ds:[SidePodLeftOuter]
-    jne loc_0AD38
+    jne @@checkRightOuter
     jmp near ptr UpdateSidePodLeftOuter
-loc_0AD38:
+@@checkRightOuter:
     cmp bp, word ptr ds:[SidePodRightOuter]
-    jne loc_0AD41
+    jne @@checkTrailingNear
     jmp near ptr UpdateSidePodRightOuter
-loc_0AD41:
+@@checkTrailingNear:
     mov bx, offset TrailingPodNear
     cmp bp, word ptr ds:[TrailingPodNear]
-    jne loc_0AD4D
+    jne @@checkTrailingFar
     jmp near ptr UpdateTrailingPod
-loc_0AD4D:
+@@checkTrailingFar:
     mov bx, offset TrailingPodFar
     cmp bp, word ptr ds:[TrailingPodFar]
-    jne loc_0AD59
+    jne @@done
     jmp near ptr UpdateTrailingPod
-loc_0AD59:
+@@done:
     ret
 ; Shot tail: scrolls, then the bounds test below.
 ShotScrollAndBounds:
@@ -3132,53 +3132,53 @@ ShotScrollAndBounds:
 ; Removes the shot outside Y 8..E0h or past X C8h, or a player shot hitting a wall.
 ShotBoundsCheck:
     cmp word ptr ss:[bp + REC_Y], 8
-    jae loc_0AD69
+    jae @@checkBottom
     jmp near ptr RemoveRecord
-loc_0AD69:
+@@checkBottom:
     cmp word ptr ss:[bp + REC_Y], 0E0h
-    jbe loc_0AD73
+    jbe @@checkRight
     jmp near ptr RemoveRecord
-loc_0AD73:
+@@checkRight:
     cmp word ptr ss:[bp + REC_X], 0C8h
-    jbe loc_0AD7D
+    jbe @@checkWallShot
     jmp near ptr RemoveRecord
-loc_0AD7D:
+@@checkWallShot:
     cmp word ptr ss:[bp + REC_KIND], KIND_TYPED
-    jne loc_0ADC8
+    jne @@done
     cmp word ptr ss:[bp + REC_TYPE], 2
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 4
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 0Ch
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 5
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 6
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 9
-    je loc_0ADAF
+    je @@probeWall
     cmp word ptr ss:[bp + REC_TYPE], 8
-    je loc_0ADAF
-    jmp short loc_0ADC8
-loc_0ADAF:
+    je @@probeWall
+    jmp short @@done
+@@probeWall:
     cmp word ptr ds:[DemoActive], 1
-    je loc_0ADC8
+    je @@done
 ; Remove the record when the cell at grid offset + 13 has attribute 1 exactly
 ; (the FFFFh negative-Y result is again not checked).
     call ComputeRecordGridOffset
     add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    je loc_0ADC8
+    je @@done
     dec al
-    jne loc_0ADC8
+    jne @@done
     jmp near ptr RemoveRecord
-loc_0ADC8:
+@@done:
     ret
 ; Removes the shot through the bounds test (Y = FFFFh).
 ExpireShot:
     mov word ptr ss:[bp + REC_Y], 0FFFFh
     jmp short ShotBoundsCheck
-loc_0ADD0:
+@@descendAndCheckPlayerHit:
     inc word ptr ss:[bp + REC_Y]
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr ShotHitPlayerCheck
@@ -3205,20 +3205,21 @@ Type0FTimedShot2:
     mov ss:[bp + REC_SPRITE], ax
     dec word ptr ss:[bp + REC_SHOT_TIMER]
     je ExpireShot
-    mov ax, 0B250h
+; Return into ShotHitPlayerCheck after the move.
+    mov ax, offset ShotHitPlayerCheck
     push ax
     jmp near ptr MoveInDirection2
 ; 3 px per frame in REC_DIRECTION while REC_SHOT_TIMER counts down, then turns straight
 ; up.
 Type0CTimedTurnUpShot:
     cmp word ptr ss:[bp + REC_SHOT_TIMER], 0
-    je loc_0AE19
+    je @@rise
     dec word ptr ss:[bp + REC_SHOT_TIMER]
-    jne loc_0AE1D
+    jne @@move
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
-loc_0AE19:
+@@rise:
     sub word ptr ss:[bp + REC_Y], 2
-loc_0AE1D:
+@@move:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 28h
     mov ss:[bp + REC_SPRITE], ax
@@ -3230,21 +3231,21 @@ Type06SideShotUpRight:
     je ExpireShot
     sub word ptr ss:[bp + REC_Y], 4
     test word ptr ss:[bp + REC_X], 7
-    jne loc_0AE5E
+    jne @@driftUpRight
     test word ptr ss:[bp + REC_X], 8
-    je loc_0AE5E
+    je @@driftUpRight
     cmp word ptr ds:[DemoActive], 1
-    je loc_0AE5E
+    je @@driftUpRight
     call ComputeRecordGridOffset
     add bx, 0Eh
     call ReadIndexedByteAttribute
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     cmp al, 1
-    je loc_0AE67
-loc_0AE5E:
+    je @@setSprite
+@@driftUpRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
     add word ptr ss:[bp + REC_X], 4
-loc_0AE67:
+@@setSprite:
     mov ax, ds:[FrameCount4]
     shl ax, 1
     shl ax, 1
@@ -3257,24 +3258,24 @@ loc_0AE67:
 ; otherwise it keeps drifting up-left.
 Type05SideShotUpLeft:
     cmp word ptr ss:[bp + REC_X], 0
-    jne loc_0AE86
+    jne @@rise
     jmp near ptr ExpireShot
-loc_0AE86:
+@@rise:
     sub word ptr ss:[bp + REC_Y], 4
     test word ptr ss:[bp + REC_X], 0Fh
-    jne loc_0AEAA
+    jne @@driftUpLeft
     cmp word ptr ds:[DemoActive], 1
-    je loc_0AEAA
+    je @@driftUpLeft
     call ComputeRecordGridOffset
     add bx, 0Ch
     call ReadIndexedByteAttribute
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     cmp al, 1
-    je loc_0AEB3
-loc_0AEAA:
+    je @@setSprite
+@@driftUpLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
     sub word ptr ss:[bp + REC_X], 4
-loc_0AEB3:
+@@setSprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 8
     mov ss:[bp + REC_SPRITE], ax
@@ -3282,78 +3283,80 @@ loc_0AEB3:
 ; 4 px per frame in REC_DIRECTION (8 px on level 0 unless heading down), then the
 ; player-hit test; the SpawnThrottledChild shot.
 Type04StraightShot:
-    mov ax, 0B250h
+; Return into ShotHitPlayerCheck after the move.
+    mov ax, offset ShotHitPlayerCheck
     push ax
     cmp word ptr ds:[LevelIndex], 0
-    je loc_0AECD
+    je @@checkDown
     jmp near ptr MoveInDirection4
-loc_0AECD:
+@@checkDown:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
-    jne loc_0AED6
+    jne @@moveFast
     jmp near ptr MoveInDirection4
-loc_0AED6:
+@@moveFast:
     jmp short MoveInDirection8
 ; Types 02h/03h: 8 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the
 ; player-hit test; type 3 hits deal 1/3/5 damage by difficulty.
 Type02TimedStraightShot:
     dec word ptr ss:[bp + REC_SHOT_TIMER]
-    jne loc_0AEE0
+    jne @@move
     jmp near ptr ExpireShot
-loc_0AEE0:
-    mov ax, 0B250h
+@@move:
+; Return into ShotHitPlayerCheck after the move.
+    mov ax, offset ShotHitPlayerCheck
     push ax
 MoveInDirection8:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
     jmp word ptr cs:[bx + Move8ByDirection]
 Move8ByDirection label word
-    dw offset loc_0AF0B, offset loc_0AF10, offset loc_0AF14, offset loc_0AEFE
-    dw offset loc_0AF02, offset loc_0AF19, offset loc_0AF1D, offset loc_0AF07
-loc_0AEFE:
+    dw offset @@moveUp, offset @@moveUpRight, offset @@moveRight, offset @@moveDownRight
+    dw offset @@moveDown, offset @@moveDownLeft, offset @@moveLeft, offset @@moveUpLeft
+@@moveDownRight:
     add word ptr ss:[bp + REC_X], 8
-loc_0AF02:
+@@moveDown:
     add word ptr ss:[bp + REC_Y], 8
     ret
-loc_0AF07:
+@@moveUpLeft:
     sub word ptr ss:[bp + REC_X], 8
-loc_0AF0B:
+@@moveUp:
     sub word ptr ss:[bp + REC_Y], 8
     ret
-loc_0AF10:
+@@moveUpRight:
     sub word ptr ss:[bp + REC_Y], 8
-loc_0AF14:
+@@moveRight:
     add word ptr ss:[bp + REC_X], 8
     ret
-loc_0AF19:
+@@moveDownLeft:
     add word ptr ss:[bp + REC_Y], 8
-loc_0AF1D:
+@@moveLeft:
     sub word ptr ss:[bp + REC_X], 8
     ret
 MoveInDirection3:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0AF22Cases]
-loc_0AF22Cases label word
-    dw offset loc_0AF49, offset loc_0AF4E, offset loc_0AF52, offset loc_0AF3C
-    dw offset loc_0AF40, offset loc_0AF57, offset loc_0AF5B, offset loc_0AF45
-loc_0AF3C:
+    jmp word ptr cs:[bx + MoveInDirection3Cases]
+MoveInDirection3Cases label word
+    dw offset @@moveUp, offset @@moveUpRight, offset @@moveRight, offset @@moveDownRight
+    dw offset @@moveDown, offset @@moveDownLeft, offset @@moveLeft, offset @@moveUpLeft
+@@moveDownRight:
     add word ptr ss:[bp + REC_X], 3
-loc_0AF40:
+@@moveDown:
     add word ptr ss:[bp + REC_Y], 3
     ret
-loc_0AF45:
+@@moveUpLeft:
     sub word ptr ss:[bp + REC_X], 3
-loc_0AF49:
+@@moveUp:
     sub word ptr ss:[bp + REC_Y], 3
     ret
-loc_0AF4E:
+@@moveUpRight:
     sub word ptr ss:[bp + REC_Y], 3
-loc_0AF52:
+@@moveRight:
     add word ptr ss:[bp + REC_X], 3
     ret
-loc_0AF57:
+@@moveDownLeft:
     add word ptr ss:[bp + REC_Y], 3
-loc_0AF5B:
+@@moveLeft:
     sub word ptr ss:[bp + REC_X], 3
     ret
 MoveInDirection4:
@@ -3364,26 +3367,26 @@ MoveInDirection2:
     jmp word ptr cs:[bx + Move2ByDirection]
     even
 Move2ByDirection label word
-    dw offset loc_0AF8B, offset loc_0AF90, offset loc_0AF94, offset loc_0AF7E
-    dw offset loc_0AF82, offset loc_0AF99, offset loc_0AF9D, offset loc_0AF87
-loc_0AF7E:
+    dw offset @@moveUp, offset @@moveUpRight, offset @@moveRight, offset @@moveDownRight
+    dw offset @@moveDown, offset @@moveDownLeft, offset @@moveLeft, offset @@moveUpLeft
+@@moveDownRight:
     add word ptr ss:[bp + REC_X], 2
-loc_0AF82:
+@@moveDown:
     add word ptr ss:[bp + REC_Y], 2
     ret
-loc_0AF87:
+@@moveUpLeft:
     sub word ptr ss:[bp + REC_X], 2
-loc_0AF8B:
+@@moveUp:
     sub word ptr ss:[bp + REC_Y], 2
     ret
-loc_0AF90:
+@@moveUpRight:
     sub word ptr ss:[bp + REC_Y], 2
-loc_0AF94:
+@@moveRight:
     add word ptr ss:[bp + REC_X], 2
     ret
-loc_0AF99:
+@@moveDownLeft:
     add word ptr ss:[bp + REC_Y], 2
-loc_0AF9D:
+@@moveLeft:
     sub word ptr ss:[bp + REC_X], 2
     ret
 MoveInDirection1:
@@ -3391,26 +3394,26 @@ MoveInDirection1:
     shl bx, 1
     jmp word ptr cs:[bx + Move1ByDirection]
 Move1ByDirection label word
-    dw offset loc_0AFC6, offset loc_0AFCA, offset loc_0AFCD, offset loc_0AFBC
-    dw offset loc_0AFBF, offset loc_0AFD1, offset loc_0AFD4, offset loc_0AFC3
-loc_0AFBC:
+    dw offset @@moveUp, offset @@moveUpRight, offset @@moveRight, offset @@moveDownRight
+    dw offset @@moveDown, offset @@moveDownLeft, offset @@moveLeft, offset @@moveUpLeft
+@@moveDownRight:
     inc word ptr ss:[bp + REC_X]
-loc_0AFBF:
+@@moveDown:
     inc word ptr ss:[bp + REC_Y]
     ret
-loc_0AFC3:
+@@moveUpLeft:
     dec word ptr ss:[bp + REC_X]
-loc_0AFC6:
+@@moveUp:
     dec word ptr ss:[bp + REC_Y]
     ret
-loc_0AFCA:
+@@moveUpRight:
     dec word ptr ss:[bp + REC_Y]
-loc_0AFCD:
+@@moveRight:
     inc word ptr ss:[bp + REC_X]
     ret
-loc_0AFD1:
+@@moveDownLeft:
     inc word ptr ss:[bp + REC_Y]
-loc_0AFD4:
+@@moveLeft:
     dec word ptr ss:[bp + REC_X]
     ret
 ; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and TerrainBlocked = 1) when blocked.
@@ -3436,147 +3439,147 @@ TryTerrainStep:
 TerrainStepInDirection:
     call ComputeRecordGridOffset
     cmp bx, -1
-    je loc_0B032
+    je TerrainStepBlocked
     mov dx, bx
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_0B00DCases]
+    jmp word ptr cs:[bx + TerrainStepCases]
     even
-loc_0B00DCases label word
-    dw offset TerrainStepUp, offset loc_0B0C9, offset TerrainStepRight, offset loc_0B039
-    dw offset TerrainStepDown, offset loc_0B10C, offset TerrainStepLeft, offset loc_0B07A
-loc_0B032:
+TerrainStepCases label word
+    dw offset TerrainStepUp, offset TerrainStepUpRight, offset TerrainStepRight, offset TerrainStepDownRight
+    dw offset TerrainStepDown, offset TerrainStepDownLeft, offset TerrainStepLeft, offset TerrainStepUpLeft
+TerrainStepBlocked:
     mov word ptr ds:[TerrainBlocked], 1
     ret
-loc_0B039:
+TerrainStepDownRight:
     call TerrainStepRight
 TerrainStepDown:
     mov bx, dx
     sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    jne loc_0B032
+    jne TerrainStepBlocked
     test word ptr ss:[bp + REC_X], 0Fh
-    je loc_0B053
+    je @@moveDown
     inc bx
     call ReadIndexedByteAttribute
-    jne loc_0B032
-loc_0B053:
+    jne TerrainStepBlocked
+@@moveDown:
     inc word ptr ss:[bp + REC_Y]
     inc word ptr ds:[TerrainProbeY]
     push bx
     call ProbeOverlapsWalker
     pop bx
-    jae loc_0B06A
+    jae @@moved
     dec word ptr ss:[bp + REC_Y]
     dec word ptr ds:[TerrainProbeY]
-    jmp short loc_0B032
-loc_0B06A:
+    jmp short TerrainStepBlocked
+@@moved:
     inc word ptr ds:[GridYSum]
     and word ptr ds:[GridYSum], 0Fh
-    je loc_0B076
+    je @@crossedRowDown
     ret
-loc_0B076:
+@@crossedRowDown:
     sub dx, MAP_ROW_BYTES
     ret
-loc_0B07A:
+TerrainStepUpLeft:
     call TerrainStepLeft
 TerrainStepUp:
     mov bx, dx
     test word ptr ds:[GridYSum], 0Fh
-    jne loc_0B09C
+    jne @@moveUp
     add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    jne loc_0B032
+    jne TerrainStepBlocked
     test word ptr ss:[bp + REC_X], 0Fh
-    je loc_0B09C
+    je @@moveUp
     inc bx
     call ReadIndexedByteAttribute
-    jne loc_0B032
-loc_0B09C:
+    jne TerrainStepBlocked
+@@moveUp:
     dec word ptr ss:[bp + REC_Y]
     dec word ptr ds:[TerrainProbeY]
     push bx
     call ProbeOverlapsWalker
     pop bx
-    jae loc_0B0B4
+    jae @@moved
     inc word ptr ss:[bp + REC_Y]
     inc word ptr ds:[TerrainProbeY]
-    jmp near ptr loc_0B032
-loc_0B0B4:
+    jmp near ptr TerrainStepBlocked
+@@moved:
     dec word ptr ds:[GridYSum]
     and word ptr ds:[GridYSum], 0Fh
     cmp word ptr ds:[GridYSum], 0Fh
-    je loc_0B0C5
+    je @@crossedRowUp
     ret
-loc_0B0C5:
+@@crossedRowUp:
     add dx, MAP_ROW_BYTES
     ret
-loc_0B0C9:
+TerrainStepUpRight:
     call TerrainStepUp
 TerrainStepRight:
     mov bx, dx
     inc bx
     call ReadIndexedByteAttribute
-    je loc_0B0D7
-    jmp near ptr loc_0B032
-loc_0B0D7:
+    je @@checkSecondRow
+    jmp near ptr TerrainStepBlocked
+@@checkSecondRow:
     test word ptr ds:[GridYSum], 0Fh
-    je loc_0B0EA
+    je @@moveRight
     sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    je loc_0B0EA
-    jmp near ptr loc_0B032
-loc_0B0EA:
+    je @@moveRight
+    jmp near ptr TerrainStepBlocked
+@@moveRight:
     inc word ptr ss:[bp + REC_X]
     inc word ptr ds:[TerrainProbeX]
     push bx
     call ProbeOverlapsWalker
     pop bx
-    jae loc_0B102
+    jae @@moved
     dec word ptr ss:[bp + REC_X]
     dec word ptr ds:[TerrainProbeX]
-    jmp near ptr loc_0B032
-loc_0B102:
+    jmp near ptr TerrainStepBlocked
+@@moved:
     test word ptr ss:[bp + REC_X], 0Fh
-    je loc_0B10A
+    je @@crossedColumn
     ret
-loc_0B10A:
+@@crossedColumn:
     inc dx
     ret
-loc_0B10C:
+TerrainStepDownLeft:
     call TerrainStepDown
 TerrainStepLeft:
     mov bx, dx
     test word ptr ss:[bp + REC_X], 0Fh
-    jne loc_0B134
+    jne @@moveLeft
     dec bx
     call ReadIndexedByteAttribute
-    je loc_0B121
-    jmp near ptr loc_0B032
-loc_0B121:
+    je @@checkSecondRow
+    jmp near ptr TerrainStepBlocked
+@@checkSecondRow:
     test word ptr ds:[GridYSum], 0Fh
-    je loc_0B134
+    je @@moveLeft
     sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    je loc_0B134
-    jmp near ptr loc_0B032
-loc_0B134:
+    je @@moveLeft
+    jmp near ptr TerrainStepBlocked
+@@moveLeft:
     dec word ptr ss:[bp + REC_X]
     dec word ptr ds:[TerrainProbeX]
     push bx
     call ProbeOverlapsWalker
     pop bx
-    jae loc_0B14C
+    jae @@moved
     inc word ptr ss:[bp + REC_X]
     inc word ptr ds:[TerrainProbeX]
-    jmp near ptr loc_0B032
-loc_0B14C:
+    jmp near ptr TerrainStepBlocked
+@@moved:
     mov ax, word ptr ss:[bp + REC_X]
     and ax, 0Fh
     cmp ax, 0Fh
-    je loc_0B158
+    je @@crossedColumn
     ret
-loc_0B158:
+@@crossedColumn:
     dec dx
     ret
 
@@ -3584,33 +3587,33 @@ loc_0B158:
 FindMissileTarget:
     mov cx, POOL_A_COUNT
     mov bx, word ptr ds:[TargetSearchCursor]
-loc_0B161:
+@@checkRecord:
     cmp bx, offset PoolAEnd
-    jae loc_0B19A
+    jae @@wrapToPoolStart
     cmp word ptr ds:[bx + REC_STATUS], 0
-    je loc_0B191
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 1
-    je loc_0B191
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 026h
-    je loc_0B191
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 021h
-    je loc_0B191
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 022h
-    je loc_0B191
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_Y], 0E0h
-    ja loc_0B191
+    ja @@nextRecord
     cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
-    je loc_0B1A6
-loc_0B191:
+    je @@found
+@@nextRecord:
     add bx, RECORD_SIZE
-    loop loc_0B161
+    loop @@checkRecord
     mov bx, 0FFFFh
     ret
-loc_0B19A:
+@@wrapToPoolStart:
     mov word ptr ds:[TargetSearchCursor], offset PoolA
     mov bx, word ptr ds:[TargetSearchCursor]
-    jmp short loc_0B161
-loc_0B1A6:
+    jmp short @@checkRecord
+@@found:
     push bx
     add bx, RECORD_SIZE
     mov word ptr ds:[TargetSearchCursor], bx
@@ -3623,7 +3626,7 @@ Type0AHomingMissile:
     add ax, 6Dh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ss:[bp + REC_MISSILE_LOCKED], 1
-    je loc_0B227
+    je @@chaseTarget
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     add ax, 0Ah
     mov ds:[SteerTargetY], ax
@@ -3637,38 +3640,38 @@ Type0AHomingMissile:
     and word ptr ss:[bp + REC_Y], -4
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
-    jne loc_0B1F6
+    jne @@reachedPlayer
     jmp near ptr ShotBoundsCheck
-loc_0B1F6:
+@@reachedPlayer:
     cmp word ptr ds:[MissilesLive], 0
-    je loc_0B201
+    je @@lockTarget
     dec word ptr ds:[MissilesLive]
-loc_0B201:
+@@lockTarget:
     call FindMissileTarget
     cmp bx, -1
-    jne loc_0B20C
+    jne @@targetFound
     jmp near ptr ExpireShot
-loc_0B20C:
+@@targetFound:
     mov ss:[bp + REC_TARGET], bx
     mov word ptr ss:[bp + REC_MISSILE_LOCKED], 1
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0B220
+    je @@countMissile
     mov byte ptr ds:[SfxRequest], 11h
-loc_0B220:
+@@countMissile:
     inc word ptr ds:[MissilesLive]
     jmp near ptr ShotBoundsCheck
-loc_0B227:
+@@chaseTarget:
     mov bx, ss:[bp + REC_TARGET]
     cmp word ptr ds:[bx + REC_STATUS], 0
-    je loc_0B245
+    je @@targetLost
     cmp word ptr ds:[bx + REC_Y], 0DCh
-    ja loc_0B245
+    ja @@targetLost
     cmp word ptr ds:[bx + REC_TYPE], 1
-    je loc_0B245
+    je @@targetLost
     call SetDeltaToward
     call StepAlongDelta
     jmp near ptr ShotScrollAndBounds
-loc_0B245:
+@@targetLost:
     mov word ptr ss:[bp + REC_MISSILE_LOCKED], 0
     jmp near ptr ShotScrollAndBounds
 ; 3 px Bresenham steps along REC_DELTA, then the player-hit test.
@@ -3677,49 +3680,49 @@ Type0BAimedEnemyShot:
 ; Damages the player and removes the shot on a hit; otherwise the scroll and bounds tail.
 ShotHitPlayerCheck:
     cmp word ptr ss:[bp + REC_SIDE_FLAG], 1
-    je loc_0B2A3
+    je @@missed
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     mov bx, word ptr ds:[PrimaryRecord + REC_X]
     sub ax, 2
     cmp word ptr ss:[bp + REC_Y], ax
-    jl loc_0B2A3
+    jl @@missed
     add ax, 014h
     cmp word ptr ss:[bp + REC_Y], ax
-    jg loc_0B2A3
+    jg @@missed
     cmp word ptr ss:[bp + REC_X], bx
-    jb loc_0B2A3
+    jb @@missed
     add bx, 014h
     cmp word ptr ss:[bp + REC_X], bx
-    ja loc_0B2A3
+    ja @@missed
     mov cx, 1
     cmp word ptr ss:[bp + REC_TYPE], 3
-    jne loc_0B297
+    jne @@damageLoop
     cmp word ptr ds:[DifficultySetting], 0
-    je loc_0B297
+    je @@damageLoop
     mov cx, 3
     cmp word ptr ds:[DifficultySetting], 1
-    je loc_0B297
+    je @@damageLoop
     mov cx, 5
-loc_0B297:
+@@damageLoop:
     push cx
     push bp
     call DamagePlayerEnergy
     pop bp
     pop cx
-    loop loc_0B297
+    loop @@damageLoop
     jmp near ptr ExpireShot
-loc_0B2A3:
+@@missed:
     jmp near ptr ShotScrollAndBounds
 ; Types 89h/8Ah: terrain patrol firing down every 32 frames.
 Type89PatrolShootDown32:
     mov ax, ds:[SlowCount4]
     add ax, 1Ch
-loc_0B2AC:
+PatrolSpriteShootDown32:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount32], 1Fh
-    jne loc_0B2B9
+    jne @@patrol
     call SpawnShotDown
-loc_0B2B9:
+@@patrol:
     jmp near ptr HorizontalTerrainPatrol
 ; Starts the waypoint path at DS:A45C as type 12h.
 Type10StartPathFollowerA:
@@ -3742,82 +3745,82 @@ Type12WaypointPathFollower:
     mov ds:[SteerTargetX], ax
     mov word ptr ds:[SteerSpeed], 1
     cmp word ptr ds:[LevelIndex], 0
-    je loc_0B2EF
+    je @@fastSpeed
     cmp word ptr ds:[DemoActive], 1
-    jne loc_0B2F5
-loc_0B2EF:
+    jne @@steer
+@@fastSpeed:
     mov word ptr ds:[SteerSpeed], 2
-loc_0B2F5:
+@@steer:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
-    je loc_0B304
+    je @@pickSprite
     mov ss:[bp + REC_PATH], si
     jmp short Type12WaypointPathFollower
-loc_0B304:
+@@pickSprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 3Bh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[DemoActive], 1
-    jne loc_0B317
+    jne @@levelSprite
     jmp near ptr FinishRecordUpdate
-loc_0B317:
+@@levelSprite:
     cmp word ptr ds:[LevelIndex], 5
-    je loc_0B32C
+    je @@level056Sprite
     cmp word ptr ds:[LevelIndex], 6
-    je loc_0B32C
+    je @@level056Sprite
     cmp word ptr ds:[LevelIndex], 0
-    jne loc_0B35D
-loc_0B32C:
+    jne @@level1Sprite
+@@level056Sprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 115h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
-    je loc_0B340
+    je @@lastSpawnSprite
     jmp near ptr FinishRecordUpdate
-loc_0B340:
+@@lastSpawnSprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 105h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 0
-    jne loc_0B353
+    jne @@checkLevel6
     jmp near ptr FinishRecordUpdate
-loc_0B353:
+@@checkLevel6:
     cmp word ptr ds:[LevelIndex], 6
-    jne loc_0B35D
+    jne @@level1Sprite
     jmp near ptr FinishRecordUpdate
-loc_0B35D:
+@@level1Sprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 2Ah
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 1
-    jne loc_0B370
+    jne @@level2Sprite
     jmp near ptr FinishRecordUpdate
-loc_0B370:
+@@level2Sprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0D2h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 2
-    jne loc_0B383
+    jne @@level3Sprite
     jmp near ptr FinishRecordUpdate
-loc_0B383:
+@@level3Sprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 3
-    jne loc_0B396
+    jne @@checkLevel7
     jmp near ptr FinishRecordUpdate
-loc_0B396:
+@@checkLevel7:
     cmp word ptr ds:[LevelIndex], 7
-    jne loc_0B3A0
+    jne @@level4Sprite
     jmp near ptr FinishRecordUpdate
-loc_0B3A0:
+@@level4Sprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[LevelIndex], 4
-    jne loc_0B3B3
+    jne @@otherLevelSprite
     jmp near ptr FinishRecordUpdate
-loc_0B3B3:
+@@otherLevelSprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
@@ -3835,23 +3838,23 @@ Type36SwayFallThenBurst:
     call SetSwaySprite
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ss:[bp + REC_Y], 0A0h
-    jae loc_0B3DD
+    jae @@reachedBurstY
     jmp near ptr ScrollRecordThenFinish
-loc_0B3DD:
-    jmp short loc_0B3F9
+@@reachedBurstY:
+    jmp short DescendBurstTail
 ; Types 22h/35h: sways down (1 px, 2 on level 0) to Y A0h, then destroys itself in an
 ; eight-way burst of type 3 shots.
 Type22DescendThenBurst:
     call SetSwaySprite
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ds:[LevelIndex], 0
-    jne loc_0B3EF
+    jne @@checkBurstY
     inc word ptr ss:[bp + REC_Y]
-loc_0B3EF:
+@@checkBurstY:
     cmp word ptr ss:[bp + REC_Y], 0A0h
-    jae loc_0B3F9
+    jae DescendBurstTail
     jmp near ptr ScrollRecordThenFinish
-loc_0B3F9:
+DescendBurstTail:
     call DestroyRecord
     call SpawnEightWayBurst
     jmp near ptr ScrollRecordThenFinish
@@ -3859,9 +3862,9 @@ loc_0B3F9:
 SpawnEightWayBurst:
     mov dx, 0Ch
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
-    je loc_0B40E
+    je @@setOrigin
     mov dx, 4
-loc_0B40E:
+@@setOrigin:
     mov ax, ss:[bp + REC_X]
     add ax, dx
     mov ds:[BurstOriginX], ax
@@ -3869,12 +3872,12 @@ loc_0B40E:
     add ax, dx
     mov ds:[BurstOriginY], ax
     mov cx, 8
-loc_0B421:
+@@spawnShot:
     push cx
     call FindFreeRecordPoolB
     pop cx
     cmp bx, -1
-    je loc_0B467
+    je @@done
     push cx
     dec cx
     mov ds:[bx + REC_DIRECTION], cx
@@ -3892,15 +3895,15 @@ loc_0B421:
     mov word ptr ds:[bx + REC_TYPE], 3
     mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     pop cx
-    loop loc_0B421
-loc_0B467:
+    loop @@spawnShot
+@@done:
     ret
 ; AX = number of live KIND_ENEMY records in pool A.
 CountLiveEnemies:
     push bp
     mov cx, 23h
     xor ax, ax
-loc_0B46E:
+@@checkRecord:
     push cx
     push ax
     mov bx, cx
@@ -3908,31 +3911,31 @@ loc_0B46E:
     mov bp, ds:[bx + PoolAPointers - 2]
     pop ax
     cmp word ptr ss:[bp + REC_STATUS], 0
-    je loc_0B486
+    je @@nextRecord
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
-    jne loc_0B486
+    jne @@nextRecord
     inc ax
-loc_0B486:
+@@nextRecord:
     pop cx
-    loop loc_0B46E
+    loop @@checkRecord
     pop bp
     ret
-loc_0B48B:
+EncounterInvaderLevel:
     cmp word ptr ds:[EncounterTicks], 32h
-    jae loc_0B495
-    jmp near ptr loc_0B615
-loc_0B495:
+    jae @@checkInvaderStart
+    jmp near ptr EncounterSpawnFaller
+@@checkInvaderStart:
     cmp word ptr ds:[EncounterTicks], 5Ah
-    jae loc_0B49F
+    jae @@startInvaders
     jmp near ptr FinishRecordUpdate
-loc_0B49F:
-    jmp near ptr loc_0B5D8
-loc_0B4A2:
+@@startInvaders:
+    jmp near ptr EncounterSpawnInvader
+EncounterSegBossLevel:
     call CountLiveEnemies
     cmp ax, 1
-    je loc_0B4AD
+    je @@spawnSegBoss
     jmp near ptr FinishRecordUpdate
-loc_0B4AD:
+@@spawnSegBoss:
     mov word ptr ds:[SegBossX], 0
     mov word ptr ds:[SegBossY], 0
     mov word ptr ds:[SegBossActive], 1
@@ -3947,14 +3950,14 @@ loc_0B4AD:
     mov ds:[SegBossCore], bp
     call FindFreeRecordPoolA
     cmp bx, -1
-    je loc_0B54A
+    je @@bossPartsFailed
     call far ptr InitSegBossPartRecord
     mov word ptr ds:[bx + REC_TYPE], 76h
     mov word ptr ds:[bx + REC_SPRITE], 20h
     mov ds:[SegBossAnchor], bx
     call FindFreeRecordPoolA
     cmp bx, -1
-    je loc_0B54A
+    je @@bossPartsFailed
     call far ptr InitSegBossPartRecord
     mov word ptr ds:[bx + REC_TYPE], 77h
     mov word ptr ds:[bx + REC_SPRITE], 21h
@@ -3962,14 +3965,14 @@ loc_0B4AD:
     mov ds:[SegBossPart77], bx
     call FindFreeRecordPoolA
     cmp bx, -1
-    je loc_0B54A
+    je @@bossPartsFailed
     call far ptr InitSegBossPartRecord
     mov word ptr ds:[bx + REC_TYPE], 79h
     mov word ptr ds:[bx + REC_SPRITE], 23h
     mov word ptr ds:[bx + REC_X], 20h
     mov ds:[SegBossPart79], bx
     jmp near ptr FinishRecordUpdate
-loc_0B54A:
+@@bossPartsFailed:
     mov word ptr ds:[EncounterLiveCount], 0
     call SmartBombAll
     jmp near ptr FinishRecordUpdate
@@ -3977,25 +3980,25 @@ loc_0B54A:
 ; 0: segmented boss 78h; level 3: invaders).
 Type21EncounterDirector:
     cmp word ptr ds:[LevelIndex], 4
-    jne loc_0B560
-    jmp near ptr loc_08D83
-loc_0B560:
+    jne @@checkLevel3
+    jmp near ptr Type21LeaderPath
+@@checkLevel3:
     cmp word ptr ds:[LevelIndex], 3
-    jne loc_0B56A
-    jmp near ptr loc_0B48B
-loc_0B56A:
+    jne @@checkLevel0
+    jmp near ptr EncounterInvaderLevel
+@@checkLevel0:
     cmp word ptr ds:[LevelIndex], 0
-    jne loc_0B574
-    jmp near ptr loc_0B4A2
-loc_0B574:
+    jne @@fallerPhase
+    jmp near ptr EncounterSegBossLevel
+@@fallerPhase:
     cmp word ptr ds:[EncounterTicks], 0C8h
-    jae loc_0B57F
-    jmp near ptr loc_0B615
-loc_0B57F:
+    jae @@checkBossTime
+    jmp near ptr EncounterSpawnFaller
+@@checkBossTime:
     cmp word ptr ds:[EncounterTicks], 0F0h
-    jae loc_0B58A
+    jae @@becomeBoss22
     jmp near ptr FinishRecordUpdate
-loc_0B58A:
+@@becomeBoss22:
     mov word ptr ss:[bp + REC_TYPE], 22h
     mov word ptr ss:[bp + REC_SPRITE], 71h
     mov cx, ds:[LevelIndex]
@@ -4011,7 +4014,7 @@ ResetInvaderFormation:
     mov word ptr ds:[InvaderNextMarchLeft], 0
     mov word ptr ds:[InvaderNextDropStep], 0
     ret
-loc_0B5BC:
+FormationComplete:
     dec word ptr ds:[EncounterLiveCount]
     mov word ptr ss:[bp + REC_TYPE], 64h
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
@@ -4019,16 +4022,16 @@ loc_0B5BC:
     mov word ptr ss:[bp + REC_Y], 0
     mov word ptr ss:[bp + REC_SPRITE], 8Eh
     jmp near ptr ScrollRecordThenFinish
-loc_0B5D8:
+EncounterSpawnInvader:
     mov word ptr ds:[FramesSinceInvaderSpawn], 0
     cmp word ptr ds:[InvaderSlotCursor], offset InvaderFormationEnd
-    je loc_0B5BC
+    je FormationComplete
     mov si, ds:[InvaderSlotCursor]
     push si
     call SpawnEnemyHere
     pop si
     cmp bx, -1
-    je loc_0B612
+    je @@done
     lodsw
     add ax, 20h
     mov ds:[bx + REC_SAVED_Y], ax
@@ -4038,34 +4041,34 @@ loc_0B5D8:
     mov word ptr ds:[bx + REC_SPRITE], 0E7h
     inc word ptr ds:[EncounterLiveCount]
     add word ptr ds:[InvaderSlotCursor], 4
-loc_0B612:
+@@done:
     jmp near ptr FinishRecordUpdate
-loc_0B615:
+EncounterSpawnFaller:
     cmp word ptr ds:[FrameCount8], 7
-    je loc_0B61F
+    je @@spawnFaller
     jmp near ptr FinishRecordUpdate
-loc_0B61F:
+@@spawnFaller:
     call SpawnEnemyHereQuiet
     cmp bx, -1
-    jne loc_0B62A
+    jne @@setupFaller
     jmp near ptr FinishRecordUpdate
-loc_0B62A:
+@@setupFaller:
     call AssignNextFallerColumn
     mov word ptr ds:[bx + REC_SAVED_Y], 10h
     mov word ptr ds:[bx + REC_TYPE], 23h
     cmp word ptr ds:[LevelIndex], 1
-    je loc_0B65E
+    je @@invulnerableFaller
     cmp word ptr ds:[LevelIndex], 2
-    je loc_0B656
+    je @@level2Faller
     cmp word ptr ds:[LevelIndex], 3
-    je loc_0B65E
+    je @@invulnerableFaller
     cmp word ptr ds:[LevelIndex], 5
-    je loc_0B65E
+    je @@invulnerableFaller
     jmp near ptr FinishRecordUpdate
-loc_0B656:
+@@level2Faller:
     mov word ptr ds:[bx + REC_HIT_POINTS], 1
     jmp near ptr FinishRecordUpdate
-loc_0B65E:
+@@invulnerableFaller:
     mov word ptr ds:[bx + REC_HIT_POINTS], 0FFFFh
     mov ax, ds:[RecordTickCounter]
     inc word ptr ds:[RecordTickCounter]
@@ -4076,10 +4079,10 @@ loc_0B65E:
 AssignNextFallerColumn:
     mov si, ds:[FallerColumnCursor]
     cmp si, offset FallerColumnsEnd
-    jb loc_0B687
+    jb @@takeColumn
     mov word ptr ds:[FallerColumnCursor], offset FallerColumns
     mov si, ds:[FallerColumnCursor]
-loc_0B687:
+@@takeColumn:
     lodsw
     mov ds:[bx + REC_SAVED_X], ax
     mov ds:[FallerColumnCursor], si
@@ -4089,24 +4092,24 @@ loc_0B687:
 Type23ColumnFaller:
     mov ax, ss:[bp + REC_X]
     cmp ax, ss:[bp + REC_SAVED_X]
-    je loc_0B69B
-    jmp near ptr loc_0B85C
-loc_0B69B:
+    je @@checkY
+    jmp near ptr SteerToSavedTail
+@@checkY:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
-    je loc_0B6A6
-    jmp near ptr loc_0B85C
-loc_0B6A6:
+    je @@atColumnTop
+    jmp near ptr SteerToSavedTail
+@@atColumnTop:
     cmp word ptr ss:[bp + REC_Y], 20h
-    ja loc_0B6BE
+    ja @@fall
     cmp word ptr ss:[bp + REC_Y], 1Ch
-    jb loc_0B6BE
+    jb @@fall
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0B6BE
+    je @@fall
     mov byte ptr ds:[SfxRequest], 1Dh
-loc_0B6BE:
+@@fall:
     cmp word ptr ds:[LevelIndex], 2
-    je loc_0B701
+    je @@aimAtPlayer
     mov si, ss:[bp + REC_FALLER_VARIANT]
     shl si, 1
     shl si, 1
@@ -4114,14 +4117,14 @@ loc_0B6BE:
     xor cx, cx
     mov dx, 80h
     cmp word ptr ds:[LevelIndex], 3
-    je loc_0B6E2
+    je @@altVariants
     cmp word ptr ds:[LevelIndex], 5
-    jne loc_0B6E9
-loc_0B6E2:
+    jne @@applyVariant
+@@altVariants:
     mov ax, offset FallerVariantsAlt
     inc cx
     mov dx, 6Dh
-loc_0B6E9:
+@@applyVariant:
     add si, ax
     lodsw
     mov bx, ax
@@ -4133,7 +4136,7 @@ loc_0B6E9:
     add ss:[bp + REC_Y], ax
     add ss:[bp + REC_SAVED_Y], ax
     jmp near ptr FinishRecordUpdate
-loc_0B701:
+@@aimAtPlayer:
     mov bx, bp
     call AimAtPlayer
     mov word ptr ss:[bp + REC_TYPE], 2Ch
@@ -4160,7 +4163,7 @@ SteerToSaved:
 ; per frame.
 Type20SlotHopperDropper:
     cmp word ptr ss:[bp + REC_DIVE_PHASE], -1
-    je loc_0B791
+    je Type20SlotHopper
     mov bx, word ptr ss:[bp + REC_DIVE_PHASE]
     shl bx, 1
     jmp word ptr cs:[bx + Type20Cases]
@@ -4169,14 +4172,14 @@ Type20Cases label word
 Type20MoveAbovePlayer:
     mov ax, word ptr ss:[bp + REC_X]
     cmp ax, word ptr ss:[bp + REC_SAVED_X]
-    je loc_0B75F
-    jmp near ptr loc_0B85C
-loc_0B75F:
+    je @@checkY
+    jmp near ptr SteerToSavedTail
+@@checkY:
     mov ax, word ptr ss:[bp + REC_Y]
     cmp ax, word ptr ss:[bp + REC_SAVED_Y]
-    je loc_0B76A
-    jmp near ptr loc_0B85C
-loc_0B76A:
+    je @@arrived
+    jmp near ptr SteerToSavedTail
+@@arrived:
     inc word ptr ss:[bp + REC_DIVE_PHASE]
     jmp near ptr FinishRecordUpdate
 Type20StartDrop:
@@ -4186,73 +4189,73 @@ Type20StartDrop:
 Type20Drop:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ss:[bp + REC_Y], 0A0h
-    jae loc_0B789
+    jae @@landed
     jmp near ptr FinishRecordUpdate
-loc_0B789:
+@@landed:
     mov word ptr ss:[bp + REC_SPRITE], 077h
     jmp near ptr FinishRecordUpdate
-loc_0B791:
+Type20SlotHopper:
     mov ax, word ptr ds:[SlowCount6]
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
-    jae loc_0B7A1
+    jae @@rightHalfSprite
     neg ax
     add ax, 07Fh
-    jmp short loc_0B7A4
-loc_0B7A1:
+    jmp short @@setSprite
+@@rightHalfSprite:
     add ax, 07Ah
-loc_0B7A4:
+@@setSprite:
     mov word ptr ss:[bp + REC_SPRITE], ax
     mov ax, word ptr ss:[bp + REC_X]
     cmp ax, word ptr ss:[bp + REC_SAVED_X]
-    je loc_0B7B2
-    jmp near ptr loc_0B85C
-loc_0B7B2:
+    je @@checkSlotY
+    jmp near ptr SteerToSavedTail
+@@checkSlotY:
     mov ax, word ptr ss:[bp + REC_Y]
     cmp ax, word ptr ss:[bp + REC_SAVED_Y]
-    je loc_0B7BD
-    jmp near ptr loc_0B85C
-loc_0B7BD:
+    je @@inSlot
+    jmp near ptr SteerToSavedTail
+@@inSlot:
     cmp word ptr ds:[EncounterTicks], 023h
-    jae loc_0B7F3
+    jae @@maybeShoot
     jmp near ptr FinishRecordUpdate
-loc_0B7C7:
+@@fewLeft:
     cmp word ptr ds:[CountGate2324], 1
-    je loc_0B7D7
-loc_0B7CE:
+    je @@startDrop
+@@targetPlayerX:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
     mov word ptr ss:[bp + REC_SAVED_X], ax
-loc_0B7D7:
+@@startDrop:
     and word ptr ss:[bp + REC_SAVED_X], 0FFF8h
     mov word ptr ds:[RecordTickCounter], 028h
     mov word ptr ss:[bp + REC_DIVE_PHASE], 0
     mov word ptr ss:[bp + REC_SPRITE], 078h
     mov word ptr ss:[bp + REC_SAVED_Y], 020h
     jmp near ptr FinishRecordUpdate
-loc_0B7F3:
+@@maybeShoot:
     cmp word ptr ds:[RecordTickCounter], 02BCh
-    jb loc_0B80E
+    jb @@checkLiveCount
     cmp word ptr ds:[RecordTickCounter], 02D0h
-    ja loc_0B80E
+    ja @@checkLiveCount
     call NextRandomWord
     and bx, 1
-    jne loc_0B80E
+    jne @@checkLiveCount
     call SpawnAimedShot
-loc_0B80E:
+@@checkLiveCount:
     cmp word ptr ds:[EncounterLiveCount], 3
-    jbe loc_0B7C7
+    jbe @@fewLeft
     cmp word ptr ds:[RecordTickCounter], 5
-    jb loc_0B7CE
+    jb @@targetPlayerX
     cmp word ptr ds:[FrameCount64], 03Fh
-    je loc_0B826
+    je @@nextSlot
     jmp near ptr FinishRecordUpdate
-loc_0B826:
+@@nextSlot:
     mov si, word ptr ds:[FormationSlotCursor]
     cmp si, offset FormationSlotsEnd
-    jb loc_0B83A
+    jb @@takeSlot
     mov word ptr ds:[FormationSlotCursor], offset FormationSlots
     mov si, word ptr ds:[FormationSlotCursor]
-loc_0B83A:
+@@takeSlot:
     lodsw
     add ax, 020h
     mov word ptr ss:[bp + REC_SAVED_Y], ax
@@ -4261,13 +4264,13 @@ loc_0B83A:
     mov word ptr ds:[FormationSlotCursor], si
     mov ax, word ptr ss:[bp + REC_Y]
     cmp ax, word ptr ss:[bp + REC_SAVED_Y]
-    jne loc_0B859
+    jne @@done
     mov ax, word ptr ss:[bp + REC_X]
     cmp ax, word ptr ss:[bp + REC_SAVED_X]
-    je loc_0B826
-loc_0B859:
+    je @@nextSlot
+@@done:
     jmp near ptr FinishRecordUpdate
-loc_0B85C:
+SteerToSavedTail:
     mov word ptr ds:[SteerSpeed], 2
     call SteerToSaved
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
@@ -4276,13 +4279,13 @@ loc_0B85C:
 ; once low on screen.
 Type1DSlotBobThenChase:
     cmp word ptr ds:[EncounterLiveCount], 2
-    ja loc_0B877
-    jmp near ptr loc_0B8F8
-loc_0B877:
+    ja @@checkLow
+    jmp near ptr @@chasePlayer
+@@checkLow:
     cmp word ptr ss:[bp + REC_Y], 0C0h
-    ja loc_0B8F8
+    ja @@chasePlayer
     cmp word ptr ds:[EncounterTicks], 28h
-    jae loc_0B8B0
+    jae @@bob
     mov word ptr ds:[SteerSpeed], 1
     mov word ptr ss:[bp + REC_SPRITE], 75h
     and word ptr ss:[bp + REC_SAVED_X], -2
@@ -4290,40 +4293,40 @@ loc_0B877:
     and word ptr ss:[bp + REC_SAVED_Y], -2
     and word ptr ss:[bp + REC_Y], -2
     call SteerToSaved
-    jne loc_0B8A8
+    jne @@arrived
     jmp near ptr FinishRecordUpdate
-loc_0B8A8:
+@@arrived:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr FinishRecordUpdate
-loc_0B8B0:
+@@bob:
     cmp word ptr ds:[RecordTickCounter], 2EFh
-    jne loc_0B8BB
+    jne @@checkShot2
     call SpawnAimedShot
-loc_0B8BB:
+@@checkShot2:
     cmp word ptr ds:[RecordTickCounter], 159h
-    jne loc_0B8C6
+    jne @@checkShot3
     call SpawnAimedShot
-loc_0B8C6:
+@@checkShot3:
     cmp word ptr ds:[RecordTickCounter], 79h
-    jne loc_0B8D0
+    jne @@sway
     call SpawnAimedShot
-loc_0B8D0:
+@@sway:
     mov ax, ds:[SwayDirX]
     neg ax
     add ss:[bp + REC_Y], ax
     mov ax, 75h
     cmp word ptr ds:[SwayDirX], -1
-    je loc_0B8E5
+    je @@setSprite
     mov ax, 76h
-loc_0B8E5:
+@@setSprite:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount8], 7
-    je loc_0B8F2
+    je @@sink
     jmp near ptr FinishRecordUpdate
-loc_0B8F2:
+@@sink:
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr FinishRecordUpdate
-loc_0B8F8:
+@@chasePlayer:
     mov bx, offset PrimaryRecord
     call SetDeltaToward
     call StepAlongDelta
@@ -4334,15 +4337,15 @@ loc_0B8F8:
 Type1EShuttleShooter:
     mov word ptr ds:[SteerSpeed], 2
     call SteerToSaved
-    jne loc_0B917
+    jne @@arrived
     jmp near ptr FinishRecordUpdate
-loc_0B917:
+@@arrived:
     call SpawnAimedShot
     cmp word ptr ss:[bp + REC_SAVED_X], 0
-    je loc_0B928
+    je @@shuttleRight
     mov word ptr ss:[bp + REC_SAVED_X], 0
     jmp near ptr FinishRecordUpdate
-loc_0B928:
+@@shuttleRight:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
     jmp near ptr FinishRecordUpdate
 ; Types 16h/17h: steers to REC_SAVED, waits REC_ENTRY_DELAY, moves to Y 20h (16h) or 40h
@@ -4350,36 +4353,36 @@ loc_0B928:
 Type16SweepLeadIn:
     mov word ptr ds:[SteerSpeed], 1
     cmp word ptr ds:[LevelIndex], 0
-    jne loc_0B943
+    jne @@steer
     mov word ptr ds:[SteerSpeed], 2
-loc_0B943:
+@@steer:
     call SteerToSaved
     pushf
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 10Dh
     mov ss:[bp + REC_SPRITE], ax
     popf
-    jne loc_0B956
+    jne @@arrived
     jmp near ptr FinishRecordUpdate
-loc_0B956:
+@@arrived:
     cmp word ptr ss:[bp + REC_ENTRY_DELAY], 0
-    je loc_0B97A
+    je @@waitSweep
     dec word ptr ss:[bp + REC_ENTRY_DELAY]
-    je loc_0B964
+    je @@delayDone
     jmp near ptr FinishRecordUpdate
-loc_0B964:
+@@delayDone:
     mov word ptr ss:[bp + REC_SAVED_Y], 20h
     cmp word ptr ss:[bp + REC_TYPE], 16h
-    jne loc_0B972
+    jne @@type17Y
     jmp near ptr FinishRecordUpdate
-loc_0B972:
+@@type17Y:
     mov word ptr ss:[bp + REC_SAVED_Y], 40h
     jmp near ptr FinishRecordUpdate
-loc_0B97A:
+@@waitSweep:
     cmp word ptr ds:[EncounterTicks], 31h
-    je loc_0B984
+    je @@startSweep
     jmp near ptr FinishRecordUpdate
-loc_0B984:
+@@startSweep:
     mov word ptr ss:[bp + REC_TYPE], 18h
     jmp near ptr FinishRecordUpdate
 ; Walks the REC_PATH waypoints at speed 3 (FFFFh, address = jump); random downward
@@ -4388,14 +4391,14 @@ Type18SweepPathLooper:
     mov ax, ds:[RecordTickCounter]
     and ax, 3FFh
     cmp ax, 0Ch
-    jne loc_0B99E
+    jne @@followPath
     call SpawnAimedShot
     inc word ptr ds:[RecordTickCounter]
-loc_0B99E:
+@@followPath:
     mov si, ss:[bp + REC_PATH]
     lodsw
     cmp ax, 0FFFFh
-    je loc_0B9EA
+    je @@pathJump
     add ax, 20h
     mov ds:[SteerTargetY], ax
     lodsw
@@ -4406,9 +4409,9 @@ loc_0B99E:
     add ax, 10Dh
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[SteerArrived], 0
-    jne loc_0B9CD
+    jne @@nextWaypoint
     jmp near ptr FinishRecordUpdate
-loc_0B9CD:
+@@nextWaypoint:
     mov ss:[bp + REC_PATH], si
     call NextRandomWord
     and bx, 7
@@ -4419,7 +4422,7 @@ loc_0B9CD:
     je Type18SweepPathLooper
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     jmp short Type18SweepPathLooper
-loc_0B9EA:
+@@pathJump:
     lodsw
     mov ss:[bp + REC_PATH], ax
     jmp short Type18SweepPathLooper
@@ -4427,53 +4430,53 @@ loc_0B9EA:
 ; remain or on a tick, wraps below D0h and returns to the slot.
 Type14FormationSwayDiver:
     cmp word ptr ds:[LeaderScriptCursor], offset LeaderScript13End
-    jne loc_0BA67
+    jne @@setSprite
     cmp word ptr ds:[RecordTickCounter], 2EFh
-    jne loc_0BA07
+    jne @@sway
     call SpawnAimedShot
     inc word ptr ds:[RecordTickCounter]
-loc_0BA07:
+@@sway:
     mov ax, ds:[SwayDirX]
     add ss:[bp + REC_SAVED_X], ax
     mov ax, ds:[SwayDropY]
     add ss:[bp + REC_SAVED_Y], ax
     cmp word ptr ss:[bp + REC_SAVED_Y], 0D0h
-    jna loc_0BA1F
+    jna @@checkInSlot
     mov word ptr ss:[bp + REC_SAVED_Y], 20h
-loc_0BA1F:
+@@checkInSlot:
     mov ax, ss:[bp + REC_X]
     add ax, ds:[SwayDirX]
     cmp ax, ss:[bp + REC_SAVED_X]
-    jne loc_0BA99
+    jne @@outOfSlot
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
-    jne loc_0BA99
+    jne @@outOfSlot
     cmp word ptr ds:[EncounterLiveCount], 6
-    jb loc_0BA5A
+    jb @@dive
     mov ax, ds:[RecordTickCounter]
     cmp word ptr ds:[DifficultySetting], 2
-    je loc_0BA4E
+    je @@hardDiveTick
     and ax, 0FFh
     cmp ax, 0FFh
-    jne loc_0BA67
-    jmp short loc_0BA56
-loc_0BA4E:
+    jne @@setSprite
+    jmp short @@diveTick
+@@hardDiveTick:
     and ax, 7Fh
     cmp ax, 7Fh
-    jne loc_0BA67
-loc_0BA56:
+    jne @@setSprite
+@@diveTick:
     inc word ptr ds:[RecordTickCounter]
-loc_0BA5A:
+@@dive:
     mov bx, offset PrimaryRecord
     call SetDeltaToward
     call StepAlongDelta
     add word ptr ss:[bp + REC_Y], 2
-loc_0BA67:
+@@setSprite:
     mov ax, ds:[SlowCount4]
     add ax, 1Ch
     mov ss:[bp + REC_SPRITE], ax
     jmp near ptr FinishRecordUpdate
-loc_0BA73:
+@@returnToSlot:
     mov ax, ss:[bp + REC_SAVED_X]
     and ax, 0FFFEh
     and word ptr ss:[bp + REC_X], -2
@@ -4485,21 +4488,21 @@ loc_0BA73:
     mov word ptr ds:[SteerSpeed], 1
     call SteerTowardTarget
     jmp near ptr FinishRecordUpdate
-loc_0BA99:
+@@outOfSlot:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
-    jna loc_0BA73
+    jna @@returnToSlot
     call StepAlongDelta
     cmp word ptr ds:[EncounterLiveCount], 6
-    jae loc_0BAB5
+    jae @@checkWrap
     cmp word ptr ds:[FrameCount64], 3Fh
-    jne loc_0BAB5
+    jne @@checkWrap
     call SpawnAimedShot
-loc_0BAB5:
+@@checkWrap:
     cmp word ptr ss:[bp + REC_Y], 0D0h
-    ja loc_0BABF
+    ja @@wrapToTop
     jmp near ptr FinishRecordUpdate
-loc_0BABF:
+@@wrapToTop:
     mov word ptr ss:[bp + REC_Y], 10h
     jmp near ptr FinishRecordUpdate
 ; Type 19h patrol without firing (sprite 27h based).
@@ -4508,14 +4511,14 @@ Type1BWallPatrolB:
     shr ax, 1
     add ax, 27h
     mov ss:[bp + REC_SPRITE], ax
-    jmp short loc_0BADF
+    jmp short WallPatrolTail
 ; Type 19h patrol without firing (sprite 24h based).
 Type1AWallPatrolA:
     mov ax, ds:[SlowCount6]
     shr ax, 1
     add ax, 24h
     mov ss:[bp + REC_SPRITE], ax
-loc_0BADF:
+WallPatrolTail:
     jmp short HorizontalTerrainPatrol
 ; SpawnThrottledChild with REC_DIRECTION temporarily down.
 SpawnShotDown:
@@ -4536,41 +4539,41 @@ Type19WallPatrolShooter:
 ; Walks BP 1 px left or right, reversing at X 0/C0h or a blocked step; ends in the scroll tail.
 HorizontalTerrainPatrol:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    jne loc_0BB24
+    jne @@walkRight
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     cmp word ptr ss:[bp + REC_X], 0
-    je loc_0BB1C
+    je @@turnRight
     call TryTerrainStep
-    jne loc_0BB1C
+    jne @@turnRight
     jmp near ptr ScrollRecordThenFinish
-loc_0BB1C:
+@@turnRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
-loc_0BB24:
+@@walkRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
-    je loc_0BB38
+    je @@turnLeft
     call TryTerrainStep
-    jne loc_0BB38
+    jne @@turnLeft
     jmp near ptr ScrollRecordThenFinish
-loc_0BB38:
+@@turnLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Types 8Dh/8Eh: as 8Bh with another sprite set.
 Type8DClimbWalkerB:
     mov word ptr ds:[WalkerFacingStep], 0FFFFh
-    jmp short loc_0BB4E
+    jmp short ClimbWalkerBStep
 ; Type 8Dh facing the other way.
 Type8EClimbWalkerBFlipped:
     mov word ptr ds:[WalkerFacingStep], 1
-loc_0BB4E:
+ClimbWalkerBStep:
     call ClimbWalkerStep
     mov bx, 0
-    je loc_0BB60
+    je @@pickSprite
     mov bx, ds:[SlowCount4]
     shl bx, 1
     mov bx, ds:[bx + PingPongFrames4]
-loc_0BB60:
+@@pickSprite:
     mov ax, 13Ah
     add ax, ds:[WalkerFacingStep]
     add ax, ds:[WalkerFacingStep]
@@ -4578,24 +4581,24 @@ loc_0BB60:
     add ax, bx
     xor cx, cx
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP
-    je loc_0BB7C
+    je @@addDirOffset
     mov cx, 3
-loc_0BB7C:
+@@addDirOffset:
     add ax, cx
-    jmp short loc_0BBB2
+    jmp short ClimbWalkerSpriteAndShoot
 ; Type 8Bh facing the other way.
 Type8CClimbWalkerAFlipped:
     mov word ptr ds:[WalkerFacingStep], 0FFFFh
-    jmp short loc_0BB8E
+    jmp short ClimbWalkerAStep
 ; Types 8Bh/8Ch: climbs toward the player's Y along a wall, firing aimed shots.
 Type8BClimbWalkerA:
     mov word ptr ds:[WalkerFacingStep], 1
-loc_0BB8E:
+ClimbWalkerAStep:
     call ClimbWalkerStep
     mov bx, 0
-    je loc_0BB9A
+    je @@pickSprite
     mov bx, ds:[SlowCount4]
-loc_0BB9A:
+@@pickSprite:
     mov ax, 61h
     add ax, ds:[WalkerFacingStep]
     add ax, ds:[WalkerFacingStep]
@@ -4603,15 +4606,15 @@ loc_0BB9A:
     add ax, ds:[WalkerFacingStep]
     add ax, bx
     add ax, ss:[bp + REC_DIRECTION]
-loc_0BBB2:
+ClimbWalkerSpriteAndShoot:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount128], 7Fh
-    je loc_0BBCA
+    je @@shoot
     cmp word ptr ds:[FrameCount128], 6Bh
-    je loc_0BBCA
+    je @@shoot
     cmp word ptr ds:[FrameCount128], 57h
     jne ScrollRecordThenFinish
-loc_0BBCA:
+@@shoot:
     call SpawnAimedShot
     cmp bx, -1
     je ScrollRecordThenFinish
@@ -4619,7 +4622,7 @@ loc_0BBCA:
     sub word ptr ds:[bx + REC_X], 8
     sub word ptr ds:[bx + REC_Y], 8
     jmp short ScrollRecordThenFinish
-loc_0BBE1:
+ClimbWalkerBlocked:
     mov word ptr ds:[TerrainBlocked], 1
     cmp word ptr ds:[TerrainBlocked], 1
     ret
@@ -4635,22 +4638,22 @@ ClimbWalkerStep:
     call ComputeRecordGridOffset
     pop word ptr ss:[bp + REC_Y]
     cmp bx, -1
-    je loc_0BBE1
+    je ClimbWalkerBlocked
     mov ax, ss:[bp + REC_Y]
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    jl loc_0BC2B
+    jl @@climbDown
     add bx, ds:[WalkerFacingStep]
     call ReadIndexedByteAttribute
-    je loc_0BBE1
+    je ClimbWalkerBlocked
     call TryTerrainStep
     cmp word ptr ds:[TerrainBlocked], 1
     ret
-loc_0BC2B:
+@@climbDown:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     add bx, ds:[WalkerFacingStep]
     sub bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    je loc_0BBE1
+    je ClimbWalkerBlocked
     call TryTerrainStep
     cmp word ptr ds:[TerrainBlocked], 1
     ret
@@ -4664,93 +4667,93 @@ ScrollRecordThenFinish:
 FinishRecordUpdate:
     call ClampRecordX
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    jne loc_0BC96
+    jne @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 0
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 048h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 026h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 086h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 028h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 029h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_TYPE], 034h
-    je loc_0BC96
+    je @@exemptBounds
     cmp word ptr ss:[bp + REC_Y], 0FF40h
-    jge loc_0BC8A
+    jge @@checkBottom
     jmp near ptr RemoveRecord
-loc_0BC8A:
+@@checkBottom:
     cmp word ptr ss:[bp + REC_Y], 0F0h
-    jl loc_0BC94
+    jl @@onScreen
     jmp near ptr RemoveRecord
-loc_0BC94:
-    jmp short loc_0BCA3
-loc_0BC96:
+@@onScreen:
+    jmp short @@collisions
+@@exemptBounds:
     cmp word ptr ss:[bp + REC_Y], -014h
     jl RemoveRecord
     cmp word ptr ss:[bp + REC_Y], 0F0h
     jge RemoveRecord
-loc_0BCA3:
+@@collisions:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
-    jne loc_0BCB0
+    jne @@done
     call CheckRecordHitsPlayer
     call PlayerShotsHitRecord
-loc_0BCB0:
+@@done:
     ret
 
 ; Clamp REC_X to 0..0C0h.
 ClampRecordX:
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
-    jg loc_0BCBF
+    jg @@clampRight
     cmp word ptr ss:[bp + REC_X], 0
-    jl loc_0BCC5
+    jl @@clampLeft
     ret
-loc_0BCBF:
+@@clampRight:
     mov word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     ret
-loc_0BCC5:
+@@clampLeft:
     mov word ptr ss:[bp + REC_X], 0
     ret
 ; BP = record: on body contact destroys it (not during a segmented boss) and calls
 ; LosePlayerEnergyTank.
 CheckRecordHitsPlayer:
     cmp word ptr ss:[bp + REC_STATUS], 0
-    jne loc_0BCD2
+    jne @@checkKind
     ret
-loc_0BCD2:
+@@checkKind:
     cmp word ptr ss:[bp + REC_KIND], KIND_PICKUP
-    jne loc_0BCD9
+    jne @@checkType0
     ret
-loc_0BCD9:
+@@checkType0:
     cmp word ptr ss:[bp + REC_TYPE], 0
-    jne loc_0BCE0
+    jne @@checkType1
     ret
-loc_0BCE0:
+@@checkType1:
     cmp word ptr ss:[bp + REC_TYPE], 1
-    jne loc_0BCE7
+    jne @@checkSize
     ret
-loc_0BCE7:
+@@checkSize:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 1
-    je loc_0BCF4
+    je @@smallHit
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
-    je loc_0BCF9
+    je @@largeHit
     ret
-loc_0BCF4:
+@@smallHit:
     call SmallRecordHitsPlayer
-    jmp short loc_0BCFC
-loc_0BCF9:
+    jmp short @@testHit
+@@largeHit:
     call LargeRecordHitsPlayer
-loc_0BCFC:
-    jb loc_0BCFF
+@@testHit:
+    jb @@hit
     ret
-loc_0BCFF:
+@@hit:
     cmp word ptr ds:[SegBossActive], 1
-    je loc_0BD09
+    je @@loseTank
     call DestroyRecord
-loc_0BD09:
+@@loseTank:
     call LosePlayerEnergyTank
     ret
 ; RemoveRecord for the record at BX.
@@ -4767,138 +4770,138 @@ RemoveRecordAtBX:
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
-    je loc_0BD5C
+    je @@enemyFreed
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
-    je loc_0BD56
+    je @@podFreed
     cmp word ptr ss:[bp + REC_TYPE], 7
-    je loc_0BDAC
+    je @@mainShotFreed
     cmp word ptr ss:[bp + REC_TYPE], 8
-    je loc_0BDAC
+    je @@mainShotFreed
     cmp word ptr ss:[bp + REC_TYPE], 9
-    je loc_0BD7A
+    je @@beamFreed
     cmp word ptr ss:[bp + REC_TYPE], 6
-    jne loc_0BD43
-    jmp near ptr loc_0BDC4
-loc_0BD43:
+    jne @@checkType5
+    jmp near ptr @@sideShotFreed
+@@checkType5:
     cmp word ptr ss:[bp + REC_TYPE], 5
-    je loc_0BDC4
+    je @@sideShotFreed
     cmp word ptr ss:[bp + REC_TYPE], 0Ch
-    je loc_0BDB8
+    je @@frontPodShotFreed
     cmp word ptr ss:[bp + REC_TYPE], 0Ah
-    je loc_0BD9E
+    je @@missileFreed
     ret
-loc_0BD56:
+@@podFreed:
     mov word ptr ss:[bp + REC_KIND], KIND_TYPED
     ret
-loc_0BD5C:
+@@enemyFreed:
     call ReleaseEncounterMember
     cmp word ptr ss:[bp + REC_TYPE], 1
-    jne loc_0BD66
+    jne @@checkGroup
     ret
-loc_0BD66:
+@@checkGroup:
     cmp word ptr ss:[bp + REC_SLOT_INDEX], -1
-    jne loc_0BD6D
+    jne @@clearGroupLive
     ret
-loc_0BD6D:
+@@clearGroupLive:
     mov si, word ptr ss:[bp + REC_SLOT_INDEX]
     shl si, 1
     add si, offset GroupTable
     mov byte ptr ds:[si + GROUP_LIVE], 0
     ret
-loc_0BD7A:
+@@beamFreed:
     cmp word ptr ds:[ShotsLiveType9], 0
-    jne loc_0BD82
+    jne @@clearBeamList
     ret
-loc_0BD82:
+@@clearBeamList:
     mov cx, 01Ah
     mov si, offset BeamList
-loc_0BD88:
+@@nextBeam:
     lodsw
     cmp ax, 0FFFFh
-    jne loc_0BD8F
+    jne @@clearBeamSegment
     ret
-loc_0BD8F:
+@@clearBeamSegment:
     mov word ptr ds:[si - 2], ax
     mov bx, ax
     mov word ptr ds:[bx], 0
     dec word ptr ds:[ShotsLiveType9]
-    jmp short loc_0BD88
-loc_0BD9E:
+    jmp short @@nextBeam
+@@missileFreed:
     cmp word ptr ds:[MissilesLive], 0
-    je loc_0BDA9
+    je @@missileTail
     dec word ptr ds:[MissilesLive]
-loc_0BDA9:
-    jmp near ptr loc_0AC19
-loc_0BDAC:
+@@missileTail:
+    jmp near ptr RefreshUpgradeDisplay
+@@mainShotFreed:
     cmp word ptr ds:[ShotsLiveMain], 0
-    je loc_0BDB7
+    je @@mainShotDone
     dec word ptr ds:[ShotsLiveMain]
-loc_0BDB7:
+@@mainShotDone:
     ret
-loc_0BDB8:
+@@frontPodShotFreed:
     cmp word ptr ds:[ShotsLiveFrontPod], 0
-    je loc_0BDC3
+    je @@frontPodShotDone
     dec word ptr ds:[ShotsLiveFrontPod]
-loc_0BDC3:
+@@frontPodShotDone:
     ret
-loc_0BDC4:
+@@sideShotFreed:
     cmp word ptr ds:[ShotsLiveSide], 0
-    je loc_0BDCF
+    je @@sideShotDone
     dec word ptr ds:[ShotsLiveSide]
-loc_0BDCF:
+@@sideShotDone:
     ret
 ; CF when TerrainProbeY/X is within 10h of another walker (enemy types 82h..94h).
 ProbeOverlapsWalker:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 1
-    je loc_0BE3A
+    je @@noOverlap
     mov cx, POOL_A_COUNT
     mov bx, offset PoolA
     mov ax, word ptr ds:[TerrainProbeX]
     mov di, word ptr ds:[TerrainProbeY]
-loc_0BDE3:
+@@checkRecord:
     cmp word ptr ds:[bx + REC_STATUS], 0
-    je loc_0BE35
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_DRAW_PASS], 1
-    je loc_0BE35
+    je @@nextRecord
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
-    jne loc_0BE35
+    jne @@nextRecord
     cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
-    jne loc_0BE35
+    jne @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 082h
-    jb loc_0BE35
+    jb @@nextRecord
     cmp word ptr ds:[bx + REC_TYPE], 094h
-    ja loc_0BE35
+    ja @@nextRecord
     mov si, word ptr ds:[bx + REC_Y]
     add si, 010h
     cmp di, si
-    jge loc_0BE35
+    jge @@nextRecord
     sub si, 020h
     cmp di, si
-    jle loc_0BE35
+    jle @@nextRecord
     mov si, word ptr ds:[bx + REC_X]
     add si, 010h
     cmp ax, si
-    jge loc_0BE35
+    jge @@nextRecord
     sub si, 020h
     cmp ax, si
-    jle loc_0BE35
+    jle @@nextRecord
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     cmp si, word ptr ds:[bx + REC_SAVE_BUFFER]
-    je loc_0BE35
+    je @@nextRecord
     jmp near ptr loc_05059
-loc_0BE35:
+@@nextRecord:
     add bx, RECORD_SIZE
-    loop loc_0BDE3
-loc_0BE3A:
+    loop @@checkRecord
+@@noOverlap:
     clc
     ret
 ; Explosion: REC_ANIM advances every 2nd frame; small ones end at 9 (types 24h/25h leave
 ; a type 26h wreck), large ones at 0Ch. Size class 0 only scrolls.
 Type01ExplosionAnimation:
     cmp word ptr ds:[CountGate2324], 1
-    je loc_0BE46
+    je @@advance
     jmp near ptr ScrollRecordThenFinish
-loc_0BE46:
+@@advance:
     inc word ptr ss:[bp + REC_ANIM_COUNTER]
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
@@ -4908,19 +4911,19 @@ ExplosionSizeCases label word
     dw offset ScrollRecordThenFinish, offset AnimateExplosion16, offset AnimateExplosion32
 AnimateExplosion16:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 9
-    jne loc_0BEA4
+    jne Explosion16Frame
     cmp word ptr ss:[bp + REC_PREV_TYPE], 024h
-    je loc_0BE6F
+    je @@leaveWreckLeft
     cmp word ptr ss:[bp + REC_PREV_TYPE], 025h
-    je loc_0BE84
+    je @@leaveWreckRight
     jmp near ptr RemoveRecord
-loc_0BE6F:
+@@leaveWreckLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     mov word ptr ss:[bp + REC_TYPE], 026h
     mov word ptr ss:[bp + REC_SPRITE], 097h
     sub word ptr ss:[bp + REC_X], 8
     jmp short StoreRecordSavedPosition
-loc_0BE84:
+@@leaveWreckRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov word ptr ss:[bp + REC_TYPE], 026h
     mov word ptr ss:[bp + REC_SPRITE], 091h
@@ -4931,16 +4934,16 @@ StoreRecordSavedPosition:
     mov ax, word ptr ss:[bp + REC_Y]
     mov word ptr ss:[bp + REC_SAVED_Y], ax
     ret
-loc_0BEA4:
+Explosion16Frame:
     mov ax, word ptr ss:[bp + REC_ANIM_COUNTER]
     add ax, 0
     mov word ptr ss:[bp + REC_SPRITE], ax
     jmp near ptr ScrollRecordThenFinish
 AnimateExplosion32:
     cmp word ptr ss:[bp + REC_ANIM_COUNTER], 0Ch
-    jne loc_0BEB9
+    jne @@nextFrame
     jmp near ptr RemoveRecord
-loc_0BEB9:
+@@nextFrame:
     mov ax, ss:[bp + REC_ANIM_COUNTER]
     add ax, 3
     mov ss:[bp + REC_SPRITE], ax
@@ -4951,70 +4954,70 @@ loc_0BEB9:
 ; by sprite and DifficultySetting; any other shot only hits its REC_TARGET.
 ShotHitsRecord:
     cmp word ptr ds:[bx + REC_TYPE], 7
-    jne loc_0BECE
-    jmp near ptr loc_0BFB9
-loc_0BECE:
+    jne @@checkType8
+    jmp near ptr PiercingHit
+@@checkType8:
     cmp word ptr ds:[bx + REC_TYPE], 8
-    jne loc_0BED7
-    jmp near ptr loc_0BFB9
-loc_0BED7:
+    jne @@checkType0C
+    jmp near ptr PiercingHit
+@@checkType0C:
     cmp word ptr ds:[bx + REC_TYPE], 0Ch
-    jne loc_0BEE0
-    jmp near ptr loc_0BFB9
-loc_0BEE0:
+    jne @@checkType9
+    jmp near ptr PiercingHit
+@@checkType9:
     cmp word ptr ds:[bx + REC_TYPE], 9
-    jne loc_0BEE9
-    jmp near ptr loc_0BFA8
-loc_0BEE9:
+    jne @@checkType2
+    jmp near ptr BeamHit
+@@checkType2:
     cmp word ptr ds:[bx + REC_TYPE], 2
-    je loc_0BF1B
+    je @@type2Hit
     cmp word ptr ds:[bx + REC_TYPE], 6
-    jne loc_0BEF8
-    jmp near ptr loc_0BF97
-loc_0BEF8:
+    jne @@checkType5
+    jmp near ptr SideShotHit
+@@checkType5:
     cmp word ptr ds:[bx + REC_TYPE], 5
-    jne loc_0BF01
-    jmp near ptr loc_0BF97
-loc_0BF01:
+    jne @@checkTarget
+    jmp near ptr SideShotHit
+@@checkTarget:
     cmp bp, word ptr ds:[bx + REC_TARGET]
-    je loc_0BF07
+    je @@missileHit
     ret
-loc_0BF07:
+@@missileHit:
     mov word ptr ds:[bx + REC_MISSILE_LOCKED], 0
     cmp word ptr ds:[SegBossActive], 1
-    je loc_0BF25
+    je DamageTwo
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp near ptr DestroyRecord
-loc_0BF1B:
+@@type2Hit:
     mov word ptr ds:[bx + REC_STATUS], 0
     cmp word ptr ds:[bx + REC_SPRITE], 033h
-    jne loc_0BF2D
-loc_0BF25:
+    jne DamageOne
+DamageTwo:
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    jne loc_0BF2D
+    jne DamageOne
     jmp near ptr DestroyRecord
-loc_0BF2D:
+DamageOne:
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    jne loc_0BF35
+    jne @@difficultyDamage
     jmp near ptr DestroyRecord
-loc_0BF35:
+@@difficultyDamage:
     cmp word ptr ds:[DifficultySetting], 1
-    je loc_0BF4D
+    je @@extraDamage
     cmp word ptr ds:[DifficultySetting], 0
-    jne loc_0BF52
+    jne @@flash
     dec word ptr ss:[bp + REC_HIT_POINTS]
     je DestroyRecord
     dec word ptr ss:[bp + REC_HIT_POINTS]
     je DestroyRecord
-loc_0BF4D:
+@@extraDamage:
     dec word ptr ss:[bp + REC_HIT_POINTS]
     je DestroyRecord
-loc_0BF52:
+@@flash:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
     cmp word ptr ds:[SegBossActive], 1
-    je loc_0BF5F
+    je @@flashBossParts
     ret
-loc_0BF5F:
+@@flashBossParts:
     push bp
     mov bp, word ptr ds:[SegBossAnchor]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
@@ -5025,57 +5028,57 @@ loc_0BF5F:
     mov bp, word ptr ds:[SegBossPart79]
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0BF90
+    je @@done
     mov byte ptr ds:[SfxRequest], 0Eh
-loc_0BF90:
+@@done:
     pop bp
     ret
-loc_0BF92:
+PierceBossHit:
     call RemoveRecordAtBX
-    jmp short loc_0BF25
-loc_0BF97:
+    jmp short DamageTwo
+SideShotHit:
     call RemoveRecordAtBX
     cmp word ptr ds:[SegBossActive], 1
-    je loc_0BF25
+    je DamageTwo
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short DestroyRecord
-loc_0BFA8:
+BeamHit:
     cmp word ptr ds:[SegBossActive], 1
     jne loc_0BFB2
-    jmp near ptr loc_0BF25
+    jmp near ptr DamageTwo
 loc_0BFB2:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short DestroyRecord
-loc_0BFB9:
+PiercingHit:
     cmp word ptr ds:[SegBossActive], 1
-    je loc_0BF92
+    je PierceBossHit
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short DestroyRecord
 ; Starts BP's explosion: REC_PREV_TYPE = type, type 1, sfx 19h, score and group drop.
 DestroyRecord:
     cmp word ptr ss:[bp + REC_TYPE], 021h
-    jne loc_0BFD5
+    jne @@score
     cmp word ptr ds:[LevelIndex], 4
-    je loc_0BFD5
+    je @@score
     ret
-loc_0BFD5:
+@@score:
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 1
     mov bx, 030h
-    je loc_0BFE1
+    je @@addScore
     mov bx, 060h
-loc_0BFE1:
+@@addScore:
     call AddScoreBcd
     call ClampRecordX
     push bp
     cmp word ptr ss:[bp + REC_SLOT_INDEX], -1
-    je loc_0C017
+    je @@release
     mov si, word ptr ss:[bp + REC_SLOT_INDEX]
     shl si, 1
     add si, offset GroupTable
     cmp byte ptr ds:[si + GROUP_LIVE], 0
-    je loc_0C017
+    je @@release
     dec byte ptr ds:[si + GROUP_LIVE]
-    jne loc_0C017
+    jne @@release
 
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[DropX], ax
@@ -5085,13 +5088,13 @@ loc_0BFE1:
     xor ah, ah
     mov word ptr ds:[DropKind], ax
     call SpawnItemDrop
-loc_0C017:
+@@release:
     pop bp
     call ReleaseEncounterMember
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0C027
+    je @@startExplosion
     mov byte ptr ds:[SfxRequest], 019h
-loc_0C027:
+@@startExplosion:
     mov ax, word ptr ss:[bp + REC_TYPE]
     mov word ptr ss:[bp + REC_PREV_TYPE], ax
     mov word ptr ss:[bp + REC_TYPE], 1
@@ -5114,91 +5117,91 @@ StartExplosion32:
 ; explodes the others, leaders end their script, type 93h sets its latch.
 ReleaseEncounterMember:
     cmp word ptr ss:[bp + REC_TYPE], 076h
-    jne loc_0C05D
-    jmp near ptr loc_0C15B
-loc_0C05D:
+    jne @@checkType77
+    jmp near ptr @@segBossPartKilled
+@@checkType77:
     cmp word ptr ss:[bp + REC_TYPE], 077h
-    jne loc_0C066
-    jmp near ptr loc_0C15B
-loc_0C066:
+    jne @@checkType78
+    jmp near ptr @@segBossPartKilled
+@@checkType78:
     cmp word ptr ss:[bp + REC_TYPE], 078h
-    jne loc_0C06F
-    jmp near ptr loc_0C15B
-loc_0C06F:
+    jne @@checkType79
+    jmp near ptr @@segBossPartKilled
+@@checkType79:
     cmp word ptr ss:[bp + REC_TYPE], 079h
-    jne loc_0C078
-    jmp near ptr loc_0C15B
-loc_0C078:
+    jne @@checkType61
+    jmp near ptr @@segBossPartKilled
+@@checkType61:
     cmp word ptr ss:[bp + REC_TYPE], 061h
-    jne loc_0C081
-    jmp near ptr loc_0C14F
-loc_0C081:
+    jne @@checkType62
+    jmp near ptr @@countDown
+@@checkType62:
     cmp word ptr ss:[bp + REC_TYPE], 062h
-    jne loc_0C08A
-    jmp near ptr loc_0C14F
-loc_0C08A:
+    jne @@checkType65
+    jmp near ptr @@countDown
+@@checkType65:
     cmp word ptr ss:[bp + REC_TYPE], 065h
-    jne loc_0C093
-    jmp near ptr loc_0C14F
-loc_0C093:
+    jne @@checkType14
+    jmp near ptr @@countDown
+@@checkType14:
     cmp word ptr ss:[bp + REC_TYPE], 014h
-    jne loc_0C09C
-    jmp near ptr loc_0C14F
-loc_0C09C:
+    jne @@checkType16
+    jmp near ptr @@countDown
+@@checkType16:
     cmp word ptr ss:[bp + REC_TYPE], 016h
-    jne loc_0C0A5
-    jmp near ptr loc_0C14F
-loc_0C0A5:
+    jne @@checkType17
+    jmp near ptr @@countDown
+@@checkType17:
     cmp word ptr ss:[bp + REC_TYPE], 017h
-    jne loc_0C0AE
-    jmp near ptr loc_0C14F
-loc_0C0AE:
+    jne @@checkType18
+    jmp near ptr @@countDown
+@@checkType18:
     cmp word ptr ss:[bp + REC_TYPE], 018h
-    jne loc_0C0B7
-    jmp near ptr loc_0C14F
-loc_0C0B7:
+    jne @@checkType7F
+    jmp near ptr @@countDown
+@@checkType7F:
     cmp word ptr ss:[bp + REC_TYPE], 07Fh
-    jne loc_0C0C0
-    jmp near ptr loc_0C14F
-loc_0C0C0:
+    jne @@checkType80
+    jmp near ptr @@countDown
+@@checkType80:
     cmp word ptr ss:[bp + REC_TYPE], 080h
-    jne loc_0C0CA
-    jmp near ptr loc_0C14F
-loc_0C0CA:
+    jne @@checkType81
+    jmp near ptr @@countDown
+@@checkType81:
     cmp word ptr ss:[bp + REC_TYPE], 081h
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 093h
-    je loc_0C154
+    je @@type93Killed
     cmp word ptr ss:[bp + REC_TYPE], 01Dh
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 01Eh
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 020h
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 021h
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 022h
-    je loc_0C14F
+    je @@countDown
     cmp word ptr ss:[bp + REC_TYPE], 07Eh
     mov ax, offset LeaderScript7EEnd
-    je loc_0C12D
+    je @@leaderKilled
     cmp word ptr ss:[bp + REC_TYPE], 07Dh
     mov ax, offset LeaderScript7DEnd
-    je loc_0C12D
+    je @@leaderKilled
     cmp word ptr ss:[bp + REC_TYPE], 01Fh
     mov ax, offset LeaderScript1FEnd
-    je loc_0C12D
+    je @@leaderKilled
     cmp word ptr ss:[bp + REC_TYPE], 01Ch
     mov ax, offset LeaderScript1CEnd
-    je loc_0C12D
+    je @@leaderKilled
     cmp word ptr ss:[bp + REC_TYPE], 015h
     mov ax, offset LeaderScript15End
-    je loc_0C12D
+    je @@leaderKilled
     cmp word ptr ss:[bp + REC_TYPE], 013h
     mov ax, offset LeaderScript13End
-    je loc_0C12D
+    je @@leaderKilled
     ret
-loc_0C12D:
+@@leaderKilled:
     mov word ptr ds:[LeaderScriptCursor], ax
     mov word ptr ds:[FormationSlotCursor], offset FormationSlots
     push bx
@@ -5212,33 +5215,33 @@ loc_0C12D:
     call SpawnItemDrop
     pop bp
     pop bx
-loc_0C14F:
+@@countDown:
     dec word ptr ds:[EncounterLiveCount]
     ret
-loc_0C154:
+@@type93Killed:
     mov byte ptr ds:[Type93KilledLatch], 1
-    jmp short loc_0C14F
-loc_0C15B:
+    jmp short @@countDown
+@@segBossPartKilled:
     mov bx, word ptr ds:[SegBossAnchor]
     cmp bx, bp
-    je loc_0C166
+    je @@explodePart77
     call ExplodeRecordAtBX
-loc_0C166:
+@@explodePart77:
     mov bx, word ptr ds:[SegBossPart77]
     cmp bx, bp
-    je loc_0C171
+    je @@explodeCore
     call ExplodeRecordAtBX
-loc_0C171:
+@@explodeCore:
     mov bx, word ptr ds:[SegBossCore]
     cmp bx, bp
-    je loc_0C17C
+    je @@explodePart79
     call ExplodeRecordAtBX
-loc_0C17C:
+@@explodePart79:
     mov bx, word ptr ds:[SegBossPart79]
     cmp bx, bp
-    je loc_0C187
+    je @@bossDone
     call ExplodeRecordAtBX
-loc_0C187:
+@@bossDone:
     mov word ptr ds:[EncounterLiveCount], 0
     mov word ptr ds:[SegBossActive], 0
     ret
@@ -5246,9 +5249,9 @@ loc_0C187:
 ; BX = record: starts a large explosion (type 1, sprite 3), sfx 19h.
 ExplodeRecordAtBX:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0C1A0
+    je @@startExplosion
     mov byte ptr ds:[SfxRequest], 019h
-loc_0C1A0:
+@@startExplosion:
     mov ax, word ptr ds:[bx + REC_TYPE]
     mov word ptr ds:[bx + REC_PREV_TYPE], ax
     mov word ptr ds:[bx + REC_TYPE], 1
@@ -5257,47 +5260,47 @@ loc_0C1A0:
     ret
 ; BP = record: turn it toward the primary (REC_DIRECTION from AimQuadrantBits;
 ; unchanged when aligned, then return) and continue in TryTerrainStep.
-loc_0C1B6:
+@@turnTowardPlayerStep:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
-    jns loc_0C1BD
-loc_0C1BD:
+    jns @@aimX
+@@aimX:
     mov word ptr ds:[AimQuadrantBits], 0
     mov ax, word ptr ss:[bp + REC_X]
     sub ax, 4
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
-    jl loc_0C1DA
+    jl @@playerRight
     sub ax, 2
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
-    jg loc_0C1E2
-    jmp short loc_0C1E8
-loc_0C1DA:
+    jg @@playerLeft
+    jmp short @@aimY
+@@playerRight:
     mov word ptr ds:[AimQuadrantBits], 1
-    jmp short loc_0C1E8
-loc_0C1E2:
+    jmp short @@aimY
+@@playerLeft:
     mov word ptr ds:[AimQuadrantBits], 2
-loc_0C1E8:
+@@aimY:
     mov ax, word ptr ss:[bp + REC_Y]
     sub ax, 4
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    jl loc_0C1FF
+    jl @@playerBelow
     sub ax, 2
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
-    jg loc_0C206
-    jmp short loc_0C20B
-loc_0C1FF:
+    jg @@playerAbove
+    jmp short @@lookupDirection
+@@playerBelow:
     or word ptr ds:[AimQuadrantBits], 4
-    jmp short loc_0C20B
-loc_0C206:
+    jmp short @@lookupDirection
+@@playerAbove:
     or word ptr ds:[AimQuadrantBits], 8
-loc_0C20B:
+@@lookupDirection:
     mov bx, offset DirectionFromQuadrant
     mov ax, word ptr ds:[AimQuadrantBits]
     xlat
     cmp al, 0FFh
-    jne loc_0C217
+    jne @@turnAndStep
     ret
-loc_0C217:
+@@turnAndStep:
     mov word ptr ss:[bp + REC_DIRECTION], ax
     jmp near ptr TryTerrainStep
 
@@ -5307,15 +5310,15 @@ loc_0C217:
 SpawnChildAt12:
     call FindFreeRecordPoolB
     cmp bx, -1
-    jne loc_0C226
+    jne @@placeChild
     ret
-loc_0C226:
+@@placeChild:
     mov ax, word ptr ss:[bp + REC_X]
     add ax, 0Ch
     mov word ptr ds:[bx + REC_X], ax
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, 0Ch
-    jmp short loc_0C277
+    jmp short InitChildRecord
 ; BP = parent record. Spawns a pool-B child (REC_KIND 2, REC_TYPE 4, sprite 30h) at
 ; parent +4,+4 moving in the parent's direction, on every 4th / 2nd / every call for
 ; DifficultySetting 0 / 1 / 2 (throttled: AL = 0). Unless the child is near the top
@@ -5323,31 +5326,31 @@ loc_0C226:
 ; REC_TYPE and returns BX = child. Pool full: BX = FFFF.
 SpawnThrottledChild:
     cmp word ptr ds:[DifficultySetting], 2
-    je loc_0C25F
+    je @@spawn
     cmp word ptr ds:[DifficultySetting], 1
-    je loc_0C253
+    je @@throttleHalf
     inc byte ptr ds:[ChildSpawnThrottle]
     and byte ptr ds:[ChildSpawnThrottle], 3
-    je loc_0C25F
+    je @@spawn
     xor al, al
     ret
-loc_0C253:
+@@throttleHalf:
     inc byte ptr ds:[ChildSpawnThrottle]
     and byte ptr ds:[ChildSpawnThrottle], 1
-    jne loc_0C25F
+    jne @@spawn
     ret
-loc_0C25F:
+@@spawn:
     call FindFreeRecordPoolB
     cmp bx, -1
-    jne loc_0C268
+    jne @@placeChild
     ret
-loc_0C268:
+@@placeChild:
     mov ax, word ptr ss:[bp + REC_X]
     add ax, 4
     mov word ptr ds:[bx + REC_X], ax
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, 4
-loc_0C277:
+InitChildRecord:
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ss:[bp + REC_DIRECTION]
     mov word ptr ds:[bx + REC_DIRECTION], ax
@@ -5360,19 +5363,19 @@ loc_0C277:
     mov word ptr ds:[bx + REC_TYPE], 4
     mov word ptr ds:[bx + REC_SHOT_TIMER], 0FFFFh
     cmp word ptr ds:[bx + REC_Y], 8
-    jae loc_0C2AE
+    jae @@checkParentY
     ret
-loc_0C2AE:
+@@checkParentY:
     cmp word ptr ss:[bp + REC_Y], 0E0h
-    jbe loc_0C2B6
+    jbe @@requestSfx
     ret
-loc_0C2B6:
+@@requestSfx:
     mov ax, bx
     mov bx, word ptr ss:[bp + REC_TYPE]
     cmp bx, 092h
-    jne loc_0C2C4
+    jne @@sfxByType
     jmp near ptr ShotSfx14
-loc_0C2C4:
+@@sfxByType:
     and bx, 0Fh
     shl bx, 1
     jmp word ptr cs:[bx + ShotSfxByType]
@@ -5494,7 +5497,7 @@ ResetRecordsForLife:
     rep stosw
     mov word ptr cs:[SaveBufferCursor], offset PoolBSaveBuffers
     mov cx, POOL_B_COUNT
-loc_0C3BF:
+@@resetPoolB:
     push cx
     mov bx, cx
     shl bx, 1
@@ -5506,28 +5509,28 @@ loc_0C3BF:
     mov word ptr ss:[bp + REC_SAVE_BUFFER], ax
     add word ptr cs:[SaveBufferCursor], POOL_B_SAVE_BYTES
     pop cx
-    loop loc_0C3BF
+    loop @@resetPoolB
     mov word ptr cs:[SaveBufferCursor], offset PoolASaveBuffers
     mov cx, POOL_A_POINTER_COUNT
-loc_0C3F1:
+@@resetPoolA:
     push cx
     mov bx, cx
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     mov word ptr ss:[bp + REC_DRAW_PASS], 1
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
-    je loc_0C41E
+    je @@assignSaveBuffer
     mov word ptr ss:[bp + REC_STATUS], 0
     mov word ptr ss:[bp + REC_STEP_ERROR], 0
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     mov word ptr ss:[bp + REC_TYPE], 0
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
-loc_0C41E:
+@@assignSaveBuffer:
     mov ax, word ptr cs:[SaveBufferCursor]
     mov word ptr ss:[bp + REC_SAVE_BUFFER], ax
     add word ptr cs:[SaveBufferCursor], POOL_A_SAVE_BYTES
     pop cx
-    loop loc_0C3F1
+    loop @@resetPoolA
     mov bp, offset PrimaryRecord
     mov word ptr ss:[bp + REC_STATUS], 1
     mov word ptr ss:[bp + REC_KIND], KIND_PLAYER
@@ -5569,7 +5572,7 @@ loc_0C41E:
 ResetPoolAAndUpgrades:
     mov word ptr cs:[SaveBufferCursor], offset PoolASaveBuffers
     mov cx, POOL_A_POINTER_COUNT
-loc_0C4E5:
+@@resetRecord:
     push cx
     mov bx, cx
     shl bx, 1
@@ -5584,7 +5587,7 @@ loc_0C4E5:
     mov word ptr ss:[bp + REC_SAVE_BUFFER], ax
     add word ptr cs:[SaveBufferCursor], POOL_A_SAVE_BYTES
     pop cx
-    loop loc_0C4E5
+    loop @@resetRecord
     mov word ptr ds:[WeaponMode], WEAPON_SINGLE
     mov word ptr ds:[SideShotsEnabled], 0
     mov word ptr ds:[MissileAmmo], 0
@@ -5598,7 +5601,7 @@ loc_0C4E5:
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     call InitUpgradeSlots
     jmp near ptr DrawUpgradeSlots
-loc_0C565:
+ApplyCgaLevelPalette:
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
     jmp word ptr cs:[bx + LevelCgaPaletteCases]
@@ -5610,7 +5613,7 @@ LevelCgaPaletteCases label word
 ; DAC only).
 ApplyLevelPalette:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
-    je loc_0C565
+    je ApplyCgaLevelPalette
     mov si, offset DacColor6Level1
     cmp word ptr ds:[LevelIndex], 1
     je SetDacColor6
@@ -5619,9 +5622,9 @@ ApplyLevelPalette:
 ; SI = three RGB bytes: writes DAC entry 6 when VideoAdapter is EGA.
 SetDacColor6:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    je loc_0C59A
+    je @@writeDac
     ret
-loc_0C59A:
+@@writeDac:
     cli
     mov dx, 03C8h
     mov al, 6
@@ -5643,9 +5646,9 @@ PerFileFlagsEnabled db 0
 
 EnableFileFlagsIfVgaDac:
     call ProbeVgaDac
-    jne loc_0C5BC
+    jne @@done
     mov byte ptr cs:[PerFileFlagsEnabled], 1
-loc_0C5BC:
+@@done:
     ret
 
 ; ZF when a VGA-compatible DAC answers (sets DAC colour 0 to black as a side effect).
@@ -5674,78 +5677,78 @@ DetectEms:
     mov dx, offset EmsDeviceName
     mov ax, 03D00h
     int 021h
-    jb loc_0C63A
+    jb @@noEms
     mov bx, ax
     mov ax, 04400h
     int 021h
-    jb loc_0C63A
+    jb @@noEms
     and dx, 080h
-    je loc_0C63A
+    je @@noEms
     mov ax, 04407h
     int 021h
-    jb loc_0C63A
+    jb @@noEms
     or al, al
-    je loc_0C63A
+    je @@noEms
     mov ah, DOS_CLOSE_FILE
     int 021h
-    jb loc_0C63A
+    jb @@noEms
     mov ah, 040h
     int 067h
     or ah, ah
-    jne loc_0C63A
+    jne @@noEms
     mov ah, 046h
     int 067h
     or ah, ah
-    jne loc_0C63A
+    jne @@noEms
     cmp al, 030h
-    jb loc_0C63A
+    jb @@noEms
     mov ah, 041h
     int 067h
     or ah, ah
-    jne loc_0C63A
+    jne @@noEms
     mov word ptr ds:[EmsPageFrame], bx
     mov ah, 042h
     int 067h
     or ah, ah
-    jne loc_0C63A
+    jne @@noEms
     mov word ptr ds:[EmsTotalPages], dx
     mov word ptr ds:[EmsFreePages], bx
     or bx, bx
-    je loc_0C63A
+    je @@noEms
     mov byte ptr ds:[EmsAvailable], 1
     ret
-loc_0C63A:
+@@noEms:
     mov byte ptr ds:[EmsAvailable], 0
     ret
 
 ; Frees the EMS handle of every FileCache entry held in EMS (EmsAvailable only).
 ReleaseEmsCache:
     cmp byte ptr ds:[EmsAvailable], 0
-    jne loc_0C648
+    jne @@scanCache
     ret
-loc_0C648:
+@@scanCache:
     mov si, offset FileCache
-loc_0C64B:
+@@nextEntry:
     cmp word ptr ds:[si + CACHE_NAME], -1
-    jne loc_0C651
+    jne @@checkEntry
     ret
-loc_0C651:
+@@checkEntry:
     push si
     cmp word ptr ds:[si + CACHE_SEGMENT], -1
-    jne loc_0C65F
+    jne @@advance
     mov dx, word ptr ds:[si + CACHE_EMS_HANDLE]
     mov ah, 045h
     int 067h
-loc_0C65F:
+@@advance:
     pop si
     add si, FILE_CACHE_ENTRY_BYTES
-    jmp short loc_0C64B
+    jmp short @@nextEntry
 
 ; Maps logical pages 0..BX-1 of EMS handle DX to physical pages 0..BX-1.
 MapEmsPages:
     mov cx, bx
     xor ax, ax
-loc_0C669:
+@@mapPage:
     push ax
     push cx
     push dx
@@ -5756,41 +5759,41 @@ loc_0C669:
     pop cx
     pop ax
     inc ax
-    loop loc_0C669
+    loop @@mapPage
     ret
 
 ; Loads the file named by FileNamePtr to FileBufferSegment:FileBufferOffset: copied from
 ; FileCache when present, else read from disk (drive prompt and retry; ESC leaves through
-; loc_05D0B) and then offered to CacheLoadedFile. Sets FileStatus.
+; ShutdownWithError) and then offered to CacheLoadedFile. Sets FileStatus.
 LoadResourceFile:
     mov word ptr ds:[FileStatus], FILE_STATUS_OK
     call CopyFromFileCache
-    jne loc_0C685
+    jne @@notCached
     ret
-loc_0C685:
+@@notCached:
     mov word ptr ds:[LoadWordBB82], 0
-loc_0C68B:
+@@retryOpen:
     call AdvanceABColonPrefix
     call ProbeFloppyReady
-    jne loc_0C6A5
+    jne @@openFailed
     mov dx, word ptr ds:[FileNamePtr]
     xor al, al
     mov ah, 03Dh
     call far ptr OpenResourceFile
     mov word ptr ds:[FileHandle], ax
-    jae loc_0C6B7
-loc_0C6A5:
+    jae @@opened
+@@openFailed:
     cmp byte ptr ds:[KeyDownTable + SCAN_ESC], KEY_STATE_DOWN
-    je loc_0C6B4
+    je @@abortLoad
     mov ah, DOS_GET_DRIVE
     int 021h
     cmp al, 2
-    jb loc_0C68B
-loc_0C6B4:
-    jmp near ptr loc_05D0B
-loc_0C6B7:
+    jb @@retryOpen
+@@abortLoad:
+    jmp near ptr ShutdownWithError
+@@opened:
     cmp byte ptr ds:[LoadIsEnc], 0
-    je loc_0C6DC
+    je @@loadPacked
     mov ax, word ptr ds:[FileHandle]
     mov word ptr cs:[EncFileHandle], ax
     mov ax, word ptr ds:[FileBufferSegment]
@@ -5799,8 +5802,8 @@ loc_0C6B7:
     mov word ptr cs:[EncDestOffset], ax
     call DecodeEncFile
     mov ax, word ptr cs:[EncOutputBytes]
-    jmp short loc_0C700
-loc_0C6DC:
+    jmp short @@loaded
+@@loadPacked:
     mov bx, word ptr ds:[FileHandle]
     mov ah, DOS_CLOSE_FILE
     int 021h
@@ -5812,7 +5815,7 @@ loc_0C6DC:
     mov word ptr cs:[PackedDestOffset], ax
     call LoadPackedFile
     mov ax, word ptr cs:[PackedOutputBytes]
-loc_0C700:
+@@loaded:
     mov word ptr ds:[FileByteCount], ax
     call CacheLoadedFile
     ret
@@ -5822,35 +5825,35 @@ loc_0C700:
 ; ResidentFiles. Allocation failures just skip caching.
 CacheLoadedFile:
     cmp word ptr cs:[VideoAdapter], VIDEO_TANDY
-    jne loc_0C710
+    jne @@checkResident
     ret
-loc_0C710:
+@@checkResident:
     mov si, offset ResidentFiles
-loc_0C713:
+@@nextResident:
     lodsw
     cmp ax, word ptr ds:[FileNamePtr]
-    jne loc_0C71B
+    jne @@checkListEnd
     ret
-loc_0C71B:
+@@checkListEnd:
     cmp ax, 0FFFFh
-    jne loc_0C713
+    jne @@nextResident
     cmp byte ptr ds:[EmsAvailable], 0
-    je loc_0C769
+    je @@allocDos
     mov bx, 1
     mov ax, word ptr ds:[FileByteCount]
-loc_0C72D:
+@@countPages:
     sub ax, 04000h
-    jb loc_0C737
-    je loc_0C737
+    jb @@allocEms
+    je @@allocEms
     inc bx
-    jmp short loc_0C72D
-loc_0C737:
+    jmp short @@countPages
+@@allocEms:
     mov ah, 043h
     push bx
     int 067h
     pop bx
     or ah, ah
-    jne loc_0C769
+    jne @@allocDos
     mov es, word ptr cs:[MainDataSegment]
     mov di, word ptr ds:[FileCacheEnd]
     mov ax, word ptr ds:[FileNamePtr]
@@ -5866,8 +5869,8 @@ loc_0C737:
     mov word ptr ds:[FileCacheEnd], di
     call MapEmsPages
     mov bx, word ptr ds:[EmsPageFrame]
-    jmp short loc_0C799
-loc_0C769:
+    jmp short @@copyToCache
+@@allocDos:
     mov bx, word ptr ds:[FileByteCount]
     shr bx, 1
     shr bx, 1
@@ -5876,9 +5879,9 @@ loc_0C769:
     inc bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_0C77D
+    jae @@dosAllocated
     ret
-loc_0C77D:
+@@dosAllocated:
     mov es, word ptr cs:[MainDataSegment]
     mov bx, ax
     mov di, word ptr ds:[FileCacheEnd]
@@ -5891,7 +5894,7 @@ loc_0C77D:
     stosw
     stosw
     mov word ptr ds:[FileCacheEnd], di
-loc_0C799:
+@@copyToCache:
     mov si, word ptr ds:[FileBufferOffset]
     mov ds, word ptr ds:[FileBufferSegment]
     mov es, bx
@@ -5907,26 +5910,26 @@ loc_0C799:
 CopyFromFileCache:
     mov si, offset FileCache
     mov ax, word ptr ds:[FileNamePtr]
-loc_0C7B8:
+@@scanEntry:
     cmp word ptr ds:[si + CACHE_NAME], -1
-    je loc_0C7FB
+    je @@miss
     cmp word ptr ds:[si + CACHE_NAME], ax
-    je loc_0C7C6
+    je @@found
     add si, FILE_CACHE_ENTRY_BYTES
-    jmp short loc_0C7B8
-loc_0C7C6:
+    jmp short @@scanEntry
+@@found:
     cmp word ptr ds:[si + CACHE_SEGMENT], -1
-    jne loc_0C7DE
+    jne @@conventionalCopy
     mov dx, word ptr ds:[si + CACHE_EMS_HANDLE]
     mov bx, word ptr ds:[si + CACHE_EMS_PAGES]
     push si
     call MapEmsPages
     pop si
     mov ds, word ptr ss:[EmsPageFrame]
-    jmp short loc_0C7E1
-loc_0C7DE:
+    jmp short @@copyEntry
+@@conventionalCopy:
     mov ds, word ptr ds:[si + CACHE_SEGMENT]
-loc_0C7E1:
+@@copyEntry:
     mov cx, word ptr ss:[si + CACHE_BYTES]
     xor si, si
     mov es, word ptr ss:[FileBufferSegment]
@@ -5935,20 +5938,20 @@ loc_0C7E1:
     mov ds, word ptr cs:[MainDataSegment]
     xor al, al
     ret
-loc_0C7FB:
+@@miss:
     or al, 1
     ret
 ; AL in 61h..7Ah becomes AL & DFh; all other values unchanged. AH and other registers
 ; preserved. Flags reflect the final CMP or AND, not a stable boolean ABI. Near RET.
 UppercaseAsciiAL:
     cmp al, 061h
-    jae loc_0C803
+    jae @@checkBelowZ
     ret
-loc_0C803:
+@@checkBelowZ:
     cmp al, 07Ah
-    jbe loc_0C808
+    jbe @@toUpper
     ret
-loc_0C808:
+@@toUpper:
     and al, 0DFh
     ret
 ; Read pointer DS:21AA. If byte +1 is colon and ASCII-case-folded byte +0 is A or B, retain
@@ -5958,28 +5961,28 @@ loc_0C808:
 AdvanceABColonPrefix:
     mov si, word ptr ds:[FileNamePtr]
     cmp byte ptr ds:[si + 1], 03Ah
-    je loc_0C816
+    je @@hasColon
     ret
-loc_0C816:
+@@hasColon:
     mov al, byte ptr ds:[si]
     call UppercaseAsciiAL
     cmp al, 041h
-    je loc_0C824
+    je @@driveA
     cmp al, 042h
-    je loc_0C830
+    je @@driveB
     ret
-loc_0C824:
+@@driveA:
     cmp byte ptr ds:[DriveAPresent], 1
-    jne loc_0C82C
+    jne @@tryNextFromA
     ret
-loc_0C82C:
+@@tryNextFromA:
     inc byte ptr ds:[si]
     jmp short AdvanceABColonPrefix
-loc_0C830:
+@@driveB:
     cmp byte ptr ds:[DriveBPresent], 1
-    jne loc_0C838
+    jne @@tryNextFromB
     ret
-loc_0C838:
+@@tryNextFromB:
     inc byte ptr ds:[si]
     jmp short AdvanceABColonPrefix
 
@@ -5987,18 +5990,18 @@ loc_0C838:
 DetectFloppyDrives:
     int 011h
     test al, 1
-    jne loc_0C843
+    jne @@haveFloppy
     ret
-loc_0C843:
+@@haveFloppy:
     mov byte ptr ds:[DriveAPresent], 1
     and al, 0C0h
     mov cl, 6
     shr al, cl
     inc al
     cmp al, 1
-    jne loc_0C855
+    jne @@haveDriveB
     ret
-loc_0C855:
+@@haveDriveB:
     mov byte ptr ds:[DriveBPresent], 1
     ret
 
@@ -6008,15 +6011,15 @@ ProbeFloppyReady:
     mov si, word ptr ds:[FileNamePtr]
     mov al, byte ptr ds:[si]
     cmp byte ptr ds:[si + 1], 03Ah
-    je loc_0C86D
+    je @@haveDriveLetter
     mov ah, DOS_GET_DRIVE
     int 021h
     add al, 041h
-loc_0C86D:
+@@haveDriveLetter:
     call UppercaseAsciiAL
     sub al, 041h
     cmp al, 2
-    jae loc_0C886
+    jae @@notFloppy
     mov dl, al
     mov dh, 0
     mov cx, 0101h
@@ -6024,7 +6027,7 @@ loc_0C86D:
     int 013h
     and ah, 080h
     ret
-loc_0C886:
+@@notFloppy:
     xor al, al
     ret
     even
@@ -6068,7 +6071,7 @@ ChecksumFileOrAbort:
     int 021h
     mov word ptr ds:[FileHandle], ax
     mov word ptr cs:[IntegrityRunningSum], 01234h
-loc_0C8DC:
+@@readChunk:
     mov ds, word ptr cs:[MainDataSegment]
     mov bx, word ptr ds:[FileHandle]
     mov ds, word ptr cs:[IntegrityBufferSegment]
@@ -6087,18 +6090,18 @@ loc_0C8DC:
     mov word ptr cs:[IntegrityBytesRead], ax
     mov ax, word ptr cs:[IntegrityRunningSum]
     mov cx, word ptr cs:[IntegrityBytesRead]
-    jcxz loc_0C925
+    jcxz @@endOfFile
     mov si, 042h
     mov dh, 0
-loc_0C916:
+@@sumByte:
     mov dl, byte ptr ds:[si]
     add ax, dx
     add ah, al
     inc si
-    loop loc_0C916
+    loop @@sumByte
     mov word ptr cs:[IntegrityRunningSum], ax
-    jmp short loc_0C8DC
-loc_0C925:
+    jmp short @@readChunk
+@@endOfFile:
     push ax
     push si
     push ds
@@ -6122,9 +6125,9 @@ loc_0C925:
     cmp ax, word ptr ds:[si]
     pushf
     cmp word ptr cs:[IntegritySkip], 1
-    je loc_0C980
+    je @@freeBuffer
     cmp word ptr ss:[FileNamePtr], offset IntegrityFileExe
-    jne loc_0C980
+    jne @@freeBuffer
     sub si, 040h
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset Codeword
@@ -6135,19 +6138,19 @@ loc_0C925:
     call XorCopy16BytesAA
     mov di, offset Password
     call XorCopy16BytesAA
-loc_0C980:
+@@freeBuffer:
     mov es, word ptr cs:[IntegrityBufferSegment]
     mov ah, DOS_FREE_MEMORY
     int 021h
     popf
     mov ds, word ptr cs:[MainDataSegment]
-    jne loc_0C992
+    jne @@mismatch
     ret
-loc_0C992:
+@@mismatch:
     cmp word ptr cs:[IntegritySkip], 1
-    jne loc_0C99B
+    jne @@reportCorrupt
     ret
-loc_0C99B:
+@@reportCorrupt:
     mov ax, 3
     int 010h
     mov dx, offset CorruptMsgHead
@@ -6177,21 +6180,21 @@ loc_0C99B:
 ; aliasing is observable.
 XorCopy16BytesAA:
     mov cx, 010h
-loc_0C9D6:
+@@xorCopyByte:
     xor byte ptr ds:[si], 0AAh
     movsb
-    loop loc_0C9D6
+    loop @@xorCopyByte
     ret
 
 ; Reads and discards keys through INT 16h until the BIOS queue is empty.
 DrainBiosKeysInt16:
     mov ah, 1
     int 016h
-    je loc_0C9E9
+    je @@empty
     xor ah, ah
     int 016h
     jmp short DrainBiosKeysInt16
-loc_0C9E9:
+@@empty:
     ret
 ; Wait through one complete vertical retrace pulse and return at its end; the
 ; frame-rate delay behind WaitVerticalRetrace.
@@ -6278,38 +6281,38 @@ RetraceBitInverted db 00h ; RetraceBitInverted
 ; preserved. Flags reflect final CMP or OR. Near RET.
 LowercaseAsciiAL:
     cmp al, 041h
-    jae loc_0CA60
+    jae @@checkAboveZ
     ret
-loc_0CA60:
+@@checkAboveZ:
     cmp al, 05Ah
-    jbe loc_0CA65
+    jbe @@toLower
     ret
-loc_0CA65:
+@@toLower:
     or al, 020h
     ret
 ; Print which sound module loaded (SoundCardCaption*) and wait 0AFh frames. No caller
 ; found in this image.
 ShowSoundCardCaption:
     cmp byte ptr ds:[SoundModuleLoaded], 0
-    je loc_0CA97
+    je @@done
     mov ax, ds:[SoundModuleNamePtr]
     mov bp, offset SoundCardCaptionAdlib
     cmp ax, offset SoundModuleNameAdlib
-    je loc_0CA8C
+    je @@printCaption
     mov bp, offset SoundCardCaptionTandy
     cmp ax, offset SoundModuleNameTandy
-    je loc_0CA8C
+    je @@printCaption
     mov bp, offset SoundCardCaptionRoland
     cmp ax, offset SoundModuleNameRoland
-    je loc_0CA8C
-    jmp short loc_0CA97
-loc_0CA8C:
+    je @@printCaption
+    jmp short @@done
+@@printCaption:
     call PrintMessageBP
     mov cx, 0AFh
-loc_0CA92:
+@@waitFrame:
     call WaitVerticalRetrace
-    loop loc_0CA92
-loc_0CA97:
+    loop @@waitFrame
+@@done:
     ret
 
 ; Load and initialize the optional sound module named by SoundModuleSelect ('t', 'r',
@@ -6374,41 +6377,41 @@ LoadSoundModule:
 RequestModuleMusic:
     mov byte ptr ds:[ModuleSoundRequest], al
     cmp byte ptr ds:[ModuleSoundEnabled], 0
-    je loc_0CB3D
+    je @@done
     xor ah, ah
     mov bx, seg SoundModuleSlot
     mov es, bx
     cmp al, byte ptr es:[MODULE_MUSIC_CURRENT]
-    je loc_0CB3D
+    je @@done
     mov word ptr es:[MODULE_MUSIC_REQUEST], ax
     mov ds, word ptr cs:[MainDataSegment]
-loc_0CB3D:
+@@done:
     ret
 
 ; With a sound module loaded: MODULE_MUSIC_REQUEST = FFh, then waits five timer ticks so
 ; the module sees it. ES = module segment.
 StopModuleMusic:
     cmp byte ptr ds:[SoundModuleLoaded], 0
-    jne loc_0CB46
+    jne @@sendStop
     ret
-loc_0CB46:
+@@sendStop:
     mov ax, seg SoundModuleSlot
     mov es, ax
     mov word ptr es:[MODULE_MUSIC_REQUEST], 0FFh
     mov cx, 5
-loc_0CB55:
+@@waitTick:
     push cx
     call WaitTimerInterruptIfModule
     pop cx
-    loop loc_0CB55
+    loop @@waitTick
     mov ds, word ptr cs:[MainDataSegment]
     ret
 ; Store AL at the module's MODULE_BYTE_0A. No caller found in this image.
 SetModuleByte0A:
     cmp byte ptr ds:[SoundModuleLoaded], 0
-    jne loc_0CB6A
+    jne @@store
     ret
-loc_0CB6A:
+@@store:
     push es
     push bx
     mov bx, seg SoundModuleSlot
@@ -6420,9 +6423,9 @@ loc_0CB6A:
 ; Request music AL even if it is current (high byte FFh first). No caller found.
 ForceModuleMusic:
     cmp byte ptr ds:[SoundModuleLoaded], 0
-    jne loc_0CB80
+    jne @@store
     ret
-loc_0CB80:
+@@store:
     push es
     push bx
     mov bx, seg SoundModuleSlot
@@ -6441,35 +6444,35 @@ LoadSoundModuleFile:
     xor al, al
     mov ah, 03Dh
     call far ptr OpenResourceFile
-    jae loc_0CBB4
+    jae @@decode
     mov dx, word ptr ds:[FileNamePtr]
     xor al, al
     mov ah, DOS_OPEN_FILE
     int 021h
-    jb loc_0CBD2
-loc_0CBB4:
+    jb @@failed
+@@decode:
     mov word ptr cs:[EncFileHandle], ax
     mov ax, word ptr cs:[WorkspaceSegment]
     mov word ptr cs:[EncDestSegment], seg SoundModuleSlot
     mov word ptr cs:[EncDestOffset], 0
     call DecodeEncFile
-    jb loc_0CBD2
+    jb @@failed
     or al, 1
     ret
-loc_0CBD2:
+@@failed:
     xor al, al
     ret
 
 ; With a sound module loaded, waits for one INT 08h tick (TimerTickPhase change).
 WaitTimerInterruptIfModule:
     cmp byte ptr ds:[SoundModuleLoaded], 0
-    jne loc_0CBDD
+    jne @@waitTick
     ret
-loc_0CBDD:
+@@waitTick:
     mov al, byte ptr ds:[TimerTickPhase]
-loc_0CBE0:
+@@pollTick:
     cmp al, byte ptr ds:[TimerTickPhase]
-    je loc_0CBE0
+    je @@pollTick
     ret
 ; UNKNOWN: not yet classified as code or data
     db 00h
@@ -6480,13 +6483,13 @@ RunAttractSequence:
     call ResetPageAndClearScreen
     call CgaSelectBrightPalette1
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CBFB
+    jne @@pause
     call RunIntroPagesAndDemo
-loc_0CBFB:
+@@pause:
     mov cx, 01Eh
-loc_0CBFE:
+@@waitFrame:
     call WaitVerticalRetrace
-    loop loc_0CBFE
+    loop @@waitFrame
     ret
 
 ; Draws the backdrop and reveals the logo in three rounds; a key or the primary button
@@ -6498,23 +6501,23 @@ PlayTitleAnimation:
     call DrawTitleBackdrop
     call CopyFullWorkspaceToScreen
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CC4E
+    jne @@done
     mov cx, 01Eh
     call DelayFramesUntilKeyOrPrimary
     mov word ptr ds:[TitleLogoPiecePtr], offset TitleLogoPieces
     call StageTitleLogoPieces
     call RevealTitleLogoCells
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CC4E
+    jne @@done
     call StageTitleLogoPieces
     call RevealTitleLogoCells
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CC4E
+    jne @@done
     call StageTitleLogoPieces
     call RevealTitleLogoCells
     mov cx, 032h
     call DelayFramesUntilKeyOrPrimary
-loc_0CC4E:
+@@done:
     ret
 
 ; Copies the changed 8-pixel cells of the five TitleRevealRects from the staging page
@@ -6522,7 +6525,7 @@ loc_0CC4E:
 RevealTitleLogoCells:
     mov word ptr ds:[RevealRectPtr], offset TitleRevealRects
     mov cx, 5
-loc_0CC58:
+NextRect:
     push cx
     mov word ptr ds:[RevealRectsLeft], cx
     mov si, word ptr ds:[RevealRectPtr]
@@ -6536,11 +6539,11 @@ loc_0CC58:
     lodsb
     mov word ptr ds:[RevealColumns], ax
     mov word ptr ds:[RevealRectPtr], si
-loc_0CC76:
+NextRow:
     push cx
     push word ptr ds:[RevealCol]
     mov cx, word ptr ds:[RevealColumns]
-loc_0CC7F:
+RevealCellLoop:
     push cx
     mov ax, word ptr ds:[RevealCol]
     call DrawOffsetFromWideRow
@@ -6559,69 +6562,69 @@ RevealCellMergeCases label word
 ; Copies the cell from workspace + 7D00h into the workspace; DL = 1 if it changed.
 MergeRevealCellCga:
     mov cx, 8
-loc_0CCAD:
+@@compareRow:
     mov ax, word ptr es:[si]
     cmp ax, word ptr es:[di]
-    je loc_0CCBA
+    je @@nextRow
     mov dl, 1
     mov word ptr es:[di], ax
-loc_0CCBA:
+@@nextRow:
     add di, 050h
     add si, 050h
-    loop loc_0CCAD
-    jmp short loc_0CD08
+    loop @@compareRow
+    jmp short RevealCellMerged
 
 MergeRevealCellTandy:
     mov cx, 8
-loc_0CCC7:
+@@compareRow:
     mov ax, word ptr es:[si]
     cmp ax, word ptr es:[di]
-    je loc_0CCD4
+    je @@compareSecondWord
     mov dl, 1
     mov word ptr es:[di], ax
-loc_0CCD4:
+@@compareSecondWord:
     mov ax, word ptr es:[si + 2]
     cmp ax, word ptr es:[di + 2]
-    je loc_0CCE4
+    je @@nextRow
     mov dl, 1
     mov word ptr es:[di + 2], ax
-loc_0CCE4:
+@@nextRow:
     add di, 0A0h
     add si, 0A0h
-    loop loc_0CCC7
-    jmp short loc_0CD08
+    loop @@compareRow
+    jmp short RevealCellMerged
 
 MergeRevealCellEga:
     mov cx, 020h
-loc_0CCF3:
+@@compareRow:
     mov al, byte ptr es:[si]
     cmp al, byte ptr es:[di]
-    je loc_0CD00
+    je @@nextRow
     mov dl, 1
     mov byte ptr es:[di], al
-loc_0CD00:
+@@nextRow:
     add di, 028h
     add si, 028h
-    loop loc_0CCF3
-loc_0CD08:
+    loop @@compareRow
+RevealCellMerged:
     or dl, dl
-    jne loc_0CD0F
-    jmp near ptr loc_0CE07
-loc_0CD0F:
+    jne @@cellChanged
+    jmp near ptr RevealNextColumn
+@@cellChanged:
     cmp word ptr ds:[RevealRectsLeft], 4
-    je loc_0CD2B
+    je @@firstRectSfx
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0CD37
+    je @@flash
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0CD29
+    je @@sfxChosen
     mov byte ptr ds:[SfxRequest], 0Eh
-loc_0CD29:
-    jmp short loc_0CD37
-loc_0CD2B:
+@@sfxChosen:
+    jmp short @@flash
+@@firstRectSfx:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0CD37
+    je @@flash
     mov byte ptr ds:[SfxRequest], 0Ah
-loc_0CD37:
+@@flash:
     mov ax, word ptr ds:[RevealCol]
     call DrawOffsetFromScreenRow
     push di
@@ -6633,11 +6636,11 @@ loc_0CD37:
     call BlitPackedToScreen
     mov ds, word ptr cs:[MainDataSegment]
     cmp word ptr ds:[RevealRectsLeft], 5
-    je loc_0CD68
+    je @@showCell
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CD68
+    jne @@showCell
     call WaitVerticalRetrace
-loc_0CD68:
+@@showCell:
     pop di
     mov si, word ptr ds:[RevealCellOffset]
     mov es, word ptr cs:[ScreenSegment]
@@ -6652,21 +6655,21 @@ RevealCellShowCases label word
 ; Copies the workspace cell at RevealCellOffset to the screen at DI.
 ShowRevealCellCga:
     mov cx, 8
-loc_0CD8D:
+@@copyRow:
     mov ax, word ptr ds:[si]
     mov word ptr es:[di], ax
     add si, 050h
     add di, 02000h
     test di, 04000h
-    je loc_0CDA3
+    je @@nextRow
     add di, 0C050h
-loc_0CDA3:
-    loop loc_0CD8D
-    jmp short loc_0CE02
+@@nextRow:
+    loop @@copyRow
+    jmp short RevealCellShown
 
 ShowRevealCellTandy:
     mov cx, 8
-loc_0CDAA:
+@@copyRow:
     mov ax, word ptr ds:[si]
     mov word ptr es:[di], ax
     mov ax, word ptr ds:[si + 2]
@@ -6674,11 +6677,11 @@ loc_0CDAA:
     add si, 0A0h
     add di, 02000h
     test di, 08000h
-    je loc_0CDC8
+    je @@nextRow
     add di, 080A0h
-loc_0CDC8:
-    loop loc_0CDAA
-    jmp short loc_0CE02
+@@nextRow:
+    loop @@copyRow
+    jmp short RevealCellShown
 
 ShowRevealCellEga:
     mov dx, 03C4h
@@ -6686,7 +6689,7 @@ ShowRevealCellEga:
     out dx, al
     inc dx
     mov cx, 8
-loc_0CDD6:
+@@copyRow:
     mov al, 1
     out dx, al
     mov al, byte ptr ds:[si]
@@ -6705,36 +6708,36 @@ loc_0CDD6:
     mov byte ptr es:[di], al
     add di, 028h
     add si, 0A0h
-    loop loc_0CDD6
-loc_0CE02:
+    loop @@copyRow
+RevealCellShown:
     mov ds, word ptr cs:[MainDataSegment]
-loc_0CE07:
+RevealNextColumn:
     inc byte ptr ds:[RevealCol]
     pop cx
-    loop loc_0CE10
-    jmp short loc_0CE13
-loc_0CE10:
-    jmp near ptr loc_0CC7F
-loc_0CE13:
+    loop @@continueColumns
+    jmp short @@rowDone
+@@continueColumns:
+    jmp near ptr RevealCellLoop
+@@rowDone:
     pop word ptr ds:[RevealCol]
     add byte ptr ds:[RevealRow], 8
     pop cx
-    loop loc_0CE21
-    jmp short loc_0CE24
-loc_0CE21:
-    jmp near ptr loc_0CC76
-loc_0CE24:
+    loop @@continueRows
+    jmp short @@rectDone
+@@continueRows:
+    jmp near ptr NextRow
+@@rectDone:
     cmp word ptr ds:[RevealRectsLeft], 5
-    je loc_0CE31
+    je @@nextRectCount
     mov cx, 0Ah
     call DelayFramesUntilKeyOrPrimary
-loc_0CE31:
+@@nextRectCount:
     pop cx
-    loop loc_0CE36
-    jmp short loc_0CE39
-loc_0CE36:
-    jmp near ptr loc_0CC58
-loc_0CE39:
+    loop @@continueRects
+    jmp short @@allRectsDone
+@@continueRects:
+    jmp near ptr NextRect
+@@allRectsDone:
     mov cx, 050h
     call DelayFramesUntilKeyOrPrimary
     ret
@@ -6743,16 +6746,16 @@ loc_0CE39:
 ; code) ends it early and stays visible in KeyLastMakeCode for the caller.
 DelayFramesUntilKeyOrPrimary:
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    je loc_0CE48
+    je @@pollFrame
     ret
-loc_0CE48:
+@@pollFrame:
     push cx
     call PollInputBits
     pop cx
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    je loc_0CE59
+    je @@waitFrame
     mov byte ptr ds:[KeyLastMakeCode], SCAN_SPACE
-loc_0CE59:
+@@waitFrame:
     call WaitVerticalRetrace
     loop DelayFramesUntilKeyOrPrimary
     ret
@@ -6760,7 +6763,7 @@ loc_0CE59:
 ; Blits the next five TitleLogoPieces into the staging page (workspace + 7D00h).
 StageTitleLogoPieces:
     mov cx, 5
-loc_0CE62:
+@@nextPiece:
     push cx
     mov si, word ptr ds:[TitleLogoPiecePtr]
     lodsb
@@ -6781,7 +6784,7 @@ loc_0CE62:
     call BlitPackedStride160
     mov ds, word ptr cs:[MainDataSegment]
     pop cx
-    loop loc_0CE62
+    loop @@nextPiece
     ret
 
 ; Composes the title background in the workspace and copies it to the staging page.
@@ -6797,7 +6800,7 @@ DrawTitleBackdrop:
     call BlitPackedStride160
     mov ds, word ptr cs:[MainDataSegment]
     mov cx, 012h
-loc_0CEBD:
+@@drawStrip:
     push cx
     mov ah, cl
     add ah, ah
@@ -6815,7 +6818,7 @@ loc_0CEBD:
     call BlitPackedStride160
     mov ds, word ptr cs:[MainDataSegment]
     pop cx
-    loop loc_0CEBD
+    loop @@drawStrip
     xor al, al
     mov ah, 0BEh
     call DrawOffsetFromWideRow
@@ -6852,7 +6855,7 @@ RunIntroPagesAndDemo:
     mov byte ptr ds:[KeyLastMakeCode], 0
     mov cx, 4
     xor si, si
-loc_0CF3E:
+@@nextItem:
     push cx
     push si
     shl si, 1
@@ -6875,26 +6878,26 @@ loc_0CF3E:
     pop bp
     call PrintMessageBP
     mov cx, 064h
-loc_0CF78:
+@@waitFrame:
     call WaitVerticalRetrace
     push cx
     call PollInputBits
     pop cx
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne loc_0CF97
+    jne @@interrupted
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    jne loc_0CF97
-    loop loc_0CF78
+    jne @@interrupted
+    loop @@waitFrame
     pop si
     inc si
     pop cx
-    loop loc_0CF3E
-    jmp short loc_0CF9C
-loc_0CF97:
+    loop @@nextItem
+    jmp short @@startDemo
+@@interrupted:
     pop si
     pop cx
-    jmp near ptr loc_0D040
-loc_0CF9C:
+    jmp near ptr @@exitDemo
+@@startDemo:
     mov word ptr ds:[DemoActive], 1
     call ResetEgaPages
     call ResetPageAndClearScreen
@@ -6923,7 +6926,7 @@ loc_0CF9C:
     mov word ptr ds:[DemoStep], 0
     mov word ptr ds:[DemoStepTimer], 064h
     mov byte ptr ds:[KeyLastMakeCode], 0
-loc_0D007:
+@@demoFrame:
     call ClearTimerTick
     call FlipEgaDrawPage
     call DrawRecordsToWorkspace
@@ -6936,13 +6939,13 @@ loc_0D007:
     call ShowEgaDrawPage
     call WaitTimerTick
     cmp word ptr ds:[DemoStep], 013h
-    je loc_0D040
+    je @@exitDemo
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne loc_0D040
+    jne @@exitDemo
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    je loc_0D007
-loc_0D040:
+    je @@demoFrame
+@@exitDemo:
     mov word ptr ds:[DemoActive], 0
     call ResetPageAndClearScreen
     call ClearWorkspace
@@ -6970,36 +6973,36 @@ RunDemoScriptFrame:
     pop ds
     call UpdateBeam
     cmp word ptr ds:[DemoStep], 8
-    jb loc_0D0CA
+    jb @@stepAction
     cmp word ptr ds:[DemoStepTimer], 014h
-    jb loc_0D0CA
+    jb @@stepAction
     mov byte ptr ds:[InputBits], 0
     inc word ptr ds:[DemoFireCycle]
     cmp word ptr ds:[DemoFireCycle], 014h
-    jb loc_0D0A4
+    jb @@checkFireFrame
     mov word ptr ds:[DemoFireCycle], 0
-loc_0D0A4:
+@@checkFireFrame:
     cmp word ptr ds:[DemoFireCycle], 0Fh
-    je loc_0D0B9
+    je @@pressFire
     cmp word ptr ds:[DemoFireCycle], 011h
-    je loc_0D0B9
+    je @@pressFire
     cmp word ptr ds:[DemoFireCycle], 013h
-    jne loc_0D0BE
-loc_0D0B9:
+    jne @@handleFire
+@@pressFire:
     mov byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-loc_0D0BE:
+@@handleFire:
     mov bp, offset PrimaryRecord
     mov word ptr ds:[FireLatch], 0
     call HandleFireButton
-loc_0D0CA:
+@@stepAction:
     cmp word ptr ds:[DemoStep], 0
-    jne loc_0D0D4
+    jne DemoCountDownStep
     jmp near ptr DemoRiseShipToY60
-loc_0D0D4:
+DemoCountDownStep:
     dec word ptr ds:[DemoStepTimer]
-    je loc_0D0DB
+    je @@nextStep
     ret
-loc_0D0DB:
+@@nextStep:
     mov word ptr ds:[DemoStepTimer], 064h
     inc word ptr ds:[DemoStep]
     mov bx, word ptr ds:[DemoStep]
@@ -7009,12 +7012,12 @@ loc_0D0DB:
     add bx, ax
     mov ax, word ptr ds:[bx + DemoScript + 2]
     cmp ax, 0FFFFh
-    je loc_0D107
+    je @@dispatchStep
     mov word ptr ds:[SelectedUpgradeSlot], ax
     mov ax, word ptr ds:[bx + DemoScript + 4]
     mov word ptr ds:[DemoUpgradeStatus], ax
     call DrawUpgradeSlots
-loc_0D107:
+@@dispatchStep:
     mov bx, word ptr ds:[DemoStep]
     shl bx, 1
     jmp word ptr cs:[bx + DemoStepActions]
@@ -7041,32 +7044,32 @@ DemoStepGiveMissile:
     ret
 DemoRiseShipToY60:
     cmp word ptr ds:[PrimaryRecord + REC_Y], 060h
-    jne loc_0D16A
-    jmp near ptr loc_0D0D4
-loc_0D16A:
+    jne @@rise
+    jmp near ptr DemoCountDownStep
+@@rise:
     dec word ptr ds:[PrimaryRecord + REC_Y]
     mov bp, offset PrimaryRecord
     call StoreApplyHistoryAndConditionalPlacement
     cmp word ptr ds:[PrimaryRecord + REC_Y], 060h
-    je loc_0D17C
+    je @@arrived
     ret
-loc_0D17C:
+@@arrived:
     mov word ptr ds:[DemoStepTimer], 032h
     ret
 DemoStepNextShipForm:
     inc word ptr ds:[PrimaryRecord + REC_SPRITE]
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D193
+    je @@setTimer
     mov byte ptr ds:[SfxRequest], 6
-loc_0D193:
+@@setTimer:
     mov word ptr ds:[DemoStepTimer], 032h
     mov bp, offset PrimaryRecord
     jmp near ptr PlaceSidePods
 DemoStepLaunchFrontPod:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D1AB
+    je @@launch
     mov byte ptr ds:[SfxRequest], 01Eh
-loc_0D1AB:
+@@launch:
     mov bp, offset PrimaryRecord
     call FindFreeRecordPoolA
     mov word ptr ds:[FrontPodRecord], bx
@@ -7084,9 +7087,9 @@ loc_0D1AB:
     ret
 DemoStepLaunchTrailingPodNear:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D1E8
+    je @@launch
     mov byte ptr ds:[SfxRequest], 1Eh
-loc_0D1E8:
+@@launch:
     call AddTrailingPod
     mov bp, ds:[TrailingPodNear]
     call DemoLaunchTrailingPod
@@ -7094,9 +7097,9 @@ loc_0D1E8:
     ret
 DemoStepLaunchTrailingPodFar:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D204
+    je @@launch
     mov byte ptr ds:[SfxRequest], 1Eh
-loc_0D204:
+@@launch:
     call AddTrailingPod
     mov bp, ds:[TrailingPodFar]
     call DemoLaunchTrailingPod
@@ -7114,9 +7117,9 @@ DemoLaunchTrailingPod:
     ret
 DemoStepLaunchInnerSidePods:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D235
+    je @@launch
     mov byte ptr ds:[SfxRequest], 01Eh
-loc_0D235:
+@@launch:
     call AddSidePods
     mov bp, word ptr ds:[SidePodLeftInner]
     call DemoLaunchPod
@@ -7125,9 +7128,9 @@ loc_0D235:
     jmp short DemoLaunchPod
 DemoStepLaunchOuterSidePods:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D256
+    je @@launch
     mov byte ptr ds:[SfxRequest], 1Eh
-loc_0D256:
+@@launch:
     call AddSidePods
     mov bp, ds:[SidePodLeftOuter]
     call DemoLaunchPod
@@ -7153,14 +7156,14 @@ Type50SteerHomeThenBecomePod:
     call SteerTowardTarget
     mov word ptr ds:[SteerSpeed], 2
     cmp word ptr ds:[SteerArrived], 0
-    jne loc_0D2A4
+    jne @@arrived
     ret
-loc_0D2A4:
+@@arrived:
     mov word ptr ss:[bp + REC_KIND], KIND_POD
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0D2B5
+    je @@done
     mov byte ptr ds:[SfxRequest], 0Eh
-loc_0D2B5:
+@@done:
     ret
 ; Offset of the one image of the page or level screen being shown.
 ScreenImageOffset dw 0
@@ -7194,14 +7197,14 @@ RunTimedSequenceUntilPrimary:
     jne RunTimedSequenceUntilPrimary
     call CopyWorkspaceToScreen
     mov word ptr ds:[SequenceFrameCount], 0
-loc_0D318:
+@@frame:
     call ClearTimerTick
     call FlipEgaDrawPage
     call DrawStars
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    jne loc_0D32C
+    jne @@drawPlaque
     call CopyWorkspaceToScreen
-loc_0D32C:
+@@drawPlaque:
     call DrawPlaqueImage
     call EraseStars
     call far ptr MoveStars
@@ -7212,14 +7215,14 @@ loc_0D32C:
     call WaitVerticalRetrace
     inc word ptr ds:[SequenceFrameCount]
     cmp word ptr ds:[SequenceFrameCount], 0C8h
-    ja loc_0D35C
+    ja @@waitRelease
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    je loc_0D318
-loc_0D35C:
+    je @@frame
+@@waitRelease:
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne loc_0D35C
+    jne @@waitRelease
     ret
 
 ; Draws the first PlaqueSegment image at row 47h, column 3.
@@ -7261,7 +7264,7 @@ RunChooseScreen:
     mov word ptr ds:[ClearWorkspaceHalfOnly], 0
     mov byte ptr ds:[LoadIsEnc], 0
     mov word ptr cs:[LoadDestOffset], 0
-loc_0D406:
+@@frame:
     call ClearTimerTick
     call FlipEgaDrawPage
     call DrawChooseScreen
@@ -7269,16 +7272,16 @@ loc_0D406:
     call WaitVerticalRetrace
     call ReadChooseScreenInput
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne loc_0D424
+    jne @@chosen
     call WaitTimerTick
-    jmp short loc_0D406
-loc_0D424:
+    jmp short @@frame
+@@chosen:
     mov ax, word ptr ds:[ChooseSlot]
     inc ax
     cmp ax, 6
-    jne loc_0D42F
+    jne @@storeLevel
     xor ax, ax
-loc_0D42F:
+@@storeLevel:
     dec ax
     mov word ptr ds:[LevelIndex], ax
     ret
@@ -7288,54 +7291,54 @@ loc_0D42F:
 ReadChooseScreenInput:
     cmp byte ptr ds:[KeyDownTable + SCAN_D], KEY_STATE_DOWN
     je ReadChooseScreenInput
-loc_0D43B:
+@@waitRelease:
     call PollInputBits
     cmp byte ptr ds:[InputBits], 0
-    jne loc_0D43B
-loc_0D445:
+    jne @@waitRelease
+@@poll:
     cmp byte ptr ds:[KeyDownTable + SCAN_D], KEY_STATE_DOWN
-    je loc_0D498
+    je @@cycleDifficulty
     call PollInputBits
     mov al, byte ptr ds:[ChooseSlot]
     test byte ptr ds:[InputBits], IN_XPLUS
-    jne loc_0D476
+    jne @@moveRight
     test byte ptr ds:[InputBits], IN_XMINUS
-    jne loc_0D480
+    jne @@moveLeft
     test byte ptr ds:[InputBits], IN_YMINUS
-    jne loc_0D488
+    jne @@moveUp
     test byte ptr ds:[InputBits], IN_YPLUS
-    jne loc_0D490
+    jne @@moveDown
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    je loc_0D445
+    je @@poll
     ret
-loc_0D476:
+@@moveRight:
     cmp al, 3
-    jae loc_0D445
+    jae @@poll
     add al, 3
-loc_0D47C:
+@@storeSlot:
     mov byte ptr ds:[ChooseSlot], al
     ret
-loc_0D480:
+@@moveLeft:
     cmp al, 2
-    jbe loc_0D445
+    jbe @@poll
     sub al, 3
-    jmp short loc_0D47C
-loc_0D488:
+    jmp short @@storeSlot
+@@moveUp:
     or al, al
-    je loc_0D445
+    je @@poll
     dec al
-    jmp short loc_0D47C
-loc_0D490:
+    jmp short @@storeSlot
+@@moveDown:
     cmp al, 5
-    je loc_0D445
+    je @@poll
     inc al
-    jmp short loc_0D47C
-loc_0D498:
+    jmp short @@storeSlot
+@@cycleDifficulty:
     inc word ptr ds:[DifficultySetting]
     cmp word ptr ds:[DifficultySetting], 3
-    jb loc_0D4A9
+    jb @@done
     mov word ptr ds:[DifficultySetting], 0
-loc_0D4A9:
+@@done:
     ret
 
 ; Draws the level choice background and the images for ChooseSlot and DifficultySetting.
@@ -7566,114 +7569,114 @@ ShowPaymentText:
     int 10h
     mov word ptr cs:[TextScreenSegment], 0B800h
     call ProbeMonoHercules
-    je loc_0D687
+    je @@openFile
     mov word ptr cs:[TextScreenSegment], 0B000h
-loc_0D687:
+@@openFile:
     mov dx, offset PaymentFileName
     mov ds:[FileNamePtr], dx
     xor al, al
     mov ah, 3Dh
     call far ptr OpenResourceFile
-    jae loc_0D6A4
+    jae @@decode
     mov ah, 19h
     int 21h
     cmp al, 2
-    jb loc_0D687
-    jmp near ptr loc_05D0B
-loc_0D6A4:
+    jb @@openFile
+    jmp near ptr ShutdownWithError
+@@decode:
     mov cs:[EncFileHandle], ax
     mov ax, cs:[WorkspaceSegment]
     mov cs:[EncDestSegment], ax
     mov word ptr cs:[EncDestOffset], 0
     call DecodeEncFile
-    jae loc_0D6BF
-    jmp near ptr loc_0D84B
-loc_0D6BF:
+    jae @@countLines
+    jmp near ptr PaymentTextWaitEscRelease
+@@countLines:
     mov word ptr cs:[TextTopLine], 0
     mov word ptr cs:[TextLineCount], 1
     mov es, cs:[WorkspaceSegment]
     xor si, si
-loc_0D6D4:
+@@scanByte:
     lods byte ptr es:[si]
     cmp al, 1Ah
-    je loc_0D6E5
+    je PaymentTextRedraw
     cmp al, 0Dh
-    jne loc_0D6D4
+    jne @@scanByte
     inc word ptr cs:[TextLineCount]
-    jmp short loc_0D6D4
-loc_0D6E5:
+    jmp short @@scanByte
+PaymentTextRedraw:
     call DrawPaymentTextPage
-loc_0D6E8:
+PaymentTextPollKeys:
     cmp byte ptr ds:[KeyDownTable + SCAN_ESC], KEY_STATE_DOWN
-    jne loc_0D6F2
-    jmp near ptr loc_0D84B
-loc_0D6F2:
+    jne @@checkNavKeys
+    jmp near ptr PaymentTextWaitEscRelease
+@@checkNavKeys:
     cmp byte ptr ds:[KeyDownTable + SCAN_HOME], KEY_STATE_DOWN
-    je loc_0D71E
+    je @@homeKey
     cmp byte ptr ds:[KeyDownTable + SCAN_END], KEY_STATE_DOWN
-    je loc_0D729
+    je @@endKey
     cmp byte ptr ds:[KeyDownTable + SCAN_UP], KEY_STATE_DOWN
-    je loc_0D756
+    je @@lineUp
     cmp byte ptr ds:[KeyDownTable + SCAN_DOWN], KEY_STATE_DOWN
-    je loc_0D76E
+    je PaymentTextLineDown
     cmp byte ptr ds:[KeyDownTable + SCAN_PGUP], KEY_STATE_DOWN
-    je loc_0D734
+    je @@pageUp
     cmp byte ptr ds:[KeyDownTable + SCAN_PGDN], KEY_STATE_DOWN
-    je loc_0D745
-    jmp short loc_0D6E8
-loc_0D71E:
+    je @@pageDown
+    jmp short PaymentTextPollKeys
+@@homeKey:
     mov bp, 0FFFFh
-loc_0D721:
+@@homeStep:
     call PaymentTextScrollUp
     dec bp
-    jne loc_0D721
-    jmp short loc_0D6E5
-loc_0D729:
+    jne @@homeStep
+    jmp short PaymentTextRedraw
+@@endKey:
     mov bp, 0FFFFh
-loc_0D72C:
+@@endStep:
     call PaymentTextScrollDown
     dec bp
-    jne loc_0D72C
-    jmp short loc_0D6E5
-loc_0D734:
+    jne @@endStep
+    jmp short PaymentTextRedraw
+@@pageUp:
     call WaitTextRetrace4
     call WaitTextRetrace4
     mov bp, 17h
-loc_0D73D:
+@@pageUpStep:
     call PaymentTextScrollUp
     dec bp
-    jne loc_0D73D
-    jmp short loc_0D6E5
-loc_0D745:
+    jne @@pageUpStep
+    jmp short PaymentTextRedraw
+@@pageDown:
     call WaitTextRetrace4
     call WaitTextRetrace4
     mov bp, 17h
-loc_0D74E:
+@@pageDownStep:
     call PaymentTextScrollDown
     dec bp
-    jne loc_0D74E
-    jmp short loc_0D6E5
-loc_0D756:
+    jne @@pageDownStep
+    jmp short PaymentTextRedraw
+@@lineUp:
     call PaymentTextScrollUp
-    jcxz loc_0D6E8
-    jmp short loc_0D6E5
+    jcxz PaymentTextPollKeys
+    jmp short PaymentTextRedraw
 ; TextTopLine - 1 when above 0; CX = 1 if it scrolled.
 PaymentTextScrollUp:
     xor cx, cx
     cmp word ptr cs:[TextTopLine], 0
-    je loc_0D76D
+    je @@done
     dec word ptr cs:[TextTopLine]
     inc cx
-loc_0D76D:
+@@done:
     ret
-loc_0D76E:
+PaymentTextLineDown:
     call PaymentTextScrollDown
-    jcxz loc_0D775
-    jmp short loc_0D778
-loc_0D775:
-    jmp near ptr loc_0D6E8
-loc_0D778:
-    jmp near ptr loc_0D6E5
+    jcxz @@paymentLineDownUnchanged
+    jmp short @@paymentLineDownRedraw
+@@paymentLineDownUnchanged:
+    jmp near ptr PaymentTextPollKeys
+@@paymentLineDownRedraw:
+    jmp near ptr PaymentTextRedraw
 ; TextTopLine + 1 while a page remains below; CX = 1 if it scrolled.
 PaymentTextScrollDown:
     xor cx, cx
@@ -7681,10 +7684,10 @@ PaymentTextScrollDown:
     inc ax
     add ax, 18h
     cmp ax, cs:[TextLineCount]
-    jae loc_0D792
+    jae @@done
     inc word ptr cs:[TextTopLine]
     inc cx
-loc_0D792:
+@@done:
     ret
 ; Writes PaymentHelpRow and 24 text lines from TextTopLine to TextScreenSegment.
 DrawPaymentTextPage:
@@ -7692,18 +7695,18 @@ DrawPaymentTextPage:
     xor di, di
     mov dx, cs:[TextTopLine]
     or dx, dx
-    je loc_0D7B4
-loc_0D7A3:
+    je @@copyText
+@@skipLine:
     mov cx, 0FFFFh
     mov al, 0Dh
     repne scasb
     cmp byte ptr es:[di], 0Ah
-    jne loc_0D7B1
+    jne @@lineSkipped
     inc di
-loc_0D7B1:
+@@lineSkipped:
     dec dx
-    jne loc_0D7A3
-loc_0D7B4:
+    jne @@skipLine
+@@copyText:
     mov si, di
     mov ds, cs:[WorkspaceSegment]
     mov es, cs:[TextScreenSegment]
@@ -7718,66 +7721,66 @@ loc_0D7B4:
     pop ds
     mov bp, 18h
     xor dx, dx
-loc_0D7D8:
+@@nextChar:
     or bp, bp
-    je loc_0D83E
+    je @@pageDone
     lodsb
     cmp al, 1Ah
-    je loc_0D83E
+    je @@pageDone
     cmp al, 9
-    je loc_0D7F7
+    je @@tab
     cmp al, 0Dh
-    je loc_0D81A
+    je @@carriageReturn
     mov ah, 1Bh
     stosw
     inc dx
     cmp dx, 50h
-    jne loc_0D7D8
+    jne @@nextChar
     xor dx, dx
     dec bp
-    jmp short loc_0D7D8
-loc_0D7F7:
+    jmp short @@nextChar
+@@tab:
     mov al, 20h
     mov ah, 1Bh
     test dx, 7
-    je loc_0D80B
-loc_0D801:
+    je @@fullTab
+@@padToTabStop:
     stosw
     inc dx
     test dx, 7
-    jne loc_0D801
-    jmp short loc_0D818
-loc_0D80B:
+    jne @@padToTabStop
+    jmp short @@tabDone
+@@fullTab:
     cmp dx, 50h
-    je loc_0D818
+    je @@tabDone
     add dx, 8
     mov cx, 8
     rep stosw
-loc_0D818:
-    jmp short loc_0D7D8
-loc_0D81A:
+@@tabDone:
+    jmp short @@nextChar
+@@carriageReturn:
     cmp byte ptr ds:[si], 0Ah
-    jne loc_0D820
+    jne @@padLine
     inc si
-loc_0D820:
+@@padLine:
     cmp dx, 50h
-    je loc_0D835
+    je @@emptyLineWrap
     mov al, 20h
     mov ah, 1Bh
-loc_0D829:
+@@padChar:
     stosw
     inc dx
     cmp dx, 50h
-    jne loc_0D829
+    jne @@padChar
     xor dx, dx
     dec bp
-    jmp short loc_0D7D8
-loc_0D835:
+    jmp short @@nextChar
+@@emptyLineWrap:
     add di, 0A0h
     xor dx, dx
     dec bp
-    jmp short loc_0D7D8
-loc_0D83E:
+    jmp short @@nextChar
+@@pageDone:
     mov ds, cs:[MainDataSegment]
     push dx
     push bp
@@ -7785,53 +7788,53 @@ loc_0D83E:
     pop bp
     pop dx
     ret
-loc_0D84B:
+PaymentTextWaitEscRelease:
     cmp byte ptr ds:[KeyDownTable + SCAN_ESC], KEY_STATE_DOWN
-    je loc_0D84B
+    je PaymentTextWaitEscRelease
     ret
 WaitTextRetrace4:
     mov cx, 4
-loc_0D856:
+@@waitRetrace:
     call WaitTextVerticalRetrace
-    loop loc_0D856
+    loop @@waitRetrace
     ret
 ; Colour (3DAh bit 3) or Hercules (3BAh bit 7) retrace by TextScreenSegment.
 WaitTextVerticalRetrace:
     mov dx, 3DAh
     mov ah, 8
     cmp word ptr cs:[TextScreenSegment], 0B800h
-    je loc_0D86F
+    je @@waitRetraceStart
     mov dx, 3BAh
     mov ah, 80h
-loc_0D86F:
+@@waitRetraceStart:
     in al, dx
     and al, ah
-    je loc_0D86F
-loc_0D874:
+    je @@waitRetraceStart
+@@waitRetraceEnd:
     in al, dx
     and al, ah
-    jne loc_0D874
+    jne @@waitRetraceEnd
     ret
 ; NZ when a CRTC answers at 3B4h and 3BAh bit 7 toggles (Hercules). A plain MDA returns
 ; ZF, so ShowPaymentText then writes to B800h.
 ProbeMonoHercules:
     mov dx, 3B4h
     call ProbeCrtcAtDX
-    je loc_0D89A
+    je @@done
     mov dx, 3BAh
     in al, dx
     and al, 80h
     mov ah, al
     mov cx, 8000h
-loc_0D88D:
+@@watchBit:
     in al, dx
     and al, 80h
     cmp ah, al
-    loope loc_0D88D
+    loope @@watchBit
     mov al, 1
-    jne loc_0D89A
+    jne @@done
     mov al, 0
-loc_0D89A:
+@@done:
     ret
 ; DX = CRTC index port: NZ when register 0Fh reads back what was written (restored).
 ProbeCrtcAtDX:
@@ -7843,15 +7846,15 @@ ProbeCrtcAtDX:
     mov al, 66h
     out dx, al
     mov cx, 100h
-loc_0D8A8:
-    loop loc_0D8A8
+@@settle:
+    loop @@settle
     in al, dx
     xchg ah, al
     out dx, al
     cmp ah, 66h
-    je loc_0D8B5
+    je @@setFlags
     xor ax, ax
-loc_0D8B5:
+@@setFlags:
     and ax, ax
     ret
 ; ENC (LZSS) input buffer, refilled 400h bytes at a time from EncFileHandle.
@@ -7875,13 +7878,13 @@ DecodeEncFile:
     mov ax, 03F00h
     mov dx, offset EncReadBuffer
     int 021h
-    jb loc_0ECEC
+    jb @@done
     call DecodeEncStream
     mov ax, 03E00h
     mov bx, word ptr cs:[EncFileHandle]
     int 021h
     clc
-loc_0ECEC:
+@@done:
     pop ds
     ret
 ; Output pointer of DecodeEncFile (offset, segment).
@@ -7897,42 +7900,42 @@ DecodeEncStream:
     mov si, 0
     mov bp, 0
     mov cx, 07F7h
-loc_0ED15:
+@@clearRing:
     mov word ptr cs:[bp + EncRingBuffer], 0
     inc bp
     inc bp
-    loop loc_0ED15
+    loop @@clearRing
     mov bp, 0FEEh
     mov dx, 0
-loc_0ED26:
+@@nextToken:
     shr dx, 1
     test dx, 0100h
-    jne loc_0ED35
+    jne @@checkFlag
     call ReadEncByte
     mov dl, al
     mov dh, 0FFh
-loc_0ED35:
+@@checkFlag:
     test dx, 1
-    je loc_0ED4D
+    je @@backReference
     call ReadEncByte
     call StoreEncByte
     mov byte ptr cs:[bp + EncRingBuffer], al
     inc bp
     and bp, 0FFFh
-    jmp short loc_0ED26
-loc_0ED4D:
+    jmp short @@nextToken
+@@backReference:
     call ReadEncByte
     mov ah, al
     call ReadEncByte
     xchg al, ah
     cmp ax, 0
-    jne loc_0ED68
+    jne @@copyMatch
     call ReadEncByte
     cmp al, 0
-    je loc_0ED95
+    je @@done
     call PushBackEncByte
     mov al, 0
-loc_0ED68:
+@@copyMatch:
     mov cl, ah
     shr ah, 1
     shr ah, 1
@@ -7941,7 +7944,7 @@ loc_0ED68:
     and cl, 0Fh
     mov bx, ax
     add cl, 3
-loc_0ED7A:
+@@copyMatchByte:
     mov al, byte ptr cs:[bx + EncRingBuffer]
     call StoreEncByte
     mov byte ptr cs:[bp + EncRingBuffer], al
@@ -7949,9 +7952,9 @@ loc_0ED7A:
     and bx, 0FFFh
     inc bp
     and bp, 0FFFh
-    loop loc_0ED7A
-    jmp short loc_0ED26
-loc_0ED95:
+    loop @@copyMatchByte
+    jmp short @@nextToken
+@@done:
     pop es
     ret
 
@@ -7959,12 +7962,12 @@ loc_0ED95:
 ; file every 400h bytes. SI = buffer position; flags preserved across the refill.
 ReadEncByte:
     test byte ptr cs:[EncPushback], 0FFh
-    jne loc_0EDCF
+    jne @@takePushback
     add si, offset EncReadBuffer
     lodsb
     sub si, offset EncReadBuffer
     and si, 03FFh
-    jne loc_0EDCE
+    jne @@done
     pushf
     push ax
     push bx
@@ -7986,9 +7989,9 @@ ReadEncByte:
     pop bx
     pop ax
     popf
-loc_0EDCE:
+@@done:
     ret
-loc_0EDCF:
+@@takePushback:
     mov al, byte ptr cs:[EncPushedByte]
     mov byte ptr cs:[EncPushback], 0
     ret
@@ -8005,17 +8008,17 @@ EncOutputBytesHigh dw 0
 StoreEncByte:
     stosb
     or di, di
-    jne loc_0EDF7
+    jne @@count
     push ax
     mov ax, es
     add ax, 01000h
     mov es, ax
     pop ax
-loc_0EDF7:
+@@count:
     inc word ptr cs:[EncOutputBytes]
-    jne loc_0EE03
+    jne @@done
     inc word ptr cs:[EncOutputBytesHigh]
-loc_0EE03:
+@@done:
     ret
 ; Set when ReadEncByte has pushed back EncPushedByte (end-of-data check).
 EncPushback db 0
@@ -8115,25 +8118,25 @@ Type86LaunchAimedEnemy:
     shl bx, 1
     mov si, offset Type86FramesDir6
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    je loc_0F108
+    je @@setSprite
     mov si, offset Type86Frames
-loc_0F108:
+@@setSprite:
     mov ax, bx
     mov bx, ds:[bx + si]
     mov ss:[bp + REC_SPRITE], bx
     cmp ax, 4
-    je loc_0F117
+    je @@checkLaunchFrame
     jmp near ptr ScrollRecordThenFinish
-loc_0F117:
+@@checkLaunchFrame:
     cmp word ptr ds:[FrameCount64], 26h
-    je loc_0F121
+    je @@launch
     jmp near ptr ScrollRecordThenFinish
-loc_0F121:
+@@launch:
     call SpawnEnemyHere
     cmp bx, -1
-    jne loc_0F12C
+    jne @@aim
     jmp near ptr ScrollRecordThenFinish
-loc_0F12C:
+@@aim:
     call AimAtPlayer
     mov word ptr ds:[bx + REC_SPRITE], 0CBh
     mov word ptr ds:[bx + REC_TYPE], 60h
@@ -8141,9 +8144,9 @@ loc_0F12C:
 ; Scrolls to Y 80h, then fires a burst in animation phase 2.
 Type88WaitThenFireBurst:
     cmp word ptr ss:[bp + REC_Y], 80h
-    jae loc_0F146
+    jae @@animate
     jmp near ptr ScrollRecordThenFinish
-loc_0F146:
+@@animate:
     mov bx, ds:[FrameCount64]
     shr bx, 1
     shr bx, 1
@@ -8152,43 +8155,43 @@ loc_0F146:
     shl bx, 1
     mov si, offset Type88FramesDir6
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    je loc_0F160
+    je @@setSprite
     mov si, offset Type88Frames
-loc_0F160:
+@@setSprite:
     mov ax, bx
     mov bx, ds:[bx + si]
     mov ss:[bp + REC_SPRITE], bx
     cmp ax, 4
-    je loc_0F16F
+    je @@fireBurst
     jmp near ptr ScrollRecordThenFinish
-loc_0F16F:
+@@fireBurst:
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls until Y is exactly 50h, then continues as type 56h.
 Type6AScrollUntilY50ThenType56:
     cmp word ptr ss:[bp + REC_Y], 50h
-    je loc_0F17E
+    je @@becomeCrawler
     jmp near ptr ScrollRecordThenFinish
-loc_0F17E:
+@@becomeCrawler:
     mov word ptr ss:[bp + REC_TYPE], 56h
     jmp short Type56CrawlDestroyOnBlock
 ; Scrolls until Y is exactly B0h, then continues as type 56h.
 Type54ScrollUntilY_B0ThenType56:
     cmp word ptr ss:[bp + REC_Y], 0B0h
-    je loc_0F18F
+    je @@becomeCrawler
     jmp near ptr ScrollRecordThenFinish
-loc_0F18F:
+@@becomeCrawler:
     mov word ptr ss:[bp + REC_TYPE], 56h
 ; Three terrain steps per frame; destroyed when one is blocked.
 Type56CrawlDestroyOnBlock:
     call TryTerrainStep
-    jne loc_0F1A6
+    jne @@blocked
     call TryTerrainStep
-    jne loc_0F1A6
+    jne @@blocked
     call TryTerrainStep
-    jne loc_0F1A6
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F1A6:
+@@blocked:
     call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
 ; Fires a burst while its animation is in phase 3.
@@ -8204,22 +8207,22 @@ Type87AnimFireBurstA:
     add bx, 0DDh
     mov ss:[bp + REC_SPRITE], bx
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
-    jae loc_0F1D0
-    jmp near ptr loc_0878C
-loc_0F1D0:
+    jae @@rightHalf
+    jmp near ptr CheckFirePhase
+@@rightHalf:
     add word ptr ss:[bp + REC_SPRITE], 3
-    jmp near ptr loc_0878C
+    jmp near ptr CheckFirePhase
 ; Scrolls to Y B0h, then drops 4 px per frame without scrolling.
 Type55DropFrom_B0:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
-    je loc_0F1F1
+    je @@drop
     mov word ptr ss:[bp + REC_SPRITE], 73h
     cmp word ptr ss:[bp + REC_Y], 0B0h
-    je loc_0F1EC
+    je @@startDrop
     jmp near ptr ScrollRecordThenFinish
-loc_0F1EC:
+@@startDrop:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
-loc_0F1F1:
+@@drop:
     mov ax, ds:[FrameCount8]
     add ax, 77h
     mov ss:[bp + REC_SPRITE], ax
@@ -8229,17 +8232,17 @@ loc_0F1F1:
 ; blocked.
 Type57ScrollToY80ThenCrawl:
     cmp word ptr ss:[bp + REC_Y], 80h
-    jae loc_0F20B
+    jae @@reachedY80
     jmp near ptr ScrollRecordThenFinish
-loc_0F20B:
-    jne loc_0F210
+@@reachedY80:
+    jne @@crawl
     call IncrementRecordSprite
-loc_0F210:
+@@crawl:
     call TryTerrainStep
     call TryTerrainStep
-    jne loc_0F21B
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F21B:
+@@blocked:
     jmp near ptr DestroyRecord
     jmp near ptr HorizontalTerrainPatrol
 IncrementRecordSprite:
@@ -8249,64 +8252,64 @@ IncrementRecordSprite:
 Type59ScrollThenAnimateThenType5A:
     mov word ptr ss:[bp + REC_SPRITE], 148h
     cmp word ptr ds:[LevelIndex], 0
-    je loc_0F249
+    je @@checkY
     cmp word ptr ds:[LevelIndex], 6
-    je loc_0F249
+    je @@checkY
     mov word ptr ss:[bp + REC_SPRITE], 174h
     cmp word ptr ds:[LevelIndex], 4
-    je loc_0F249
+    je @@checkY
     mov word ptr ss:[bp + REC_SPRITE], 0E3h
-loc_0F249:
+@@checkY:
     cmp word ptr ss:[bp + REC_Y], 80h
-    jg loc_0F253
+    jg @@animate
     jmp near ptr ScrollRecordThenFinish
-loc_0F253:
+@@animate:
     mov ax, ds:[FrameCount4]
     add ss:[bp + REC_SPRITE], ax
     cmp word ptr ss:[bp + REC_Y], 0C0h
-    jg loc_0F263
+    jg @@becomeType5A
     jmp near ptr ScrollRecordThenFinish
-loc_0F263:
+@@becomeType5A:
     mov word ptr ss:[bp + REC_TYPE], 5Ah
 ; Crawls three steps per frame, mirroring its diagonal at the edges or a wall; destroyed
 ; when still blocked.
 Type5ACrawlMirrorDiagonal:
     mov word ptr ss:[bp + REC_SPRITE], 148h
     cmp word ptr ds:[LevelIndex], 0
-    je loc_0F28C
+    je @@crawl
     cmp word ptr ds:[LevelIndex], 6
-    je loc_0F28C
+    je @@crawl
     mov word ptr ss:[bp + REC_SPRITE], 174h
     cmp word ptr ds:[LevelIndex], 4
-    je loc_0F28C
+    je @@crawl
     mov word ptr ss:[bp + REC_SPRITE], 0E3h
-loc_0F28C:
+@@crawl:
     mov ax, ds:[FrameCount4]
     add ss:[bp + REC_SPRITE], ax
     call TryTerrainStep
-    jne loc_0F2B1
+    jne @@mirror
     call TryTerrainStep
-    jne loc_0F2B1
+    jne @@mirror
     call TryTerrainStep
-    jne loc_0F2B1
+    jne @@mirror
     cmp word ptr ss:[bp + REC_X], 0
-    jng loc_0F2B1
+    jng @@mirror
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
-    jnl loc_0F2B1
+    jnl @@mirror
     jmp near ptr ScrollRecordThenFinish
-loc_0F2B1:
+@@mirror:
     xor word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     call TryTerrainStep
-    je loc_0F2BD
+    je @@continueScroll
     jmp near ptr DestroyRecord
-loc_0F2BD:
+@@continueScroll:
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls past Y B0h, then continues as type 5Ch.
 Type5BScrollPastY_B0ThenType5C:
     cmp word ptr ss:[bp + REC_Y], 0B0h
-    jg loc_0F2CA
+    jg @@becomeType5C
     jmp near ptr ScrollRecordThenFinish
-loc_0F2CA:
+@@becomeType5C:
     mov word ptr ss:[bp + REC_TYPE], 5Ch
 ; Rises 4 px per frame.
 Type5CRiseFast4:
@@ -8327,18 +8330,18 @@ Type5ECrawlTurnDownToLeft:
     call TryTerrainStep
     call TryTerrainStep
     call TryTerrainStep
-    jne loc_0F2FC
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F2FC:
+@@blocked:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
-    je loc_0F30B
+    je @@turnDownLeft
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
-    je loc_0F313
+    je @@turnLeft
     jmp near ptr DestroyRecord
-loc_0F30B:
+@@turnDownLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     jmp near ptr ScrollRecordThenFinish
-loc_0F313:
+@@turnLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Crawls two steps per frame, alternating down and right when blocked.
@@ -8350,14 +8353,14 @@ Type6ECrawlStaircase:
     mov ss:[bp + REC_SPRITE], bx
     call TryTerrainStep
     call TryTerrainStep
-    jne loc_0F337
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F337:
+@@blocked:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
-    je loc_0F345
+    je @@turnRight
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr ScrollRecordThenFinish
-loc_0F345:
+@@turnRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
 ; Crawls four steps per frame, bouncing between the two downward diagonals; destroyed
@@ -8369,25 +8372,25 @@ Type5FCrawlBounceDiagonal:
     mov ax, ss:[bp + REC_Y]
     add ax, ss:[bp + REC_X]
     cmp ax, 60h
-    jae loc_0F364
+    jae @@crawl
     jmp near ptr ScrollRecordThenFinish
-loc_0F364:
+@@crawl:
     call TryTerrainStep
     call TryTerrainStep
     call TryTerrainStep
     call TryTerrainStep
-    jne loc_0F375
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F375:
+@@blocked:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    je loc_0F384
+    je @@bounceDownRight
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
-    je loc_0F38C
+    je @@bounceDownLeft
     jmp near ptr DestroyRecord
-loc_0F384:
+@@bounceDownRight:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_RIGHT
     jmp near ptr ScrollRecordThenFinish
-loc_0F38C:
+@@bounceDownLeft:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Steers to its invader slot (REC_SAVED) at speed 3, then becomes type 62h.
@@ -8399,139 +8402,139 @@ Type61InvaderSteerToSlot:
     mov word ptr ds:[SteerSpeed], 3
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
-    jne loc_0F3B3
+    jne @@arrived
     jmp near ptr ScrollRecordThenFinish
-loc_0F3B3:
+@@arrived:
     mov word ptr ss:[bp + REC_TYPE], 62h
     jmp near ptr ScrollRecordThenFinish
 ; Marches with the invader block (March* state).
 Type62InvaderMarch:
     cmp word ptr ds:[FramesSinceInvaderSpawn], 18h
-    jae loc_0F3C5
+    jae @@march
     jmp near ptr ScrollRecordThenFinish
-loc_0F3C5:
+@@march:
     mov ax, ds:[InvaderDropStep]
     add ss:[bp + REC_Y], ax
     cmp word ptr ss:[bp + REC_Y], 0D0h
-    jna loc_0F3EB
+    jna @@stepByLiveCount
     mov word ptr ss:[bp + REC_SPRITE], 0E7h
     mov word ptr ss:[bp + REC_TYPE], 61h
     and word ptr ss:[bp + REC_Y], -8
     and word ptr ss:[bp + REC_X], -8
     mov word ptr ss:[bp + REC_SAVED_Y], 20h
     jmp short Type61InvaderSteerToSlot
-loc_0F3EB:
+@@stepByLiveCount:
     mov ax, 1
     cmp word ptr ds:[EncounterLiveCount], 10h
-    ja loc_0F416
+    ja @@stepX
     mov ax, 2
     cmp word ptr ds:[EncounterLiveCount], 8
-    ja loc_0F416
+    ja @@stepX
     mov ax, 4
     cmp word ptr ds:[EncounterLiveCount], 4
-    ja loc_0F416
+    ja @@stepX
     mov ax, 8
     cmp word ptr ds:[EncounterLiveCount], 1
-    ja loc_0F416
+    ja @@stepX
     mov ax, 10h
-loc_0F416:
+@@stepX:
     neg ax
     and ss:[bp + REC_X], ax
     neg ax
     mov bx, 0C0h
     mov cx, 1
     cmp word ptr ds:[InvaderMarchLeft], 0
-    je loc_0F431
+    je @@moveX
     neg ax
     xor bx, bx
     mov cx, 0
-loc_0F431:
+@@moveX:
     add ss:[bp + REC_X], ax
     cmp ss:[bp + REC_X], bx
-    jne loc_0F446
+    jne @@checkDive
     mov ds:[InvaderNextMarchLeft], cx
     mov word ptr ds:[InvaderNextDropStep], 2
     call SpawnAimedShot
-loc_0F446:
+@@checkDive:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ss:[bp + REC_X], ax
-    jne loc_0F45D
+    jne @@checkFire
     call NextRandomWord
     and bx, 1Fh
-    jne loc_0F45D
+    jne @@checkFire
     mov word ptr ss:[bp + REC_TYPE], 65h
     jmp short Type63ScriptedSlideThenDrop
-loc_0F45D:
+@@checkFire:
     mov ax, ds:[RecordTickCounter]
     and ax, 7Fh
     cmp ax, ds:[FrameCount128]
-    je loc_0F46C
+    je @@checkPhase
     jmp near ptr ScrollRecordThenFinish
-loc_0F46C:
+@@checkPhase:
     cmp word ptr ds:[FrameCount4], 0
-    je loc_0F476
+    je @@fire
     jmp near ptr ScrollRecordThenFinish
-loc_0F476:
+@@fire:
     inc word ptr ds:[RecordTickCounter]
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnThrottledChild
     cmp bx, -1
-    jne loc_0F48A
+    jne @@setShotSprite
     jmp near ptr ScrollRecordThenFinish
-loc_0F48A:
+@@setShotSprite:
     mov word ptr ds:[bx + REC_SPRITE], 63h
     jmp near ptr ScrollRecordThenFinish
 ; Dives 4 px per frame, firing aimed shots while its sprite advances.
 Type65InvaderDiveFiring:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ds:[FrameCount4], 3
-    je loc_0F4A0
+    je @@fireFrame
     jmp near ptr ScrollRecordThenFinish
-loc_0F4A0:
+@@fireFrame:
     cmp word ptr ss:[bp + REC_SPRITE], 0EBh
-    jne loc_0F4AA
+    jne @@fire
     jmp near ptr ScrollRecordThenFinish
-loc_0F4AA:
+@@fire:
     inc word ptr ss:[bp + REC_SPRITE]
     call SpawnAimedShot
     jmp near ptr ScrollRecordThenFinish
 ; Waits for Y 50h, then plays a scripted slide by sprite and drops 4 px per frame.
 Type63ScriptedSlideThenDrop:
     cmp word ptr ss:[bp + REC_Y], 50h
-    jae loc_0F4BC
+    jae @@scripted
     jmp near ptr ScrollRecordThenFinish
-loc_0F4BC:
+@@scripted:
     cmp word ptr ss:[bp + REC_SPRITE], 0E7h
-    je loc_0F4EE
+    je @@advanceOnPhase
     cmp word ptr ss:[bp + REC_SPRITE], 0E8h
-    je loc_0F4EE
+    je @@advanceOnPhase
     cmp word ptr ss:[bp + REC_SPRITE], 0E9h
-    je loc_0F4DF
+    je @@slideRight
     cmp word ptr ss:[bp + REC_SPRITE], 0EAh
-    je loc_0F4EE
+    je @@advanceOnPhase
     add word ptr ss:[bp + REC_Y], 4
     jmp near ptr ScrollRecordThenFinish
-loc_0F4DF:
+@@slideRight:
     add word ptr ss:[bp + REC_X], 2
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
-    je loc_0F4EC
+    je @@reachedCenter
     jmp near ptr ScrollRecordThenFinish
-loc_0F4EC:
-    jmp short loc_0F4F8
-loc_0F4EE:
+@@reachedCenter:
+    jmp short @@nextSprite
+@@advanceOnPhase:
     cmp word ptr ds:[FrameCount4], 3
-    je loc_0F4F8
+    je @@nextSprite
     jmp near ptr ScrollRecordThenFinish
-loc_0F4F8:
+@@nextSprite:
     inc word ptr ss:[bp + REC_SPRITE]
     jmp near ptr ScrollRecordThenFinish
 ; Drops 4 px per frame (2 on level 4).
 Type64DropSlow:
     mov ax, 2
     cmp word ptr ds:[LevelIndex], 4
-    je loc_0F50A
+    je @@drop
     add al, 2
-loc_0F50A:
+@@drop:
     add ss:[bp + REC_Y], ax
     jmp near ptr ScrollRecordThenFinish
 ; Starts PathType66 with 20 hit points as type 12h.
@@ -8552,7 +8555,7 @@ Type6BDescendToX50:
     shr ax, 1
     add ax, 11Fh
     mov ss:[bp + REC_SPRITE], ax
-    jmp short loc_0F55A
+    jmp short DescendToTargetX
 ; Descends while sliding toward X 70h.
 Type6DDescendToX70:
     mov word ptr ds:[DescentTargetX], 70h
@@ -8561,54 +8564,54 @@ Type6DDescendToX70:
     shr ax, 1
     add ax, 124h
     mov ss:[bp + REC_SPRITE], ax
-    jmp short loc_0F55A
+    jmp short DescendToTargetX
 ; Descends toward X 60h and fires; the only one of 6Bh..6Dh that shoots.
 Type6CDescendToX60Firing:
     mov word ptr ds:[DescentTargetX], 60h
-loc_0F55A:
+DescendToTargetX:
     cmp word ptr ss:[bp + REC_Y], 40h
-    jae loc_0F563
+    jae @@slide
     jmp near ptr ScrollRecordThenFinish
-loc_0F563:
+@@slide:
     mov ax, ds:[DescentTargetX]
     cmp ss:[bp + REC_X], ax
-    je loc_0F577
-    ja loc_0F573
+    je @@descend
+    ja @@slideLeft
     add word ptr ss:[bp + REC_X], 2
-    jmp short loc_0F577
-loc_0F573:
+    jmp short @@descend
+@@slideLeft:
     sub word ptr ss:[bp + REC_X], 2
-loc_0F577:
+@@descend:
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ss:[bp + REC_TYPE], 6Ch
-    je loc_0F583
+    je @@fire
     jmp near ptr ScrollRecordThenFinish
-loc_0F583:
+@@fire:
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
-    je loc_0F596
+    je @@centerFire
     cmp word ptr ds:[FrameCount16], 0Fh
-    jne loc_0F593
+    jne @@offCenterDone
     call SpawnThrottledChild
-loc_0F593:
+@@offCenterDone:
     jmp near ptr ScrollRecordThenFinish
-loc_0F596:
+@@centerFire:
     cmp word ptr ds:[FrameCount4], 3
-    jne loc_0F5A0
+    jne @@centerDone
     call SpawnThrottledChild
-loc_0F5A0:
+@@centerDone:
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls to Y 50h and becomes type 70h unless the player is just below.
 Type6FWaitThenType70:
     cmp word ptr ss:[bp + REC_Y], 50h
-    jae loc_0F5AC
+    jae @@checkPlayer
     jmp near ptr ScrollRecordThenFinish
-loc_0F5AC:
+@@checkPlayer:
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     sub ax, ss:[bp + REC_Y]
     cmp ax, 20h
-    jae loc_0F5BA
+    jae @@becomeType70
     jmp near ptr ScrollRecordThenFinish
-loc_0F5BA:
+@@becomeType70:
     mov word ptr ss:[bp + REC_TYPE], 70h
 ; Moves 2 px per frame in REC_DIRECTION, firing every 8 frames.
 Type70CruiseFiring:
@@ -8619,9 +8622,9 @@ Type70CruiseFiring:
     mov ss:[bp + REC_SPRITE], ax
     call MoveInDirection2
     cmp word ptr ds:[FrameCount8], 7
-    jne loc_0F5D9
+    jne @@done
     call SpawnThrottledChild
-loc_0F5D9:
+@@done:
     jmp near ptr ScrollRecordThenFinish
 ; Descends 1 px per frame, firing an aimed shot every other frame.
 Type72DescendFiringAimed:
@@ -8631,16 +8634,16 @@ Type72DescendFiringAimed:
     mov ss:[bp + REC_SPRITE], ax
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ds:[CountGate2324], 1
-    jne loc_0F5F4
+    jne @@done
     call SpawnAimedShot
-loc_0F5F4:
+@@done:
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls to Y 80h, then charges right as type 85h code.
 Type73WaitThenRunRight:
     cmp word ptr ss:[bp + REC_Y], 80h
-    jae loc_0F601
+    jae @@startRun
     jmp near ptr ScrollRecordThenFinish
-loc_0F601:
+@@startRun:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov bx, ds:[SlowCount4]
     shl bx, 1
@@ -8651,9 +8654,9 @@ loc_0F601:
 ; Scrolls to Y 90h, then charges left as type 85h code.
 Type74WaitThenRunLeft:
     cmp word ptr ss:[bp + REC_Y], 90h
-    jae loc_0F623
+    jae @@startRun
     jmp near ptr ScrollRecordThenFinish
-loc_0F623:
+@@startRun:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     mov bx, ds:[SlowCount4]
     shl bx, 1
@@ -8664,22 +8667,22 @@ loc_0F623:
 ; edge.
 Type85ChargeUntilBlocked:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
-    jne loc_0F646
+    jne @@checkLeftEdge
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
-    je loc_0F663
-loc_0F646:
+    je @@blocked
+@@checkLeftEdge:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    jne loc_0F652
+    jne @@charge
     cmp word ptr ss:[bp + REC_X], 0
-    je loc_0F663
-loc_0F652:
+    je @@blocked
+@@charge:
     call TryTerrainStep
     call TryTerrainStep
     call TryTerrainStep
     call TryTerrainStep
-    jne loc_0F663
+    jne @@blocked
     jmp near ptr ScrollRecordThenFinish
-loc_0F663:
+@@blocked:
     call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
 ; Waits until the player lines up with REC_DIRECTION, then becomes type 85h; the
@@ -8702,9 +8705,9 @@ Type84SameColumn:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
-    je loc_0F699
+    je @@compareColumn
     add ax, 8
-loc_0F699:
+@@compareColumn:
     mov bx, ss:[bp + REC_X]
     and ax, 0FFF0h
     and bx, -10h
@@ -8718,9 +8721,9 @@ Type84StartCharge:
 Type84FacingDown:
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     cmp ax, ss:[bp + REC_Y]
-    jae loc_0F6BA
+    jae @@checkColumn
     jmp near ptr ScrollRecordThenFinish
-loc_0F6BA:
+@@checkColumn:
     jmp short Type84SameColumn
 ; Facing right: the player must be at or to the right, on the same 4-pixel row.
 Type84FacingRight:
@@ -8744,9 +8747,9 @@ Type84StartChargeH:
 Type84FacingLeft:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ax, ss:[bp + REC_X]
-    jna loc_0F6EE
+    jna @@checkRow
     jmp near ptr ScrollRecordThenFinish
-loc_0F6EE:
+@@checkRow:
     jmp short Type84SameRow
 ; Fires two shots when the player is on its row.
 Type92FireWhenPlayerLevel:
@@ -8756,9 +8759,9 @@ Type92FireWhenPlayerLevel:
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     and ax, 0FFFCh
     cmp ax, bx
-    je loc_0F706
+    je @@fire
     jmp near ptr ScrollRecordThenFinish
-loc_0F706:
+@@fire:
     sub word ptr ss:[bp + REC_Y], 4
     call Type92SpawnShot
     add word ptr ss:[bp + REC_Y], 8
@@ -8769,17 +8772,17 @@ loc_0F706:
 Type92SpawnShot:
     call SpawnThrottledChild
     cmp bx, -1
-    je loc_0F728
+    je @@done
     mov word ptr ds:[bx + REC_SPRITE], 44h
-loc_0F728:
+@@done:
     ret
 ; Descends 2 px per frame, firing a three-way downward spread every 4 frames.
 Type75DescendSpreadShot:
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ds:[FrameCount4], 3
-    je loc_0F737
+    je @@fireSpread
     jmp near ptr ScrollRecordThenFinish
-loc_0F737:
+@@fireSpread:
     push word ptr ss:[bp + REC_DIRECTION]
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     call SpawnChildAt12
@@ -8792,32 +8795,32 @@ loc_0F737:
 ; Segmented boss part at (SegBossY, SegBossX) + BossPartOffsets[0].
 Type76SegBossPart0:
     mov si, offset BossPartOffsets
-    jmp short loc_0F779
+    jmp short SegBossPlacePart
 ; Segmented boss part at BossPartOffsets[1].
 Type77SegBossPart1:
     mov si, offset BossPartOffsets + 4
-    jmp short loc_0F779
+    jmp short SegBossPlacePart
 ; Segmented boss part at BossPartOffsets[2]; fires aimed shots early in each 128-frame
 ; cycle.
 Type78SegBossGunPart:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     cmp word ptr ds:[FrameCount128], 0Fh
-    ja loc_0F771
+    ja @@placePart
     call SpawnAimedShot
-loc_0F771:
+@@placePart:
     mov si, offset BossPartOffsets + 8
-    jmp short loc_0F779
+    jmp short SegBossPlacePart
 ; Segmented boss part at BossPartOffsets[3].
 Type79SegBossPart3:
     mov si, offset BossPartOffsets + 0Ch
-loc_0F779:
+SegBossPlacePart:
     lodsw
     add ax, ds:[SegBossY]
     mov ss:[bp + REC_Y], ax
     cmp word ptr ss:[bp + REC_Y], 0
-    jnl loc_0F78C
+    jnl @@setX
     mov word ptr ss:[bp + REC_Y], 0
-loc_0F78C:
+@@setX:
     lodsw
     add ax, ds:[SegBossX]
     mov ss:[bp + REC_X], ax
@@ -8830,14 +8833,14 @@ SteerSegBossAlongPath:
     pop word ptr ss:[bp + REC_X]
     push word ptr ds:[SegBossY]
     pop word ptr ss:[bp + REC_Y]
-loc_0F7A9:
+@@readWaypoint:
     mov si, ds:[SegBossPathCursor]
     lodsw
     cmp ax, 0FFFFh
-    jne loc_0F7BB
+    jne @@steer
     mov word ptr ds:[SegBossPathCursor], offset BossPath
-    jmp short loc_0F7A9
-loc_0F7BB:
+    jmp short @@readWaypoint
+@@steer:
     add ax, 20h
     mov ds:[SteerTargetY], ax
     lodsw
@@ -8849,9 +8852,9 @@ loc_0F7BB:
     push word ptr ss:[bp + REC_Y]
     pop word ptr ds:[SegBossY]
     cmp word ptr ds:[SteerArrived], 0
-    jne loc_0F7E4
+    jne @@arrived
     ret
-loc_0F7E4:
+@@arrived:
     mov ds:[SegBossPathCursor], si
     jmp short SteerSegBossAlongPath
 MAIN ends
@@ -8862,28 +8865,28 @@ assume cs:FAR0F7F,ds:nothing,ss:nothing,es:nothing
 ; (78h..28h, shorter with fewer live members).
 StepMarchFireDelay:
     dec byte ptr ds:[MarchFireDelay]
-    jne loc_1003E
+    jne @@notYet
     mov ax, word ptr ds:[EncounterLiveCount]
     mov cl, 078h
     cmp ax, 010h
-    ja loc_10034
+    ja @@reloadDelay
     mov cl, 064h
     cmp ax, 8
-    ja loc_10034
+    ja @@reloadDelay
     mov cl, 050h
     cmp ax, 4
-    ja loc_10034
+    ja @@reloadDelay
     mov cl, 03Ch
     cmp ax, 2
-    ja loc_10034
+    ja @@reloadDelay
     mov cl, 028h
-loc_10034:
+@@reloadDelay:
     mov byte ptr ds:[MarchFireDelay], cl
     inc byte ptr ds:[MarchFireNow]
-    jmp short loc_10043
-loc_1003E:
+    jmp short @@done
+@@notYet:
     mov byte ptr ds:[MarchFireNow], 0
-loc_10043:
+@@done:
     retf
 
 ResetMarchState:
@@ -8913,7 +8916,7 @@ Type21LeaderPathBody:
     mov si, word ptr cs:[Type21PathCursor]
     lodsw
     cmp ax, 0FFFFh
-    je loc_10103
+    je @@restartPath
     add ax, 20h
     mov ds:[SteerTargetY], ax
     lodsw
@@ -8922,13 +8925,13 @@ Type21LeaderPathBody:
     mov ax, offset SteerTowardTarget
     call far ptr FarCallMainNearViaAX
     cmp word ptr ds:[SteerArrived], 0
-    je loc_100F9
+    je @@setSprite
     mov word ptr ss:[bp + REC_HIT_POINTS], 2
     add word ptr cs:[Type21PathCursor], 4
     mov ax, offset SpawnEnemyHere
     call far ptr FarCallMainNearViaAX
     cmp bx, -1
-    je loc_100F9
+    je @@setSprite
     mov ax, ss:[bp + REC_Y]
     mov ds:[bx + REC_SAVED_Y], ax
     mov ax, ss:[bp + REC_X]
@@ -8936,12 +8939,12 @@ Type21LeaderPathBody:
     mov word ptr ds:[bx + REC_TYPE], 64h
     mov word ptr ds:[bx + REC_HIT_POINTS], 3
     mov word ptr ds:[bx + REC_SPRITE], 8Eh
-loc_100F9:
+@@setSprite:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 3Bh
     mov ss:[bp + REC_SPRITE], ax
     retf
-loc_10103:
+@@restartPath:
     call ResetType21Path
     jmp short Type21LeaderPathBody
 
@@ -8953,32 +8956,32 @@ Type21PathCursor dw 0
 
 MoveStars:
     cmp word ptr ds:[EnergyTanks], -1
-    je loc_1014F
+    je @@done
     inc word ptr ds:[StarLayerTick1]
     and word ptr ds:[StarLayerTick1], 1
-    jne loc_1014F
+    jne @@done
     mov si, offset Stars
     mov cx, 014h
     call MoveStarLayer
     inc word ptr ds:[StarLayerTick2]
     and word ptr ds:[StarLayerTick2], 1
-    jne loc_1014F
+    jne @@done
     mov cx, 0Ah
     call MoveStarLayer
     inc word ptr ds:[StarLayerTick3]
     and word ptr ds:[StarLayerTick3], 1
-    jne loc_1014F
+    jne @@done
     mov cx, 0Ah
     call MoveStarLayer
-loc_1014F:
+@@done:
     retf
 
 MoveStarLayer:
     inc word ptr ds:[si]
     cmp word ptr ds:[si], 0C0h
-    jne loc_1015C
+    jne @@nextStar
     mov word ptr ds:[si], 0
-loc_1015C:
+@@nextStar:
     add si, 6
     loop MoveStarLayer
     ret

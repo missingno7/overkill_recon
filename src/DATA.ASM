@@ -1125,7 +1125,7 @@ DecimalToBuffer dw 00000h
 ; Set while choose.enc loads: ClearWorkspace then clears only the first 4000h words.
 ClearWorkspaceHalfOnly dw 0h
 HiscoreFileName db 'hiscore.dat',00h
-; Prefix of a high-score row; loc_05461 patches the row byte.
+; Prefix of a high-score row; @@nextRow patches the row byte.
 HiscoreRowPrefix db TEXT_MOVE_TO, 4h, 0h, TEXT_SET_COLOR, 0Ah, 0h
 ; hiscore.dat image: 8 score entries then 27 settings bytes (SavedSettings), followed
 ; in the file by an additive checksum word; stored XOR-coded (XorCodeHiscoreBlock).
@@ -1201,7 +1201,7 @@ ScoreMessagePrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Dh, 1Dh, 0
 ; Music number per LevelIndex (RequestLifeStartMusic, TickFrameTimers).
 LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
 CountGate2324 dw 00000h
-; Wrapping frame counters (loc_05F89..): 0..3 up to 0..7Fh each frame; the slow
+; Wrapping frame counters (@@sway..): 0..3 up to 0..7Fh each frame; the slow
 ; counters step when FrameDivider4 wraps (SlowCount10 and SlowCount3 have no reader).
 FrameCount4 dw 0h
 FrameCount8 dw 0h
@@ -1249,7 +1249,7 @@ LevelDigitChars db '612345'
 ; all start at 4 and each point takes one off the first nonzero cell.
 EnergyCells dw 4, 4, 4, 4, 4, 4
 EnergyCellsEnd label word
-; Compared with EnergyTanks (loc_061FC); never written.
+; Compared with EnergyTanks (@@drawCells); never written.
 HudTankCompare dw 8000h
 ; Pending item drop (SpawnItemDrop): position and kind.
 DropX dw 0h
@@ -1512,7 +1512,7 @@ DirectionFromQuadrant db 0FFh,02h,06h,02h,04h,03h,05h,04h
 AutopilotWaypointA dw 0AAh, 58h
 AutopilotWaypointB dw 0h, 58h
 XAdjustPathTaken dw 00000h
-; DifficultySetting 0: alternates so only every other hit costs a life (loc_09E85).
+; DifficultySetting 0: alternates so only every other hit costs a life (@@checkEasyToggle).
 EasyHitToggle db 0h
     even
 ; Slots still to fill (AddSidePods).
