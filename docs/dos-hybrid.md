@@ -91,9 +91,36 @@ registers, and compares the whole state segment (except the four static tables o
 addresses and stack scratch below SP), the registers and flags the contract keeps or
 returns, every write outside the state segment (by symbol or address), and port traffic.
 
-Suites: `tests/movement.py` (every entry, random and edge states), `tests/movement_callers.py`
-(the real ASM callers: tail jumps, fall-through, far trampoline, ZF consumers),
-`tests/quirks.py` (documented original bugs asserted on the oracle, then compared).
+Building blocks, reused by every region:
+
+- `tools/world.py`: memory-state builders (World, Record, pools, player, counters,
+  plausible mid-game worlds, stale slots, full pools); field names and constants come
+  from include/*.INC. They only place values; no game behaviour is modelled.
+- Sequences: a suite may yield a list of cases; each step continues from the state the
+  previous one left on each side and both sides are compared after every step.
+- `tools/fuzz.py`: coverage-guided differential fuzzing. A suite declares
+  `FUZZ = [Target(...)]` (entry label, seed builder, the region's oracle labels, register
+  contract, record types and globals worth mutating, and `domains`: value sets of fields
+  or globals whose range is an oracle precondition, e.g. an unchecked jump-table index or
+  a pointer that only ever holds table addresses). Features come from the oracle run:
+  branch edges in the region, entry-record type/kind/status transitions, pool occupancy
+  changes, watched globals; `cmp` operands are logged and a mutation copies one operand
+  into state words holding the other (reaches exact-equality branches). Every candidate
+  is compared on both sides; a state on which the ORACLE crashes is discarded as
+  unreachable, any other difference fails. `--save` stores the corpus in tests/corpus/,
+  which difftest replays as regression cases.
+
+Suites: `tests/movement.py` (entries, fuzz targets), `tests/movement_callers.py` (the real
+ASM callers: tail jumps, fall-through, far trampoline, ZF consumers), `tests/sequences.py`
+(UpdateAllRecords / TickFrameTimers sequences over populated worlds), `tests/quirks.py`
+(documented original bugs asserted on the oracle, then compared).
+
+A region is ready to merge when its fuzz targets and sequences reach every reachable
+oracle instruction of the region (`python tools/fuzz.py <suite>` prints the union
+coverage), its suites, the corpus and all older suites pass, and a few representative
+mutants (signedness, off-by-one, wrong transition, omitted side effect, wrong allocation
+path, bridge preservation) are caught. As C regions merge, prefer higher entry points
+(a handler, UpdateRecordByKind, UpdateAllRecords) over more direct entries.
 
 Each C region is proven on its own, through its entry labels and its real ASM callers;
 whole-game runs are a manual play check, not a test method (no set of runs covers all

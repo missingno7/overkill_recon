@@ -24,10 +24,14 @@ from common import *
 from build import main_sources
 from emu import Machine, FLAG, LOAD
 from unicorn import UC_HOOK_MEM_WRITE
-import bisect, importlib, random, re, shutil, sys, time
+import bisect, importlib, itertools, random, re, shutil, sys, time
 
 STATE_BYTES = 0xD330
 ALL_REGS = ('AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS')
+
+class OracleFault(AssertionError):
+    """The oracle itself faulted, hung or hit an interrupt: the state is not one the game can
+    reach (suites must not produce it; the fuzzer discards it)."""
 
 class Case:
     """One call: `writes` is a list of (state offset, bytes); `preserve` names the
@@ -54,23 +58,35 @@ class Side:
         self.m.u.hook_add(UC_HOOK_MEM_WRITE, write)
 
     def where(self, address):
-        """A write target both links agree on: label+offset inside the image, else the address."""
+        """A write target both links agree on: a DS offset past the state data (e.g. through a
+        pointer of FFFFh), label+offset inside the image, else the address."""
+        ds = self.m.data_frame * 16
+        if ds + STATE_BYTES <= address < ds + 0x10000:
+            return f'DS:{address - ds:04X}'
         if self.image[0] <= address < self.image[1]:
             i = bisect.bisect_right(self.keys, address) - 1
             return f'{self.by_address[i][1]}+{address - self.keys[i]:X}'
         return f'{address:05X}'
 
-    def run(self, case, sp):
-        self.m.set_state(self.pristine)
+    def run(self, case, sp, fresh=True, keep=False):
+        """fresh: start from the pristine state (else continue from the last step's state);
+        keep: leave writes outside the state segment in place for a following step."""
+        if fresh:
+            self.m.set_state(self.pristine); self.undo = []
         for off, data in case.writes: self.m.write(off, data)
-        self.outside, self.undo = [], []
+        self.before = self.m.read(0, STATE_BYTES)
+        self.outside = []
         try:
             regs = self.m.call(case.label, case.regs, sp=sp)
             return regs, self.m.read(0, STATE_BYTES)
         finally:
-            # Writes outside the state segment (video memory, buffers, CS variables) are
-            # undone so every case starts from the same runtime.
-            for address, old in reversed(self.undo): self.m.u.mem_write(address, old)
+            if not keep: self.rollback()
+
+    def rollback(self):
+        # Writes outside the state segment (video memory, buffers, CS variables) are undone
+        # so every case starts from the same runtime.
+        for address, old in reversed(self.undo): self.m.u.mem_write(address, old)
+        self.undo = []
 
 class Pair:
     def __init__(self, oracle=ROOT/'build/oracle-sym/OVERKILL.EXE', hybrid=ROOT/'build/hybrid/OVERKILL.EXE'):
@@ -81,10 +97,31 @@ class Pair:
         self.stack_area = self.a.m.offset('StackArea')
         self.sym = self.a.m.offset
 
-    def compare(self, case, sp=None):
+    def sequence(self, steps, sp=None):
+        """Run steps in order on both sides, each from the state the previous step left, and
+        compare after every step: the first divergence names its step."""
+        try:
+            for i, case in enumerate(steps):
+                try:
+                    self.compare(case, sp, fresh=(i == 0), keep=(i < len(steps) - 1))
+                except AssertionError as e:
+                    raise AssertionError(f'step {i + 1}/{len(steps)}: {e}') from None
+        finally:
+            self.a.rollback(); self.b.rollback()
+
+    def compare(self, case, sp=None, fresh=True, keep=False):
         sp = self.a.m.stack_top - 0x40 if sp is None else sp
-        ra, sa = self.a.run(case, sp)
-        rb, sb = self.b.run(case, sp)
+        try:
+            try:
+                ra, sa = self.a.run(case, sp, fresh, keep)
+            except AssertionError as e:
+                raise OracleFault(f'oracle: {e}') from None
+            try:
+                rb, sb = self.b.run(case, sp, fresh, keep)
+            except AssertionError as e:
+                raise AssertionError(f'hybrid only: {e}') from None
+        except AssertionError:
+            self.a.rollback(); self.b.rollback(); raise
         where = f'{case.label} {case.name}'
         if self.a.m.ports != self.b.m.ports:
             raise AssertionError(f'{where}: port traffic differs\n  oracle {self.a.m.ports[:6]}\n  hybrid {self.b.m.ports[:6]}')
@@ -117,8 +154,13 @@ def run_suites(names=None, scale=1, seed=0x0F67C9B, pair=None, quiet=False):
     for name in names or suite_names():
         module = importlib.import_module(name)
         rng = random.Random(seed); t = time.time(); n = 0
-        for case in module.cases(rng, scale, pair):
-            pair.compare(case); n += 1
+        cases = module.cases(rng, scale, pair) if hasattr(module, 'cases') else ()
+        if getattr(module, 'FUZZ', ()):
+            from fuzz import corpus_cases   # saved fuzz corpora replay as regression cases
+            cases = itertools.chain(cases, *(corpus_cases(t) for t in module.FUZZ))
+        for case in cases:
+            if isinstance(case, list): pair.sequence(case); n += len(case)
+            else: pair.compare(case); n += 1
         if not quiet: print(f'PASS {name}: {n} cases in {time.time() - t:.1f} s', flush=True)
         total += n
     return total
@@ -150,22 +192,11 @@ def run_mutants(names=None):
 def coverage(names=None, scale=1):
     """Run the suites while recording which instructions of the oracle's C-owned code the
     oracle side executed; every instruction should be reached."""
-    import hybrid, capstone
+    import hybrid
     from unicorn import UC_HOOK_CODE
     pair = Pair(); m = pair.a.m
-    # Jump tables inside owned code: `X label word` followed by dw rows (skip their words).
-    tables = {}
-    for path in main_sources():
-        text = path.read_bytes().decode('latin-1')
-        for mt in re.finditer(r'^(\w+)[ \t]+label[ \t]+word[ \t]*\r?\n((?:[ \t]+dw[^\r\n]*\r?\n)+)', text, re.M | re.I):
-            tables[mt[1].upper()] = 2 * sum(len(row.split(';')[0].split(',')) for row in mt[2].splitlines())
-    starts = sorted((LOAD + s) * 16 + o for s, o in m.symbols.values())
-    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
-    code = {}
-    for name in hybrid.owned_labels():
-        begin = m.linear(name) + tables.get(name, 0); end = next(a for a in starts if a > m.linear(name))
-        body = bytes(m.u.mem_read(begin, end - begin))
-        code[name] = [begin + i.address for i in md.disasm(body, 0)]
+    from fuzz import region_instructions
+    code = {name: region_instructions(m, [name]) for name in hybrid.owned_labels()}
     hit = set()
     lo = min(min(v) for v in code.values()); hi = max(max(v) for v in code.values())
     m.u.hook_add(UC_HOOK_CODE, lambda u, address, size, _: hit.add(address), None, lo, hi)

@@ -94,3 +94,63 @@ MUTANTS = [
     ('movement.c', 'case DIR_DOWN_LEFT:  r->y += n; r->x -= n;', 'case DIR_DOWN_LEFT:  r->y += n; r->x += n;'),
     ('movement.asm', 'MoveInDirectionN:\r\n    push ax\r\n', 'MoveInDirectionN:\r\n'),
 ]
+
+# Coverage-guided differential fuzzing (python tools/fuzz.py movement N): the movement
+# region's oracle code guides the search from these entries.
+from fuzz import Target
+from world import K
+import hybrid as _hybrid
+REGION = [n for n, f in _hybrid.owned_labels().items() if f == 'movement.c']
+
+def _steer_seed(w):
+    r = w.record('PoolA', w.rng.randrange(35)).live()
+    tx, ty = r.get('x') + w.rng.randrange(-20, 21), r.get('y') + w.rng.randrange(-20, 21)
+    w.word('SteerTargetX', tx).word('SteerTargetY', ty).word('SteerSpeed', w.rng.randrange(4))
+    return {'BP': r.at}
+
+def _step_seed(w):
+    r = w.record('PoolB', w.rng.randrange(34)).live(delta_x=w.rng.randrange(-40, 41), delta_y=w.rng.randrange(-40, 41))
+    w.word('ChaseStepPixels', w.rng.choice((2, 3)))
+    return {'BP': r.at}
+
+def _missile_seed(w):
+    w.plausible()
+    t = w.record('PoolA', w.rng.randrange(35)).live(kind=K.KIND_ENEMY, type=0x14)
+    m = w.record('PoolB', w.rng.randrange(34)).live(kind=K.KIND_TYPED, type=0x0A, size=0, player_shot=1,
+                                                     field_1c=w.rng.randrange(2), target=t.at)
+    return {'BP': m.at}
+
+def _path_seed(w):
+    w.plausible()
+    r = w.record('PoolA', w.rng.randrange(35)).live(kind=K.KIND_ENEMY, type=0x12)
+    r.set(field_36=w.sym(w.rng.choice(('Type41Path', 'Type43Path', 'Type44Path'))))
+    return {'BP': r.at}
+
+def _aim_seed(w):
+    w.plausible()
+    if w.rng.randrange(3) == 0: w.fill('PoolB', w.rng.choice((33, 34)))
+    return {'BP': w.record('PoolA', w.rng.randrange(35)).live(kind=K.KIND_ENEMY, type=0x48).at}
+
+def _slot_seed(w):
+    w.plausible()
+    r = w.record('PoolA', w.rng.randrange(35)).live(kind=K.KIND_ENEMY, type=0x1D)
+    r.set(saved_x=r.get('x') + w.rng.randrange(-8, 9), saved_y=r.get('y') + w.rng.randrange(-8, 9))
+    return {'BP': r.at}
+
+NOT_AX_BX = tuple(r for r in ALL_REGS if r not in ('AX', 'BX'))
+# Preconditions: unchecked jump tables (SteerSpeed, REC_DIRECTION); every writer stays inside.
+DOMAINS = {'SteerSpeed': range(4), 'direction': range(8)}
+FUZZ = [
+    Target('steer', 'SteerTowardTarget', _steer_seed, REGION, NOT_AX_BX, globals=('SteerTargetX', 'SteerTargetY', 'SteerSpeed'), domains=DOMAINS),
+    Target('step', 'StepAlongDelta', _step_seed, REGION, NOT_AX_BX, globals=('ChaseStepPixels',), domains=DOMAINS),
+    Target('missile', 'Type0AHomingMissile', _missile_seed, REGION, types=(0x14, 0x12, 0x26, 1, 0x21),
+           globals=('MissilesLive', 'FrameCount8', 'DemoActive', 'SfxEnabled', 'ScrollDeltaY'), watch=('MissilesLive',), domains=DOMAINS),
+    Target('aimshot', 'SpawnAimedShot', _aim_seed, REGION, ('SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS'), outputs=('BX',),
+           globals=('SegBossActive', 'SfxEnabled', 'PoolBCursor'), domains=DOMAINS),
+    Target('slotbob', 'Type1DSlotBobThenChase', _slot_seed, REGION, types=(0x1D,),
+           globals=('EncounterTicks', 'EncounterLiveCount', 'SteerSpeed', 'FrameCount8', 'RecordTickCounter'), domains=DOMAINS),
+    Target('pathfollow', 'Type12WaypointPathFollower', _path_seed, REGION,
+           globals=('LevelIndex', 'DemoActive', 'MapScrollPos'),
+           # REC_PATH only ever points at a waypoint of the Type41..Type51 path tables.
+           domains=dict(DOMAINS, field_36=lambda pair: range(pair.sym('Type41Path'), pair.sym('AutoMoveExtraRecord'), 4))),
+]
