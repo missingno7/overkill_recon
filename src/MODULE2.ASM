@@ -1434,10 +1434,32 @@ loc_05CC0:
     out dx, ax
     pop ds
     ret
-; UNKNOWN: not yet classified as code or data
-    db 052h,086h,0F2h,0E8h,01h,00h,05Ah,052h,0D0h,0EAh,0D0h,0EAh,0D0h,0EAh,0D0h,0EAh
-    db 0E8h,01h,00h,05Ah,080h,0E2h,0Fh,080h,0FAh,0Ah,072h,03h,080h,0C2h,07h,080h
-    db 0C2h,030h,08Ah,0C2h,0B4h,0Eh,0CDh,010h,0C3h
+; Print DX as four hex digits with BIOS teletype output (INT 10h AH=0Eh). No caller
+; found in this image.
+DebugPrintHexDX:
+    push dx
+    xchg dh, dl
+    call DebugPrintHexDL
+    pop dx
+DebugPrintHexDL:
+    push dx
+    shr dl, 1
+    shr dl, 1
+    shr dl, 1
+    shr dl, 1
+    call DebugPrintHexDigit
+    pop dx
+DebugPrintHexDigit:
+    and dl, 0Fh
+    cmp dl, 0Ah
+    jb loc_05D01
+    add dl, 7
+loc_05D01:
+    add dl, 30h
+    mov al, dl
+    mov ah, 0Eh
+    int 10h
+    ret
 loc_05D0B:
     mov ds, word ptr cs:[MainDataSegment]
     inc byte ptr ds:[022CFh]

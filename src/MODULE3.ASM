@@ -3052,8 +3052,10 @@ loc_0ADC8:
 loc_0ADC9:
     mov word ptr ss:[bp + REC_Y], 0FFFFh
     jmp short loc_0AD60
-; UNKNOWN: not yet classified as code or data
-    db 0FFh,046h,02h,0FFh,046h,02h,0E9h,077h,04h
+loc_0ADD0:
+    inc word ptr ss:[bp + REC_Y]
+    inc word ptr ss:[bp + REC_Y]
+    jmp near ptr loc_0B250
 TypeHandler08:
     sub word ptr ss:[bp + REC_Y], 10h
     jmp short loc_0AD60
@@ -3528,6 +3530,7 @@ loc_0B245:
     jmp near ptr loc_0AD5A
 TypeHandler0B:
     call loc_05E42
+loc_0B250:
     cmp word ptr ss:[bp + REC_SIDE_FLAG], 1
     je loc_0B2A3
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
@@ -8727,7 +8730,5 @@ loc_10206:
     loop loc_10206
     inc word ptr ds:[PageIndex]
     jmp near ptr loc_10179
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h
 FAR0F7F ends
 end ProgramEntry
