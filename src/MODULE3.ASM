@@ -702,6 +702,7 @@ StartupAfterOverrides:
     call LoadCommonGraphics
     mov word ptr cs:[LoadNamePtr], offset File_WINDOW_BIC
     mov ax, word ptr cs:[WorkspaceSegment]
+; One paragraph past the 7D04h bytes CollapseScreenAndClear writes at workspace 0.
     add ax, WIDE_PAGE_BYTES / 16
     inc ax
     mov word ptr cs:[LoadDestSegment], ax
@@ -720,8 +721,9 @@ StartupAfterOverrides:
     mov word ptr ds:[TextInGraphics], 1
     call ResetPageAndClearScreen
     call RunAttractSequence
-; Options menu and choose screen, then reset level, lives and score and start the
-; first level. GameOver returns here. Kept across levels: score, lives, upgrades, pods,
+; Options menu and choose screen, then reset lives, score and upgrades and start the
+; chosen level (RunChooseScreen overwrites the LevelIndex store). GameOver returns here;
+; cheat flags, ChooseSlot and DifficultySetting carry over. Kept across levels: score, lives, upgrades, pods,
 ; ship form; lost on death: upgrades, pods, ship form (ResetPoolAAndUpgrades).
 StartNewGame:
     mov al, MUSIC_TITLE
@@ -792,8 +794,9 @@ StartLife:
     cmp word ptr ds:[MapScrollPos], MAP_START_POS
     jne GameFrame
     call ShowLevelIntro
-; One game frame, paced by the timer (WaitTimerTick): update and draw, act on the
-; requests raised this frame, then F4 (level skip), F10 (pause) and Esc (quit prompt).
+; One game frame, paced by the timer (WaitTimerTick): update and draw; a request raised by
+; UpdatePlayerFrame is acted on at once (no UpdateAllRecords, timers or fuel drain that
+; frame); then F4 (level skip), F10 (pause) and Esc (quit prompt).
 ; Draws the state of the previous update: EGA targets the hidden page, the workspace window
 ; goes to the screen, and backgrounds are restored before UpdatePlayerFrame scrolls the ring
 ; (REC_WORK_OFS stays valid); the EGA page is shown at the end of the frame.
@@ -1026,6 +1029,8 @@ InitPositionHistory:
 
 ; Drives the player during the end-of-level sequence (LevelEndPhase) by synthesizing
 ; InputBits: autopilot to two waypoints, then refill fuel and energy.
+; X is forced even so the 2-px steps can land on the waypoint X. Arrival re-dispatches the
+; next phase in the same frame (entering phase 2 zeroes the spreads and spawns type 52h).
 RunLevelEndSequence:
     and word ptr ds:[PrimaryRecord + REC_X], 0FFFEh
     mov byte ptr ds:[InputBits], 0
@@ -1126,6 +1131,9 @@ SteerInputToWaypoint:
     or byte ptr ds:[InputBits], IN_XMINUS
 @@done:
     ret
+; UpdatePlayerFrame's dying branch (BP = PrimaryRecord; returns for it): sprite + 1 when
+; FrameCount4 = 3; at 0Fh frees the ship, RestartAtCheckpoint (map reload and scroll-back
+; now, mid-frame, even for a game over), LifeLostRequest, and GameOverRequest if Fuel is 0.
 PlayerDyingTail:
     cmp word ptr ds:[FrameCount4], 3
     je @@nextDeathFrame
@@ -1237,7 +1245,8 @@ CountRightPod:
     inc al
     ret
 
-; BP = record. Push X two steps away from an edge where a side pod was clamped (unless
+; BP = record. Push X two steps away from an edge where a side pod was clamped last frame
+; (ClampX*Seen; unless
 ; the player steers that way), then one step towards the side with fewer pods (skipped for a
 ; difference of one while FrameParity = 1). XAdjustPathTaken = 1 when any nudge path
 ; was taken, even if the bound kept X unchanged; it triggers a history advance.
@@ -1538,12 +1547,15 @@ RedrawEnergyGauge:
     call FlipEgaDrawPage
 @@done:
     ret
+; AllCheatsFlag: full tanks and bar again; the gauge is not redrawn here.
 CheatRefill:
     mov word ptr ds:[EnergyTanks], 3
     mov word ptr ds:[EnergyPoints], 018h
     ret
 
 ; Fuel - 1; at 0 the ship dies unless WhatOilShortageFlag refills it. Redraws the gauge.
+; Also runs while dying: reaching 0 then restarts the death animation (sprite 3) and turns
+; a tank death into a game over.
 DrainFuelUnit:
     cmp word ptr ds:[Fuel], 0
     jne @@drain
@@ -1655,7 +1667,7 @@ PlaceSidePods:
 
 ; BX = pod record or FFFFh (no-op), SI = (Y, X) offset table, BP = anchor record.
 ; Pod position = anchor + table[anchor REC_SPRITE] + 2*OffsetXWork in X, with X clamped
-; to 0..PLACEMENT_X_SIGNED_MAX; a clamp sets ClampXLowSeen/ClampXHighSeen (never clears).
+; to 0..PLAYFIELD_MAX_X; a clamp sets ClampXLowSeen/ClampXHighSeen (never clears).
 PlaceRecordFromOffsetPair:
     cmp bx, -1
     jne @@placePod
@@ -1681,9 +1693,9 @@ PlaceRecordFromOffsetPair:
     mov word ptr ds:[bx + REC_X], 0
     mov byte ptr ds:[ClampXLowSeen], 1
 @@checkHighClamp:
-    cmp word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_MAX_X
     jle @@done
-    mov word ptr ds:[bx + REC_X], PLACEMENT_X_SIGNED_MAX
+    mov word ptr ds:[bx + REC_X], PLAYFIELD_MAX_X
     mov byte ptr ds:[ClampXHighSeen], 1
 @@done:
     ret
@@ -1715,8 +1727,9 @@ ClearFireLatch:
     ret
 
 ; BP = PrimaryRecord. Fires when the primary button is newly pressed, held with rapid
-; fire, or every 16 frames while held. Early in the level (MapScrollPos <= MAP_INTRO_END_POS, not the
-; demo) only the main shot fires; otherwise the ShotsLive* snapshot is taken and
+; fire, or every 16 frames while held. Early in the level (MapScrollPos <=
+; MAP_INTRO_END_POS, not the demo) only FireSingleShot fires (FireForkShot in WEAPON_FORK;
+; heavy, twin and beam fall back to it, e.g. after a level change); otherwise the ShotsLive* snapshot is taken and
 ; missile, side shots, pod shots and the main weapon fire in turn. Demo: step 8 fires
 ; only FireFrontPodBurst; steps 10h..12h only the missile.
 HandleFireButton:
@@ -2177,7 +2190,7 @@ SpawnShotAtPod:
 AllocPlayerShot:
     call AllocPoolBRecordEvicting
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov word ptr ds:[bx + REC_SIDE_FLAG], 1
+    mov word ptr ds:[bx + REC_PLAYER_SHOT], 1
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 032h
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
@@ -2215,7 +2228,7 @@ FireMissile:
 @@lockTarget:
     mov word ptr ds:[bx + REC_TARGET], ax
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov word ptr ds:[bx + REC_SIDE_FLAG], 1
+    mov word ptr ds:[bx + REC_PLAYER_SHOT], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 0Ah
@@ -2272,10 +2285,10 @@ DecRecordYByMode:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne DecYUnguarded
     call DecRecordYUnlessAtMin
-; Decrement REC_Y unless it equals RECORD_Y_MIN. Equality guard only: smaller values
+; Decrement REC_Y unless it equals SHIP_Y_MIN. Equality guard only: smaller values
 ; still decrement.
 DecRecordYUnlessAtMin:
-    cmp word ptr ss:[bp + REC_Y], RECORD_Y_MIN
+    cmp word ptr ss:[bp + REC_Y], SHIP_Y_MIN
     jne @@decY
     ret
 @@decY:
@@ -2288,10 +2301,10 @@ DecYUnguarded:
 ; Two guarded REC_Y increments: call IncRecordYUnlessAtMax, then fall through into it.
 IncRecordYTwice:
     call IncRecordYUnlessAtMax
-; Increment REC_Y unless it equals RECORD_Y_MAX. Equality guard only: larger values
+; Increment REC_Y unless it equals SHIP_Y_MAX. Equality guard only: larger values
 ; still increment.
 IncRecordYUnlessAtMax:
-    cmp word ptr ss:[bp + REC_Y], RECORD_Y_MAX
+    cmp word ptr ss:[bp + REC_Y], SHIP_Y_MAX
     jne @@incY
     ret
 @@incY:
@@ -2310,12 +2323,12 @@ DecRecordXUnlessZero:
     dec word ptr ss:[bp + REC_X]
     ret
 
-; REC_X += 2, saturating at RECORD_X_MAX: call IncRecordXBelowMax, then fall through.
+; REC_X += 2, saturating at SHIP_X_MAX: call IncRecordXBelowMax, then fall through.
 IncRecordXTwice:
     call IncRecordXBelowMax
-; Increment REC_X while it is below RECORD_X_MAX (unsigned).
+; Increment REC_X while it is below SHIP_X_MAX (unsigned).
 IncRecordXBelowMax:
-    cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
+    cmp word ptr ss:[bp + REC_X], SHIP_X_MAX
     jb @@incX
     ret
 @@incX:
@@ -2323,7 +2336,7 @@ IncRecordXBelowMax:
     ret
 
 ; BP = ship; no-op while MapScrollPos <= MAP_INTRO_END_POS. At the right edge (X =
-; RECORD_X_MAX with IN_XPLUS) pulls the left pod pair in (SidePodSpreadLeft up to 8),
+; SHIP_X_MAX with IN_XPLUS) pulls the left pod pair in (SidePodSpreadLeft up to 8),
 ; else relaxes it toward 0. Equality guards, not clamps.
 UpdateSidePodSpreadAtEdges:
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
@@ -2331,7 +2344,7 @@ UpdateSidePodSpreadAtEdges:
     ret
 @@updateSpread:
     call UpdateSidePodSpreadRight
-    cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
+    cmp word ptr ss:[bp + REC_X], SHIP_X_MAX
     jne @@relaxLeftSpread
     test byte ptr ds:[InputBits], IN_XPLUS
     je @@relaxLeftSpread
@@ -2411,6 +2424,8 @@ ScrollForwardAndCheckLevelEnd:
     jne @@done
     mov word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     call SmartBombAll
+; REC_DRAW_PASS, REC_FLASH_TIMER and REC_HIT_POINTS stay from the slot's last occupant
+; (collisions are off from here).
     mov si, offset Type53SpawnTable
     mov cx, 4
 @@spawnNext:
@@ -2696,8 +2711,10 @@ RestoreRecordBackgrounds:
 
 ; Per frame: march, type 93h and segmented-boss state, then UpdateRecordByKind for pool
 ; A from PoolA[34] down to PoolA[0] (the primary is not updated here), then pool B from
-; [33] down to [0], then MoveStars. A record spawned mid-pass is updated this frame only
-; if its slot is still ahead; everything is drawn next frame.
+; [33] down to [0], then MoveStars. A record spawned mid-pass runs this frame only if its
+; slot is still ahead (a lower index in the pool being walked, or any pool B slot during
+; pool A); a reused slot is visited as its new occupant. Spawns from UpdatePlayerFrame run
+; this frame; all are drawn next frame.
 UpdateAllRecords:
     cmp word ptr ds:[FramesSinceInvaderSpawn], -1
     je @@latchMarch
@@ -3074,7 +3091,8 @@ PodLoseHitPoint:
 ; an enemy is destroyed and the pod loses a hit point (CF when it was the last). Always
 ; NC in the demo.
 ; On CF the caller (front, side or trailing pod) runs DestroyRecordAtBX on the enemy again:
-; score, sfx, ReleaseEncounterMember and GROUP_LIVE twice (no 26h wreck). Pool B is not
+; score, sfx and GROUP_LIVE - 1 twice (the group drop can come one member early); the
+; second ReleaseEncounterMember sees type 1 and does nothing; no 26h wreck. Pool B is not
 ; scanned: enemy shots never hit pods.
 PodCollideRecords:
     cmp word ptr ds:[DemoActive], 1
@@ -3185,8 +3203,9 @@ UpdatePod:
 ShotScrollAndBounds:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
-; Removes the shot outside Y 8..E0h or past X C8h, or when a type 2/4/5/6/8/9/0Ch shot is
-; over a wall cell (attribute exactly 1); the wall test is skipped in the demo.
+; Removes the shot unless 8 <= Y <= E0h and X <= C8h (unsigned: negative X/Y also go), or
+; when a type 2/4/5/6/8/9/0Ch shot is over a wall cell (attribute exactly 1); the wall test
+; is skipped in the demo.
 ShotBoundsCheck:
     cmp word ptr ss:[bp + REC_Y], 8
     jae @@checkBottom
@@ -3360,7 +3379,7 @@ Type04StraightShot:
 @@moveFast:
     jmp short MoveInDirection8
 ; Types 02h/03h: 8 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the
-; player-hit test; type 3 hits deal 1/3/5 damage by difficulty.
+; player-hit test; a type 3 hit calls DamagePlayerEnergy 1/3/5 times by difficulty.
 Type02TimedStraightShot:
     dec word ptr ss:[bp + REC_SHOT_TIMER]
     jne @@move
@@ -3485,6 +3504,8 @@ Move1ByDirection label word
 ; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and TerrainBlocked = 1)
 ; when blocked. BP is a 16x16 box at (X, Y + ScrollDeltaY). Diagonals try both axis steps
 ; separately, so one axis may move while NZ reports blocked; a walker overlap undoes it.
+; The walker test uses the unscrolled position against walkers' current REC_Y (scrolled
+; only if already updated this pass).
 TryTerrainStep:
     mov word ptr ds:[TerrainBlocked], 0
     mov ax, word ptr ss:[bp + REC_Y]
@@ -3751,8 +3772,9 @@ Type0BAimedEnemyShot:
 ; Damages the player and removes the shot on a hit; otherwise the scroll and bounds tail.
 ; Hit: PY-2 <= shot Y <= PY+12h (signed), PX <= shot X <= PX+14h (unsigned), before this
 ; frame's scroll. The shot is used up even when DamagePlayerEnergy ignores the hit.
+; Player shots (REC_PLAYER_SHOT 1, e.g. type 2 via Type02TimedStraightShot) skip to the tail.
 ShotHitPlayerCheck:
-    cmp word ptr ss:[bp + REC_SIDE_FLAG], 1
+    cmp word ptr ss:[bp + REC_PLAYER_SHOT], 1
     je @@missed
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     mov bx, word ptr ds:[PrimaryRecord + REC_X]
@@ -3963,7 +3985,7 @@ SpawnEightWayBurst:
     mov ax, ds:[BurstOriginY]
     mov ds:[bx + REC_Y], ax
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov word ptr ds:[bx + REC_SIDE_FLAG], 0
+    mov word ptr ds:[bx + REC_PLAYER_SHOT], 0
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
@@ -4047,16 +4069,19 @@ EncounterSegBossLevel:
     mov word ptr ds:[bx + REC_X], 20h
     mov ds:[SegBossPart79], bx
     jmp near ptr FinishRecordUpdate
-; Unchecked: SegBossActive stays 1 and the part pointers are stale (0 before any boss), so
-; SteerSegBossAlongPath and the part-kill explosions touch stale records.
+; Pool A full: SmartBombAll also destroys this core, whose ReleaseEncounterMember explodes
+; the stale part pointers (0 before any boss: writes into DS:8..23h) and clears
+; SegBossActive; parts already made are exploded with it.
 @@bossPartsFailed:
     mov word ptr ds:[EncounterLiveCount], 0
     call SmartBombAll
     jmp near ptr FinishRecordUpdate
 ; Encounter director (Formation33 at trigger 4; indestructible except on level 4). Level 4:
 ; Type21LeaderPath. Levels 1/2/5: a 23h faller on each FrameCount8 = 7 until EncounterTicks
-; C8h, at F0h boss 22h (HP 0Ah * (LevelIndex + 1)). Level 3: fallers, then one invader per
-; update. Level 0: the segmented boss once CountLiveEnemies == 1 (itself; equality).
+; C8h; at F0h it turns into a type 22h burster at X 60h (HP 0Ah * (LevelIndex + 1)) that
+; falls to Y A0h and bursts (Type22DescendThenBurst). Level 3: fallers, then one invader per
+; update. Level 0: the segmented boss once it is the only live KIND_ENEMY in pool A (map
+; enemies and running explosions count).
 ; Level 3: once InvaderFormationEnd is reached it becomes type 64h (sprite 8Eh) at the
 ; player's X, Y 0, leaving the encounter count. Level 0: it becomes the boss core 78h.
 Type21EncounterDirector:
@@ -4241,8 +4266,9 @@ SteerToSaved:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
     ret
-; Hops between formation slots; when few remain, moves above the player and drops 4 px
-; per frame.
+; Hops between formation slots; when EncounterLiveCount <= 3, or at the player's X whenever
+; RecordTickCounter < 5 (just after its wrap), moves above the player and drops 4 px per
+; frame.
 ; Fires random aimed shots while RecordTickCounter is 2BCh..2D0h. The drop sets the
 ; global RecordTickCounter = 28h, targets (player X + 8) & ~7 unless FrameParity = 1,
 ; and keeps falling 4 px per frame past A0h.
@@ -4362,8 +4388,8 @@ SteerToSavedTail:
     call SteerToSaved
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr FinishRecordUpdate
-; Enters its slot, then bobs, sinks and shoots; chases the player when few remain or
-; once low on screen.
+; Steers to its slot until EncounterTicks 28h (arrived or not), then bobs, sinks and
+; shoots; chases the player when EncounterLiveCount <= 2 or Y > C0h (unsigned).
 Type1DSlotBobThenChase:
     cmp word ptr ds:[EncounterLiveCount], 2
     ja @@checkLow
@@ -4437,6 +4463,8 @@ Type1EShuttleShooter:
     jmp near ptr FinishRecordUpdate
 ; Types 16h/17h: steers to REC_SAVED, waits REC_ENTRY_DELAY, moves to Y 20h (16h) or 40h
 ; (17h); becomes type 18h at EncounterTicks 31h.
+; Equality test: a member parked after the 4 frames of tick 31h stays 16h/17h (still
+; counted).
 Type16SweepLeadIn:
     mov word ptr ds:[SteerSpeed], 1
     cmp word ptr ds:[LevelIndex], 0
@@ -4625,6 +4653,7 @@ Type19WallPatrolShooter:
     jne HorizontalTerrainPatrol
     call SpawnShotDown
 ; Walks BP 1 px left or right, reversing at X 0/C0h or a blocked step; ends in the scroll tail.
+; Any REC_DIRECTION but DIR_LEFT (e.g. the spawn default DIR_DOWN) walks right.
 HorizontalTerrainPatrol:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jne @@walkRight
@@ -4858,6 +4887,9 @@ RemoveRecordAtBX:
 ; (leaders drop their item even when leaving the screen) and, unless type 1, zero its
 ; group's GROUP_LIVE (no drop). Pod -> KIND_TYPED. Type 9: frees the whole BeamList.
 ; Shots 5-8/0Ch decrement their ShotsLive* count; type 0Ah decrements MissilesLive.
+; A leader's drop can reuse BP's just-freed slot: the checks after ReleaseEncounterMember
+; then read the pickup (slot FFFFh), so GROUP_LIVE is kept. Type 0Ah also runs
+; RefreshUpgradeDisplay (AdvanceToAvailableUpgrade and redraw).
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
@@ -4991,6 +5023,8 @@ ProbeOverlapsWalker:
     ret
 ; Explosion: REC_ANIM advances every 2nd frame; small ones end at 9 (types 24h/25h leave
 ; a type 26h wreck), large ones at 0Ch. Size class 0 only scrolls.
+; The last step (RemoveRecord, or the 26h wreck with X +/- 8 unclamped into REC_SAVED)
+; skips the scroll and finish tail.
 Type01ExplosionAnimation:
     cmp word ptr ds:[FrameParity], 1
     je @@advance
@@ -5042,12 +5076,14 @@ AnimateExplosion32:
     add ax, 3
     mov ss:[bp + REC_SPRITE], ax
     jmp near ptr ScrollRecordThenFinish
-; BX = player shot that hit BP. Types 7, 8, 0Ch and 9 pierce: they destroy BP outright
-; (against the segmented boss they only damage it, and 7/8/0Ch are then used up). Types
-; 5 and 6 are used up and destroy BP. Type 2 is used up: 1 HP (+1 for sprite 33h) plus
-; 3/1/0 more at DifficultySetting 0/1/other; boss hits through DamageTwo take 5/3/2. Each
+; BX = player shot that hit BP. Types 7, 8, 0Ch and 9 pierce and destroy BP outright; 5 and
+; 6 are used up and destroy it. With SegBossActive these and the missile only DamageTwo
+; (5/3/2 HP at DifficultySetting 0/1/other); 5-8/0Ch are still used up, 9 and the missile
+; not. Type 2 is used up: 1 HP (+1 for sprite 33h) plus 3/1/0 more by difficulty. Each
 ; step tests zero only, so a type 21h left at 0 HP wraps to FFFFh on its next hit. Any
 ; other shot only hits its REC_TARGET (the missile, which unlocks).
+; The missile keeps REC_TARGET after unlocking, so flying back it still hits whatever
+; now occupies that slot.
 ShotHitsRecord:
     cmp word ptr ds:[bx + REC_TYPE], 7
     jne @@checkType8
@@ -5211,8 +5247,10 @@ StartExplosion32:
     ret
 
 
-; BP = enemy being removed: encounter live count by REC_TYPE; a segmented-boss part
-; explodes the others, leaders end their script, type 93h sets its latch.
+; BP = enemy being removed: EncounterLiveCount - 1 for counted types; leaders (13h/15h/1Ch/
+; 1Fh/7Dh/7Eh) also end their script, reset FormationSlotCursor and drop item 2 (energy)
+; through SpawnItemDrop; 93h sets its latch; a segmented-boss part explodes the others (no
+; score) and zeroes the count. Type 1 (already destroyed) matches nothing.
 ReleaseEncounterMember:
     cmp word ptr ss:[bp + REC_TYPE], 076h
     jne @@checkType77
@@ -5417,9 +5455,10 @@ SpawnChildAt12:
     jmp short InitChildRecord
 ; BP = parent record. Spawns a pool-B child (REC_KIND 2, REC_TYPE 4, sprite 30h) at
 ; parent +4,+4 moving in the parent's direction, on every 4th / 2nd / every call for
-; DifficultySetting 0 / 1 / 2. Unless the child is near the top (REC_Y < 8) or the
-; parent below E0h (unsigned), requests an effect chosen by the parent's REC_TYPE and
-; returns BX = child. Pool full: BX = FFFFh. Throttled: returns with BX UNCHANGED (AL = 0
+; DifficultySetting 0 / 1 / 2 (others act as 0; one shared ChildSpawnThrottle, never
+; reset). Unless child REC_Y < 8 or parent REC_Y > E0h (unsigned: a negative child Y passes,
+; a negative parent Y fails), requests an effect chosen by the parent's REC_TYPE; BX = child
+; either way. Pool full: BX = FFFFh. Throttled: returns with BX UNCHANGED (AL = 0
 ; only at difficulty 0); callers that test BX = FFFFh then write through the stale BX
 ; (types 24h/25h: RunTypeHandler's REC_TYPE * 2, hitting JoyCalCenterY/TimerVectorInstalled).
 SpawnThrottledChild:
@@ -5453,7 +5492,7 @@ InitChildRecord:
     mov ax, word ptr ss:[bp + REC_DIRECTION]
     mov word ptr ds:[bx + REC_DIRECTION], ax
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov word ptr ds:[bx + REC_SIDE_FLAG], 0
+    mov word ptr ds:[bx + REC_PLAYER_SHOT], 0
     mov word ptr ds:[bx + REC_SPRITE], 030h
     mov word ptr ds:[bx + REC_DRAW_PASS], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
@@ -6420,7 +6459,7 @@ ShowSoundCardCaption:
     ret
 
 ; Load and initialize the optional sound module named by SoundModuleSelect ('t', 'r',
-; 'a'; FFh tries tandy, roland, then adlib) into SOUND_MODULE_SEGMENT. On success sets
+; 'a'; FFh tries tandy, roland, then adlib) into SoundModuleSlot. On success sets
 ; SoundModuleLoaded and falls into RequestModuleMusic with AL = MUSIC_TITLE.
 LoadSoundModule:
     mov al, byte ptr ds:[SoundModuleSelect]
@@ -6477,9 +6516,10 @@ LoadSoundModule:
     mov byte ptr ds:[SoundModuleLoaded], 1
     mov al, MUSIC_TITLE
 
-; Music seam: AL = MUSIC_* tune. Written into the loaded module's header word
-; MODULE_MUSIC_REQUEST unless it is already MODULE_MUSIC_CURRENT; the module's own
-; timer tick picks it up.
+; Music seam: AL = MUSIC_* tune (kept in ModuleSoundRequest). Unless it equals
+; MODULE_MUSIC_CURRENT, stored as the word (tune, 0) at MODULE_MUSIC_REQUEST, zeroing
+; CURRENT; the module's own timer tick picks it up. SoundModuleLoaded is not tested:
+; without a module the SLOT1022 stub (or a failed module image) is written.
 RequestModuleMusic:
     mov byte ptr ds:[ModuleSoundRequest], al
     cmp byte ptr ds:[ModuleSoundEnabled], 0
@@ -7302,6 +7342,9 @@ LoadAndShowPage:
 ; Level intro: the plaque over the moving starfield for up to 200 frames or until the
 ; primary button. Runs when a life starts at the level start (MAP_START_POS), not at a
 ; later checkpoint.
+; Each intro frame also runs UpdateRefuelTimersAndScore (refuelling from 0, frame counters,
+; fuel drain): Fuel and the counter phases at the first GameFrame depend on when the
+; button ended the intro.
 ShowLevelIntro:
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
@@ -7976,7 +8019,8 @@ ProbeCrtcAtDX:
 ; ENC (LZSS) input buffer, refilled 400h bytes at a time from EncFileHandle.
 EncReadBuffer db 0400h dup (0)
 ; LZSS ring buffer: 4096 bytes, first write at 0FEEh. Only [0, 0FEEh) is cleared per file:
-; the last 18 bytes keep the previous ENC file's output.
+; the last 18 bytes keep the previous ENC file's output. No ENC stream in OVERKILL reads
+; them before writing them, so the carry-over is inert.
 EncRingBuffer db 01000h dup (0)
 ; LZSS allocation slack: the ring is sized N + F - 1 (4096 + 18 - 1), but
 ; DecodeEncFile wraps its index at 4096, so these 17 bytes are never touched.
@@ -7986,8 +8030,9 @@ EncRingBufferSlack db 00h,00h,00h,00h,00h,00h,00h,00h
 ; Decode the ENC file open on EncFileHandle to EncDestSegment:EncDestOffset, then close
 ; it. LZSS: flag bytes LSB first, 1 = literal, 0 = pair b0, b1: copy (b1 & 0Fh) + 3 bytes
 ; from ring[b0 | (b1 & F0h) << 4]. Pair 0, 0 then byte 0 ends; pair 0, 0 then a nonzero X
-; is an ordinary 3-byte copy from ring 0, and X is read again as the next input byte. EncOutputBytes counts the output; DS preserved.
-; CF set if the first read fails.
+; is an ordinary 3-byte copy from ring 0, and X is read again as the next input byte.
+; EncOutputBytes counts the output; DS preserved. CF set (and the file left open) if the
+; first read fails.
 DecodeEncFile:
     push ds
     push cs
@@ -8212,7 +8257,7 @@ TypeHandlers label word
     dw offset Type48DescendAimedFire, offset Type49RadialBurstFaller, offset Type4AFollowPathType4A, offset Type4BDescendThenBounceUpRight
     dw offset Type4CSinkThenRise, offset Type4DSinkRiseThenDash, offset Type4EAnimDescendThenBounce, offset Type4FFallFast4Flicker
     dw offset Type50SteerHomeThenBecomePod, offset Type51FollowType51Path, offset Type52ScrollOnly, offset Type53AnimateFromSpriteBase
-    dw offset Type54ScrollUntilY_B0ThenType56, offset Type55DropFrom_B0, offset Type56CrawlDestroyOnBlock, offset Type57ScrollToY80ThenCrawl
+    dw offset Type54ScrollUntilY_B0ThenType56, offset Type55DropFast4, offset Type56CrawlDestroyOnBlock, offset Type57ScrollToY80ThenCrawl
     dw offset Type57ScrollToY80ThenCrawl, offset Type59ScrollThenAnimateThenType5A, offset Type5ACrawlMirrorDiagonal, offset Type5BScrollPastY_B0ThenType5C
     dw offset Type5CRiseFast4, offset Type5DDropFast8, offset Type5ECrawlTurnDownToLeft, offset Type5FCrawlTurnDiagonalDown
     dw offset Type60FlyAlongAimLine, offset Type61InvaderSteerToSlot, offset Type62InvaderMarch, offset Type63ScriptedSlideThenDrop
@@ -8316,7 +8361,7 @@ Type56CrawlDestroyOnBlock:
     call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
 ; Fires a burst while its animation is in phase 3.
-; A throttled spawn writes sprite 44h through the stale BX (see SpawnThrottledChild).
+; A throttled spawn writes sprite 44h through the stale BX (see CheckFirePhase).
 Type87AnimFireBurstA:
     mov bx, ds:[FrameCount64]
     shr bx, 1
@@ -8334,8 +8379,9 @@ Type87AnimFireBurstA:
 @@rightHalf:
     add word ptr ss:[bp + REC_SPRITE], 3
     jmp near ptr CheckFirePhase
-; Scrolls to Y B0h, then drops 4 px per frame without scrolling.
-Type55DropFrom_B0:
+; Drops 4 px per frame without scrolling while REC_DIRECTION = DIR_DOWN, which its only
+; spawner always leaves (InitEnemyRecordHere); the scroll-to-B0h wait is unreachable.
+Type55DropFast4:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     je @@drop
     mov word ptr ss:[bp + REC_SPRITE], 73h
@@ -8422,7 +8468,8 @@ Type5ACrawlMirrorDiagonal:
     jnl @@mirror
     jmp near ptr ScrollRecordThenFinish
 @@mirror:
-    xor word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
+; xor 6 mirrors a diagonal horizontally (1<->7, 3<->5); only diagonals arrive from 59h.
+    xor word ptr ss:[bp + REC_DIRECTION], 6
     call TryTerrainStep
     je @@continueScroll
     jmp near ptr DestroyRecord
@@ -8601,6 +8648,8 @@ Type62InvaderMarch:
     cmp word ptr ds:[FrameCount4], 0
     je @@fire
     jmp near ptr ScrollRecordThenFinish
+; Throttled: 63h goes through the stale BX: 0/C0h (DS:8/C8h), this frame's edge aimed
+; shot, or the failed 1..1Fh roll (DS:9..27h, the input-device and joystick words).
 @@fire:
     inc word ptr ds:[RecordTickCounter]
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
@@ -8625,7 +8674,9 @@ Type65InvaderDiveFiring:
     inc word ptr ss:[bp + REC_SPRITE]
     call SpawnAimedShot
     jmp near ptr ScrollRecordThenFinish
-; Waits for Y 50h, then plays a scripted slide by sprite and drops 4 px per frame.
+; Waits for Y 50h, then plays a scripted slide by sprite and drops 4 px per frame. The E9h
+; slide ends only at X = PLAYFIELD_CENTER_X exactly: from right of centre it slides to the
+; clamp and never drops.
 Type63ScriptedSlideThenDrop:
     cmp word ptr ss:[bp + REC_Y], 50h
     jae @@scripted
@@ -8898,7 +8949,10 @@ Type92FireWhenPlayerOnRow:
     call Type92SpawnShot
     sub word ptr ss:[bp + REC_Y], 4
     jmp near ptr ScrollRecordThenFinish
-; SpawnThrottledChild from BP with sprite 44h; returns BX.
+; SpawnThrottledChild from BP with sprite 44h; returns BX. Throttled: 44h goes through the
+; stale BX = player Y & ~3, to DS:that + 8; at player Y 4Ch..4Fh it zeroes SoundModuleLoaded
+; (module music stops for the session) and sets TimerTickPhase 44h; at 38h..4Bh it hits
+; the joystick calibration words.
 Type92SpawnShot:
     call SpawnThrottledChild
     cmp bx, -1
@@ -9032,6 +9086,7 @@ ResetMarchState:
     mov byte ptr ds:[Type93KilledPulse], 0
     ret
 ; BX = pool A record: a live size class 2 KIND_ENEMY with 200 hit points at (0, 0).
+; REC_DRAW_PASS/REC_FLASH_TIMER are left stale.
 InitSegBossPartRecord:
     mov word ptr ds:[bx + REC_HIT_POINTS], 0C8h
     mov word ptr ds:[bx + REC_X], 0

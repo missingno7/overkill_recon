@@ -19,9 +19,10 @@ UPGRADE_SLOT_BYTES equ 0Ah
 LEVEL_END_OFF equ 0
 ; Autopilot to AutopilotWaypointA.
 LEVEL_END_TO_WAYPOINT_A equ 1
-; Autopilot to AutopilotWaypointB, side pods spread out.
+; Autopilot to AutopilotWaypointB, side pods drawn in toward the ship.
 LEVEL_END_TO_WAYPOINT_B equ 2
-; Refuel and refill energy until full.
+; Refuel and refill energy until full while the ship climbs 1 px per frame (IN_YMINUS,
+; unguarded, so Y can go negative).
 LEVEL_END_REFILL equ 3
 ; Raises NextLevelRequest.
 LEVEL_END_DONE equ 4
@@ -29,7 +30,7 @@ LEVEL_END_DONE equ 4
 MAP_ROW_BYTES equ 0Dh
 ; Where a level (or a life) starts scrolling; life-start music 4 plays here.
 MAP_START_POS equ 12 * MAP_ROW_BYTES
-; Up to here only the main shot fires and pods stay idle (outside the demo).
+; Up to here only the single (or fork) shot fires and pods stay idle (outside the demo).
 MAP_INTRO_END_POS equ 14 * MAP_ROW_BYTES
 ; An encounter ending at or beyond this position restores MUSIC_LATE_LEVEL instead of
 ; the level tune (TickFrameTimers); nothing changes on merely crossing it.

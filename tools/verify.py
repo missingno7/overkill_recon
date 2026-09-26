@@ -26,8 +26,9 @@ MARK = '; UNKNOWN: not yet classified as code or data'
 def check_sources():
     """Original bytes may not enter through the assembler. An UNKNOWN marker heads plain
     `db` rows (unclassified bytes only); the run ends at any other line. Returns the
-    UNKNOWN byte count."""
-    unknown = 0
+    UNKNOWN byte count of the main image and of each sound module."""
+    unknown = {'main': 0, **{name: 0 for name in DRIVERS}}
+    owner = {path: 'main' for path in main_sources()} | {path: name for name, path in DRIVERS.items()}
     for path in main_sources() + list(DRIVERS.values()) + list((ROOT/'include').glob('*.INC')):
         text = path.read_text(encoding='latin-1'); low = text.lower()
         for bad in ('incbin', 'include assets', 'include ../', 'include ..\\'):
@@ -37,7 +38,7 @@ def check_sources():
             if line.startswith('; UNKNOWN'):
                 in_unknown = True; after = n; continue
             if in_unknown and line.startswith('    db '):
-                if path in main_sources(): unknown += len(line.split(';', 1)[0].strip()[3:].split(','))
+                if path in owner: unknown[owner[path]] += len(line.split(';', 1)[0].strip()[3:].split(','))
                 continue
             if in_unknown and n == after + 1: raise ValueError(f'{path.name}:{after}: UNKNOWN marker must head plain db rows')
             in_unknown = False
@@ -77,14 +78,14 @@ def verify():
     if (header['cs'], header['ip']) != (manifest['entry_cs'], manifest['entry_ip']):
         raise AssertionError(f"Entry {header['cs']:04X}:{header['ip']:04X} differs from the original")
     in_order = check_relocations(relocations, manifest['relocations'])
-    print(f'PASS main image: {len(actual)} bytes exact, entry {header["cs"]:04X}:{header["ip"]:04X}; {unknown} bytes still UNKNOWN db')
+    print(f'PASS main image: {len(actual)} bytes exact, entry {header["cs"]:04X}:{header["ip"]:04X}; {unknown["main"]} bytes still UNKNOWN db')
     print(f'PASS relocations: {len(relocations)} linked, the original set; '
           f'{in_order}/{len(relocations)} in original relative order (evidence only)')
     for name in DRIVERS:
         want, _ = driver(name); got = assemble_driver(name)
         diff = first_differences(want, got)
         if diff: raise AssertionError(f'{name} mismatch:\n  ' + '\n  '.join(diff))
-        print(f'PASS {name}: {len(got)} bytes exact')
+        print(f'PASS {name}: {len(got)} bytes exact; {unknown[name]} bytes still UNKNOWN db')
 
 if __name__ == '__main__':
     verify()

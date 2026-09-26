@@ -37,6 +37,7 @@ extrn EnergyPoints:word
 extrn EnergyTanks:word
 extrn ExitOrderScreen:word
 extrn ExitWithError:byte
+extrn ExtraDrainToggle:word
 extrn FileBufferOffset:word
 extrn FileBufferSegment:word
 extrn FileNamePtr:word
@@ -171,7 +172,6 @@ extrn SwayPhase:word
 extrn SwayReversals:word
 extrn SweepPath:word
 extrn SweepPathLeadIn:word
-extrn ThrustDrainToggle:word
 extrn TrailingPodFar:word
 extrn TrailingPodNear:word
 extrn TurretPhaseTable:word
@@ -1439,7 +1439,7 @@ CopyWorkspaceToScreen:
 CopyWorkspaceToScreenCases label word
     dw CopyWorkspaceToScreenCga, CopyWorkspaceToScreenEga, CopyWorkspace104x192ToTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-; Clears the whole video buffer for the adapter (CGA 16K, EGA both pages, Tandy 32K),
+; Clears the video buffer for the adapter (CGA 16K, EGA see ClearEgaPages, Tandy 32K),
 ; after showing EGA page 0 again. Leaves ES = ScreenSegment.
 ResetPageAndClearScreen:
     call ResetEgaPages
@@ -1971,7 +1971,7 @@ TickFuelDrain:
     je @@toggleExtraDrain
     ret
 @@toggleExtraDrain:
-    xor word ptr ds:[ThrustDrainToggle], 1
+    xor word ptr ds:[ExtraDrainToggle], 1
     je @@drainExtra
     ret
 @@drainExtra:
@@ -2237,6 +2237,9 @@ SmartBombAll:
     pop bp
     ret
 
+; BP = live pool A record: an on-screen (Y <= E0h unsigned) KIND_ENEMY other than type
+; 0/1 gets HP 0 and DestroyRecord (a type 21h outside level 4 survives at 0 HP); drops
+; may spawn into pool A slots the scan has not reached yet.
 SmartBombRecord:
     cmp word ptr ss:[bp + REC_Y], 0E0h
     jbe @@checkKind
@@ -2256,10 +2259,11 @@ SmartBombRecord:
 @@destroy:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp near ptr DestroyRecord
-; BP = record: tests every live player shot in pool B (unrolled over all 34 records)
-; against BP's 8-pixel cells (two columns and rows, four for size class 2) and hands
-; the first hit to ShotHitsRecord. Skips BP with REC_Y < 20h (signed), scenery and types
-; 0/1/26h; types 78h/79h get two rows even at size class 2.
+; BP = record: tests every live player shot in pool B (unrolled over all 34 records):
+; hit when shot cell (X & ~7) - BP cell is 0 or 8 (size 2: up to 18h), or -8 when shot
+; X & 7; Y the same without -8. The first overlapping shot goes to ShotHitsRecord and ends
+; the scan, even a missile aimed elsewhere (no effect). Skips BP with REC_Y < 20h
+; (signed), scenery and types 0/1/26h; types 78h/79h get two rows even at size class 2.
 PlayerShotsHitRecord:
     cmp word ptr ss:[bp + REC_STATUS], 0
     jne @@checkY
@@ -2294,7 +2298,7 @@ PlayerShotsHitRecord:
     mov bx, offset PoolB
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot1
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot1
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2349,7 +2353,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot2
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot2
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2404,7 +2408,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot3
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot3
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2459,7 +2463,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot4
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot4
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2514,7 +2518,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot5
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot5
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2569,7 +2573,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot6
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot6
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2624,7 +2628,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot7
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot7
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2679,7 +2683,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot8
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot8
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2734,7 +2738,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot9
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot9
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2789,7 +2793,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot10
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot10
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2844,7 +2848,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot11
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot11
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2899,7 +2903,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot12
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot12
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -2954,7 +2958,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot13
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot13
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3009,7 +3013,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot14
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot14
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3064,7 +3068,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot15
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot15
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3119,7 +3123,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot16
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot16
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3174,7 +3178,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot17
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot17
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3229,7 +3233,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot18
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot18
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3284,7 +3288,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot19
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot19
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3339,7 +3343,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot20
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot20
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3394,7 +3398,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot21
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot21
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3449,7 +3453,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot22
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot22
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3504,7 +3508,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot23
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot23
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3559,7 +3563,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot24
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot24
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3614,7 +3618,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot25
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot25
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3669,7 +3673,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot26
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot26
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3724,7 +3728,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot27
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot27
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3779,7 +3783,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot28
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot28
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3834,7 +3838,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot29
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot29
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3889,7 +3893,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot30
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot30
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3944,7 +3948,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot31
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot31
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -3999,7 +4003,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot32
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot32
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -4054,7 +4058,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@shot33
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@shot33
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -4109,7 +4113,7 @@ PlayerShotsHitRecord:
     add bx, RECORD_SIZE
     cmp word ptr ds:[bx + REC_STATUS], 0
     je @@noShotHit
-    cmp word ptr ds:[bx + REC_SIDE_FLAG], 0
+    cmp word ptr ds:[bx + REC_PLAYER_SHOT], 0
     je @@noShotHit
     mov ax, word ptr ds:[bx + REC_X]
     test ax, 7
@@ -4228,7 +4232,7 @@ SpawnAimedShot:
 ; BX = record: a live 8x8 KIND_TYPED type 0Bh shot, sprite 31h.
 InitAimedShotRecord:
     mov word ptr ds:[bx + REC_STATUS], 1
-    mov word ptr ds:[bx + REC_SIDE_FLAG], 0
+    mov word ptr ds:[bx + REC_PLAYER_SHOT], 0
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 031h
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
@@ -4251,8 +4255,8 @@ AimAtPlayer:
     ret
 ; BX = a free pool A record; when the pool is full, frees the first record that is not a
 ; pod or the exhaust (else the first one) through RemoveRecord: a leader victim spawns
-; its drop into the freed slot, which is then returned and overwritten. PoolACursor is
-; not moved by eviction.
+; its drop into the freed slot, which is then returned and overwritten, and the drop's
+; search leaves PoolACursor on it. Otherwise eviction leaves PoolACursor unchanged.
 AllocRecordEvicting:
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -4589,6 +4593,8 @@ DrawFuelGaugeOnPage:
     mov byte ptr es:[di], 0FEh
     sub di, 2 * EGA_SCREEN_ROW_BYTES
     jmp short @@nextFuelBar
+; CGA: the bank test is inverted, so one half-step is not a scan line, but each pair
+; nets -50h (two scan lines up, same bank); the midpoint is never written.
 @@cgaFullBar:
     mov word ptr es:[di], 0A02Fh
     mov ax, CGA_BANK_BYTES
@@ -5421,7 +5427,7 @@ SpawnCellCrawler6E:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 6Eh
     ret
-; Level 0 byte ECh: type 6Fh, 16 px outward, facing the centre.
+; Level 0 byte ECh: type 6Fh, 16 px outward, facing the centre; joins a group.
 SpawnCellCruiser6F:
     call SpawnMapGroupEnemy
     jne @@spawned
@@ -5633,7 +5639,8 @@ SpawnCellCrawler57Left:
     mov word ptr ds:[bx + REC_SPRITE], 9Bh
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     ret
-; SpawnMapEnemy, then registers the record in the current enemy group.
+; SpawnMapEnemy, then JoinMapGroup into the entry the cell dispatcher just allocated (one
+; enemy per entry).
 SpawnMapGroupEnemy:
     call SpawnMapEnemy
     cmp bx, -1
@@ -5657,7 +5664,8 @@ JoinMapGroup:
     or ax, 1
     ret
 ; Clears the cell and spawns a pool A enemy at (MapCellX, 10h) in draw pass 0 (under
-; pass-1 records); BX = record and NZ, or ZF when full. REC_SAVED = the caller BP's position.
+; pass-1 records); BX = record and NZ, or ZF when full. REC_SAVED = BP's position: the
+; player's (only path: UpdatePlayerFrame, BP = PrimaryRecord).
 SpawnMapEnemy:
     call ClearMapCell
 SpawnMapEnemyKeepCell:
@@ -5791,19 +5799,19 @@ TurretRemnantFlickerTail:
     jmp near ptr ScrollRecordThenFinish
 ; What a destroyed wall turret (24h/25h) leaves: slides 1 px per frame in REC_DIRECTION;
 ; when blocked (or at X >= C0h) sprite + 1 and sfx 1Eh; at sprite 98h/92h, every 4th
-; frame it snaps back to REC_SAVED_X (sprite - 1) and repeats. No collision, never a
-; missile target.
+; frame it snaps back to REC_SAVED_X (sprite - 1) and repeats. Player shots and missiles
+; ignore it; body contact (costs a tank), pods and the smart bomb destroy it.
 Type26TurretRemnant:
     cmp word ptr ss:[bp + REC_SPRITE], 98h
     je TurretRemnantFlickerTail
     cmp word ptr ss:[bp + REC_SPRITE], 92h
     je TurretRemnantFlickerTail
     call TryTerrainStep
-    jne @@slideStep
+    jne @@blocked
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
-    jae @@slideStep
+    jae @@blocked
     jmp near ptr ScrollRecordThenFinish
-@@slideStep:
+@@blocked:
     inc word ptr ss:[bp + REC_SPRITE]
     cmp byte ptr ds:[SfxEnabled], 0
     je @@done
@@ -6191,8 +6199,8 @@ StepHatchRampFrame:
     add ax, cx
     mov ss:[bp + REC_SPRITE], ax
     ret
-; Types 28h/2Ah: cycles its ramp animation and releases an enemy when none is live (29h,
-; 2Bh, 7Ah or 14h by level).
+; Types 28h/2Ah: cycles its 96-frame ramp; at phase 7, while EncounterLiveCount = 0,
+; releases an uncounted child (so one every cycle): 29h, 2Bh, 7Ah or 14h by level.
 Type28EnemyHatch:
     mov cx, 1Ch
     cmp word ptr ds:[LevelIndex], 1
@@ -6301,6 +6309,8 @@ Type8FAnimFireBurstB:
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     ja CheckFirePhase
     add word ptr ss:[bp + REC_SPRITE], 3
+; Throttled: BX is still the sprite (C1h for 8Fh, DFh for 87h), so 44h lands in
+; BossKeyScreen text (DS:C9h / E7h).
 CheckFirePhase:
     cmp cx, 3
     je @@fire
@@ -6388,8 +6398,8 @@ Type2FScrollingShuttle:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
     jmp near ptr ScrollRecordThenFinish
 ; Fires when FrameCount16 is 15 (every 4 frames on level 5).
-; On level 5 it freezes at sprite 46h unless the player's X is within 0Ch; adds sfx 0Eh
-; on top of the child's.
+; On level 5 it freezes at sprite 46h unless the player's X is within 0Ch. Then requests
+; sfx 0Eh, replacing the child's 0Bh in the SfxRequest mailbox (also when throttled).
 Type30AnimatedShooter:
     cmp word ptr ds:[LevelIndex], 5
     jne @@animate
@@ -6451,10 +6461,10 @@ Type33TerrainBouncer:
     jne @@reflect
     jmp near ptr ScrollRecordThenFinish
 @@reflect:
-    xor word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
+    xor word ptr ss:[bp + REC_DIRECTION], 2
     jmp near ptr ScrollRecordThenFinish
-; Fires sideways with sfx 13h from FrameCount64 32h on; level 0 waits until Y 50h (the
-; compare with 6 never matches).
+; Fires sideways from FrameCount64 32h on; level 0 waits until Y 50h (the compare with 6
+; never matches). Requests sfx 13h, which a spawned child's request (12h) replaces.
 ; The shot alternates each frame (FrameParity) between horizontal and diagonal-down;
 ; fires every frame while FrameCount64 >= 32h, subject to the throttle.
 Type34SideFiringTurret:
@@ -6512,7 +6522,8 @@ Type34SideFiringTurret:
 @@fireShot:
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
-; Bounces between Y 8 and 90h at an X-dependent speed and fires at each turn.
+; Bounces between Y 8 and 90h (1 px at X 60h, 3 at 50h/70h, else 5; exact X) and fires a
+; down shot at each turn (REC_DIRECTION is DIR_DOWN at both spawns).
 Type37VerticalBouncerShooter:
     mov ax, ds:[SlowCount4]
     add ax, 0B5h
@@ -6560,10 +6571,10 @@ Type83PatrolShootDown64:
     jmp near ptr HorizontalTerrainPatrol
 ; Descends diagonally, turning at X 0 and C0h.
 Type38WallBounceDescend:
-    mov ax, 3
+    mov ax, DIR_DOWN_RIGHT
     cmp word ptr ss:[bp + REC_X], 0
     je @@setDirection
-    mov ax, 5
+    mov ax, DIR_DOWN_LEFT
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     je @@setDirection
     mov ax, ss:[bp + REC_DIRECTION]
@@ -6854,7 +6865,8 @@ Type4CSinkThenRise:
     mov ss:[bp + REC_SPRITE], ax
     sub word ptr ss:[bp + REC_Y], 4
     jmp near ptr FinishRecordUpdate
-; Scrolls to Y 80h, rises to Y 60h, then dashes right as type 39h.
+; Scrolls to Y 80h, rises 4 px per frame (no scroll) to Y 60h, then becomes type 39h, which
+; scrolls back to Y 80h before dashing. REC_DIRECTION is the phase (DIR_DOWN = sinking).
 Type4DSinkRiseThenDash:
     mov word ptr ss:[bp + REC_SPRITE], 6Eh
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
@@ -6882,6 +6894,7 @@ Type4EAnimDescendThenBounce:
     mov ss:[bp + REC_SPRITE], bx
     jmp near ptr DescendUntilBounceRowTail
 ; Falls 4 px per frame with a cycling sprite.
+; The record offset adds PoolA & 7, the same for every slot (RECORD_SIZE 38h).
 Type4FFallFast4Flicker:
     mov ax, ds:[FrameCount8]
     add ax, bp
@@ -6920,13 +6933,17 @@ Type7BDropThenAim:
 Type13FormationLeader:
     call far ptr Type13FormationLeaderBody
     jmp near ptr FinishRecordUpdate
-; Steers to REC_SAVED, then becomes type 93h; no scroll.
+; Steers to REC_SAVED keeping its spawn heading (restored after each steer), then becomes
+; type 93h, whose first sweep uses it; no scroll.
 Type81SweeperEnterSteer:
     call far ptr Type81SweeperEnterBody
     jmp near ptr FinishRecordUpdate
 ; Sweeps sideways, descends and climbs back; destroyed after 100 blocked climbs.
 ; Shots: down when RecordTickCounter & FFh = FFh, aimed at ticks 0 and 2BDh. Drops five
 ; terrain steps on Type93KilledPulse; the climb counter resets on a free third step.
+; Waits for LeaderScript7DEnd, then REC_ENTRY_DELAY. Descent tests only the 4th step. A
+; blocked 3rd climb step at X = 60h also resets the counter (ZF of Type93BlockedTurnUp's
+; compare), so a sweeper stuck at the centre is never removed.
 Type93SweepDescendClimb:
     call far ptr Type93SweepBody
     cmp word ptr ss:[bp + REC_BLOCKED_CLIMBS], 064h
@@ -6941,6 +6958,10 @@ Type7FMarchEnterSteer:
     jmp near ptr FinishRecordUpdate
 ; Marches with the March* block state: shifts, drops and fires on the shared flags, and
 ; dives from sprite 164h on.
+; Waits for LeaderScript7EEnd + REC_ENTRY_DELAY. Dives (sprite 164h, 3 HP) when
+; RecordTickCounter & FFh is 0 or 7Dh; the first marcher seeing MarchFireNow clears it and
+; fires. In slot = REC_Y equals REC_SAVED_Y (X not corrected); X exactly 0/C0h sets
+; MarchEdgeHit.
 Type80MarchFormationMember:
     call far ptr Type80MarchMemberBody
     jmp near ptr FinishRecordUpdate

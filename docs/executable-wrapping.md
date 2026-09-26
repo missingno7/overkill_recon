@@ -57,24 +57,22 @@ pre-packing relocation emission order. The reconstructed image stores **unreloca
 segment words; adding the load segment at each listed site yields the loaded image.
 
 The launcher's four stages can be extracted too (see git history for the former
-launcher extraction). Its final image is 165152 bytes with entry
-`0000:0002` and 16 relocations. Launcher ASM reconstruction is still outstanding.
+launcher extraction). Its final image is 165152 bytes with entry `0000:0002` and 16
+relocations. The launcher is outside this reconstruction: the game's side of its
+interface (binary option bytes at PSP:81h, see ProgramEntry) and the checksum the game
+verifies (ChecksumFileOrAbort) are in the source; its own code is not reconstructed.
 
-## Independent verification of the unpacker (historical)
-
-During development the original unpacking instructions were executed from a zeroed
-memory model (Unicorn, load segments 1010 and 2010) and every final byte matched the
-pure decoder in `tools/extract.py` after applying the relocation list. That tool was
-retired; it remains in git history. `tools/extract.py` plus metadata/oracle.json is
-the maintained oracle.
+The pure decoder in `tools/extract.py` was checked once against the original unpacking
+instructions executed in an emulator (every byte matched); `tools/extract.py` plus
+metadata/oracle.json is the maintained oracle.
 
 ## What exists at the boundary
 
 The target is the **initialized module immediately before 0000:95C9 executes**,
-not a post-menu or post-driver snapshot. It includes initialized code, inline tables,
-strings and currently unclassified bytes. Zero bytes expanded by the packer are
-initialized data; they must not automatically be called BSS. The original BSS
-ownership, complete allocation layout and runtime memory needs remain UNKNOWN.
+not a post-menu or post-driver snapshot: initialized code, inline tables, strings and
+zero-filled areas. The image does not say which zero bytes the original declared as
+uninitialized (BSS); the source writes them as initialized data, and segments the game
+allocates at run time (workspace, sprite banks, panels) are allocated in the source.
 
 Observed code address frames are 0000, 0F7F, 1022, 1534 and 153A. These come from
 actual reachable far targets and are not proof of original object/SEGDEF boundaries.
@@ -83,32 +81,10 @@ to A278, and begins mixed near/far calls. Far target frame 1534 at startup is vi
 as an immediate before relocation. A segment-valued word in a relocation is not, by
 itself, proof that the target contains code.
 
-At 0682 the game saves DOS INT08, programs PIT ports 43/40 with control 36 and divisor
-4000, and installs CS:06E5. This is documented from its actual instructions, not from
-legacy hook names. Other DOS/BIOS interrupts, port accesses, CS writes and possible
-code modifications remain to be reviewed in the source. Dynamic destinations,
-keyboard hooks, optional audio drivers and complete runtime-written code variants
-are still open work. The initial image oracle does not claim to account for all
-later executable bytes loaded or generated during gameplay.
-
-The legacy project's unpack notes were used as leads (notably the final entry and
-nested stubs). All image bytes, stage sizes, relocations and entry transfers above
-were independently derived from the copied originals and tested against their code.
-
-## Runtime materialization evidence (2026-09-24)
-
-The runtime-materialization tooling that produced this evidence was retired; it
-remains in git history.
-Oracle A and its ordered relocation criterion are unchanged. Executing the packed
-original proves that the 217-byte probe window at 1010:5E42..5F1A inclusive occurs in EXEPACK before
-95C9, not after it. The actual writer instruction is 32FF:0099; 009B is its successor.
-
-After A, original startup decodes ADLIB.ENC or ROLAND.ENC into relative segment
-1022. The independently decoded SHADOW directory and ENC resources are decoded by
-tools/resources.py. No original/legacy
-snapshot is an input. Runtime 9690 is a bounded candidate frontier; physical
-hardware equivalence, global stability and exact earliest-instruction minimality
-remain unproven. Both initial and materialized identities are retained.
+After the entry, startup decodes ADLIB.ENC or ROLAND.ENC (from the SHADOW container,
+see tools/resources.py) into the 1022 frame (SLOT1022.ASM); src/drivers/ reconstructs
+both modules exactly. The game writes no code at run time other than that module load.
+Interrupt, port and DOS behaviour is documented at its sites in the source.
 
 ## Link structure and the relocation invariant
 
@@ -133,8 +109,7 @@ module after the backward ones, which leaves 2 of the linked relocations out of 
 original relative order. A two-pass assembler such as MASM would not; this is weak
 evidence about the original toolchain, not a requirement. Therefore:
 
-- Acceptance: the set of relocations TLINK emits equals the original 123 sites (closed;
-  until it was, each missing site had to lie in an UNKNOWN `db` row).
+- Acceptance: the set of relocations TLINK emits equals the original 123 sites.
 - Relocation order is reported as evidence only.
 
 All 18 `jmp word ptr cs:[bx + table]` tables in MAIN are preceded by one 90h byte and

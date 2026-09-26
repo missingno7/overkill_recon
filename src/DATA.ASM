@@ -159,6 +159,7 @@ public ExhaustFrames
 public ExhaustOffsets
 public ExitOrderScreen
 public ExitWithError
+public ExtraDrainToggle
 public FallerColumnCursor
 public FallerColumns
 public FallerColumnsEnd
@@ -492,7 +493,6 @@ public TextColumn
 public TextInGraphics
 public TextRowOffset
 public TheEndBytes
-public ThrustDrainToggle
 public TimerTickPhase
 public TimerVectorInstalled
 public TitleLogoPiecePtr
@@ -629,13 +629,15 @@ MsgNotEnoughMemory db 'Not enough memory$'
 Sprite8Bytes dw 0
 Sprite16Bytes dw 0
 Sprite32Bytes dw 0
-; No reader found.
-GeometryUnread dw 0
+; Decoded size of LOGO.BIC (one 64-row image); LOGO.BIC is never loaded and this is
+; never read.
+LogoBytes dw 0
 ; Size in bytes of the THEND.BIC bank.
 TheEndBytes dw 0
-; PANEL.ENC bank: 19 size terms AllocateBuffers multiplies by counts (1, 16, 8, 7, 6, 4,
-; 4, 18, then 2 x 7, 1, 1, 6, 1: 87, the entries of PanelImageOffsets). The terms size
-; the allocation only; they do not follow the image order in PANEL.ENC.
+; PANEL.ENC bank: 19 decoded image sizes, one per image shape (not file order), times the
+; number of PANEL images of that shape (1, 16, 8, 7, 6, 4, 4, 18, then 2 x 7, 1, 1, 6, 1:
+; 87, the entries of PanelImageOffsets). Term 1 is the shape of images 0..14 and 36;
+; LoadCommonGraphics sizes the CGA patch of images 0..14 with it.
 PanelImageBytes dw 8 dup (0)
 ; BLUEBITS.BIC bank: image sizes of 13 groups (counts 1 x 9, 3, 3, 3, 1: 19 images).
 BlueBitsImageBytes dw 13 dup (0)
@@ -1060,7 +1062,9 @@ GroupDropKind dw 0h
 FormationSizeClass dw 00000h
 FormationDrawPass dw 00000h
 FormationType dw 00000h
-; 16 groups of script-spawned records: {live members, item kind to drop}.
+; 16 {live members, drop kind} entries, free while live = 0: one per script event (all its
+; members) or per grouped map cell (one enemy). RemoveRecord zeroes live while other members
+; keep REC_SLOT_INDEX, so their later deaths count against the entry's next group.
 GroupTable db 16 dup (0, 0)
 ; Index of the GroupTable entry allocated by AllocGroupSlot.
 GroupSlotIndex dw 0h
@@ -1133,8 +1137,9 @@ ClearWorkspaceHalfOnly dw 0h
 HiscoreFileName db 'hiscore.dat',00h
 ; Prefix of a high-score row; @@nextRow patches the row byte.
 HiscoreRowPrefix db TEXT_MOVE_TO, 4h, 0h, TEXT_SET_COLOR, 0Ah, 0h
-; hiscore.dat image: 8 score entries then 27 settings bytes (SavedSettings), followed
-; in the file by an additive checksum word; stored XOR-coded (XorCodeHiscoreBlock).
+; hiscore.dat image: 9 entries (8 shown and compared; the 9th, at +80h, only receives the
+; entry InsertHighScore shifts out), 27 settings bytes (SavedSettings) and a last byte;
+; then in the file an additive checksum word; stored XOR-coded (XorCodeHiscoreBlock).
 ; Entry (10h bytes): name[10], ' ', 0, score as 4 packed-BCD bytes, low byte first.
 ; Saved at game over only when the score strictly beats an entry; always at shutdown.
 HiscoreBlock db 053h,074h,065h,020h,043h,06Fh,072h,06Bh
@@ -1212,7 +1217,7 @@ LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
 FrameParity dw 00000h
 ; Wrapping frame counters (@@sway..): 0..3 up to 0..7Fh each frame; the slow
 ; counters step when FrameDivider4 wraps (SlowCount10 and SlowCount3 have no reader).
-; Never reset (nor FrameParity, ThrustDrainToggle, EasyHitToggle): their phase carries
+; Never reset (nor FrameParity, ExtraDrainToggle, EasyHitToggle): their phase carries
 ; over from the demo, level intros and earlier lives and games.
 FrameCount4 dw 0h
 FrameCount8 dw 0h
@@ -1238,7 +1243,7 @@ SwayPhase dw 0h
 SwayDropY dw 0h
 SwayReversals dw 0h
 ; Toggled while the player sprite is 2: every other pass drains extra fuel.
-ThrustDrainToggle dw 0h
+ExtraDrainToggle dw 0h
 ScrollWindowOffset dw 00000h
 ; Screen Y 0 lies ScrollSubRow pixels into the map row at MapScrollPos (GridYSum = Y +
 ; ScrollSubRow); counts down while scrolling forward and wraps 0 -> 0Fh as a row enters.
@@ -1310,11 +1315,11 @@ FuelGaugeOffset dw 0h
 LevelMapCellHandlers dw offset Level0MapCell, offset Level1MapCell, offset Level2MapCell, offset Level3MapCell, offset Level4MapCell, offset Level5MapCell
 ; Sprite frame and case per FrameCount128 >> 5 (types 90h, 91h).
 TurretPhaseTable dw 1, 0, 1, 2
-; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
-; secondary button applies the selected slot's current entry (ApplySelectedUpgrade).
 ; The player's hit point (Y, X) for SmallRecordHitsPlayer (PlayerHitOffsets applied).
 PlayerHitY dw 0
 PlayerHitX dw 0
+; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
+; secondary button applies the selected slot's current entry (ApplySelectedUpgrade).
 ; Scratch copy of SelectedUpgradeSlot, and entries tried by AdvanceToAvailableUpgrade.
 SavedUpgradeSlot dw 0
 UpgradeTries dw 0
@@ -1385,7 +1390,8 @@ SavedAllocStrategy dw 0
 WhatOilShortageFlag db 0
 ; Keep the life count when a life is lost.
 KeepLivesFlag db 0
-; Keys 3 (and others) grant pickup effects during play.
+; Key 3 steps the upgrade selector (PickupUpgradeSelector); the frame stalls until it is
+; released.
 BonusKeysEnabled db 0
 ; F4 skips to the next level.
 LevelSkipEnabled db 0
@@ -1515,7 +1521,8 @@ StackTop label word
 ; backward; added to REC_Y of scrolling records. Records update after the scroll, so
 ; terrain probes add it to REC_Y first.
 ScrollDeltaY dw 0
-; Ring of 48 ship (Y+8, X+8) points, advanced only on frames the ship moves; the
+; Ring of 48 ship (Y+8, X+8) points: the entry at HistoryWriteCursor is rewritten every
+; frame; the ring advances on movement input or an X nudge, not on actual motion. The
 ; trailing pods read 15 and 31 entries back. HistoryCursor47 advances but is never read.
 HistoryPairs db 00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -1575,7 +1582,9 @@ ShotsAtFireMain dw 0
 ShotsAtFireBeam dw 0
 ShotsAtFireSide dw 0
 ShotsAtFireFrontPod dw 0
-; Muzzle (dY, dX) from the player position per PrimaryRecord REC_SPRITE 0..2.
+; Muzzle (dY, dX) from the player position per PrimaryRecord REC_SPRITE 0..2. While dying
+; (sprite 3..0Eh) UpdateBeam's new links read past it into BeamList; the values are
+; discarded (UpdateBeam realigns every link in the same call).
 MuzzleOffsets dw 6, 0Ch,  0, 0Ch,  0, 0Ch
 ; Records of the beam (type 9 shots), head first; FFFFh-filled when the beam starts.
 BeamList dw 26 dup (0FFFFh)
@@ -1691,7 +1700,8 @@ LeaderScript7E dw 0h, 60h,  10h, 50h,  10h, 60h,  10h, 70h
     dw 50h, 40h,  50h, 40h,  60h, 50h,  60h, 50h
     dw 70h, 60h,  0FFFFh, 0FFFFh
 LeaderScript7EEnd dw LEADER_END_Y, 0h
-; Encounter age, counted every fourth frame; gates boss phases.
+; Encounter age in 4-frame ticks since StartLeaderScript; times the director phases and
+; the 20h/1Dh/16h-17h followers.
 EncounterTicks dw 0
 LeaderScript1C dw 0h, 0C0h,  30h, 8h,  10h, 0C0h,  20h, 10h
     dw 20h, 0C0h,  20h, 20h,  30h, 0C0h,  30h, 30h
@@ -1731,6 +1741,9 @@ SegBossAnchor dw 0
 SegBossPart77 dw 0
 SegBossCore dw 0
 SegBossPart79 dw 0
+; 1 from EncounterSegBossLevel until a part dies (StartLife clears it). While set, for any
+; record: 5-9/0Ch/missile hits only DamageTwo, surviving hits flash all four parts, contact
+; keeps the enemy, the large Y hit box shrinks, aimed shots start at +1Ch/+8; the anchor steers.
 SegBossActive dw 0
 SegBossPathCursor dw 0
 ; Invader march (Type62InvaderMarch): 0 = right towards X C0h, 1 = left towards 0; the
@@ -1751,16 +1764,17 @@ InvaderFormation dw 50h, 0A8h,  50h, 90h,  50h, 78h,  50h, 60h
     dw 20h, 0A8h,  20h, 90h,  20h, 78h,  20h, 60h
     dw 20h, 48h,  20h, 30h,  20h, 18h,  20h, 0h
 InvaderFormationEnd label word
-; Faller variants by REC_FALLER_VARIANT: {animation counter address, Y step per frame};
-; FallerVariantsAlt on levels 3 and 5.
-FallerVariants dw 2336h, 2,  2336h, 3,  2328h, 4,  2328h, 5
-FallerVariantsAlt dw 2326h, 5,  2326h, 6,  2326h, 7,  2326h, 8
+; Faller variants by REC_FALLER_VARIANT: {counter read for the sprite (>> 1, base 6Dh on
+; levels 3/5, else 80h), Y step per frame}; FallerVariantsAlt on levels 3 and 5.
+FallerVariants dw offset SlowCount8, 2,  offset SlowCount8, 3,  offset FrameCount8, 4,  offset FrameCount8, 5
+FallerVariantsAlt dw offset FrameCount4, 5,  offset FrameCount4, 6,  offset FrameCount4, 7,  offset FrameCount4, 8
 ; +1 or -1: facing of the walker types 8Bh..8Eh.
 WalkerFacingStep dw 0
 ; Aiming: bit 0 target to the right, 1 left, 2 below, 3 above (none = aligned);
 ; DirectionFromQuadrant maps it to REC_DIRECTION.
 AimQuadrantBits dw 00000h
-; Counts spawn attempts in SpawnThrottledChild; DifficultySetting picks the modulus.
+; Counts spawn attempts in SpawnThrottledChild (one counter for all callers);
+; DifficultySetting picks the modulus. Never reset.
 ChildSpawnThrottle db 0
     even
 ; Weapon mode 0..5, set by the upgrade apply routines.
@@ -1785,7 +1799,8 @@ SidePodLeftOuter dw 0FFFFh
 SidePodRightOuter dw 0FFFFh
 ; Front pod record (above the ship; fires FireFrontPodBurst), FFFFh = none.
 FrontPodRecord dw 0FFFFh
-; Live shots by class (main, beam, front pod, side), decremented as they are freed.
+; Live shots by class, decremented as they are freed: main = types 7/8 (twin modes, ship
+; and pods; type 2 is never counted), beam = type 9, front pod = 0Ch, side = 5/6.
 ShotsLiveMain dw 0h
 ShotsLiveType9 dw 0h
 ShotsLiveFrontPod dw 0h
@@ -1933,7 +1948,8 @@ BonusCaptionShield db TEXT_MOVE_TO, 0Ah, 6, 'Bonus Shield', 0
 BonusCaptionFuel db TEXT_MOVE_TO, 0Fh, 6, 'Bonus Fuel', 0
 BonusCaptionSmartBomb db TEXT_MOVE_TO, 14h, 6, 'Smart Bomb', 0
     even
-; Attract demo state: step (0..13h), step timer and forced-fire cycle.
+; Attract demo state: step (0..13h), step timer and forced-fire cycle. DemoFireCycle is
+; never reset: the fire timing differs between demo runs.
 DemoStep dw 0
 DemoStepTimer dw 0
 DemoFireCycle dw 0
@@ -2416,8 +2432,8 @@ StarLayerTick1 dw 0
 StarLayerTick2 dw 0
 StarLayerTick3 dw 0
 StarBrightCount dw 14h
-; Item kind (0 = none, 1..4) dropped when a whole group of a script event dies,
-; indexed by EventTrigger & 3Fh.
+; Item kind (0 = none, 1..4) dropped when a whole group dies, indexed by EventTrigger & 3Fh
+; (script events) or the map cell offset & 3Fh (group cells of levels 0/3/4/5).
 GroupDropKinds db 3,1,0,0,0,2,0,4,1,0,1,0,0,0,1,4
     db 0,0,0,3,1,0,0,0,0,0,1,0,3,0,0,0
     db 2,3,1,0,0,2,0,1,1,0,1,3,0,1,0,0

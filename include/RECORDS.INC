@@ -30,7 +30,7 @@ DIR_UP_LEFT equ 7
 ; Sprite-table index for drawing. On the primary record it is the ship form (0..2,
 ; 3 or more = destroyed), which also indexes the pod and exhaust offset tables.
 REC_SPRITE equ 08h
-; Drawn in the first pass when 0, in the second when 1 (other values: never drawn).
+; Pool A only (pool B is drawn first, whatever its value). Drawn in the first pass when 0, in the second when 1 (other values: never drawn).
 ; Pass 1 also marks a non-ground record: ProbeOverlapsWalker and the formation column
 ; snap skip it. ResetRecordsForLife sets 1 on all of pool A; spawners that do not set
 ; it inherit the old value.
@@ -42,7 +42,7 @@ REC_WORK_OFS equ 0Ch
 ; PodCollideRecords also uses it as the record's identity.
 REC_SAVE_BUFFER equ 0Eh
 REC_WORK_OFS_LOWER equ 10h
-; X & 7: selects the shifted blit variant.
+; Blit shift, set with REC_WORK_OFS: X & 7 (EGA), X & 3 (CGA), 0 (Tandy); stale off screen.
 REC_PIXEL_PHASE equ 12h
 ; 0 = 8x8, 1 = 16 rows, 2 = two 16-row halves.
 REC_SIZE_CLASS equ 14h
@@ -52,7 +52,8 @@ REC_KIND equ 16h
 ; Scroll-only handler (ScrollRecordThenFinish): player shots ignore it, body contact
 ; still counts. No code stores 0; it only appears in a never-used, zeroed slot.
 KIND_SCENERY equ 0
-; A pod (UpdatePod); becomes KIND_TYPED when removed.
+; A pod (UpdatePod); kept across levels by ResetRecordsForLife. A lost pod becomes a
+; KIND_ENEMY type 1 explosion (ExplodePod); RemoveRecord would make it KIND_TYPED.
 KIND_POD equ 1
 ; Runs its REC_TYPE handler; not destroyed by the smart bomb (e.g. enemy shots).
 KIND_TYPED equ 2
@@ -71,19 +72,20 @@ REC_PREV_TYPE equ 1Ah
 REC_FIELD_1C equ 1Ch
 ; Pool B: 1 = player shot (tested against pool A), 0 = enemy shot or child (tested
 ; against the player).
-REC_SIDE_FLAG equ 1Eh
+REC_PLAYER_SHOT equ 1Eh
 ; Set at spawn, decremented per collision; zero destroys the record.
 REC_HIT_POINTS equ 20h
 ; Explosion frame, +1 on frames when FrameParity = 1; ends at 9 (size 1) or 0Ch
 ; (size 2); a size-0 explosion never ends (it only scrolls until out of bounds).
 REC_ANIM_COUNTER equ 22h
-; Nonzero selects the flash blitters; set to 5 on a hit. Decremented by the draw side
-; (RecordWorkspaceOffset) only while on screen, once per half: twice per frame for
-; visible size-2 records.
+; Nonzero selects the flash blitters (none for 8x8); 5 on a hit, 8 on the player. The save
+; pass (RecordWorkspaceOffset) decrements it once per visible half before that frame's draw
+; tests it: a size-1 hit flashes 4 frames, a fully visible size-2 hit 2.
 REC_FLASH_TIMER equ 24h
-; Kind 5 only: effect index applied when the primary touches it.
+; Kind 5 only: PickupHandlers index, applied when the ship or a pod touches it.
 REC_ITEM_INDEX equ 26h
-; Index 0..15 of the record's GroupTable entry, FFFFh = not in a group.
+; Index 0..15 of the record's GroupTable entry, FFFFh = not in a group. Not set by
+; SpawnCellHatch2A, which then acts on the old occupant's group.
 REC_SLOT_INDEX equ 28h
 ; Aim vector self - target (SetDeltaToward/AimAtPlayer) and its step error. The error is
 ; zeroed only by ResetRecordsForLife/ResetPoolAAndUpgrades: a new record inherits its
@@ -101,9 +103,11 @@ REC_FIELD_36 equ 36h
 ; Shots (types 02h, 03h, 04h, 0Bh, 0Ch, 0Fh): frames left, counted down by 02h/03h/0Fh
 ; (expire at 0) and 0Ch (turns up at 0); FFFFh = until out of bounds.
 REC_SHOT_TIMER equ REC_FIELD_1C
-; Homing missile (type 0Ah): 0 = riding with the player, 1 = locked on REC_TARGET.
+; Homing missile (type 0Ah): 1 = locked on REC_TARGET, 0 = flying back to the player
+; (relocks for free or expires on arrival; REC_TARGET keeps the old target).
 REC_MISSILE_LOCKED equ REC_FIELD_1C
-; Formation followers 16h/17h, 1Dh/1Eh, 7Fh, 81h: frames to wait before moving off.
+; 16h/17h: frames to wait before moving off. 7Fh/81h carry it into 80h/93h, which count it
+; only once the leader script has ended. Written for 1Dh/1Eh but never read.
 REC_ENTRY_DELAY equ REC_FIELD_1C
 ; Type 23h column faller: index 0..3 into FallerVariants.
 REC_FALLER_VARIANT equ REC_FIELD_1C

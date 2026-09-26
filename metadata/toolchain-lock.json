@@ -37,7 +37,7 @@
       "size": 21717
     }
   ],
-  "linker": "TLINK 2.0 (not yet used by the build)",
+  "linker": "TLINK 2.0 (historical identity UNKNOWN)",
   "linker_runner": "toolchain/msdos-i86/msdos.exe",
   "notes": "Tools copied locally from empires_reconstruction and C:/tools; no build-time dependency on either.",
   "primary_dos_assembler_runner": "toolchain/nmlgcdos/msdos.exe",

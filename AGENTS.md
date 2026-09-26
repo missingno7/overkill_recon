@@ -31,6 +31,22 @@ Priorities:
    modern than the lost original; do not keep disassembly-shaped structure for the
    sake of possible historical fidelity.
 
+## Oracle status
+
+The ASM phase has reached its end state (below; docs/next-work.md holds the freeze bar).
+Once frozen at a tag, the source is the semantic oracle: the permanent executable
+specification of the original DOS game, byte exact against the original and the
+reference a C implementation is tested against for behavioural equivalence.
+
+```
+original binary  <- byte exact ->  semantic ASM oracle  <- behavioural equivalence ->  DOS C
+```
+
+After the freeze the oracle changes only to correct a wrong name, comment or contract,
+or to record newly proven behaviour, always with the exact build. It is not reshaped,
+split or annotated to suit the C code; C sources, wrappers and test harnesses live
+outside src/ and include/ and must not change what the oracle assembles to.
+
 ## The loop
 
 1. Choose the next target by asking: what unresolved part of this ASM would force a
@@ -52,7 +68,7 @@ Priorities:
 4. `python tools/verify.py` (about 3 s). If it fails, fix or revert before continuing.
 5. Continue.
 
-ASM-phase end state: exact match, closed relocation set, every byte classified,
+ASM-phase end state (reached): exact match, closed relocation set, every byte classified,
 game state and structures understood, routine boundaries and side effects clear,
 platform code and game logic identifiable, few raw offsets or magic constants, no
 disassembly-dump look, no extra infrastructure needed to read it.
@@ -71,10 +87,10 @@ disassembly-dump look, no extra infrastructure needed to read it.
   Never pull original bytes in via INCBIN or asset includes: unclassified or executable
   bytes must stay visible in the source.
 - Two separate questions: *classification* (what kind of bytes?) and *semantics*
-  (what do they mean?). `; UNKNOWN` marks unclassified bytes only. The target is zero
-  unclassified bytes. Classes: code, initialized state, table, pointer table, string,
-  graphics, level/map, sound, padding/alignment, workspace/buffer, or another named
-  data class. Once bytes are proven data, write them as data (strings as literals,
+  (what do they mean?). `; UNKNOWN` marks unclassified bytes only; none are left
+  (verify.py counts them per image) and none may be added. Classes: code, initialized
+  state, table, pointer table, string, graphics, level/map, sound, padding/alignment,
+  workspace/buffer, or another named data class. Once bytes are proven data, write them as data (strings as literals,
   words as `dw`, pointer tables as `dw offset X`) under a conservative name even if
   their meaning is still open; say what is unknown in a comment. Proven code is
   written as instructions, never left as `db`. Do not guess.
@@ -99,7 +115,8 @@ disassembly-dump look, no extra infrastructure needed to read it.
   names assume the game state segment. Check segment context before renaming.
 - File organization serves understanding. MODULE1..3 reflect the minimum of three link
   modules implied by the original relocation order (each has a MAIN and a FAR0F7F
-  part; some boundaries are non-unique, more modules are possible);
+  part; some boundaries are non-unique); MODULE4 is the far page viewer, a separate
+  paragraph-aligned module implied by linker padding (more modules are possible);
   SLOT1022, SEG1534, SEG153A and DATA each hold one address frame. Link order fixes
   physical order, so a file can only hold a contiguous range of a segment; split
   where a range is a coherent subsystem. Do not spend effort on module archaeology

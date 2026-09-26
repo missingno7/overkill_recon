@@ -22,7 +22,7 @@ SoundModuleInitEntry:
     retf
 ; Header fields at +8 as in a loaded module: MODULE_MUSIC_REQUEST (with the current
 ; music in its high byte), two unused words here, the OPL2 base port 388h at +0Eh, and a
-; final word; the stub keeps these defaults.
+; final word. RequestModuleMusic still writes +8 here when no module is loaded.
     dw 2, 0, 0, 388h, 0
 
 ; The empty routine the built-in SLOT1022 sound stub calls; a loaded module replaces it.

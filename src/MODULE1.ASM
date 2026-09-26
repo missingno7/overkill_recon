@@ -874,7 +874,8 @@ PackedColumnHeader0 dw 0
 PackedColumnWidth dw 0
 PackedColumnHeader2 dw 0
 
-; Header words (?, W, ?), then W columns left to right, each a mode-3 stream ended by
+; Header words (W * rows, W, rows) in every archive file, of which only W is read; then W
+; columns left to right, each a mode-3 stream ended by
 ; 80h, written top-down with a row stride of W bytes.
 DecodeColumnPackBits:
     mov es, word ptr ds:[PackedDestSegment]
@@ -1006,7 +1007,9 @@ ClosePackedFile:
     ret
 ; Frame pacing (platform seam): written asynchronously by Interrupt08Handler every
 ; second timer tick (about 36.4 Hz); the game loop clears it (ClearTimerTick) and
-; spins until it is nonzero again (WaitTimerTick).
+; spins until it is nonzero again (WaitTimerTick). Cleared at frame start, so the wait
+; absorbs only the rest of the current tick; an overrunning frame does not wait and missed
+; ticks are not caught up.
 TimerTickCount db 0
 IncrementTimerTick:
     inc byte ptr cs:[TimerTickCount]
@@ -1556,7 +1559,8 @@ AllocateBuffers:
     ret
 
 ; Loads LevelMapFiles[LevelIndex] into LevelMapSegment (retrying until it succeeds),
-; then builds the attributes and patches the map end.
+; then builds the attributes, sets map rows 0..1 to tile 1 and copies LevelEndMapRows
+; (5 rows) to MAP_END_ROWS_POS.
 LoadLevelMap:
     mov word ptr ds:[LevelScriptCursors + 0], offset LevelScript0
     mov word ptr ds:[LevelScriptCursors + 2], offset LevelScript1
@@ -1606,12 +1610,12 @@ ReadAttributePatchIndex:
 AttributePatchesDone:
     mov es, word ptr cs:[LevelMapSegment]
     xor di, di
-    mov cx, 01Ah
+    mov cx, 2 * MAP_ROW_BYTES
     mov al, 1
     rep stosb
     mov di, MAP_END_ROWS_POS
     mov si, offset LevelEndMapRows
-    mov cx, 041h
+    mov cx, 5 * MAP_ROW_BYTES
     rep movsb
     jmp near ptr ClearKeyDownTable
     even
@@ -4459,7 +4463,8 @@ PrintGraphicsCharEga:
     mov byte ptr ds:[TextColor], al
     ret
 
-; Clears 16000 bytes on all planes: both EGA pages.
+; Clears 16000 bytes from A000:0 on all planes: page 0, the gap and page 1 up to row 195
+; byte 8 (the rest of page 1 is left as it was).
 ClearEgaPages:
     mov es, word ptr cs:[ScreenSegment]
     mov dx, 03C4h
@@ -9711,6 +9716,7 @@ PrintGraphicsCharCases label word
     mov word ptr es:[di], ax
     add word ptr ds:[TextRowOffset], 2
     ret
+; Text mode: row * 50h + 2 * column, half the 80-column row (A0h bytes).
 @@setPosition:
     mov al, byte ptr ss:[bp + 1]
     mov cx, 050h
