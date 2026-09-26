@@ -14,6 +14,12 @@ TEXTROW macro attr, text
     endm
 endm
 locals
+extrn SfxCmdRest:far
+extrn SfxCmdSlide:far
+extrn SfxCmdStepDown:far
+extrn SfxCmdStepUp:far
+extrn SfxStopAll:far
+extrn SfxStreamStoreAndWait:far
 extrn loc_07977:far
 extrn loc_07B06:far
 extrn loc_07BCB:far
@@ -1326,7 +1332,10 @@ DifficultySetting dw 1
 ChooseSlotPositions dw 02E02h, 05302h, 07802h, 02E15h, 05315h, 07815h
 DifficultyPositions dw 0A514h, 0A519h, 0A51Eh
 ; Handlers for stream bytes 80h..85h: end, rest, step down, step up, slide, hold.
-SfxCommandTable db 02Fh,0D6h,0D6h,0D5h,041h,0D6h,048h,0D6h,04Fh,0D6h,0CCh,0D5h,00h,00h
+SfxCommandTable dw offset SfxStopAll, offset SfxCmdRest, offset SfxCmdStepDown
+    dw offset SfxCmdStepUp, offset SfxCmdSlide, offset SfxStreamStoreAndWait
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h
 SfxActive db 00h
 ; Effect requested of SfxTimerTick (below 20h); lower IDs pre-empt higher ones.
 SfxRequest db 00h
@@ -1334,78 +1343,305 @@ SfxRequest db 00h
 ; byte streams, one per voice; the voices take turns driving the speaker tick by tick.
 SfxTickPhase db 00h
 ; PIT divisors a semitone apart, starting near 65.4 Hz; indexed by note, unchecked.
-SfxNoteDivisors db 043h,047h,043h,043h,07Dh,03Fh,0ECh,03Bh,08Fh,038h,063h,035h,064h,032h,090h
-    db 02Fh,0E4h,02Ch,05Fh,02Ah,0FFh,027h,0C0h,025h,0A2h,023h,0A2h,021h,0BEh,01Fh,0F6h
-    db 01Dh,048h,01Ch,0B1h,01Ah,032h,019h,0C8h,017h,072h,016h,030h,015h,0FFh,013h,0E0h
-    db 012h,0D1h,011h,0D1h,010h,0DFh,0Fh,0FBh,0Eh,024h,0Eh,059h,0Dh,099h,0Ch,0E4h
-    db 0Bh,039h,0Bh,098h,0Ah,00h,0Ah,070h,09h,0E8h,08h,068h,08h,0F0h,07h,07Dh
-    db 07h,011h,07h,0ABh,06h,04Bh,06h,0F1h,05h,09Ch,05h,04Bh,05h,0FFh,04h,0B7h
-    db 04h,074h,04h,034h,04h,0F8h,03h,0BEh,03h,088h,03h,055h,03h,025h,03h,0F8h
-    db 02h,0CDh,02h,0A5h,02h,07Fh,02h,05Bh,02h,03Ah,02h,01Ah,02h,0FCh,01h,0DFh
-    db 01h,0C4h,01h,0ABh,01h,093h,01h,07Ch,01h,067h,01h,053h,01h,040h,01h,02Eh
-    db 01h,01Dh,01h,0Dh,01h,0FEh,00h,0F0h,00h,0E2h,00h,0D6h,00h,0CAh,00h,0BEh
-    db 00h,0B4h,00h,0AAh,00h,0A0h,00h,097h,00h,090h
-SfxVoiceA db 00h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h
-    db 080h,00h,01h,00h,00h,00h,00h,00h,00h,00h
-SfxVoiceB db 00h,00h,00h,00h,00h,00h
-    db 080h,00h,01h,00h,00h,00h,00h,00h,00h,00h
+SfxNoteDivisors dw 18243, 17219, 16253, 15340, 14479, 13667, 12900, 12176, 11492, 10847, 10239, 9664
+    dw 9122, 8610, 8126, 7670, 7240, 6833, 6450, 6088, 5746, 5424, 5119, 4832
+    dw 4561, 4305, 4063, 3835, 3620, 3417, 3225, 3044, 2873, 2712, 2560, 2416
+    dw 2280, 2152, 2032, 1917, 1809, 1707, 1611, 1521, 1436, 1355, 1279, 1207
+    dw 1140, 1076, 1016, 958, 904, 853, 805, 760, 717, 677, 639, 603
+    dw 570, 538, 508, 479, 452, 427, 403, 380, 359, 339, 320, 302
+    dw 285, 269, 254, 240, 226, 214, 202, 190, 180, 170, 160, 151
+    even
+; Voice records (SFX_VOICE_* fields, 16 bytes).
+SfxVoiceA db 0, 0
+    dw 0
+    db 0, 0
+    dw 128
+    db 1, 0, 0, 0
+    dw 0
+    db 0, 0
+SfxVoiceB db 0, 0
+    dw 0
+    db 0, 0
+    dw 128
+    db 1, 0, 0, 0
+    dw 0
+    db 0, 0
 ; SFX_EFFECT_COUNT entries of two stream pointers (voice A, voice B); entry 0 unused.
-SfxEffectTable db 00h,00h,00h,00h,0C2h,0C2h
-    db 0CBh,0C2h,0CAh,0C1h,0D5h,0C1h,0BAh,0C1h,0C2h,0C1h,0D4h,0C2h,0D4h,0C2h,066h,0C2h
-    db 066h,0C2h,018h,0C1h,02Eh,0C1h,0C7h,0C0h,0CAh,0C0h,0ECh,0C0h,02h,0C1h,082h,0C1h
-    db 085h,0C1h,08Eh,0C1h,0F3h,0C2h,068h,0C1h,075h,0C1h,09Bh,0C1h,0F3h,0C2h,091h,0C1h
-    db 0F3h,0C2h,0E0h,0C1h,0E3h,0C1h,0CDh,0C0h,0D4h,0C0h,058h,0C2h,05Fh,0C2h,02h,0C2h
-    db 02Dh,0C2h,0F4h,0C1h,0FBh,0C1h,074h,0C0h,07Bh,0C0h,066h,0C0h,06Dh,0C0h,082h,0C0h
-    db 089h,0C0h,090h,0C0h,09Ch,0C0h,058h,0C0h,05Fh,0C0h,0E6h,0C1h,0EDh,0C1h,0DBh,0C0h
-    db 0E3h,0C0h,0B2h,0C1h,0B6h,0C1h,0A2h,0C1h,0A9h,0C1h,04Ah,0C0h,051h,0C0h,048h,0C1h
-    db 0F3h,0C2h,088h,0C1h,08Bh,0C1h,058h,0C1h,0F3h,0C2h
+; SFX_EFFECT_COUNT entries of two stream pointers (voice A, voice B); entry 0 unused.
+SfxEffectTable label word
+    dw 0, 0
+    dw offset SfxStream55, offset SfxStream56
+    dw offset SfxStream41, offset SfxStream42
+    dw offset SfxStream39, offset SfxStream40
+    dw offset SfxStream57, offset SfxStream57
+    dw offset SfxStream53, offset SfxStream53
+    dw offset SfxStream22, offset SfxStream23
+    dw offset SfxStream14, offset SfxStream15
+    dw offset SfxStream20, offset SfxStream21
+    dw offset SfxStream28, offset SfxStream29
+    dw offset SfxStream32, offset SfxStream58
+    dw offset SfxStream26, offset SfxStream27
+    dw offset SfxStream34, offset SfxStream58
+    dw offset SfxStream33, offset SfxStream58
+    dw offset SfxStream43, offset SfxStream44
+    dw offset SfxStream16, offset SfxStream17
+    dw offset SfxStream51, offset SfxStream52
+    dw offset SfxStream49, offset SfxStream50
+    dw offset SfxStream47, offset SfxStream48
+    dw offset SfxStream06, offset SfxStream07
+    dw offset SfxStream04, offset SfxStream05
+    dw offset SfxStream08, offset SfxStream09
+    dw offset SfxStream10, offset SfxStream11
+    dw offset SfxStream02, offset SfxStream03
+    dw offset SfxStream45, offset SfxStream46
+    dw offset SfxStream18, offset SfxStream19
+    dw offset SfxStream37, offset SfxStream38
+    dw offset SfxStream35, offset SfxStream36
+    dw offset SfxStream00, offset SfxStream01
+    dw offset SfxStream24, offset SfxStream58
+    dw offset SfxStream30, offset SfxStream31
+    dw offset SfxStream25, offset SfxStream58
+; Effect streams: notes 0..7Fh (SfxNoteDivisors index), SFX_DURATION_BIAS + ticks,
+; and commands; SFX_SLIDE is followed by a word delta and a byte tick count.
+SfxStream00 db SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw 12
+    db 8, 60, SFX_END
+SfxStream01 db SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw 6
+    db 8, 48, SFX_END
+SfxStream02 db SFX_DURATION_BIAS + 12, SFX_SLIDE
+    dw 152
+    db 12, 36, SFX_END
+SfxStream03 db SFX_DURATION_BIAS + 12, SFX_SLIDE
+    dw 152
+    db 12, 36, SFX_END
+SfxStream04 db SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 152
+    db 6, 60, SFX_END
+SfxStream05 db SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 152
+    db 6, 60, SFX_END
+SfxStream06 db SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 96
+    db 8, 72, SFX_END
+SfxStream07 db SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 96
+    db 8, 72, SFX_END
+SfxStream08 db SFX_DURATION_BIAS + 3, SFX_SLIDE
+    dw 96
+    db 8, 72, SFX_END
+SfxStream09 db SFX_DURATION_BIAS + 3, SFX_SLIDE
+    dw 96
+    db 8, 72, SFX_END
+SfxStream10 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 24, SFX_SLIDE
+    dw -128
+    db 255, SFX_HOLD, SFX_END
+SfxStream11 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 66
+    db 255, 27, SFX_SLIDE
+    dw -128
+    db 255, SFX_HOLD, SFX_END
+; Not referenced by SfxEffectTable.
+SfxStream12 db SFX_DURATION_BIAS + 6, SFX_SLIDE
+    dw 32736
+    db 6, 48, SFX_SLIDE
+    dw -32704
+    db 55, SFX_SLIDE
+    dw 32736
+    db 6, 48, SFX_SLIDE
+    dw -32704
+    db 55, SFX_END
+; Not referenced by SfxEffectTable.
+SfxStream13 db SFX_DURATION_BIAS + 6, SFX_SLIDE
+    dw 32736
+    db 6, 55, SFX_SLIDE
+    dw -32704
+    db 62, SFX_END
+SfxStream14 db SFX_DURATION_BIAS + 5, 60, SFX_END
+SfxStream15 db SFX_DURATION_BIAS + 5, 67, SFX_END
+SfxStream16 db SFX_DURATION_BIAS + 5, SFX_SLIDE
+    dw 1154
+    db 5, 72, SFX_END
+SfxStream17 db SFX_DURATION_BIAS + 5, SFX_SLIDE
+    dw 1154
+    db 5, 70, SFX_END
+SfxStream18 db SFX_DURATION_BIAS + 8, SFX_STEP_DOWN, 7, SFX_DURATION_BIAS + 11, SFX_STEP_DOWN, 22, SFX_HOLD, SFX_END
+SfxStream19 db SFX_DURATION_BIAS + 6, SFX_STEP_DOWN, SFX_DURATION_BIAS + 7, 8, SFX_DURATION_BIAS + 16, SFX_STEP_DOWN, 21, SFX_HOLD, SFX_END
+SfxStream20 db SFX_DURATION_BIAS + 9, SFX_SLIDE
+    dw 150
+    db 48, 12, SFX_SLIDE
+    dw 150
+    db 48, 12, SFX_SLIDE
+    dw 150
+    db 48, 12, SFX_SLIDE
+    dw 150
+    db 48, 12, SFX_END
+SfxStream21 db SFX_DURATION_BIAS + 9, SFX_SLIDE
+    dw 150
+    db 48, 29, SFX_SLIDE
+    dw 150
+    db 48, 28, SFX_SLIDE
+    dw 150
+    db 48, 27, SFX_SLIDE
+    dw 150
+    db 48, 26, SFX_END
+SfxStream22 db SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 150
+    db 48, 16, SFX_SLIDE
+    dw 150
+    db 48, 21, SFX_SLIDE
+    dw 150
+    db 48, 24, SFX_SLIDE
+    dw 150
+    db 48, 21, SFX_END
+SfxStream23 db SFX_DURATION_BIAS + 2, 60, 62, 63, 64, 63, 60, 59, 58, 67
+    db 69, 67, 65, 64, 63, 60, 59, 72, 71, 70
+    db 69, 67, 65, 64, 63, SFX_END
+SfxStream24 db SFX_DURATION_BIAS + 5, 71, 69, 67, 65, 64, 62, 60, 59, 57
+    db 55, 53, 52, 50, 48, SFX_END
+SfxStream25 db SFX_DURATION_BIAS + 2, 71, 69, 67, 65, 64, 62, 60, 59, 57
+    db 55, 53, 52, 50, 48, SFX_END
+SfxStream26 db SFX_DURATION_BIAS + 18, SFX_SLIDE
+    dw 100
+    db 16, 19, SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw -868
+    db 6, SFX_HOLD, SFX_END
+SfxStream27 db SFX_DURATION_BIAS + 18, SFX_SLIDE
+    dw 100
+    db 16, 22, SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw -868
+    db 6, SFX_HOLD, SFX_END
+SfxStream28 db SFX_DURATION_BIAS + 8, 31, SFX_END
+SfxStream29 db SFX_DURATION_BIAS + 8, 34, SFX_END
+SfxStream30 db SFX_DURATION_BIAS + 5, 55, SFX_END
+SfxStream31 db SFX_DURATION_BIAS + 5, 57, SFX_END
+SfxStream32 db SFX_DURATION_BIAS + 16, 43, SFX_END
+SfxStream33 db SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw -12
+    db 255, 43, SFX_HOLD, SFX_HOLD, SFX_HOLD, SFX_END
+SfxStream34 db SFX_DURATION_BIAS + 6, SFX_SLIDE
+    dw 2
+    db 12, 55, SFX_END
+SfxStream35 db SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 123
+    db 99, 43, SFX_END
+SfxStream36 db SFX_DURATION_BIAS + 3, SFX_REST, SFX_DURATION_BIAS + 10, SFX_SLIDE
+    dw 123
+    db 99, 50, SFX_END
+SfxStream37 db SFX_DURATION_BIAS + 6, SFX_STEP_DOWN, 31, SFX_END
+SfxStream38 db SFX_DURATION_BIAS + 6, SFX_STEP_DOWN, 43, SFX_END
+SfxStream39 db SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw 384
+    db 255, 55, SFX_HOLD, SFX_END
+SfxStream40 db SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw 384
+    db 255, 57, SFX_HOLD, SFX_END
+SfxStream41 db SFX_DURATION_BIAS + 32, SFX_STEP_DOWN, 43, SFX_STEP_DOWN, 38, SFX_STEP_DOWN, 31, SFX_DURATION_BIAS + 24, SFX_STEP_DOWN, 26
+    db SFX_END
+SfxStream42 db SFX_DURATION_BIAS + 32, SFX_STEP_DOWN, 46, SFX_STEP_DOWN, 41, SFX_STEP_DOWN, 34, SFX_DURATION_BIAS + 24, SFX_STEP_DOWN, 29
+    db SFX_END
+SfxStream43 db SFX_DURATION_BIAS + 5, 72, SFX_END
+SfxStream44 db SFX_DURATION_BIAS + 5, 71, SFX_END
+SfxStream45 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw -384
+    db 32, 12, SFX_END
+SfxStream46 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw -384
+    db 32, 15, SFX_END
+SfxStream47 db SFX_DURATION_BIAS + 6, SFX_SLIDE
+    dw 192
+    db 24, 35, SFX_END
+SfxStream48 db SFX_DURATION_BIAS + 6, SFX_SLIDE
+    dw 192
+    db 24, 38, SFX_END
+SfxStream49 db SFX_DURATION_BIAS + 2, SFX_SLIDE
+    dw -1024
+    db 2, 24, SFX_SLIDE
+    dw -1024
+    db 2, 21, SFX_SLIDE
+    dw -1024
+    db 2, 22, SFX_SLIDE
+    dw -1024
+    db 2, 19, SFX_SLIDE
+    dw -1024
+    db 2, 18, SFX_SLIDE
+    dw -1024
+    db 2, 20, SFX_SLIDE
+    dw -1024
+    db 2, 21, SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw -1024
+    db 12, 29, SFX_END
+SfxStream50 db SFX_DURATION_BIAS + 2, SFX_SLIDE
+    dw -1024
+    db 2, 32, SFX_SLIDE
+    dw -1024
+    db 2, 24, SFX_SLIDE
+    dw -1024
+    db 2, 30, SFX_SLIDE
+    dw -1024
+    db 2, 29, SFX_SLIDE
+    dw -1024
+    db 2, 26, SFX_SLIDE
+    dw -1024
+    db 2, 23, SFX_SLIDE
+    dw -1024
+    db 2, 21, SFX_DURATION_BIAS + 8, SFX_SLIDE
+    dw -1024
+    db 12, 33, SFX_END
+SfxStream51 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw -129
+    db 24, 36, SFX_END
+SfxStream52 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw -129
+    db 24, 40, SFX_END
+SfxStream53 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 24, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 28, SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 19, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 22, SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 14, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 18, SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 9, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 12, SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw 64
+    db 255, 4, SFX_END
+; Not referenced by SfxEffectTable.
+SfxStream54 db SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 24, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 28, SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 19, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 22, SFX_DURATION_BIAS + 24, SFX_SLIDE
+    dw 64
+    db 255, 14, SFX_DURATION_BIAS + 16, SFX_SLIDE
+    dw 64
+    db 255, 18, SFX_END
+SfxStream55 db SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw 8256
+    db 255, 19, SFX_HOLD, SFX_HOLD, SFX_END
+SfxStream56 db SFX_DURATION_BIAS + 32, SFX_SLIDE
+    dw 24864
+    db 255, 16, SFX_HOLD, SFX_HOLD, SFX_END
+SfxStream57 db SFX_DURATION_BIAS + 3, 24, SFX_REST, 29, SFX_REST, 31, SFX_REST, 35, SFX_REST, 36
+    db SFX_REST, 41, SFX_REST, 43, SFX_REST, 47, SFX_REST, 48, SFX_REST, 55
+    db SFX_REST, 59, SFX_REST, SFX_REST, SFX_REST, 60, SFX_REST, 67, SFX_REST, 72
+    db SFX_END
+SfxStream58 db SFX_DURATION_BIAS + 32, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_END
 ; UNKNOWN: not yet classified as code or data
-    db 0E7h,084h,0Ch,00h,08h,03Ch
-    db 080h,0E7h,084h,06h,00h,08h,030h,080h,0EBh,084h,098h,00h,0Ch,024h,080h,0EBh
-    db 084h,098h,00h,0Ch,024h,080h,0E9h,084h,098h,00h,06h,03Ch,080h,0E9h,084h,098h
-    db 00h,06h,03Ch,080h,0E9h,084h,060h,00h,08h,048h,080h,0E9h,084h,060h,00h,08h
-    db 048h,080h,0E2h,084h,060h,00h,08h,048h,080h,0E2h,084h,060h,00h,08h,048h,080h
-    db 0F7h,084h,040h,00h,0FFh,018h,084h,080h,0FFh,0FFh,085h,080h,0F7h,084h,042h,00h
-    db 0FFh,01Bh,084h,080h,0FFh,0FFh,085h,080h,0E5h,084h,0E0h,07Fh,06h,030h,084h,040h
-    db 080h,037h,084h,0E0h,07Fh,06h,030h,084h,040h,080h,037h,080h,0E5h,084h,0E0h,07Fh
-    db 06h,037h,084h,040h,080h,03Eh,080h,0E4h,03Ch,080h,0E4h,043h,080h,0E4h,084h,082h
-    db 04h,05h,048h,080h,0E4h,084h,082h,04h,05h,046h,080h,0E7h,082h,07h,0EAh,082h
-    db 016h,085h,080h,0E5h,082h,0E6h,08h,0EFh,082h,015h,085h,080h,0E8h,084h,096h,00h
-    db 030h,0Ch,084h,096h,00h,030h,0Ch,084h,096h,00h,030h,0Ch,084h,096h,00h,030h
-    db 0Ch,080h,0E8h,084h,096h,00h,030h,01Dh,084h,096h,00h,030h,01Ch,084h,096h,00h
-    db 030h,01Bh,084h,096h,00h,030h,01Ah,080h,0EFh,084h,096h,00h,030h,010h,084h,096h
-    db 00h,030h,015h,084h,096h,00h,030h,018h,084h,096h,00h,030h,015h,080h,0E1h,03Ch
-    db 03Eh,03Fh,040h,03Fh,03Ch,03Bh,03Ah,043h,045h,043h,041h,040h,03Fh,03Ch,03Bh,048h
-    db 047h,046h,045h,043h,041h,040h,03Fh,080h,0E4h,047h,045h,043h,041h,040h,03Eh,03Ch
-    db 03Bh,039h,037h,035h,034h,032h,030h,080h,0E1h,047h,045h,043h,041h,040h,03Eh,03Ch
-    db 03Bh,039h,037h,035h,034h,032h,030h,080h,0F1h,084h,064h,00h,010h,013h,0E7h,084h
-    db 09Ch,0FCh,06h,085h,080h,0F1h,084h,064h,00h,010h,016h,0E7h,084h,09Ch,0FCh,06h
-    db 085h,080h,0E7h,01Fh,080h,0E7h,022h,080h,0E4h,037h,080h,0E4h,039h,080h,0EFh,02Bh
-    db 080h,0FFh,084h,0F4h,0FFh,0FFh,02Bh,085h,085h,085h,080h,0E5h,084h,02h,00h,0Ch
-    db 037h,080h,0E9h,084h,07Bh,00h,063h,02Bh,080h,0E2h,081h,0E9h,084h,07Bh,00h,063h
-    db 032h,080h,0E5h,082h,01Fh,080h,0E5h,082h,02Bh,080h,0FFh,084h,080h,01h,0FFh,037h
-    db 085h,080h,0FFh,084h,080h,01h,0FFh,039h,085h,080h,0FFh,082h,02Bh,082h,026h,082h
-    db 01Fh,0F7h,082h,01Ah,080h,0FFh,082h,02Eh,082h,029h,082h,022h,0F7h,082h,01Dh,080h
-    db 0E4h,048h,080h,0E4h,047h,080h,0F7h,084h,080h,0FEh,020h,0Ch,080h,0F7h,084h,080h
-    db 0FEh,020h,0Fh,080h,0E5h,084h,0C0h,00h,018h,023h,080h,0E5h,084h,0C0h,00h,018h
-    db 026h,080h,0E1h,084h,00h,0FCh,02h,018h,084h,00h,0FCh,02h,015h,084h,00h,0FCh
-    db 02h,016h,084h,00h,0FCh,02h,013h,084h,00h,0FCh,02h,012h,084h,00h,0FCh,02h
-    db 014h,084h,00h,0FCh,02h,015h,0E7h,084h,00h,0FCh,0Ch,01Dh,080h,0E1h,084h,00h
-    db 0FCh,02h,020h,084h,00h,0FCh,02h,018h,084h,00h,0FCh,02h,01Eh,084h,00h,0FCh
-    db 02h,01Dh,084h,00h,0FCh,02h,01Ah,084h,00h,0FCh,02h,017h,084h,00h,0FCh,02h
-    db 015h,0E7h,084h,00h,0FCh,0Ch,021h,080h,0F7h,084h,07Fh,0FFh,018h,024h,080h,0F7h
-    db 084h,07Fh,0FFh,018h,028h,080h,0F7h,084h,040h,00h,0FFh,018h,0EFh,084h,040h,00h
-    db 0FFh,01Ch,0F7h,084h,040h,00h,0FFh,013h,0EFh,084h,040h,00h,0FFh,016h,0F7h,084h
-    db 040h,00h,0FFh,0Eh,0EFh,084h,040h,00h,0FFh,012h,0F7h,084h,040h,00h,0FFh,09h
-    db 0EFh,084h,040h,00h,0FFh,0Ch,0FFh,084h,040h,00h,0FFh,04h,080h,0F7h,084h,040h
-    db 00h,0FFh,018h,0EFh,084h,040h,00h,0FFh,01Ch,0F7h,084h,040h,00h,0FFh,013h,0EFh
-    db 084h,040h,00h,0FFh,016h,0F7h,084h,040h,00h,0FFh,0Eh,0EFh,084h,040h,00h,0FFh
-    db 012h,080h,0FFh,084h,040h,020h,0FFh,013h,085h,085h,080h,0FFh,084h,020h,061h,0FFh
-    db 010h,085h,085h,080h,0E2h,018h,081h,01Dh,081h,01Fh,081h,023h,081h,024h,081h,029h
-    db 081h,02Bh,081h,02Fh,081h,030h,081h,037h,081h,03Bh,081h,081h,081h,03Ch,081h,043h
-    db 081h,048h,080h,0FFh,081h,081h,081h,081h,081h,081h,081h,081h,080h,00h,070h,061h
+    db 00h,070h,061h
     db 079h,06Dh,065h,06Eh,074h,02Eh,065h,06Eh,063h,00h,049h,030h,06Eh,030h,066h,030h
     db 06Fh,030h,072h,030h,06Dh,030h,061h,030h,074h,030h,069h,030h,06Fh,030h,06Eh,030h
     db 03Ah,030h,020h,030h,020h,030h,020h,030h,020h,030h,020h,030h,020h,030h,028h,030h

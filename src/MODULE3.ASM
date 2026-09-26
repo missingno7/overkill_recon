@@ -92,8 +92,8 @@ extrn ScoreBcd:byte
 extrn ScrollDeltaY:word
 extrn SequenceFrameCount:word
 extrn SfxActive:byte
-extrn SfxCommandTable:byte
-extrn SfxEffectTable:byte
+extrn SfxCommandTable:word
+extrn SfxEffectTable:word
 extrn SfxEnabled:byte
 extrn SfxNoteDivisors:byte
 extrn SfxRequest:byte
@@ -130,6 +130,12 @@ public PlaqueSegment
 public PlayfieldRowBytes
 public ReleaseEmsCache
 public ScreenSegment
+public SfxCmdRest
+public SfxCmdSlide
+public SfxCmdStepDown
+public SfxCmdStepUp
+public SfxStopAll
+public SfxStreamStoreAndWait
 public SfxTimerTick
 public ShipSegment
 public ShowPageList

@@ -14,6 +14,12 @@ SFX_EFFECT_COUNT equ 020h
 ; 80 end (stop all), 81 rest, 82 step down, 83 step up, 84 slide (word delta, byte
 ; ticks), 85 hold.
 SFX_STREAM_COMMAND equ 080h
+SFX_END equ 080h
+SFX_REST equ 081h
+SFX_STEP_DOWN equ 082h
+SFX_STEP_UP equ 083h
+SFX_SLIDE equ 084h
+SFX_HOLD equ 085h
 SFX_STREAM_DURATION equ 0E0h
 SFX_DURATION_BIAS equ 0DFh
 ; Fields of the two 16-byte voices SfxVoiceA/SfxVoiceB (+00, +01, +0A, +0F unused).
