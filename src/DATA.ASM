@@ -69,6 +69,7 @@ public AttributePatchPointers
 public AutoMoveExtraRecord
 public BlankMessage
 public BlockBytes
+public BonusIntroItems
 public BonusKeysEnabled
 public BossKeyScreen
 public BossPath
@@ -92,15 +93,27 @@ public ChooseSlot
 public ChooseSlotPositions
 public ClampXHighSeen
 public ClampXLowSeen
+public Codeword
+public CorruptMsgHead
+public CorruptMsgPressKey
+public CorruptMsgTail
 public CountGate2324
 public CreditRandomWords
 public DecimalToBuffer
+public DemoActive
+public DemoFireCycle
+public DemoScript
+public DemoStep
+public DemoStepTimer
+public DemoUpgradeStatus
 public DescentTargetX
 public DifficultyPositions
 public DifficultySetting
 public DirectionFromQuadrant
 public DispatchRecordX
 public DispatchRecordY
+public DriveAPresent
+public DriveBPresent
 public EmsAvailable
 public EmsDeviceName
 public EmsFreePages
@@ -163,6 +176,8 @@ public IPageList
 public ImageEnd
 public InputBits
 public InputDeviceMode
+public IntegrityFileData
+public IntegrityFileExe
 public InvaderDropStep
 public InvaderFormation
 public InvaderFormationEnd
@@ -221,6 +236,7 @@ public LevelSkipEnabled
 public LifeLostRequest
 public LivesLeft
 public LoadIsEnc
+public LoadWordBB82
 public MapResetLists
 public MapScrollPos
 public MarchDelay
@@ -239,6 +255,7 @@ public MoveModeA47C
 public MsgDeallocError
 public MsgNotEnoughMemory
 public NextLevelRequest
+public NonAsciiCodeword
 public OPageList
 public OffsetTableA368
 public OffsetTableA374
@@ -248,8 +265,10 @@ public OffsetXGroupA
 public OffsetXGroupB
 public OffsetXWork
 public OkMenuPageList
+public OldNonAsciiCodeword
 public PageIndex
 public PageListPtr
+public Password
 public PaymentFileName
 public PaymentHelpRow
 public PendingSpriteFile
@@ -277,6 +296,13 @@ public ReadErrorMessage
 public RecordRowOffsets
 public RedefPageList
 public ResidentFiles
+public ResourceArchiveList
+public RevealCellOffset
+public RevealCol
+public RevealColumns
+public RevealRectPtr
+public RevealRectsLeft
+public RevealRow
 public SavedAllocStrategy
 public SavedSettings
 public SavedUpgradeSlot
@@ -304,6 +330,7 @@ public SfxVoiceA
 public SfxVoiceB
 public SoundModuleLoaded
 public SoundModuleNameAdlib
+public SoundModuleNamePtr
 public SoundModuleNameRoland
 public SoundModuleNameTandy
 public SoundModuleSelect
@@ -337,6 +364,9 @@ public TextInGraphics
 public TextRowOffset
 public TheEndBytes
 public TimerVectorInstalled
+public TitleLogoPiecePtr
+public TitleLogoPieces
+public TitleRevealRects
 public Type21Path
 public Type28FrameRamp
 public Type34SpriteByLevel
@@ -1531,67 +1561,97 @@ FileCacheEnd dw offset FileCache
 FileCache db FILE_CACHE_ENTRIES * FILE_CACHE_ENTRY_BYTES dup (0FFh)
     dw 0FFFFh
 FileStatus dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Cleared on each disk load (LoadResourceFile); no reader found.
+LoadWordBB82 dw 0
 ; Set by callers around loads of .ENC files: LoadResourceFile then decodes them with
 ; DecodeEncFile instead of LoadPackedFile.
 LoadIsEnc db 00h
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,04Fh,056h,045h,052h,04Bh,049h,04Ch,04Ch
-    db 02Eh,045h,058h,045h,00h,024h,04Fh,056h,045h,052h,04Bh,049h,04Ch,04Ch,00h,024h
-    db 045h,072h,072h,06Fh,072h,020h,021h,021h,021h,021h,020h,03Ah,02Dh,0Dh,0Ah,0Dh
-    db 0Ah,046h,069h,06Ch,065h,020h,027h,024h,08h,027h,020h,068h,061h,073h,020h,062h
-    db 065h,065h,06Eh,020h,063h,06Fh,072h,072h,075h,070h,074h,065h,064h,02Ch,020h,06Fh
-    db 072h,020h,070h,06Fh,073h,073h,069h,062h,06Ch,079h,020h,069h,06Eh,066h,065h,063h
-    db 074h,065h,064h,020h,062h,079h,020h,061h,020h,076h,069h,072h,075h,073h,021h,021h
-    db 024h,050h,072h,065h,073h,073h,020h,061h,06Eh,079h,020h,06Bh,065h,079h,020h,074h
-    db 06Fh,020h,072h,065h,074h,075h,072h,06Eh,020h,074h,06Fh,020h,044h,04Fh,053h,02Eh
-    db 02Eh,02Eh,02Eh,02Eh,02Eh,024h,011h,00h,00h,010h,0Fh,043h,06Fh,064h,065h,077h
-    db 06Fh,072h,064h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,03Dh,020h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,011h,01h,00h,010h,0Fh,04Eh,06Fh,06Eh,041h,073h,063h,069h,069h,043h,06Fh
-    db 064h,065h,077h,06Fh,072h,064h,020h,020h,020h,03Dh,020h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,011h,02h,00h,010h
-    db 0Fh,04Fh,04Ch,044h,04Eh,06Fh,06Eh,041h,073h,063h,069h,069h,043h,06Fh,064h,065h
-    db 077h,06Fh,072h,064h,03Dh,020h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,011h,03h,00h,010h,0Fh,050h,061h,073h,073h
-    db 077h,06Fh,072h,064h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,020h,03Dh
-    db 020h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h
+    even
+; Floppy drives A: and B: reported by INT 11h (loc_0C83C); AdvanceABColonPrefix
+; skips drive letters that are absent.
+DriveAPresent db 0
+DriveBPresent db 0
+; Files checked at startup (loc_0C8AD): opened as ASCIIZ, printed with AH=09h.
+IntegrityFileExe db 'OVERKILL.EXE',0,'$'
+IntegrityFileData db 'OVERKILL',0,'$'
+; Checksum failure message: head, file name, tail (8 = backspace over the NUL).
+CorruptMsgHead db 'Error !!!! :-',13,10,13,10,'File ''$'
+CorruptMsgTail db 8,''' has been corrupted, or possibly infected by a virus!!$'
+CorruptMsgPressKey db 'Press any key to return to DOS......$'
+; Debug display of the copy-protection values decoded from the end of OVERKILL.EXE
+; (XorCopy16BytesAA); only printed by code that has no caller.
+DebugCodewordLine db TEXT_MOVE_TO, 0, 0, TEXT_SET_COLOR, 0Fh, 'Codeword           = '
+Codeword db 16 dup (0)
+    db 0
+DebugNonAsciiCodewordLine db TEXT_MOVE_TO, 1, 0, TEXT_SET_COLOR, 0Fh, 'NonAsciiCodeword   = '
+NonAsciiCodeword db 16 dup (0)
+    db 0
+DebugOldNonAsciiCodewordLine db TEXT_MOVE_TO, 2, 0, TEXT_SET_COLOR, 0Fh, 'OLDNonAsciiCodeword= '
+OldNonAsciiCodeword db 16 dup (0)
+    db 0
+DebugPasswordLine db TEXT_MOVE_TO, 3, 0, TEXT_SET_COLOR, 0Fh, 'Password           = '
+Password db 16 dup (0)
+    db 0
+; Module file name tried by LoadSoundModule (loc_0CB95).
+SoundModuleNamePtr dw 0
 SoundModuleSelect db 00h
-; UNKNOWN: not yet classified as code or data
-    db 010h,0Fh,011h,0Ch,03h,053h,06Fh,075h,06Eh,064h,020h
-    db 063h,061h,072h,064h,020h,075h,073h,065h,064h,03Ah,020h,041h,064h,06Ch,069h,062h
-    db 020h,063h,06Fh,06Dh,070h,061h,074h,069h,062h,06Ch,065h,00h,010h,0Fh,011h,0Ch
-    db 04h,053h,06Fh,075h,06Eh,064h,020h,063h,061h,072h,064h,020h,075h,073h,065h,064h
-    db 03Ah,020h,054h,061h,06Eh,064h,079h,020h,069h,06Eh,074h,065h,072h,06Eh,061h,06Ch
-    db 00h,010h,0Fh,011h,0Ch,05h,053h,06Fh,075h,06Eh,064h,020h,063h,061h,072h,064h
-    db 020h,075h,073h,065h,064h,03Ah,020h,052h,06Fh,06Ch,061h,06Eh,064h,020h,04Ch,041h
-    db 050h,043h,031h,00h
+; "Sound card used" captions; their only reader has no caller (see LoadSoundModule).
+SoundCardCaptionAdlib db TEXT_SET_COLOR, 0Fh, TEXT_MOVE_TO, 0Ch, 3, 'Sound card used: Adlib compatible', 0
+SoundCardCaptionTandy db TEXT_SET_COLOR, 0Fh, TEXT_MOVE_TO, 0Ch, 4, 'Sound card used: Tandy internal', 0
+SoundCardCaptionRoland db TEXT_SET_COLOR, 0Fh, TEXT_MOVE_TO, 0Ch, 5, 'Sound card used: Roland LAPC1', 0
 SoundModuleNameAdlib db 'adlib.enc',00h
 SoundModuleNameTandy db 'tandy.enc',00h
 SoundModuleNameRoland db 'roland.enc',00h
+    even
+; Title animation (loc_0CC04..): logo pieces {row, column, BlueBits image}, three
+; frames of five; then five rectangles {row, column, rows, columns} revealed cell by cell.
+TitleLogoPieces db 1Fh, 7h, 0,  39h, 17h, 3,  89h, 7h, 6,  8Dh, 15h, 9,  0B6h, 1h, 12
+    db 18h, 4h, 1,  35h, 17h, 4,  85h, 4h, 7,  8Dh, 15h, 10,  0B6h, 1h, 13
+    db 0Eh, 2h, 2,  32h, 17h, 5,  82h, 2h, 8,  8Dh, 15h, 11,  0B6h, 1h, 14
+TitleRevealRects db 0B0h, 1h, 2, 13h,  88h, 15h, 7, 10h,  8h, 1h, 15, 14h,  30h, 16h, 6, 10h,  80h, 2h, 6, 13h
+; Reveal state: cell column and row (read together as a word), then pointers and counts.
+RevealCol db 0
+RevealRow db 0
+    even
+TitleLogoPiecePtr dw 0
+RevealRectPtr dw 0
+RevealColumns dw 0
+RevealCellOffset dw 0
+; Rectangles left (5..1); 5 skips the waits.
+RevealRectsLeft dw 0
+; Archive name list handed to the resource library (loc_153A0, AX = 4000h).
+ResourceArchiveList db 'overkill',0,0FFh
+; 1 while the attract demo runs.
+DemoActive dw 0
+; Bonus intro screen items {screen row, PanelSegment image, caption}, drawn one by one.
+BonusIntroItems label byte
+    db 24h, 3Ch
+    dw offset BonusCaptionWeaponSelector
+    db 4Ch, 3Dh
+    dw offset BonusCaptionShield
+    db 74h, 3Fh
+    dw offset BonusCaptionFuel
+    db 9Ch, 3Eh
+    dw offset BonusCaptionSmartBomb
+BonusCaptionWeaponSelector db TEXT_SET_COLOR, 0Fh, TEXT_MOVE_TO, 5h, 6, 'Bonus Weapon Selector', 0
+BonusCaptionShield db TEXT_MOVE_TO, 0Ah, 6, 'Bonus Shield', 0
+BonusCaptionFuel db TEXT_MOVE_TO, 0Fh, 6, 'Bonus Fuel', 0
+BonusCaptionSmartBomb db TEXT_MOVE_TO, 14h, 6, 'Smart Bomb', 0
+    even
+; Attract demo state: step (0..13h), step timer and forced-fire cycle.
+DemoStep dw 0
+DemoStepTimer dw 0
+DemoFireCycle dw 0
 ; UNKNOWN: not yet classified as code or data
-    db 090h,01Fh,07h,00h,039h,017h,03h,089h,07h,06h,08Dh,015h,09h
-    db 0B6h,01h,0Ch,018h,04h,01h,035h,017h,04h,085h,04h,07h,08Dh,015h,0Ah,0B6h
-    db 01h,0Dh,0Eh,02h,02h,032h,017h,05h,082h,02h,08h,08Dh,015h,0Bh,0B6h,01h
-    db 0Eh,0B0h,01h,02h,013h,088h,015h,07h,010h,08h,01h,0Fh,014h,030h,016h,06h
-    db 010h,080h,02h,06h,013h,00h,00h,090h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,06Fh,076h,065h,072h,06Bh,069h,06Ch,06Ch,00h,0FFh,00h,00h,024h,03Ch
-    db 0BEh,0BDh,04Ch,03Dh,0D9h,0BDh,074h,03Fh,0E9h,0BDh,09Ch,03Eh,0F7h,0BDh,010h,0Fh
-    db 011h,05h,06h,042h,06Fh,06Eh,075h,073h,020h,057h,065h,061h,070h,06Fh,06Eh,020h
-    db 053h,065h,06Ch,065h,063h,074h,06Fh,072h,00h,011h,0Ah,06h,042h,06Fh,06Eh,075h
-    db 073h,020h,053h,068h,069h,065h,06Ch,064h,00h,011h,0Fh,06h,042h,06Fh,06Eh,075h
-    db 073h,020h,046h,075h,065h,06Ch,00h,011h,014h,06h,053h,06Dh,061h,072h,074h,020h
-    db 042h,06Fh,06Dh,062h,00h,090h,00h,00h,00h,00h,00h,00h,010h,03h,011h,03h
-    db 01Fh,00h,011h,05h,01Fh,00h,00h,00h,02Ah,00h,03h,00h,0Ch,00h,02Dh,00h
-    db 02h,00h,09h,00h,030h,00h,02h,00h,0Ah,00h,033h,00h,03h,00h,0Dh,00h
-    db 030h,00h,02h,00h,0Ah,00h,036h,00h,03h,00h,0Eh,00h,02Bh,00h,02h,00h
-    db 0Bh,00h,02Eh,00h,02h,00h,0Bh,00h,02Dh,00h,02h,00h,09h,00h,031h,00h
-    db 00h,00h,00h,00h,034h,00h,00h,00h,01h,00h,037h,00h,01h,00h,06h,00h
-    db 03Bh,00h,00h,00h,02h,00h,02Ch,00h,00h,00h,03h,00h,02Fh,00h,00h,00h
-    db 04h,00h,032h,00h,00h,00h,05h,00h,035h,00h,0FFh,0FFh,0FFh,0FFh,038h,00h
-    db 01h,00h,07h,00h,039h,00h,0FFh,0FFh,0FFh,0FFh,03Ah,00h,0FFh,0FFh,0FFh,0FFh
+    db 10h,03h,11h,03h,1Fh,00h,11h,05h,1Fh,00h
+; Status shown for the demo's selected upgrade slot (loc_085D5 while DemoActive).
+DemoUpgradeStatus dw 0
+; Demo steps {caption PanelSegment image, upgrade slot or FFFFh, status}.
+DemoScript dw 2Ah, 3h, 0Ch,  2Dh, 2h, 9h,  30h, 2h, 0Ah,  33h, 3h, 0Dh
+    dw 30h, 2h, 0Ah,  36h, 3h, 0Eh,  2Bh, 2h, 0Bh,  2Eh, 2h, 0Bh
+    dw 2Dh, 2h, 9h,  31h, 0h, 0h,  34h, 0h, 1h,  37h, 1h, 6h
+    dw 3Bh, 0h, 2h,  2Ch, 0h, 3h,  2Fh, 0h, 4h,  32h, 0h, 5h
+    dw 35h, 0FFFFh, 0FFFFh,  38h, 1h, 7h,  39h, 0FFFFh, 0FFFFh,  3Ah, 0FFFFh, 0FFFFh
 ; Page lists for ShowPageList: a word (1 = the pages can be browsed, 0 = show the
 ; single page and return), the page file names, then FFFF.
     dw 1

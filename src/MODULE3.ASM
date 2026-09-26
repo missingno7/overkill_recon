@@ -10,6 +10,7 @@ locals
 extrn AimQuadrantBits:word
 extrn AllCheatsFlag:byte
 extrn AutoMoveExtraRecord:word
+extrn BonusIntroItems:byte
 extrn BonusKeysEnabled:byte
 extrn BossPath:word
 extrn BurstOriginX:word
@@ -21,14 +22,26 @@ extrn ChooseSlot:word
 extrn ChooseSlotPositions:word
 extrn ClampXHighSeen:byte
 extrn ClampXLowSeen:byte
+extrn Codeword:byte
+extrn CorruptMsgHead:byte
+extrn CorruptMsgPressKey:byte
+extrn CorruptMsgTail:byte
 extrn CountGate2324:word
 extrn CreditRandomWords:byte
+extrn DemoActive:word
+extrn DemoFireCycle:word
+extrn DemoScript:word
+extrn DemoStep:word
+extrn DemoStepTimer:word
+extrn DemoUpgradeStatus:word
 extrn DescentTargetX:word
 extrn DifficultyPositions:word
 extrn DifficultySetting:word
 extrn DirectionFromQuadrant:byte
 extrn DispatchRecordX:word
 extrn DispatchRecordY:word
+extrn DriveAPresent:byte
+extrn DriveBPresent:byte
 extrn EmsAvailable:byte
 extrn EmsDeviceName:byte
 extrn EmsFreePages:word
@@ -69,6 +82,8 @@ extrn HistoryWriteCursor:word
 extrn ImageEnd:byte
 extrn InputBits:byte
 extrn InstallCriticalErrorVector:far
+extrn IntegrityFileData:byte
+extrn IntegrityFileExe:byte
 extrn InvaderDropStep:word
 extrn InvaderFormation:word
 extrn InvaderFormationEnd:word
@@ -92,6 +107,7 @@ extrn LevelSkipEnabled:byte
 extrn LifeLostRequest:word
 extrn LivesLeft:word
 extrn LoadIsEnc:byte
+extrn LoadWordBB82:word
 extrn MapScrollPos:word
 extrn MarchDelay:byte
 extrn MarchDropNow:byte
@@ -108,6 +124,7 @@ extrn ModuleSoundRequest:byte
 extrn MoveModeA47C:word
 extrn MsgDeallocError:byte
 extrn NextLevelRequest:word
+extrn NonAsciiCodeword:byte
 extrn OffsetTableA368:word
 extrn OffsetTableA374:word
 extrn OffsetTableA380:word
@@ -115,9 +132,11 @@ extrn OffsetTableA38C:word
 extrn OffsetXGroupA:word
 extrn OffsetXGroupB:word
 extrn OffsetXWork:word
+extrn OldNonAsciiCodeword:byte
 extrn OpenResourceFile:far
 extrn PageIndex:word
 extrn PageListPtr:word
+extrn Password:byte
 extrn PaymentFileName:byte
 extrn PaymentHelpRow:word
 extrn PingPongFrames4:word
@@ -135,6 +154,13 @@ extrn QuitAnswer:byte
 extrn RandomWordCursor:word
 extrn RapidFireEnabled:byte
 extrn ResidentFiles:word
+extrn ResourceArchiveList:byte
+extrn RevealCellOffset:word
+extrn RevealCol:byte
+extrn RevealColumns:word
+extrn RevealRectPtr:word
+extrn RevealRectsLeft:word
+extrn RevealRow:byte
 extrn ScoreBcd:byte
 extrn ScrollDeltaY:word
 extrn SegBossActive:word
@@ -145,6 +171,7 @@ extrn SegBossPart79:word
 extrn SegBossPathCursor:word
 extrn SegBossX:word
 extrn SegBossY:word
+extrn SelectedUpgradeSlot:word
 extrn SequenceFrameCount:word
 extrn SfxActive:byte
 extrn SfxCommandTable:word
@@ -158,6 +185,7 @@ extrn SfxVoiceB:byte
 extrn SoundModuleInitEntry:far
 extrn SoundModuleLoaded:byte
 extrn SoundModuleNameAdlib:byte
+extrn SoundModuleNamePtr:word
 extrn SoundModuleNameRoland:byte
 extrn SoundModuleNameTandy:byte
 extrn SoundModuleSelect:byte
@@ -174,6 +202,9 @@ extrn SteerTargetX:word
 extrn SteerTargetY:word
 extrn TargetSearchCursor:word
 extrn TextInGraphics:word
+extrn TitleLogoPiecePtr:word
+extrn TitleLogoPieces:byte
+extrn TitleRevealRects:byte
 extrn Type21Path:word
 extrn Type86Frames:word
 extrn Type86FramesDir6:word
@@ -1077,7 +1108,7 @@ StoreApplyHistoryAndConditionalPlacement:
     call ApplyPositionHistoryToRecords
 ; Placement runs if BDAC != 0 OR unsigned [2350] > B6h. Otherwise the
 ; previous clamp feedback survives; history writes do not clear it.
-    cmp word ptr ds:[0BDACh], 0
+    cmp word ptr ds:[DemoActive], 0
     jne loc_09BF7
     cmp word ptr ds:[MapScrollPos], 0B6h
     jbe loc_09BFA
@@ -1252,8 +1283,8 @@ loc_09D54:
     cmp byte ptr ds:[KeyDownTable + SCAN_3], KEY_STATE_DOWN
     je loc_09D54
 loc_09D5B:
-    inc word ptr ds:[095FAh]
-    and word ptr ds:[095FAh], 3
+    inc word ptr ds:[SelectedUpgradeSlot]
+    and word ptr ds:[SelectedUpgradeSlot], 3
     jmp near ptr loc_0AC19
 loc_09D67:
     cmp byte ptr ds:[SfxEnabled], 0
@@ -1299,7 +1330,7 @@ loc_09DC9:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jae loc_09DE9
     mov word ptr ds:[0A97Ch], 1
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_09DE9
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_09DE9
@@ -1595,7 +1626,7 @@ loc_0A084:
     mov word ptr ds:[0A980h], 1
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A0A6
-    cmp word ptr ds:[0BDACh], 0
+    cmp word ptr ds:[DemoActive], 0
     jne loc_0A0A6
     cmp word ptr ds:[0A958h], 2
     jne loc_0A0A3
@@ -1611,13 +1642,13 @@ loc_0A0A6:
     mov word ptr ds:[0A3A4h], ax
     mov ax, word ptr ds:[0A974h]
     mov word ptr ds:[0A3A6h], ax
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_0A0D8
-    cmp word ptr ds:[0BE06h], 8
+    cmp word ptr ds:[DemoStep], 8
     jne loc_0A0CE
     jmp short loc_0A114
 loc_0A0CE:
-    cmp word ptr ds:[0BE06h], 0Fh
+    cmp word ptr ds:[DemoStep], 0Fh
     jbe loc_0A0D8
     jmp near ptr loc_0A515
 loc_0A0D8:
@@ -2442,7 +2473,7 @@ loc_0A894:
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0A8C1
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0A8B8
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8B8
@@ -2463,7 +2494,7 @@ loc_0A8C7:
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0A8F4
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0A8EB
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8EB
@@ -2822,7 +2853,7 @@ loc_0AC28:
     je loc_0AC32
     jmp near ptr loc_0AA44
 loc_0AC32:
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne ProbeGridForRecordResponse
     jmp near ptr loc_0AA44
 ; ProbeGridForRecordResponse: internal entry after AC28 gates, not a separate proven function.
@@ -2865,7 +2896,7 @@ StepRecordResponseCounter:
     stc
     ret
 loc_0AC81:
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_0AC8B
     jmp near ptr loc_0AA44
 loc_0AC8B:
@@ -2928,7 +2959,7 @@ loc_0ACF9:
     clc
     ret
 loc_0AD04:
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0AD14
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0AD14
@@ -2999,7 +3030,7 @@ loc_0AD7D:
     je loc_0ADAF
     jmp short loc_0ADC8
 loc_0ADAF:
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0ADC8
 ; Sibling grid probe: unlike ProbeGridForRecordResponse, distinguishes attribute 1 from other nonzero bytes.
 ; The FFFF grid sentinel is again not checked before adding 13.
@@ -3060,7 +3091,7 @@ TypeHandler06:
     jne loc_0AE5E
     test word ptr ss:[bp + REC_X], 8
     je loc_0AE5E
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0AE5E
     call ComputeRecordGridOffset
     add bx, 0Eh
@@ -3088,7 +3119,7 @@ loc_0AE86:
     sub word ptr ss:[bp + REC_Y], 4
     test word ptr ss:[bp + REC_X], 0Fh
     jne loc_0AEAA
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     je loc_0AEAA
     call ComputeRecordGridOffset
     add bx, 0Ch
@@ -3552,7 +3583,7 @@ TypeHandler12:
     mov word ptr ds:[2308h], 1
     cmp word ptr ds:[LevelIndex], 0
     je loc_0B2EF
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_0B2F5
 loc_0B2EF:
     mov word ptr ds:[2308h], 2
@@ -3566,7 +3597,7 @@ loc_0B304:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 3Bh
     mov ss:[bp + REC_SPRITE], ax
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_0B317
     jmp near ptr loc_0BC4B
 loc_0B317:
@@ -5511,7 +5542,7 @@ LoadResourceFile:
     jne loc_0C685
     ret
 loc_0C685:
-    mov word ptr ds:[0BB82h], 0
+    mov word ptr ds:[LoadWordBB82], 0
 loc_0C68B:
     call AdvanceABColonPrefix
     call loc_0C85B
@@ -5712,14 +5743,14 @@ loc_0C816:
     je loc_0C830
     ret
 loc_0C824:
-    cmp byte ptr ds:[0BB86h], 1
+    cmp byte ptr ds:[DriveAPresent], 1
     jne loc_0C82C
     ret
 loc_0C82C:
     inc byte ptr ds:[si]
     jmp short AdvanceABColonPrefix
 loc_0C830:
-    cmp byte ptr ds:[0BB87h], 1
+    cmp byte ptr ds:[DriveBPresent], 1
     jne loc_0C838
     ret
 loc_0C838:
@@ -5732,7 +5763,7 @@ loc_0C83C:
     jne loc_0C843
     ret
 loc_0C843:
-    mov byte ptr ds:[0BB86h], 1
+    mov byte ptr ds:[DriveAPresent], 1
     and al, 0C0h
     mov cl, 6
     shr al, cl
@@ -5741,7 +5772,7 @@ loc_0C843:
     jne loc_0C855
     ret
 loc_0C855:
-    mov byte ptr ds:[0BB87h], 1
+    mov byte ptr ds:[DriveBPresent], 1
     ret
 
 loc_0C85B:
@@ -5774,9 +5805,9 @@ loc_0C886:
 
 loc_0C8AD:
     mov word ptr cs:[0C88Ah], 0
-    mov dx, 0BB88h
+    mov dx, offset IntegrityFileExe
     call loc_0C8BD
-    mov dx, 0BB96h
+    mov dx, offset IntegrityFileData
 
 loc_0C8BD:
     mov word ptr ds:[FileNamePtr], dx
@@ -5844,17 +5875,17 @@ loc_0C925:
     pushf
     cmp word ptr cs:[0C88Ah], 1
     je loc_0C980
-    cmp word ptr ss:[021AAh], 0BB88h
+    cmp word ptr ss:[021AAh], offset IntegrityFileExe
     jne loc_0C980
     sub si, 040h
     mov es, word ptr cs:[MainDataSegment]
-    mov di, 0BC30h
+    mov di, offset Codeword
     call XorCopy16BytesAA
-    mov di, 0BC5Bh
+    mov di, offset NonAsciiCodeword
     call XorCopy16BytesAA
-    mov di, 0BC86h
+    mov di, offset OldNonAsciiCodeword
     call XorCopy16BytesAA
-    mov di, 0BCB1h
+    mov di, offset Password
     call XorCopy16BytesAA
 loc_0C980:
     mov es, word ptr cs:[0C892h]
@@ -5871,13 +5902,13 @@ loc_0C992:
 loc_0C99B:
     mov ax, 3
     int 010h
-    mov dx, 0BBA0h
+    mov dx, offset CorruptMsgHead
     mov ah, DOS_PRINT_STRING
     int 021h
     mov dx, word ptr ds:[FileNamePtr]
     mov ah, DOS_PRINT_STRING
     int 021h
-    mov dx, 0BBB8h
+    mov dx, offset CorruptMsgTail
     mov ah, DOS_PRINT_STRING
     int 021h
     mov dl, 0
@@ -5885,7 +5916,7 @@ loc_0C99B:
     mov ah, 2
     mov bh, 0
     int 010h
-    mov dx, 0BBF1h
+    mov dx, offset CorruptMsgPressKey
     mov ah, DOS_PRINT_STRING
     int 021h
     call loc_0C9DD
@@ -6133,7 +6164,7 @@ loc_0CB80:
 
 loc_0CB95:
     mov word ptr ds:[FileNamePtr], dx
-    mov word ptr ds:[0BCC2h], dx
+    mov word ptr ds:[SoundModuleNamePtr], dx
     xor al, al
     mov ah, 03Dh
     call far ptr OpenResourceFile
@@ -6193,7 +6224,7 @@ loc_0CC04:
     jne loc_0CC4E
     mov cx, 01Eh
     call DelayFramesUntilKeyOrPrimary
-    mov word ptr ds:[0BD98h], 0BD54h
+    mov word ptr ds:[TitleLogoPiecePtr], offset TitleLogoPieces
     call loc_0CE5F
     call loc_0CC4F
     cmp byte ptr ds:[KeyLastMakeCode], 0
@@ -6210,31 +6241,31 @@ loc_0CC4E:
     ret
 
 loc_0CC4F:
-    mov word ptr ds:[0BD9Ah], 0BD81h
+    mov word ptr ds:[RevealRectPtr], offset TitleRevealRects
     mov cx, 5
 loc_0CC58:
     push cx
-    mov word ptr ds:[0BDA0h], cx
-    mov si, word ptr ds:[0BD9Ah]
+    mov word ptr ds:[RevealRectsLeft], cx
+    mov si, word ptr ds:[RevealRectPtr]
     lodsb
-    mov byte ptr ds:[0BD96h], al
+    mov byte ptr ds:[RevealRow], al
     lodsb
-    mov byte ptr ds:[0BD95h], al
+    mov byte ptr ds:[RevealCol], al
     lodsb
     xor ah, ah
     mov cx, ax
     lodsb
-    mov word ptr ds:[0BD9Ch], ax
-    mov word ptr ds:[0BD9Ah], si
+    mov word ptr ds:[RevealColumns], ax
+    mov word ptr ds:[RevealRectPtr], si
 loc_0CC76:
     push cx
-    push word ptr ds:[0BD95h]
-    mov cx, word ptr ds:[0BD9Ch]
+    push word ptr ds:[RevealCol]
+    mov cx, word ptr ds:[RevealColumns]
 loc_0CC7F:
     push cx
-    mov ax, word ptr ds:[0BD95h]
+    mov ax, word ptr ds:[RevealCol]
     call DrawOffsetFromWideRow
-    mov word ptr ds:[0BD9Eh], di
+    mov word ptr ds:[RevealCellOffset], di
     mov si, di
     add si, 07D00h
     xor dl, dl
@@ -6298,7 +6329,7 @@ loc_0CD08:
     jne loc_0CD0F
     jmp near ptr loc_0CE07
 loc_0CD0F:
-    cmp word ptr ds:[0BDA0h], 4
+    cmp word ptr ds:[RevealRectsLeft], 4
     je loc_0CD2B
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0CD37
@@ -6312,7 +6343,7 @@ loc_0CD2B:
     je loc_0CD37
     mov byte ptr ds:[SfxRequest], 0Ah
 loc_0CD37:
-    mov ax, word ptr ds:[0BD95h]
+    mov ax, word ptr ds:[RevealCol]
     call DrawOffsetFromScreenRow
     push di
     mov si, 012h
@@ -6322,14 +6353,14 @@ loc_0CD37:
     mov ds, word ptr cs:[BlueBitsSegment]
     call BlitPackedToScreen
     mov ds, word ptr cs:[MainDataSegment]
-    cmp word ptr ds:[0BDA0h], 5
+    cmp word ptr ds:[RevealRectsLeft], 5
     je loc_0CD68
     cmp byte ptr ds:[KeyLastMakeCode], 0
     jne loc_0CD68
     call WaitVerticalRetrace
 loc_0CD68:
     pop di
-    mov si, word ptr ds:[0BD9Eh]
+    mov si, word ptr ds:[RevealCellOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, word ptr cs:[VideoAdapter]
@@ -6399,22 +6430,22 @@ loc_0CDD6:
 loc_0CE02:
     mov ds, word ptr cs:[MainDataSegment]
 loc_0CE07:
-    inc byte ptr ds:[0BD95h]
+    inc byte ptr ds:[RevealCol]
     pop cx
     loop loc_0CE10
     jmp short loc_0CE13
 loc_0CE10:
     jmp near ptr loc_0CC7F
 loc_0CE13:
-    pop word ptr ds:[0BD95h]
-    add byte ptr ds:[0BD96h], 8
+    pop word ptr ds:[RevealCol]
+    add byte ptr ds:[RevealRow], 8
     pop cx
     loop loc_0CE21
     jmp short loc_0CE24
 loc_0CE21:
     jmp near ptr loc_0CC76
 loc_0CE24:
-    cmp word ptr ds:[0BDA0h], 5
+    cmp word ptr ds:[RevealRectsLeft], 5
     je loc_0CE31
     mov cx, 0Ah
     call DelayFramesUntilKeyOrPrimary
@@ -6451,7 +6482,7 @@ loc_0CE5F:
     mov cx, 5
 loc_0CE62:
     push cx
-    mov si, word ptr ds:[0BD98h]
+    mov si, word ptr ds:[TitleLogoPiecePtr]
     lodsb
     mov ah, al
     lodsb
@@ -6460,7 +6491,7 @@ loc_0CE62:
     add di, 07D00h
     pop si
     lodsb
-    mov word ptr ds:[0BD98h], si
+    mov word ptr ds:[TitleLogoPiecePtr], si
     xor ah, ah
     mov si, ax
     shl si, 1
@@ -6526,12 +6557,13 @@ loc_0CEBD:
 
 loc_0CF22:
     mov ax, 04000h
-    mov si, 0BDA2h
+    mov si, offset ResourceArchiveList
     call far ptr loc_153A0
     ret
 
-; Show four title pages (up to 100 frames each), then run a frame loop that looks like a
-; self-playing demo until a key or the primary button. DS:BDAC's role is unproven.
+; Build the bonus intro screen one BonusIntroItems entry at a time (100 frames apart),
+; then run the attract demo (DemoActive = 1, steps from DemoScript) until a key or the
+; primary button.
 RunIntroPagesAndDemo:
     call loc_05145
     call loc_05BEE
@@ -6544,12 +6576,12 @@ loc_0CF3E:
     shl si, 1
     shl si, 1
     xor al, al
-    mov ah, byte ptr ds:[si - 04252h]
-    push word ptr ds:[si - 04250h]
+    mov ah, byte ptr ds:[si + BonusIntroItems]
+    push word ptr ds:[si + BonusIntroItems + 2]
     push si
     call DrawOffsetFromScreenRow
     pop si
-    mov al, byte ptr ds:[si - 04251h]
+    mov al, byte ptr ds:[si + BonusIntroItems + 1]
     xor ah, ah
     mov si, ax
     shl si, 1
@@ -6581,7 +6613,7 @@ loc_0CF97:
     pop cx
     jmp near ptr loc_0D040
 loc_0CF9C:
-    mov word ptr ds:[0BDACh], 1
+    mov word ptr ds:[DemoActive], 1
     call loc_05145
     call loc_05BEE
     call loc_04FC3
@@ -6606,8 +6638,8 @@ loc_0CF9C:
     mov bp, offset PrimaryRecord
     call StoreApplyHistoryAndConditionalPlacement
     call loc_0A940
-    mov word ptr ds:[0BE06h], 0
-    mov word ptr ds:[0BE08h], 064h
+    mov word ptr ds:[DemoStep], 0
+    mov word ptr ds:[DemoStepTimer], 064h
     mov byte ptr ds:[KeyLastMakeCode], 0
 loc_0D007:
     call ClearByteCS066B
@@ -6621,7 +6653,7 @@ loc_0D007:
     call loc_0073C
     call loc_05160
     call WaitByteCS066B
-    cmp word ptr ds:[0BE06h], 013h
+    cmp word ptr ds:[DemoStep], 013h
     je loc_0D040
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
@@ -6629,7 +6661,7 @@ loc_0D007:
     cmp byte ptr ds:[KeyLastMakeCode], 0
     je loc_0D007
 loc_0D040:
-    mov word ptr ds:[0BDACh], 0
+    mov word ptr ds:[DemoActive], 0
     call loc_05BEE
     call loc_0526A
     ret
@@ -6639,12 +6671,12 @@ loc_0D04D:
     mov al, 01Fh
     mov ah, 018h
     call DrawOffsetFromScreenRow
-    mov bx, word ptr ds:[0BE06h]
+    mov bx, word ptr ds:[DemoStep]
     shl bx, 1
     mov ax, bx
     shl bx, 1
     add bx, ax
-    mov si, word ptr ds:[bx - 041E8h]
+    mov si, word ptr ds:[bx + DemoScript]
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
@@ -6653,21 +6685,21 @@ loc_0D04D:
     call BlitPackedToScreen
     pop ds
     call loc_0A212
-    cmp word ptr ds:[0BE06h], 8
+    cmp word ptr ds:[DemoStep], 8
     jb loc_0D0CA
-    cmp word ptr ds:[0BE08h], 014h
+    cmp word ptr ds:[DemoStepTimer], 014h
     jb loc_0D0CA
     mov byte ptr ds:[InputBits], 0
-    inc word ptr ds:[0BE0Ah]
-    cmp word ptr ds:[0BE0Ah], 014h
+    inc word ptr ds:[DemoFireCycle]
+    cmp word ptr ds:[DemoFireCycle], 014h
     jb loc_0D0A4
-    mov word ptr ds:[0BE0Ah], 0
+    mov word ptr ds:[DemoFireCycle], 0
 loc_0D0A4:
-    cmp word ptr ds:[0BE0Ah], 0Fh
+    cmp word ptr ds:[DemoFireCycle], 0Fh
     je loc_0D0B9
-    cmp word ptr ds:[0BE0Ah], 011h
+    cmp word ptr ds:[DemoFireCycle], 011h
     je loc_0D0B9
-    cmp word ptr ds:[0BE0Ah], 013h
+    cmp word ptr ds:[DemoFireCycle], 013h
     jne loc_0D0BE
 loc_0D0B9:
     mov byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
@@ -6676,30 +6708,30 @@ loc_0D0BE:
     mov word ptr ds:[0A980h], 0
     call loc_0A067
 loc_0D0CA:
-    cmp word ptr ds:[0BE06h], 0
+    cmp word ptr ds:[DemoStep], 0
     jne loc_0D0D4
     jmp near ptr loc_0D160
 loc_0D0D4:
-    dec word ptr ds:[0BE08h]
+    dec word ptr ds:[DemoStepTimer]
     je loc_0D0DB
     ret
 loc_0D0DB:
-    mov word ptr ds:[0BE08h], 064h
-    inc word ptr ds:[0BE06h]
-    mov bx, word ptr ds:[0BE06h]
+    mov word ptr ds:[DemoStepTimer], 064h
+    inc word ptr ds:[DemoStep]
+    mov bx, word ptr ds:[DemoStep]
     shl bx, 1
     mov ax, bx
     shl bx, 1
     add bx, ax
-    mov ax, word ptr ds:[bx - 041E6h]
+    mov ax, word ptr ds:[bx + DemoScript + 2]
     cmp ax, 0FFFFh
     je loc_0D107
-    mov word ptr ds:[095FAh], ax
-    mov ax, word ptr ds:[bx - 041E4h]
-    mov word ptr ds:[0BE16h], ax
+    mov word ptr ds:[SelectedUpgradeSlot], ax
+    mov ax, word ptr ds:[bx + DemoScript + 4]
+    mov word ptr ds:[DemoUpgradeStatus], ax
     call loc_0859E
 loc_0D107:
-    mov bx, word ptr ds:[0BE06h]
+    mov bx, word ptr ds:[DemoStep]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0D107Cases]
 loc_0D107Cases label word
@@ -6735,7 +6767,7 @@ loc_0D16A:
     je loc_0D17C
     ret
 loc_0D17C:
-    mov word ptr ds:[0BE08h], 032h
+    mov word ptr ds:[DemoStepTimer], 032h
     ret
 loc_0D183:
     inc word ptr ds:[PrimaryRecord + REC_SPRITE]
@@ -6743,7 +6775,7 @@ loc_0D183:
     je loc_0D193
     mov byte ptr ds:[SfxRequest], 6
 loc_0D193:
-    mov word ptr ds:[0BE08h], 032h
+    mov word ptr ds:[DemoStepTimer], 032h
     mov bp, offset PrimaryRecord
     jmp near ptr PlaceFourRecordsFromOffsetTables
 loc_0D19F:

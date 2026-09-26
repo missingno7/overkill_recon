@@ -18,6 +18,8 @@ extrn CheatMyNameIsSmith:word
 extrn CheatRemindMe:word
 extrn CheatWhatOilShortage:word
 extrn CountGate2324:word
+extrn DemoActive:word
+extrn DemoUpgradeStatus:word
 extrn DifficultySetting:word
 extrn DirectionFromQuadrant:byte
 extrn EncounterEndDelay:word
@@ -5704,11 +5706,11 @@ loc_085D5:
 loc_085ED:
     xor ax, ax
 loc_085EF:
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_08602
     cmp di, word ptr ds:[SelectedUpgradeSlot]
     jne loc_08602
-    push word ptr ds:[0BE16h]
+    push word ptr ds:[DemoUpgradeStatus]
     jmp short loc_08605
 loc_08602:
     push word ptr ss:[bp + REC_STATUS]

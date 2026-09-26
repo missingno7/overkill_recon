@@ -22,6 +22,7 @@ extrn CheckpointScriptCursor:word
 extrn ChooseSlot:word
 extrn CreditRandomWords:byte
 extrn DecimalToBuffer:word
+extrn DemoActive:word
 extrn DifficultySetting:word
 extrn EventTrigger:word
 extrn EventX:word
@@ -1086,7 +1087,7 @@ loc_00744:
 
 loc_00747:
     call loc_007EF
-    cmp word ptr ds:[0BDACh], 1
+    cmp word ptr ds:[DemoActive], 1
     jne loc_00752
     ret
 loc_00752:
