@@ -54,11 +54,15 @@ python tools/where.py 9C01        # source line for an image address (after a bu
   `MOVEMENT.INC` (movement and position history).
 - `tools/` - `build.py`, `verify.py`, `where.py` (address to source line), `define.py`
   (name a variable at an address), `externs.py` (recompute extrn/public after moving or
-  naming) and the extraction helpers.
+  naming), `hybrid.py` (build the DOS hybrid), `difftest.py` + `emu.py` (ASM-vs-C
+  differential tests), `package.py` (make a linked EXE runnable) and the extraction helpers.
 - `build/` - generated: `program.bin`, objects, `.LST` listings, `OVERKILL.EXE/.MAP`.
 - `docs/executable-wrapping.md` - how the program image is packed in the EXE, the link
   module evidence and the relocation invariant.
 - `docs/next-work.md` - the freeze bar and what is deliberately left open.
+- `docs/dos-hybrid.md` - the DOS C translation: compiler, ABI, hybrid build, differential tests.
+- `c/` - C that replaces oracle routines in the DOS hybrid, with its ASM entry bridge.
+- `tests/` - differential test suites and the original-quirk regression corpus.
 - `AGENTS.md` - the working rules and the maintenance loop.
 
 Names, labels and files are modern reconstructions; original identifiers are unknown.

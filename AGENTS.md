@@ -77,7 +77,9 @@ disassembly-dump look, no extra infrastructure needed to read it.
 
 - Preserve originals and metadata/inputs.json. Never modify overkill_forged,
   legacy/overkill_port or empires_reconstruction.
-- Deliver assembly. No C port, SDL work or ASM-to-C conversion in this phase.
+- The DOS C translation is under way (docs/dos-hybrid.md): gameplay moves to C in the same
+  DOS executable, proven equivalent to the oracle by tools/difftest.py. No SDL or other
+  platform port in this phase; platform code may stay ASM.
 - Keep the build independent of neighboring projects: TASM 1.0 under the local nmlgc
   MS-DOS Player, TLINK 2.0 under the local i86 player.
 - Acceptance is exact identity: the linked EXE's load module equals a fresh extraction
@@ -98,7 +100,10 @@ disassembly-dump look, no extra infrastructure needed to read it.
   claims of recovered historical identifiers or module boundaries.
 - Do not force a game/platform split where the code mixes concerns (e.g. a renderer
   that mutates game state); record the real boundary.
-- No C work until explicitly asked.
+- C lives in c/ (sources, c/BRIDGE.ASM, c/game.h); tests in tests/. C mirrors the oracle's
+  memory model (GAME_GEN.H is generated from include/ and DATA.ASM, never copied by hand),
+  owns no data, and keeps original behaviour including bugs. No shadow state, converted
+  records or synchronisation layers.
 - Static work first. Run original code only for a specific question that static work
   cannot settle, and never beyond first gameplay entry (0000:97B2).
 

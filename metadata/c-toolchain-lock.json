@@ -1,0 +1,17 @@
+{
+  "compiler": "Watcom C16 10.0a (WCC.EXE: Win32 loader in BINNT, 16-bit compiler in BINB; copied from C:/tools/watcom-10.0a)",
+  "files": [
+    {
+      "path": "toolchain/watcom/BINNT/WCC.EXE",
+      "sha256": "8fee7d6ab3f2c06a0a874135e3898386898679e7dd53993fcc508e296364767d",
+      "size": 7704
+    },
+    {
+      "path": "toolchain/watcom/BINB/WCC.EXE",
+      "sha256": "d0d90e23ad0de79c8a4fbb8186cb90ce1543a35e1fa0ddafd318af87eeb14f60",
+      "size": 538640
+    }
+  ],
+  "schema": 1,
+  "used_by": "tools/hybrid.py only; the exact oracle build does not need it"
+}
