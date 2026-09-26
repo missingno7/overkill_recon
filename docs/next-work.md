@@ -18,7 +18,6 @@ layout argument appears (as the linker padding at far 10162 did).
 
 ## Next reconstruction targets
 
-- Hard-coded row strides outside the EGA blitters (ClearScreen104x200Ega, stars, the
-  CGA/Tandy blitters and background save/restore): per-adapter stride constants.
-- Raw game constants: sprite numbers, sfx ids (shared by unrelated events),
-  music numbers.
+- Hard-coded row strides in the CGA/Tandy video routines (workspace rows 34h/68h,
+  often written as the row minus bytes already advanced) and EGA screen-side copies.
+- Raw game constants: sprite numbers, sfx ids (shared by unrelated events).
