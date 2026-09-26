@@ -83,6 +83,7 @@ extrn LevelScriptClock:word
 extrn LevelScriptCursorPtrs:word
 extrn LevelScriptCursors:word
 extrn LoadIsEnc:byte
+extrn MapResetLists:word
 extrn MapScrollPos:word
 extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
@@ -176,6 +177,8 @@ public RestartAtCheckpoint
 public RestoreKeyboardVector09
 public RestoreTimerVector08
 public SaveHiscoreFile
+public SetMapTile1
+public SetMapTile28
 public ShowBossKeyScreen
 public ShowFatalErrorAndExit
 public TandyOffsetFromPlayfieldRow
@@ -8944,7 +8947,7 @@ loc_04DD8:
     pop di
     mov word ptr ds:[MapScrollPos], di
     push di
-    call loc_04E26
+    call ResetMapBeforeView
     mov word ptr ds:[MapScrollPos], 0E93h
     pop di
     pop si
@@ -8970,7 +8973,9 @@ loc_04E0D:
     mov word ptr ds:[LevelScriptClock], si
     ret
 
-loc_04E26:
+; Checkpoint restart: for the 9Ch map bytes before MapScrollPos, rewrite every tile
+; listed in the level's MapResetLists entry with that entry's routine.
+ResetMapBeforeView:
     push ax
     push bx
     push cx
@@ -8987,7 +8992,7 @@ loc_04E3B:
     dec si
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
-    mov bx, word ptr ds:[bx + 020D6h]
+    mov bx, word ptr ds:[bx + MapResetLists]
 loc_04E46:
     cmp word ptr cs:[bx], -1
     je loc_04E69
@@ -8999,8 +9004,12 @@ loc_04E46:
 loc_04E5A:
     add bx, 4
     jmp short loc_04E46
-; UNKNOWN: not yet classified as code or data
-    db 026h,0C6h,04h,028h,0EBh,04h,026h,0C6h,04h,01h
+; Map tile rewrites named in MapResetLists (entered by the jump above).
+SetMapTile28:
+    mov byte ptr es:[si], 28h
+    jmp short loc_04E69
+SetMapTile1:
+    mov byte ptr es:[si], 1
 loc_04E69:
     loop loc_04E3B
     pop ds

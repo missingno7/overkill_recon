@@ -180,6 +180,12 @@ public LevelSpritesSegment
 public LoadResourceFile
 public MainDataSegment
 public ManExplSegment
+public MapResetList0
+public MapResetList1
+public MapResetList2
+public MapResetList3
+public MapResetList4
+public MapResetList5
 public MoveInDirection1
 public MoveInDirection2
 public MoveInDirection4
@@ -270,6 +276,8 @@ extrn PlaqueImageOffset:word
 extrn PollInputBits:near
 extrn ReadIndexedByteAttribute:near
 extrn RestartAtCheckpoint:near
+extrn SetMapTile1:near
+extrn SetMapTile28:near
 extrn ShowFatalErrorAndExit:near
 extrn SteerTowardTarget:near
 extrn TypeHandler13:near
@@ -7659,34 +7667,42 @@ loc_0EE03:
 ; Set when ReadEncByte has pushed back EncPushedByte (end-of-data check).
 EncPushback db 0
 EncPushedByte db 0
-; UNKNOWN: not yet classified as code or data
-    db 0E1h,00h,065h,04Eh,0E2h,00h,065h,04Eh,0E3h,00h,065h,04Eh,0E4h,00h
-    db 065h,04Eh,0E5h,00h,065h,04Eh,0E6h,00h,065h,04Eh,0E7h,00h,065h,04Eh,0E8h,00h
-    db 065h,04Eh,0E9h,00h,065h,04Eh,0EAh,00h,065h,04Eh,0EBh,00h,065h,04Eh,0ECh,00h
-    db 065h,04Eh,0EDh,00h,065h,04Eh,0EEh,00h,065h,04Eh,0EFh,00h,065h,04Eh,0F0h,00h
-    db 065h,04Eh,0F1h,00h,065h,04Eh,0F2h,00h,065h,04Eh,0F3h,00h,065h,04Eh,0F4h,00h
-    db 065h,04Eh,0F5h,00h,065h,04Eh,0F6h,00h,065h,04Eh,0F7h,00h,065h,04Eh,0F8h,00h
-    db 065h,04Eh,0F9h,00h,065h,04Eh,0FFh,0FFh,04h,00h,065h,04Eh,07h,00h,065h,04Eh
-    db 0C9h,00h,05Fh,04Eh,0FFh,0FFh,0C4h,00h,065h,04Eh,05Ah,00h,065h,04Eh,0FFh,0FFh
-    db 0CEh,00h,065h,04Eh,0CFh,00h,065h,04Eh,0D0h,00h,065h,04Eh,0D1h,00h,065h,04Eh
-    db 0D2h,00h,065h,04Eh,0D3h,00h,065h,04Eh,0D4h,00h,065h,04Eh,0D5h,00h,065h,04Eh
-    db 0D6h,00h,065h,04Eh,0D7h,00h,065h,04Eh,0D8h,00h,065h,04Eh,0D9h,00h,065h,04Eh
-    db 0DAh,00h,065h,04Eh,0DBh,00h,065h,04Eh,0DCh,00h,065h,04Eh,0DDh,00h,065h,04Eh
-    db 0DEh,00h,065h,04Eh,0DFh,00h,065h,04Eh,0E0h,00h,065h,04Eh,0E1h,00h,065h,04Eh
-    db 0E2h,00h,065h,04Eh,0E3h,00h,065h,04Eh,0E4h,00h,065h,04Eh,0E5h,00h,065h,04Eh
-    db 0E6h,00h,065h,04Eh,0E7h,00h,065h,04Eh,0E8h,00h,065h,04Eh,0E9h,00h,065h,04Eh
-    db 0FFh,0FFh,0C9h,00h,05Fh,04Eh,0CEh,00h,065h,04Eh,0CFh,00h,065h,04Eh,0D0h,00h
-    db 065h,04Eh,0D1h,00h,065h,04Eh,0D2h,00h,065h,04Eh,0D3h,00h,065h,04Eh,0D4h,00h
-    db 065h,04Eh,0D5h,00h,065h,04Eh,0D6h,00h,065h,04Eh,0D7h,00h,065h,04Eh,0D8h,00h
-    db 065h,04Eh,0D9h,00h,065h,04Eh,0DAh,00h,065h,04Eh,0DBh,00h,065h,04Eh,0DCh,00h
-    db 065h,04Eh,0DDh,00h,065h,04Eh,0DEh,00h,065h,04Eh,0DFh,00h,065h,04Eh,0E0h,00h
-    db 065h,04Eh,0FFh,0FFh,0D7h,00h,065h,04Eh,0D8h,00h,065h,04Eh,0D9h,00h,065h,04Eh
-    db 0DAh,00h,065h,04Eh,0DBh,00h,065h,04Eh,0DCh,00h,065h,04Eh,0DDh,00h,065h,04Eh
-    db 0DEh,00h,065h,04Eh,0DFh,00h,065h,04Eh,0E0h,00h,065h,04Eh,0E1h,00h,065h,04Eh
-    db 0E2h,00h,065h,04Eh,0E3h,00h,065h,04Eh,0E4h,00h,065h,04Eh,0E5h,00h,065h,04Eh
-    db 0E6h,00h,065h,04Eh,0E7h,00h,065h,04Eh,0E8h,00h,065h,04Eh,0E9h,00h,065h,04Eh
-    db 0EAh,00h,065h,04Eh,0EBh,00h,065h,04Eh,0ECh,00h,065h,04Eh,0EDh,00h,065h,04Eh
-    db 0EEh,00h,065h,04Eh,0EFh,00h,065h,04Eh,0FFh,0FFh
+; Per level: map tiles rewritten before the view on a checkpoint restart
+; (ResetMapBeforeView), as {tile, routine} pairs ending with 0FFFFh.
+MapResetList0 dw 0E1h, offset SetMapTile1,  0E2h, offset SetMapTile1,  0E3h, offset SetMapTile1,  0E4h, offset SetMapTile1
+    dw 0E5h, offset SetMapTile1,  0E6h, offset SetMapTile1,  0E7h, offset SetMapTile1,  0E8h, offset SetMapTile1
+    dw 0E9h, offset SetMapTile1,  0EAh, offset SetMapTile1,  0EBh, offset SetMapTile1,  0ECh, offset SetMapTile1
+    dw 0EDh, offset SetMapTile1,  0EEh, offset SetMapTile1,  0EFh, offset SetMapTile1,  0F0h, offset SetMapTile1
+    dw 0F1h, offset SetMapTile1,  0F2h, offset SetMapTile1,  0F3h, offset SetMapTile1,  0F4h, offset SetMapTile1
+    dw 0F5h, offset SetMapTile1,  0F6h, offset SetMapTile1,  0F7h, offset SetMapTile1,  0F8h, offset SetMapTile1
+    dw 0F9h, offset SetMapTile1
+    dw 0FFFFh
+MapResetList1 dw 4h, offset SetMapTile1,  7h, offset SetMapTile1,  0C9h, offset SetMapTile28
+    dw 0FFFFh
+MapResetList2 dw 0C4h, offset SetMapTile1,  5Ah, offset SetMapTile1
+    dw 0FFFFh
+MapResetList3 dw 0CEh, offset SetMapTile1,  0CFh, offset SetMapTile1,  0D0h, offset SetMapTile1,  0D1h, offset SetMapTile1
+    dw 0D2h, offset SetMapTile1,  0D3h, offset SetMapTile1,  0D4h, offset SetMapTile1,  0D5h, offset SetMapTile1
+    dw 0D6h, offset SetMapTile1,  0D7h, offset SetMapTile1,  0D8h, offset SetMapTile1,  0D9h, offset SetMapTile1
+    dw 0DAh, offset SetMapTile1,  0DBh, offset SetMapTile1,  0DCh, offset SetMapTile1,  0DDh, offset SetMapTile1
+    dw 0DEh, offset SetMapTile1,  0DFh, offset SetMapTile1,  0E0h, offset SetMapTile1,  0E1h, offset SetMapTile1
+    dw 0E2h, offset SetMapTile1,  0E3h, offset SetMapTile1,  0E4h, offset SetMapTile1,  0E5h, offset SetMapTile1
+    dw 0E6h, offset SetMapTile1,  0E7h, offset SetMapTile1,  0E8h, offset SetMapTile1,  0E9h, offset SetMapTile1
+    dw 0FFFFh
+MapResetList4 dw 0C9h, offset SetMapTile28,  0CEh, offset SetMapTile1,  0CFh, offset SetMapTile1,  0D0h, offset SetMapTile1
+    dw 0D1h, offset SetMapTile1,  0D2h, offset SetMapTile1,  0D3h, offset SetMapTile1,  0D4h, offset SetMapTile1
+    dw 0D5h, offset SetMapTile1,  0D6h, offset SetMapTile1,  0D7h, offset SetMapTile1,  0D8h, offset SetMapTile1
+    dw 0D9h, offset SetMapTile1,  0DAh, offset SetMapTile1,  0DBh, offset SetMapTile1,  0DCh, offset SetMapTile1
+    dw 0DDh, offset SetMapTile1,  0DEh, offset SetMapTile1,  0DFh, offset SetMapTile1,  0E0h, offset SetMapTile1
+    dw 0FFFFh
+MapResetList5 dw 0D7h, offset SetMapTile1,  0D8h, offset SetMapTile1,  0D9h, offset SetMapTile1,  0DAh, offset SetMapTile1
+    dw 0DBh, offset SetMapTile1,  0DCh, offset SetMapTile1,  0DDh, offset SetMapTile1,  0DEh, offset SetMapTile1
+    dw 0DFh, offset SetMapTile1,  0E0h, offset SetMapTile1,  0E1h, offset SetMapTile1,  0E2h, offset SetMapTile1
+    dw 0E3h, offset SetMapTile1,  0E4h, offset SetMapTile1,  0E5h, offset SetMapTile1,  0E6h, offset SetMapTile1
+    dw 0E7h, offset SetMapTile1,  0E8h, offset SetMapTile1,  0E9h, offset SetMapTile1,  0EAh, offset SetMapTile1
+    dw 0EBh, offset SetMapTile1,  0ECh, offset SetMapTile1,  0EDh, offset SetMapTile1,  0EEh, offset SetMapTile1
+    dw 0EFh, offset SetMapTile1
+    dw 0FFFFh
 loc_0EFAE:
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[DispatchRecordX], ax

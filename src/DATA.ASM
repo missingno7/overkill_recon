@@ -15,6 +15,12 @@ TEXTROW macro attr, text
 endm
 locals
 extrn CountXReturn:far
+extrn MapResetList0:word
+extrn MapResetList1:word
+extrn MapResetList2:word
+extrn MapResetList3:word
+extrn MapResetList4:word
+extrn MapResetList5:word
 extrn SfxCmdRest:far
 extrn SfxCmdSlide:far
 extrn SfxCmdStepDown:far
@@ -207,6 +213,7 @@ public LevelSkipEnabled
 public LifeLostRequest
 public LivesLeft
 public LoadIsEnc
+public MapResetLists
 public MapScrollPos
 public MinusSlotA968
 public MinusSlotA96C
@@ -897,8 +904,11 @@ EventTrigger dw 00000h
     db 0A8h,020h,041h,06Eh,06Fh,074h,068h,065h,072h,020h
     db 04Dh,065h,067h,061h,020h,053h,074h,065h,020h,043h,06Fh,072h,06Bh,020h,043h,072h
     db 065h,061h,074h,069h,06Fh,06Eh,021h,090h,00h,00h,0F5h,0C5h,0F7h,0C5h,0F9h,0C5h
-    db 0FBh,0C5h,0FDh,0C5h,0FFh,0C5h,06h,0EEh,06Ch,0EEh,07Ah,0EEh,084h,0EEh,0F6h,0EEh
-    db 048h,0EFh,010h,03h,011h,0Ch,03h,020h,053h,057h,041h,050h,020h,044h,049h,053h
+    db 0FBh,0C5h,0FDh,0C5h,0FFh,0C5h
+; Per LevelIndex: the level's MapResetList (CS offsets).
+MapResetLists dw offset MapResetList0, offset MapResetList1, offset MapResetList2, offset MapResetList3, offset MapResetList4, offset MapResetList5
+; UNKNOWN: not yet classified as code or data
+    db 010h,03h,011h,0Ch,03h,020h,053h,057h,041h,050h,020h,044h,049h,053h
     db 04Bh,053h,02Ch,020h,050h,052h,045h,053h,053h,020h,046h,049h,052h,045h,020h,00h
     db 010h,02h,011h,0Ch,03h,020h,052h,045h,041h,044h,020h,045h,052h,052h,04Fh,052h
     db 02Ch,020h,050h,052h,045h,053h,053h,020h,046h,049h,052h,045h,020h,00h,011h,0Ch
