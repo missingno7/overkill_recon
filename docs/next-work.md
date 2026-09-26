@@ -16,7 +16,6 @@ layout argument appears (as the linker padding at far 10162 did).
 - GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
 - REC_TYPE handlers are named TypeNN<Behaviour>; roles of 09h (externally moved shot)
   and 26h (wall probe) are uncertain, and their inner loc_ labels remain.
-- `[bx + N]` record fields where BX provenance is not a null check.
 - Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
 
 ## Open questions worth settling statically
@@ -31,6 +30,7 @@ layout argument appears (as the linker padding at far 10162 did).
 
 ## Next reconstruction targets
 
-- About 330 `[bx + N]` record accesses whose BX provenance is inherited.
-- Collision loops 62F6..741F (pool B unrolled) and AC8B/BDD0.
+- Unrolled screen-row offsets (`es:[di + 1Ah/34h/4Eh]` = playfield row stride multiples)
+  in the sprite and clear routines: express as row-stride constants.
+- KIND_EXHAUST is inferred from placement and animation; confirm from sprites 9..0Dh.
 - Replace remaining `loc_XXXXX` labels with control-flow names region by region.
