@@ -5009,148 +5009,148 @@ DrawMapRowBlocksEga:
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    lodsw
-    mov word ptr es:[di], ax
-    lodsw
-    mov word ptr es:[di + 01Ah], ax
-    lodsw
-    mov word ptr es:[di + 034h], ax
-    lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     lodsw
     mov word ptr es:[di], ax
     lodsw
-    mov word ptr es:[di + 01Ah], ax
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 034h], ax
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsw
-    mov word ptr es:[di + 04Eh], ax
-    add di, 068h
-    sub di, 067Eh
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    lodsw
+    mov word ptr es:[di], ax
+    lodsw
+    mov word ptr es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsw
+    mov word ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    sub di, 16 * EGA_WORKSPACE_ROW_BYTES - 2
     pop bx
     add bx, 1
     pop cx
@@ -9041,11 +9041,11 @@ DrawStarGroup:
     jne DrawStarNext
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne PlotStar
-    cmp byte ptr es:[bx + 01Ah], 0
+    cmp byte ptr es:[bx + EGA_PLANE_ROW_BYTES], 0
     jne DrawStarNext
-    cmp byte ptr es:[bx + 034h], 0
+    cmp byte ptr es:[bx + 2 * EGA_PLANE_ROW_BYTES], 0
     jne DrawStarNext
-    cmp byte ptr es:[bx + 04Eh], 0
+    cmp byte ptr es:[bx + 3 * EGA_PLANE_ROW_BYTES], 0
     jne DrawStarNext
     jmp bp
 PlotStarFourPlanes:
@@ -9072,9 +9072,9 @@ EraseStars:
     mov di, ax
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne @@eraseBasePlane
-    mov byte ptr es:[di + 04Eh], 0
-    mov byte ptr es:[di + 034h], 0
-    mov byte ptr es:[di + 01Ah], 0
+    mov byte ptr es:[di + 3 * EGA_PLANE_ROW_BYTES], 0
+    mov byte ptr es:[di + 2 * EGA_PLANE_ROW_BYTES], 0
+    mov byte ptr es:[di + EGA_PLANE_ROW_BYTES], 0
 @@eraseBasePlane:
     mov byte ptr es:[di], 0
     loop @@eraseNext
