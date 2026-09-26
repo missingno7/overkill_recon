@@ -14,8 +14,6 @@ layout argument appears (as the linker padding at far 10162 did).
 ## Semantics still open
 
 - PanelImageBytes/BlueBitsImageBytes groups: tie each size group to its images.
-- REC_TYPE handlers are named TypeNN<Behaviour>; roles of 09h (externally moved shot)
-  and 26h (wall probe) are uncertain, and their inner loc_ labels remain.
 
 ## Open questions worth settling statically
 

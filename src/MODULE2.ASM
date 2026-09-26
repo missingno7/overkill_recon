@@ -317,7 +317,7 @@ public TwinRising3Available
 public Type13FormationLeader
 public Type24TurretLeftFire32
 public Type25TurretRightFire32
-public Type26WallProbeExtender
+public Type26TurretRemnant
 public Type27SlowDescender
 public Type28EnemyHatch
 public Type29EmergeThenDart
@@ -5762,9 +5762,10 @@ loc_082F6:
     mov ss:[bp + REC_X], ax
     dec word ptr ss:[bp + REC_SPRITE]
     jmp near ptr ScrollRecordThenFinish
-; Moves 1 px per frame along REC_DIRECTION with a wall test, advancing the sprite when
-; blocked. Role uncertain.
-Type26WallProbeExtender:
+; What a destroyed wall turret (24h/25h) leaves: slides out along REC_DIRECTION until
+; blocked, stepping its sprite, then flickers in place. Harmless: no collision, never a
+; missile target.
+Type26TurretRemnant:
     cmp word ptr ss:[bp + REC_SPRITE], 98h
     je loc_082EC
     cmp word ptr ss:[bp + REC_SPRITE], 92h

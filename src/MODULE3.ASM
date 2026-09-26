@@ -479,7 +479,7 @@ extrn TickRefuel:near
 extrn Type13FormationLeader:near
 extrn Type24TurretLeftFire32:near
 extrn Type25TurretRightFire32:near
-extrn Type26WallProbeExtender:near
+extrn Type26TurretRemnant:near
 extrn Type27SlowDescender:near
 extrn Type28EnemyHatch:near
 extrn Type29EmergeThenDart:near
@@ -3193,9 +3193,9 @@ Type07RisingShot3:
     mov ss:[bp + REC_SPRITE], ax
     sub word ptr ss:[bp + REC_Y], 3
     jmp near ptr ShotBoundsCheck
-; Only the shot bounds tail; its position is set elsewhere (ShotsLiveType9). Role
-; uncertain.
-Type09ExternallyMovedShot:
+; A link of the player's beam (BeamList): UpdateBeam positions it; the handler only
+; applies the shot bounds tail.
+Type09BeamLink:
     jmp near ptr ShotBoundsCheck
 ; 2 px per frame in REC_DIRECTION until REC_SHOT_TIMER runs out, then the player-hit test.
 Type0FTimedShot2:
@@ -8069,14 +8069,14 @@ RunTypeHandler:
 TypeHandlers label word
     dw offset ScrollRecordThenFinish, offset Type01ExplosionAnimation, offset Type02TimedStraightShot, offset Type02TimedStraightShot
     dw offset Type04StraightShot, offset Type05SideShotUpLeft, offset Type06SideShotUpRight, offset Type07RisingShot3
-    dw offset Type08RisingShot16, offset Type09ExternallyMovedShot, offset Type0AHomingMissile, offset Type0BAimedEnemyShot
+    dw offset Type08RisingShot16, offset Type09BeamLink, offset Type0AHomingMissile, offset Type0BAimedEnemyShot
     dw offset Type0CTimedTurnUpShot, offset ScrollRecordThenFinish, offset ScrollRecordThenFinish, offset Type0FTimedShot2
     dw offset Type10StartPathFollowerA, offset Type11StartPathFollowerB, offset Type12WaypointPathFollower, offset Type13FormationLeader
     dw offset Type14FormationSwayDiver, offset Type13FormationLeader, offset Type16SweepLeadIn, offset Type16SweepLeadIn
     dw offset Type18SweepPathLooper, offset Type19WallPatrolShooter, offset Type1AWallPatrolA, offset Type1BWallPatrolB
     dw offset Type13FormationLeader, offset Type1DSlotBobThenChase, offset Type1EShuttleShooter, offset Type13FormationLeader
     dw offset Type20SlotHopperDropper, offset Type21EncounterDirector, offset Type22DescendThenBurst, offset Type23ColumnFaller
-    dw offset Type24TurretLeftFire32, offset Type25TurretRightFire32, offset Type26WallProbeExtender, offset Type27SlowDescender
+    dw offset Type24TurretLeftFire32, offset Type25TurretRightFire32, offset Type26TurretRemnant, offset Type27SlowDescender
     dw offset Type28EnemyHatch, offset Type29EmergeThenDart, offset Type28EnemyHatch, offset Type2BAimedDart
     dw offset Type2CAimedDrifter, offset Type2DHoverFireThenPlunge, offset Type2EPlungeAtPlayerColumn, offset Type2FScrollingShuttle
     dw offset Type30AnimatedShooter, offset Type31FallFast3, offset Type32DescendThenBounce, offset Type33TerrainBouncer
