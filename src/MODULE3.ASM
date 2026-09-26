@@ -1072,6 +1072,7 @@ Steer:
 @@spawnLevelEndRecord:
     mov word ptr ds:[SidePodSpreadRight], 0
     mov word ptr ds:[SidePodSpreadLeft], 0
+    ; Unchecked: a full pool writes through FFFFh; REC_DRAW_PASS is left stale.
     call FindFreeRecordPoolA
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
@@ -2535,8 +2536,10 @@ DrawIncomingMapRow:
     mov bx, word ptr ds:[MapScrollPos]
     jmp near ptr DrawMapRowBlocks
 
-; Per frame: draws all live records, stars and the level-end extra record into the
-; workspace, by pool and draw pass.
+; Per frame: saves backgrounds (pool A with the primary, then B), draws stars, pool B
+; (8x8), pool A pass 0 (no primary), then pass 1 (primary first). Pods stay hidden until
+; MapScrollPos > MAP_INTRO_END_POS (not in the demo). The level-end extra record is
+; drawn once more at the end.
 DrawRecordsToWorkspace:
     mov cx, POOL_A_POINTER_COUNT
 @@saveNextA:
@@ -2658,7 +2661,9 @@ RestoreRecordBackgrounds:
     ret
 
 ; Per frame: march, type 93h and segmented-boss state, then UpdateRecordByKind for pool
-; A and pool B, then MoveStars.
+; A from PoolA[34] down to PoolA[0] (the primary is not updated here), then pool B from
+; [33] down to [0], then MoveStars. A record spawned mid-pass is updated this frame only
+; if its slot is still ahead; everything is drawn next frame.
 UpdateAllRecords:
     cmp word ptr ds:[FramesSinceInvaderSpawn], -1
     je @@latchMarch
@@ -2754,6 +2759,7 @@ UpdateRecordByKind:
     shl bx, 1
     jmp word ptr cs:[bx + KindHandlers]
     even
+; KIND_PLAYER is a bare ret (CountXReturn); the primary is never visited anyway.
 KindHandlers label word
     dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
     dw offset RunTypeHandler, offset UpdatePickup, offset UpdateExhaust
@@ -2814,6 +2820,8 @@ LargeRecordHitsPlayer:
     ja ReturnNoHit
     stc
     ret
+; BP = pickup: falls 1 px per frame plus scroll; on contact CollectPickup frees it, and
+; the scroll tail still runs on the freed record.
 UpdatePickup:
     inc word ptr ss:[bp + REC_Y]
     call SmallRecordHitsPlayer
@@ -2956,7 +2964,8 @@ UpdateFrontPod:
     mov word ptr ds:[FrontPodRecord], 0FFFFh
     call DestroyRecordAtBX
 ; Shared tail: turns the lost pod BP into a dying enemy (type 1), then refreshes the
-; upgrade display.
+; upgrade display. REC_PREV_TYPE is not set: a stale 24h/25h in the slot makes the pod
+; leave a type 26h remnant.
 ExplodePod:
     cmp bp, -1
     jne @@explode
@@ -3093,6 +3102,9 @@ PodCollideRecords:
     pop bp
     clc
     ret
+; BP = pod: dispatch by identity (sprite 0Fh = front pod, else the slot holding BP);
+; frozen until MapScrollPos > MAP_INTRO_END_POS (not in the demo). Pods never reach
+; FinishRecordUpdate.
 UpdatePod:
     cmp word ptr ds:[DemoActive], 1
     je @@dispatchPod
@@ -3169,8 +3181,8 @@ ShotBoundsCheck:
 @@probeWall:
     cmp word ptr ds:[DemoActive], 1
     je @@done
-; Remove the record when the cell at grid offset + 13 has attribute 1 exactly
-; (the FFFFh negative-Y result is again not checked).
+; Remove the record when the cell at grid offset + 13 has attribute 1 exactly (Y >= 8
+; is already enforced above, so the FFFFh result cannot occur here).
     call ComputeRecordGridOffset
     add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
@@ -3443,7 +3455,7 @@ TryTerrainStep:
     sub word ptr ss:[bp + REC_Y], ax
     cmp word ptr ds:[TerrainBlocked], 0
     ret
-; Sibling grid consumer explicitly rejects BX=FFFF; grid-helper flags are dead.
+; A negative GridYSum (BX = FFFFh) counts as blocked.
 ; Body of TryTerrainStep; diagonals are two axis steps.
 TerrainStepInDirection:
     call ComputeRecordGridOffset
@@ -4777,8 +4789,9 @@ RemoveRecordAtBX:
     pop bp
     ret
 
-; BP = record: free it (REC_STATUS = 0) and update the live counters its kind and
-; type belong to (shots, encounter, pods).
+; BP = record: REC_STATUS = 0 and per-class bookkeeping. Enemy: ReleaseEncounterMember
+; (leaders drop their item even when leaving the screen) and, unless type 1, zero its
+; group's GROUP_LIVE (no drop). Pod -> KIND_TYPED. Type 9: frees the whole BeamList.
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
@@ -5069,7 +5082,9 @@ PiercingHit:
     je PierceBossHit
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short DestroyRecord
-; Starts BP's explosion: REC_PREV_TYPE = type, type 1, sfx 19h, score and group drop.
+; Starts BP's explosion in place: REC_PREV_TYPE = type, type 1, frame 0 (size 1/2 sprite
+; 0/3), score 30h (size 1) else 60h, sfx 19h, ReleaseEncounterMember, GROUP_LIVE - 1
+; with the drop at 0. Type 21h is indestructible outside level 4. No type-1 guard.
 DestroyRecord:
     cmp word ptr ss:[bp + REC_TYPE], 021h
     jne @@score
@@ -5319,8 +5334,6 @@ UnusedTurnTowardPlayerStep:
     mov word ptr ss:[bp + REC_DIRECTION], ax
     jmp near ptr TryTerrainStep
 
-; BP = parent: as SpawnThrottledChild without the throttle, the child placed at
-; parent +0Ch,+0Ch instead of +4,+4.
 ; BP = parent: an unthrottled SpawnThrottledChild at +0Ch, +0Ch; BX = child or FFFFh.
 SpawnChildAt12:
     call FindFreeRecordPoolB
@@ -5336,9 +5349,11 @@ SpawnChildAt12:
     jmp short InitChildRecord
 ; BP = parent record. Spawns a pool-B child (REC_KIND 2, REC_TYPE 4, sprite 30h) at
 ; parent +4,+4 moving in the parent's direction, on every 4th / 2nd / every call for
-; DifficultySetting 0 / 1 / 2 (throttled: AL = 0). Unless the child is near the top
-; (REC_Y < 8) or the parent below E0h, requests an effect chosen by the parent's
-; REC_TYPE and returns BX = child. Pool full: BX = FFFF.
+; DifficultySetting 0 / 1 / 2. Unless the child is near the top (REC_Y < 8) or the
+; parent below E0h (unsigned), requests an effect chosen by the parent's REC_TYPE and
+; returns BX = child. Pool full: BX = FFFFh. Throttled: returns with BX UNCHANGED (AL = 0
+; only at difficulty 0); callers that test BX = FFFFh then write through the stale BX
+; (types 24h/25h: RunTypeHandler's REC_TYPE * 2, hitting DS:0050/0052).
 SpawnThrottledChild:
     cmp word ptr ds:[DifficultySetting], 2
     je @@spawn
@@ -5503,7 +5518,8 @@ SaveBufferCursor dw 00000h
 UnusedWordAfterSaveCursor db 00h,00h
 
 ; Life or demo start: clears the pools (pods keep their state), places the player and
-; exhaust, and resets energy, shots, fuel and the level-end state.
+; exhaust, and resets energy, shots, fuel and the level-end state. Pool A (with the
+; primary) all get REC_DRAW_PASS 1; REC_KIND is not reset; PoolACursor is kept.
 ResetRecordsForLife:
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset GroupTable
@@ -6930,8 +6946,7 @@ RunIntroPagesAndDemo:
     mov word ptr ds:[MissilesLive], 0
     mov word ptr ds:[MapScrollPos], MAP_START_POS
     call InitPositionHistory
-; Clear the shared byte-attribute table before calling the setup path at 007EF.
-; Forward fill requires DF=0; this is state initialization, not static table contents.
+; Demo: every tile attribute 0 (open).
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset ByteAttributeTable
     mov cx, BYTE_ATTRIBUTE_COUNT

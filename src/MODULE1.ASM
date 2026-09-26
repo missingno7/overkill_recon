@@ -1564,9 +1564,8 @@ LoadLevelMap:
     je InitializeByteAttributes
     call PromptLoadErrorWaitFire
     jmp short @@retryLoad
-; Initialize shared byte attributes to 1, then apply a selected sparse patch stream.
-; ES uses MainDataSegment for fill; DS addresses the patch stream and table writes.
-; Forward traversal requires DF=0; do not infer the selector range from this loop.
+; Every tile starts as wall (1); the level's AttributePatches list then opens tiles (0)
+; or makes them shot-permeable (2). Skipped in the demo.
 InitializeByteAttributes:
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset ByteAttributeTable

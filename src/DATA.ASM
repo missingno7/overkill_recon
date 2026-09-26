@@ -1216,7 +1216,8 @@ SlowCount6 dw 0h
 SlowCount5 dw 0h
 SlowCount4 dw 0h
 SlowCount3 dw 0h
-; Counts pool-A record updates, wraps at 5DCh; also a handler timer.
+; +1 per pool-A slot visited by UpdateAllRecords (35 per frame, free slots too), reset
+; to 0 there once >= 5DCh; some handlers also step it and read it as a timer.
 RecordTickCounter dw 0h
 ; Sway oscillator stepped every 8 frames (StartLeaderScript initialises it).
 SwayDirX dw 0h
@@ -1285,8 +1286,10 @@ rept POOL_B_COUNT
 I = I + 1
 endm
 PoolBSaveBuffers db POOL_B_COUNT * POOL_B_SAVE_BYTES dup (0)
-PoolACursor dw 023B4h
-PoolBCursor dw 02B5Ch
+; Last slot returned by FindFreeRecordPoolA/B; never reset (lives, levels, demo), so
+; slot choice depends on the whole allocation history.
+PoolACursor dw offset PoolA
+PoolBCursor dw offset PoolB
 ; Screen offset of the fuel gauge (DrawFuelGaugeOnPage); no reader found.
 FuelGaugeOffset dw 0h
 ; Per LevelIndex: handler called with AL = level map byte while a map row is set up.
@@ -1358,7 +1361,8 @@ Type51Path dw 0B0h, 0C0h,  0B0h, 0h,  0A0h, 0h,  0A0h, 0C0h
     dw 90h, 0C0h,  90h, 0h,  80h, 0h,  80h, 0C0h
     dw LEADER_END_Y, 60h
 ; Pool A record added by the auto-move sequence (LevelEndPhase 2), FFFFh = none;
-; drawn last while LevelEndPhase is nonzero.
+; drawn last while LevelEndPhase is nonzero (and also in its own pool-A pass). Not
+; cleared if its record is freed.
 AutoMoveExtraRecord dw 0FFFFh
 ; DOS allocation strategy saved at startup (SetBestFitAllocStrategy), restored on exit (RestoreAllocStrategy).
 SavedAllocStrategy dw 0
@@ -1531,34 +1535,12 @@ EasyHitToggle db 0h
 ; Slots still to fill (AddSidePods).
 SidePodsToAdd dw 0h
 SidePodSlotPtr dw 0h
-; Offset pairs at DS:A368; three adjacent pairs, caller index bound not proven.
-SidePodOffsetsLeftInner dw 010h ; offset pair 0 field Y, signed value 16
-    dw 0FFF8h ; offset pair 0 field X, signed value -8
-    dw 0Ch ; offset pair 1 field Y, signed value 12
-    dw 0FFF4h ; offset pair 1 field X, signed value -12
-    dw 0Fh ; offset pair 2 field Y, signed value 15
-    dw 0FFF3h ; offset pair 2 field X, signed value -13
-; Offset pairs at DS:A374; three adjacent pairs, caller index bound not proven.
-SidePodOffsetsRightInner dw 010h ; offset pair 0 field Y, signed value 16
-    dw 018h ; offset pair 0 field X, signed value 24
-    dw 0Ch ; offset pair 1 field Y, signed value 12
-    dw 01Ch ; offset pair 1 field X, signed value 28
-    dw 0Fh ; offset pair 2 field Y, signed value 15
-    dw 01Dh ; offset pair 2 field X, signed value 29
-; Offset pairs at DS:A380; three adjacent pairs, caller index bound not proven.
-SidePodOffsetsLeftOuter dw 014h ; offset pair 0 field Y, signed value 20
-    dw 0FFECh ; offset pair 0 field X, signed value -20
-    dw 010h ; offset pair 1 field Y, signed value 16
-    dw 0FFE8h ; offset pair 1 field X, signed value -24
-    dw 013h ; offset pair 2 field Y, signed value 19
-    dw 0FFE7h ; offset pair 2 field X, signed value -25
-; Offset pairs at DS:A38C; three adjacent pairs, caller index bound not proven.
-SidePodOffsetsRightOuter dw 014h ; offset pair 0 field Y, signed value 20
-    dw 024h ; offset pair 0 field X, signed value 36
-    dw 010h ; offset pair 1 field Y, signed value 16
-    dw 028h ; offset pair 1 field X, signed value 40
-    dw 013h ; offset pair 2 field Y, signed value 19
-    dw 029h ; offset pair 2 field X, signed value 41
+; Side pod (Y, X) offsets from the ship per ship form 0..2 (PlaceSidePods). Form 3 is
+; read on the frame the ship dies, overrunning into the next table.
+SidePodOffsetsLeftInner dw 10h, -8,  0Ch, -0Ch,  0Fh, -0Dh
+SidePodOffsetsRightInner dw 10h, 18h,  0Ch, 1Ch,  0Fh, 1Dh
+SidePodOffsetsLeftOuter dw 14h, -14h,  10h, -18h,  13h, -19h
+SidePodOffsetsRightOuter dw 14h, 24h,  10h, 28h,  13h, 29h
 OffsetXWork dw 00000h
 SidePodSpreadRight dw 00000h
 SidePodSpreadLeft dw 00000h

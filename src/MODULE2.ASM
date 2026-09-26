@@ -4227,7 +4227,9 @@ AimAtPlayer:
     mov word ptr ds:[bx + REC_DELTA_Y], ax
     ret
 ; BX = a free pool A record; when the pool is full, frees the first record that is not a
-; pod or the exhaust (else the first one).
+; pod or the exhaust (else the first one) through RemoveRecord: a leader victim spawns
+; its drop into the freed slot, which is then returned and overwritten. PoolACursor is
+; not moved by eviction.
 AllocRecordEvicting:
     call FindFreeRecordPoolA
     cmp bx, -1

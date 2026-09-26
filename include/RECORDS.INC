@@ -30,21 +30,27 @@ DIR_UP_LEFT equ 7
 ; Sprite-table index for drawing. On the primary record it is the ship form (0..2,
 ; 3 or more = destroyed), which also indexes the pod and exhaust offset tables.
 REC_SPRITE equ 08h
-; Drawn in the first pass when 0, in the second when 1.
+; Drawn in the first pass when 0, in the second when 1 (other values: never drawn).
+; Pass 1 also marks a non-ground record: ProbeOverlapsWalker and the formation column
+; snap skip it. ResetRecordsForLife sets 1 on all of pool A; spawners that do not set
+; it inherit the old value.
 REC_DRAW_PASS equ 0Ah
 ; WorkspaceSegment offset of the record as drawn (-1 = not drawn), and of its lower
 ; half for size 2 (see RecordWorkspaceOffset).
 REC_WORK_OFS equ 0Ch
-; Per-record background save buffer.
+; Per-record background save buffer: unique per slot, fixed by ResetRecordsForLife;
+; PodCollideRecords also uses it as the record's identity.
 REC_SAVE_BUFFER equ 0Eh
 REC_WORK_OFS_LOWER equ 10h
 ; X & 7: selects the shifted blit variant.
 REC_PIXEL_PHASE equ 12h
 ; 0 = 8x8, 1 = 16 rows, 2 = two 16-row halves.
 REC_SIZE_CLASS equ 14h
-; Update handler index (KindHandlers):
+; Update handler index (KindHandlers), dispatched unchecked; not cleared when a record
+; is freed, so it stays stale until the next spawner sets it:
 REC_KIND equ 16h
-; Moves with the scroll only; skipped by the collision pass.
+; Scroll-only handler (ScrollRecordThenFinish): player shots ignore it, body contact
+; still counts. No code stores 0; it only appears in a never-used, zeroed slot.
 KIND_SCENERY equ 0
 ; A pod (UpdatePod); becomes KIND_TYPED when removed.
 KIND_POD equ 1
@@ -68,13 +74,16 @@ REC_FIELD_1C equ 1Ch
 REC_SIDE_FLAG equ 1Eh
 ; Set at spawn, decremented per collision; zero destroys the record.
 REC_HIT_POINTS equ 20h
-; Destruction animation frame; completes at 9.
+; Explosion frame, +1 on frames when CountGate2324 = 1; ends at 9 (size 1) or 0Ch
+; (size 2); a size-0 explosion never ends (it only scrolls until out of bounds).
 REC_ANIM_COUNTER equ 22h
-; Nonzero selects the alternate (flash) blit table; set to 5 on a hit.
+; Nonzero selects the flash blitters; set to 5 on a hit. Decremented by the draw side
+; (RecordWorkspaceOffset) only while on screen, once per half: twice per frame for
+; visible size-2 records.
 REC_FLASH_TIMER equ 24h
 ; Kind 5 only: effect index applied when the primary touches it.
 REC_ITEM_INDEX equ 26h
-; Index into the byte-flag table at DS:2078, or FFFF.
+; Index 0..15 of the record's GroupTable entry, FFFFh = not in a group.
 REC_SLOT_INDEX equ 28h
 ; Step deltas toward the primary and the Bresenham-style error term.
 REC_DELTA_Y equ 2Ah
