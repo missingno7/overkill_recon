@@ -1,48 +1,70 @@
 """Recompute the extrn/public lines of every main-program source after moving or naming code.
 
-Each file gets `public` for its labels used elsewhere, `extrn Name:near` (inside its segment)
-for same-segment labels it uses from other files, and `extrn Name:far` (before the segment,
-so the frame comes from the target) for labels in other segments. Short branches cannot
-reach another file and are reported.
+A file may hold several segment blocks. Each file gets `public` for its labels used by
+other files; `extrn Name:near` inside a block for code labels of the same segment defined
+in another file; `extrn Name:byte|word` for data labels (inside the block of their segment
+when the file has one); `extrn Name:far` before the first segment for code in another
+segment. Short branches cannot reach another file and are reported.
 
     python tools/externs.py            # show what would change
     python tools/externs.py --apply
 """
 from common import *
 import re, sys
-APPLY = '--apply' in sys.argv
-order = [l.strip() for l in (ROOT/'src/sources.txt').read_text().splitlines() if l.strip() and not l.startswith('#')]
-texts = {n: (ROOT/'src'/n).read_bytes().decode('latin-1').split('\r\n') for n in order}
-seg = {n: next(l.split()[0] for l in t if re.fullmatch(r'\w+ segment \w+ public .*', l)) for n, t in texts.items()}
-LABEL = re.compile(r'([A-Za-z_]\w*)(?::| label \w+| d[bw] .*)')
-defined = {n: {m[1] for l in t if (m := LABEL.fullmatch(l.split(';', 1)[0].rstrip())) and not l.startswith(' ')} for n, t in texts.items()}
-owner = {d: n for n, ds in defined.items() for d in ds}
+
+SEGLINE = re.compile(r'(\w+) segment \w+ public .*')
+DEF = re.compile(r'([A-Za-z_]\w*)(:| label (\w+)| (d[bw]) .*)')
 IDENT = re.compile(r'(?<![\w@])([A-Za-z_]\w*)')
 SHORTB = re.compile(r'^    (?:jmp short|j(?!mp)[a-z]+|loop[a-z]*) (\w+)$')
-refs = {}
-for n, t in texts.items():
-    r = set()
-    for l in t:
-        code = l.split(';', 1)[0]
-        if not code.startswith('    '):  # a named data line: scan its operands
-            m = re.fullmatch(r'[A-Za-z_]\w* (d[bw] .*)', code.rstrip())
-            code = '    ' + m[1] if m else ''
-        r |= {m for m in IDENT.findall(code) if m in owner}
-    refs[n] = r - defined[n]
-    bad = {m[1] for l in t if (m := SHORTB.match(l))} & refs[n]
-    if bad: raise SystemExit(f'{n}: short branch to external {sorted(bad)}')
-users = {}
-for n, r in refs.items():
-    for x in r: users.setdefault(x, set()).add(n)
-for n, t in texts.items():
-    pub = sorted(d for d in defined[n] if users.get(d, set()) - {n})
-    t = [l for l in t if not l.startswith(('public ', 'extrn '))]
-    near = [f'extrn {e}:near' for e in sorted(refs[n]) if seg[owner[e]] == seg[n]]
-    far = [f'extrn {e}:far' for e in sorted(refs[n]) if seg[owner[e]] != seg[n]]
-    k = next(i for i, l in enumerate(t) if l.startswith('assume cs:')) + 1
-    t[k:k] = [f'public {p}' for p in pub] + near
-    s = next(i for i, l in enumerate(t) if re.fullmatch(r'\w+ segment \w+ public .*', l))
-    t[s:s] = far  # outside the segment: frame comes from the target's segment
-    ext = near + far
-    print(n, 'public', len(pub), 'extrn', len(ext))
-    if APPLY: (ROOT/'src'/n).write_bytes('\r\n'.join(t).encode('latin-1'))
+
+def blocks(t):
+    """Yield (line index, segment or None) for every line."""
+    seg = None
+    for i, l in enumerate(t):
+        m = SEGLINE.fullmatch(l)
+        if m: seg = m[1]
+        yield i, seg
+        if seg and l == f'{seg} ends': seg = None
+
+def main(apply):
+    order = [l.strip() for l in (ROOT/'src/sources.txt').read_text().splitlines() if l.strip() and not l.startswith('#')]
+    texts = {n: [l for l in (ROOT/'src'/n).read_bytes().decode('latin-1').split('\r\n') if not l.startswith(('public ', 'extrn '))] for n in order}
+    owner = {}   # label -> (file, segment, kind)
+    for n, t in texts.items():
+        for i, seg in blocks(t):
+            m = DEF.fullmatch(t[i].split(';', 1)[0].rstrip())
+            if m and not t[i].startswith(' '):
+                owner[m[1]] = (n, seg, {'db': 'byte', 'dw': 'word', 'byte': 'byte', 'word': 'word'}.get(m[4] or m[3], 'code'))
+    idents = {n: {x for l in t for x in IDENT.findall(l.split(';', 1)[0])} for n, t in texts.items()}
+    for n, t in texts.items():
+        uses = {}    # label -> set of referencing segments
+        for i, seg in blocks(t):
+            code = t[i].split(';', 1)[0]
+            if not code.startswith('    '):
+                m = re.fullmatch(r'[A-Za-z_]\w* (d[bw] .*)', code.rstrip()); code = '    ' + m[1] if m else ''
+            for x in IDENT.findall(code):
+                if x in owner and owner[x][0] != n: uses.setdefault(x, set()).add(seg)
+            m = SHORTB.match(t[i])
+            if m and m[1] in owner and owner[m[1]][0] != n: raise SystemExit(f'{n}: short branch to external {m[1]}')
+        near = {}; outside = []
+        for x, segs in sorted(uses.items()):
+            _, oseg, kind = owner[x]
+            if kind != 'code':
+                target = oseg if any(s == oseg for s in segs) else None
+                (near.setdefault(target, []) if target else outside).append(f'extrn {x}:{kind}')
+            elif segs == {oseg}: near.setdefault(oseg, []).append(f'extrn {x}:near')
+            elif oseg not in segs: outside.append(f'extrn {x}:far')
+            else: raise SystemExit(f'{n}: {x} is used both near and far')
+        pub = sorted(x for x, (f, _, _) in owner.items() if f == n and any(x in idents[m] for m in texts if m != n))
+        out = []; first = True
+        for i, seg in blocks(t):
+            l = t[i]
+            if SEGLINE.fullmatch(l) and first: out += outside; first = False
+            out.append(l)
+            if l.startswith('assume cs:'):
+                if pub: out += [f'public {p}' for p in pub]; pub = []
+                out += near.get(seg, [])
+        print(n, 'extrn', sum(len(v) for v in near.values()) + len(outside))
+        if apply: (ROOT/'src'/n).write_bytes('\r\n'.join(out).encode('latin-1'))
+
+if __name__ == '__main__': main('--apply' in sys.argv)

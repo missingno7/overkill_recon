@@ -59,25 +59,13 @@ The launcher's four stages can be extracted too (see git history for the former
 launcher extraction). Its final image is 165152 bytes with entry
 `0000:0002` and 16 relocations. Launcher ASM reconstruction is still outstanding.
 
-## Independent verification, not a copied runtime snapshot
+## Independent verification of the unpacker (historical)
 
-`tools/verify_unpack.py` creates zeroed memory, loads the original MZ module using its
-header, supplies a minimal PSP, and executes the **original unpacking instructions**
-in Unicorn. There are no legacy imports, instruction replacement hooks, DOS-service
-shortcuts, pre-unpacked binaries or snapshots in the input path. Unexpected
-interrupts fail the run. Execution stops before the first real program instruction.
-
-Both programs were checked at load segments `1010` and `2010`. Every final image
-byte equals the pure decoder result after applying its relocation list. This also
-checks relocation values independently and catches accidentally baked-in load bases.
-The initial general-register/PSP model is a documented deterministic test setup,
-not a claim that all DOS versions provide identical scratch-register values.
-
-At load 1010, the game passes through CS values 1C32, 1C43, 1B54, 1B65, 1A4F,
-23AD, 2376, 32FF, then 1010. Moved stubs execute at offset 002B (LZ) or 0034
-(EXEPACK). The normalized CS transitions and full stop registers are recorded in
-`build/unpack-verification.json`. The 1-MiB exploratory snapshots in build are
-noncanonical scratch and are never consumed by extraction or building.
+During development the original unpacking instructions were executed from a zeroed
+memory model (Unicorn, load segments 1010 and 2010) and every final byte matched the
+pure decoder in `tools/extract.py` after applying the relocation list. That tool was
+retired; it remains in git history. `tools/extract.py` plus metadata/oracle.json is
+the maintained oracle.
 
 ## What exists at the boundary
 
@@ -91,9 +79,8 @@ Observed code address frames are 0000, 0F7F, 1022, 1534 and 153A. These come fro
 actual reachable far targets and are not proof of original object/SEGDEF boundaries.
 The entry loads DS and SS from CS:9596 (relocated value originally 15BC), sets SP
 to A278, and begins mixed near/far calls. Far target frame 1534 at startup is visible
-as an immediate before relocation; additional aliases/targets are retained in the
-machine-readable graph as they are reached. A segment-valued word in a relocation
-is not, by itself, proof that the target contains code.
+as an immediate before relocation. A segment-valued word in a relocation is not, by
+itself, proof that the target contains code.
 
 At 0682 the game saves DOS INT08, programs PIT ports 43/40 with control 36 and divisor
 4000, and installs CS:06E5. This is documented from its actual instructions, not from
@@ -121,3 +108,41 @@ tools/resources.py. No original/legacy
 snapshot is an input. Runtime 9690 is a bounded candidate frontier; physical
 hardware equivalence, global stability and exact earliest-instruction minimality
 remain unproven. Both initial and materialized identities are retained.
+
+## Link structure and the relocation invariant
+
+The EXEPACK stream stores relocations in 64 KiB groups, so their packed order says
+little about the linker. Inside each group, however, the original order is not sorted:
+it runs MAIN 0041..52CC, 0F7F F7F4..F824, MAIN 52D0..8D86, 0F7F F949..FFF4,
+MAIN 9592..D695, 0F7F 100BD..1020C. TLINK emits fixups per object module, in module
+order and segment order inside a module (confirmed by a two-module experiment), so
+this pattern is evidence for at least three link modules that each contribute to
+both MAIN and the 0F7F far segment. src/MODULE1..3.ASM reproduce that structure.
+
+Boundaries: MAIN 52CF is exact (between SaveHiscoreFile and LoadHiscoreFile);
+the MAIN 2/3 split lies somewhere in 8D88..9592 (9592 chosen; the lone 00h at 9591
+may be alignment padding); far splits lie in F826..F949 (F87C chosen, after the
+settings/hiscore far helpers) and FFF6..100BD (1000D chosen). Any split inside those
+ranges links identically: the chosen points are not unique. More modules than three
+are possible; the pattern only proves a lower bound. Module names are modern.
+
+TASM 1.0 (and 2.0 /m) emit a far fixup for a forward-referenced label in the same
+module after the backward ones, which leaves 2 of the linked relocations out of the
+original relative order. A two-pass assembler such as MASM would not; this is weak
+evidence about the original toolchain, not a requirement. Therefore:
+
+- Final closure: the set of relocations TLINK emits equals the original 123 sites.
+- Transitional (now): every emitted site is original, and every missing site lies in
+  an undecoded `db` row (a relocated word written as a number anywhere else fails).
+- Relocation order is reported as evidence only.
+
+All 18 `jmp word ptr cs:[bx + table]` tables in MAIN are preceded by one 90h byte and
+start at an even absolute address, including seven between 52CF and 9591, while code
+begins at the odd address 52CF (no padding after SaveHiscoreFile's `ret`). If those
+fillers are assembler `even` directives, the modules holding them started at even
+addresses, so the original had more link modules than the three the relocation
+runs prove. MODULE2 keeps the fillers as explicit `db 90h` because `even` there would
+align relative to 52CF.
+
+TASM 1.0 assembles the whole MAIN segment as one 16,800-line file (0.8 s, ample
+memory), so file boundaries are a readability and evidence choice, not a tool limit.

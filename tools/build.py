@@ -40,11 +40,11 @@ def assemble_and_link(paths, build, exe):
 def assemble():
     header, image, relocations = assemble_and_link(main_sources(), ROOT/'build/asm', 'OVERKILL.EXE')
     (ROOT/'build/program.bin').write_bytes(image)
-    # file -> image start, from the detailed map, for tools/where.py
-    starts = {}
-    for m in re.finditer(r'^\s*([0-9A-F]{4}):([0-9A-F]{4})\s+[0-9A-F]{4}\s.*M=(\w+)', (ROOT/'build/asm/OVERKILL.MAP').read_text(), re.M):
-        starts.setdefault(m[3].upper(), int(m[1], 16)*16 + int(m[2], 16))
-    (ROOT/'build/asm/layout.txt').write_text(''.join(f'{p.name} {starts[p.stem.upper()]:05X}\n' for p in main_sources()))
+    # file, segment, image start and length of every contribution, for tools/where.py
+    names = {p.stem.upper(): p.name for p in main_sources()}
+    rows = [f'{names[m[5].upper()]} {m[4]} {int(m[1], 16)*16 + int(m[2], 16):05X} {m[3]}' for m in re.finditer(
+        r'^([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=\w+ S=(\w+) .*M=(\w+)\.ASM', (ROOT/'build/asm/OVERKILL.MAP').read_text(), re.M)]
+    (ROOT/'build/asm/layout.txt').write_text('\n'.join(rows) + '\n')
     return header, image, relocations
 
 def assemble_driver(name):

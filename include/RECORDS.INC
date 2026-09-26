@@ -2,30 +2,19 @@
 ; directly before pool A. Fields are words; roles are named from code use only, and
 ; several fields change meaning with REC_TYPE.
 RECORD_SIZE equ 038h
-PRIMARY_RECORD equ 0237Ch
-; Pool A: 35 records after the primary. FindFreeRecordPoolA starts at its cursor.
-POOL_A equ 023B4h
+; Records in PoolA and PoolB, and entries in PoolAPointers (pool A plus the primary).
 POOL_A_COUNT equ 023h
-POOL_A_CURSOR equ 095D8h
-POOL_A_END equ 02B5Ch
-; Round-robin cursor over pool A used by the target search at B15A.
-TARGET_SEARCH_CURSOR equ 0A43Ah
-; Pool B: 34 records ending at POOL_B_END; only ever drawn as 8x8 sprites.
-POOL_B equ 02B5Ch
 POOL_B_COUNT equ 022h
-POOL_B_END equ 032CCh
-POOL_B_CURSOR equ 095DAh
-; Static pointer tables: pool A's 35 records then the primary (36 words), and pool B.
-; Loops index them with BX = 2*CX for CX = count..1, hence the "- 2" displacements.
-POOL_A_POINTERS equ 032CCh
 POOL_A_POINTER_COUNT equ 024h
-POOL_B_POINTERS equ 08D14h
+; Bytes of background save buffer per record (PoolASaveBuffers, PoolBSaveBuffers).
+POOL_A_SAVE_BYTES equ 0280h
+POOL_B_SAVE_BYTES equ 040h
 
 ; 0 = free slot.
 REC_STATUS equ 00h
 REC_Y equ 02h
 REC_X equ 04h
-; Set from quadrant bits through the table at DS:A348; used as an index.
+; 0..7 clockwise from up (0 up, 2 right, 4 down, 6 left), see DirectionFromQuadrant.
 REC_DIRECTION equ 06h
 ; Sprite-table index for drawing. On the primary record it also serves as a state and
 ; offset-pair index (OFFSET_PAIR_INDEX_08).

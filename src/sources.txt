@@ -1,14 +1,9 @@
-# Sources in image order. Files that share a segment name are combined by the
-# linker in this order; each frame segment starts on a paragraph.
-R00.ASM
-R01.ASM
-R02.ASM
-R03.ASM
-R04.ASM
-R05.ASM
-R06.ASM
-R07.ASM
-FAR0F7F.ASM
+# Sources in link order. MODULE1..3 each contribute to the MAIN and FAR0F7F
+# segments; the order reproduces the original relocation order. The other files
+# each hold one address frame.
+MODULE1.ASM
+MODULE2.ASM
+MODULE3.ASM
 SLOT1022.ASM
 SEG1534.ASM
 SEG153A.ASM

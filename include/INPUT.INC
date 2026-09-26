@@ -1,6 +1,4 @@
-; Modern input vocabulary, not historical module ownership or original names.
-; DS offsets require the game state segment (CS:9596, relocated 15BC). PollJoystickInputBits and
-; the IRQ handler at Interrupt09KeyboardHandler load it locally; other readers inherit caller DS.
+; Input constants: InputBits flags, input modes, key tables, scancodes (modern names).
 
 ; InputBits (DATA.ASM) is rebuilt by PollInputBits (keyboard) or PollJoystickInputBits (joystick).
 ; Movement bits match keyboard table A (P,O,A,Q) and the fixed arrow keys.
@@ -13,17 +11,11 @@ INPUT_MOVEMENT_MASK equ 00Fh
 IN_BUTTON_PRIMARY equ 010h
 IN_BUTTON_SECONDARY equ 020h
 
-; Word DS:0010 selects the PollInputBits source. Nonzero values other than 1/2 use table A.
+; InputDeviceMode values.
 INPUT_MODE_KEYS_A equ 00h
 INPUT_MODE_JOYSTICK equ 01h
 INPUT_MODE_KEYS_B equ 02h
-; Eight scancodes each, collected by RCL into InputBits bits 7..0 in order,
-; so slot n feeds bit 7-n. Table A initially holds Z,Space,Q,A,O,P for bits
-; 5..0; the redefinition path 5752..578B rewrites its six slots through PromptAndCaptureKeyBinding,
-; copies slot 2 to table B and selects mode KEYS_A. SaveSettingsToHiscoreBlock/CalibrateJoystickThresholds save/load A.
-; Table B's other initial bytes (77h..7Ch) are not IBM set-1 keys; source unknown.
-KEY_BIT_SCANCODES_A equ 0213Eh
-KEY_BIT_SCANCODES_B equ 02146h
+; KeyBitScancodesA/B: entries per table, and the slot feeding each InputBits bit.
 KEY_BIT_SCANCODE_COUNT equ 08h
 KEY_SLOT_SECONDARY equ 02h
 KEY_SLOT_PRIMARY equ 03h
@@ -32,10 +24,7 @@ KEY_SLOT_YPLUS equ 05h
 KEY_SLOT_XMINUS equ 06h
 KEY_SLOT_XPLUS equ 07h
 
-; InstallKeyboardVector09 saves the previous INT 09h vector here (segment word, then offset); RestoreKeyboardVector09 restores it.
-KBD_SAVED_INT09 equ 0213Ah
-; Interrupt09KeyboardHandler stores each make code and sets/clears one byte per scancode.
-KEY_DOWN_TABLE equ 098C4h
+; KeyDownTable entries and their values.
 KEY_DOWN_COUNT equ 080h
 KEY_STATE_UP equ 00h
 KEY_STATE_DOWN equ 01h
@@ -71,8 +60,6 @@ SCAN_PGDN equ 051h
 SCAN_RELEASE_BIT equ 080h
 SCAN_CODE_MASK equ 07Fh
 
-; Word DS:0012; PollJoystickInputBits writes 1 before testing it, so port-B buttons are unreached there.
+; JoyButtonSelect value, and the number of calibration threshold words.
 JOY_BUTTONS_PORT_A equ 01h
-; Calibration CalibrateJoystickThresholds stores three samples; thresholds are unsigned midpoints of
-; LOW/CENTER and CENTER/HIGH. Sample roles follow that arithmetic only.
 JOY_THRESHOLD_WORDS equ 04h
