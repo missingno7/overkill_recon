@@ -9767,7 +9767,7 @@ ClearWorkspace:
     rep stosw
     ret
 
-; Insert ScoreBcd into the high-score table (532D) and save hiscore.dat if it qualified.
+; Insert ScoreBcd into the high-score table (InsertHighScore) and save hiscore.dat if it qualified.
 UpdateHighScoreTable:
     mov word ptr ds:[HiscoreQualified], 0
     call ResetPageAndClearScreen

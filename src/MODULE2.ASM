@@ -1568,7 +1568,7 @@ ShutdownWithError:
     mov ds, word ptr cs:[MainDataSegment]
     inc byte ptr ds:[ExitWithError]
 ; Common exit: silence the speaker, save hiscore.dat, stop sound, restore the keyboard
-; vector, return to text mode and exit to DOS. If DS:22CF is nonzero an error message
+; vector, return to text mode and exit to DOS. If ExitWithError is set an error message
 ; naming FileNamePtr is printed first.
 ShutdownGame:
     mov ds, word ptr cs:[MainDataSegment]
@@ -1933,7 +1933,7 @@ TickFrameTimers:
     ret
 
 ; Drains one Fuel unit every 64 frames (DifficultySetting above 1) or every 128, plus
-; one more per FrameCount32 wrap in ship form 2.
+; one more every second FrameCount32 wrap (every 64 frames) in ship form 2.
 TickFuelDrain:
     cmp word ptr ds:[DifficultySetting], 1
     jbe @@slowDrain
@@ -5565,7 +5565,7 @@ SpawnCellJitterDropper69:
 @@spawned:
     mov word ptr ds:[bx + REC_TYPE], 69h
     ret
-; Level 0 E3h, level 4 DDh, level 5 EBh: type 68h (1 in 16 grouped on level 5).
+; Level 0 E3h, level 4 DDh, level 5 EBh: type 68h (3 in 16 grouped on level 5).
 SpawnCellJitterShooter68:
     cmp word ptr ds:[LevelIndex], 5
     jne @@spawnUngrouped
@@ -6415,7 +6415,8 @@ Type33TerrainBouncer:
 @@reflect:
     xor word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
-; Fires sideways with sfx 13h from FrameCount64 32h on; levels 0 and 6 wait until Y 50h.
+; Fires sideways with sfx 13h from FrameCount64 32h on; level 0 waits until Y 50h (the
+; compare with 6 never matches).
 Type34SideFiringTurret:
     mov bx, ds:[LevelIndex]
     shl bx, 1

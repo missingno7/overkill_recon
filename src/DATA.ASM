@@ -856,7 +856,8 @@ ResidentFiles label word
 ; Holds the G file of LevelBankFiles while the BLX file loads.
 PendingSpriteFile dw 0
 ; Per LevelIndex: sprite bank (Gn.BIC, into CS:95AE) and block set (LEVnBLX.BIC,
-; into CS:959A). Levels 6 and 7 reuse the files of levels 0 and 3.
+; into CS:959A). Entries 6 and 7 (the files of levels 0 and 3) are
+; unreachable: LevelIndex stays below LEVEL_COUNT.
 LevelBankFiles label word
     dw offset File_G0_BIC, offset File_LEV0BLX_BIC
     dw offset File_G1_BIC, offset File_LEV1BLX_BIC
@@ -1072,8 +1073,11 @@ SpawnScanStartX dw 0h
 EventMarkerFlag db 0h
     even
 EventTrigger dw 00000h
-; Pseudo-random words: RandomWordCursor steps through the 16 words of this credit
-; line (NextRandomWord returns the next one in BX).
+; Pseudo-random words: a fixed walk over the 16 words of the CreditRandomWords text, not
+; a generator. NextRandomWord adds 2 before reading, so after a reset it returns the
+; words at +2..+30, then +0. Reset only at life or demo start. Callers use only BL
+; (masks 1/3/7/0Fh/1Fh, or BL <= C0h): 6F 68 72 4D 67 20 74 20 6F 6B 43 65 74 6F 21 41,
+; consumed in record-visit order, so the odds of each masked test are not uniform.
 RandomWordCursor dw offset CreditRandomWords
 CreditRandomWords db 'Another Mega Ste Cork Creation!'
     even
@@ -1129,6 +1133,8 @@ HiscoreFileName db 'hiscore.dat',00h
 HiscoreRowPrefix db TEXT_MOVE_TO, 4h, 0h, TEXT_SET_COLOR, 0Ah, 0h
 ; hiscore.dat image: 8 score entries then 27 settings bytes (SavedSettings), followed
 ; in the file by an additive checksum word; stored XOR-coded (XorCodeHiscoreBlock).
+; Entry (10h bytes): name[10], ' ', 0, score as 4 packed-BCD bytes, low byte first.
+; Saved at game over only when the score strictly beats an entry; always at shutdown.
 HiscoreBlock db 053h,074h,065h,020h,043h,06Fh,072h,06Bh
     db 020h,020h,020h,00h,00h,080h,00h,00h,054h,069h,06Eh,079h,020h,057h,02Eh,020h
     db 020h,020h,020h,00h,00h,070h,00h,00h,04Dh,02Eh,048h,06Fh,06Ch,06Ch,061h,06Eh
@@ -1203,6 +1209,8 @@ LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
 CountGate2324 dw 00000h
 ; Wrapping frame counters (@@sway..): 0..3 up to 0..7Fh each frame; the slow
 ; counters step when FrameDivider4 wraps (SlowCount10 and SlowCount3 have no reader).
+; Never reset (nor CountGate2324, ThrustDrainToggle, EasyHitToggle): their phase carries
+; over from the demo, level intros and earlier lives and games.
 FrameCount4 dw 0h
 FrameCount8 dw 0h
 FrameCount16 dw 0h
@@ -1238,8 +1246,9 @@ MapScrollPos dw 00000h
 ScrollingBackward dw 0h
 ; 1 after a backward tile step.
 LastTileStepBackward dw 0h
-; Level 0..5: selects LEVnMAP.BIC, the attribute patch stream and 6-entry tables;
-; advanced modulo LEVEL_COUNT when a level is completed.
+; Level 0..5: selects LEVnMAP.BIC, the attribute patch stream and 6-entry tables.
+; Index 0 is the sixth and last level (LevelDigitChars '6'); AdvanceLevel increments
+; first, so play runs 1..5, 0, then 1 again, and choose slot N starts level N + 1.
 LevelIndex dw 00000h
 ; Starts at INITIAL_LIVES; the HUD draws one icon per life; -1 ends the game.
 LivesLeft dw 00000h
@@ -1517,7 +1526,10 @@ HistoryWriteCursor dw 00000h
 HistoryReadCursor15 dw 00000h
 HistoryReadCursor31 dw 00000h
 HistoryCursor47 dw 00000h
-; Requests raised during a frame and acted on by the main loop.
+; Requests raised during a frame and acted on by GameFrame in the order NextLevel,
+; GameOver, LifeLost. LifeLost and NextLevel are cleared each frame by UpdatePlayerFrame;
+; GameOver only by StartNewGame. Set when the death animation ends with Fuel 0: an empty
+; tank ends the whole game.
 GameOverRequest dw 00000h
 NextLevelRequest dw 00000h
 LifeLostRequest dw 00000h
@@ -1529,7 +1541,8 @@ DirectionFromQuadrant db 0FFh,02h,06h,02h,04h,03h,05h,04h
 AutopilotWaypointA dw 0AAh, 58h
 AutopilotWaypointB dw 0h, 58h
 XAdjustPathTaken dw 00000h
-; DifficultySetting 0: alternates so only every other hit costs a life (@@checkEasyToggle).
+; DifficultySetting 0: every other energy-tank loss is skipped (the first included);
+; never reset.
 EasyHitToggle db 0h
     even
 ; Slots still to fill (AddSidePods).
@@ -1731,7 +1744,8 @@ ChildSpawnThrottle db 0
     even
 ; Weapon mode 0..5, set by the upgrade apply routines.
 WeaponMode dw 0h
-; Reserve energy tanks -1..3 (3 at a new game); one is used when EnergyPoints run out.
+; Reserve energy tanks -1..3 (3 at every life start); one is used when EnergyPoints
+; run out.
 EnergyTanks dw 0h
 ; Energy 0..18h (six HUD cells of 4); a hit costs 1, 2 or 3 by DifficultySetting.
 EnergyPoints dw 0h
@@ -1755,7 +1769,8 @@ ShotsLiveType9 dw 0h
 ShotsLiveFrontPod dw 0h
 ShotsLiveSide dw 0h
 LevelScriptClock dw 00000h
-; Fuel 0..58h, drained every 40h/80h frames (DrainFuelUnit); empty kills the player.
+; Fuel 0..58h, drained every 80h frames (40h at DifficultySetting 2); empty ends the
+; whole game (GameOverRequest). 0 at life start, then refilled by TickRefuel.
 Fuel dw 0h
 ; Refuelling: +1 per frame up to 58h.
 RefuelActive dw 0h
@@ -1872,7 +1887,10 @@ RevealCellOffset dw 0
 RevealRectsLeft dw 0
 ; Archive name list handed to the resource library (ResLibSetup, AX = 4000h).
 ResourceArchiveList db 'overkill',0,0FFh
-; 1 while the attract demo runs.
+; 1 while the attract demo runs (at startup and after an idle menu). It skips the HUD,
+; shows DemoUpgradeStatus, fires the full salvo, draws and places pods early, disables
+; pod collisions, terrain hits and shot wall tests, uses type 12h speed 2; there is no
+; UpdatePlayerFrame, TickRefuel or DrawScore, but kills still score.
 DemoActive dw 0
 ; Bonus intro screen items {screen row, PanelSegment image, caption}, drawn one by one.
 BonusIntroItems label byte

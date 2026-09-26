@@ -710,7 +710,8 @@ StartupAfterOverrides:
     call ResetPageAndClearScreen
     call RunAttractSequence
 ; Options menu and choose screen, then reset level, lives and score and start the
-; first level. GameOver returns here.
+; first level. GameOver returns here. Kept across levels: score, lives, upgrades, pods,
+; ship form; lost on death: upgrades, pods, ship form (ResetPoolAAndUpgrades).
 StartNewGame:
     mov al, MUSIC_TITLE
     call RequestModuleMusic
@@ -732,12 +733,12 @@ StartNewGame:
     mov word ptr ds:[EnergyPoints], 018h
     call DrawHud
     jmp short AdvanceLevel
-; Entered on NextLevelRequest, or F4 when LevelSkipEnabled. An interlude screen is
-; shown when the completed LevelIndex is 0.
+; Entered on NextLevelRequest, or F4 when LevelSkipEnabled. After the sixth level
+; (LevelIndex 0) the win screen is shown and play continues at LevelIndex 1.
 CompleteLevel:
     cmp word ptr ds:[LevelIndex], 0
     jne AdvanceLevel
-    call ShowInterludeAndWaitPrimary
+    call ShowWinScreenAndWaitPrimary
     call ResetPageAndClearScreen
     call RedrawStatusPanel
 ; Step LevelIndex modulo LEVEL_COUNT, request effect 4, then load and draw the level.
@@ -758,7 +759,8 @@ AdvanceLevel:
     call LoadLevelGraphics
     call ScrollMapToLevelStart
 ; Start a life (GameOver once LivesLeft reaches -1): reset the level objects and the primary
-; record, place it and redraw.
+; record, place it and redraw. Energy and tanks are refilled and Fuel refuels from 0.
+; RandomWordCursor is reset again after the first UpdateAllRecords.
 StartLife:
     cmp word ptr ds:[LivesLeft], -1
     jne @@setup_life
@@ -839,9 +841,9 @@ DrawFuelEmptyPanel:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-; Show a message through 0F7F:0980 (AX=BED0h), wait 75 frames, then wait for the
-; primary button (not for its release).
-ShowInterludeAndWaitPrimary:
+; Shows WinScreenPageList, waits 75 frames, then waits for the primary button (not for
+; its release).
+ShowWinScreenAndWaitPrimary:
     call ResetPageAndClearScreen
     mov ax, offset WinScreenPageList
     call far ptr ShowPageList
@@ -912,7 +914,8 @@ GameOver:
     loop @@delay
     call UpdateHighScoreTable
     jmp near ptr StartNewGame
-; GameOverRequest: zero LivesLeft so that LoseLife ends the game.
+; GameOverRequest: zero LivesLeft so that LoseLife ends the game. With KeepLivesFlag the
+; life is given back and GameOverRequest stays set, so the life restarts every frame.
 ForceGameOver:
     mov word ptr ds:[LivesLeft], 0
 ; LifeLostRequest: take a life (unless KeepLivesFlag), play effect 2 and restart.
@@ -935,7 +938,8 @@ LoseLife:
 @@restart_life:
     jmp near ptr StartLife
 
-; F10: show the pause graphics until the primary button or F10.
+; F10: show the pause graphics until the primary button (alone) or F10. Cheat codes are
+; read only here.
 PauseGame:
     cmp byte ptr ds:[SfxEnabled], 0
     je @@wait_f10_release
@@ -1695,7 +1699,8 @@ ClearFireLatch:
 ; BP = PrimaryRecord. Fires when the primary button is newly pressed, held with rapid
 ; fire, or every 16 frames while held. Early in the level (MapScrollPos <= B6h, not the
 ; demo) only the main shot fires; otherwise the ShotsLive* snapshot is taken and
-; missile, side shots, pod shots and the main weapon fire in turn.
+; missile, side shots, pod shots and the main weapon fire in turn. Demo: step 8 fires
+; only FireFrontPodBurst; steps 10h..12h only the missile.
 HandleFireButton:
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je ClearFireLatch
