@@ -5,10 +5,10 @@ offsets (frame 0000 unless shown). `python tools/where.py ADDR` prints the sourc
 
 ## Unclassified bytes
 
-What remains UNKNOWN (about 290 bytes) has no reader found anywhere in the image:
+What remains UNKNOWN (about 270 bytes) has no reader found anywhere in the image:
 zero or FFh runs (DS:0000, 2162, 9944 after KeyDownTable, 98AE, C440 region ends,
-MAIN ECB8 after EncRingBuffer), small word tables (DS:214E, 236E), two text records
-at DS:BE0C, and single bytes between routines. Classify them only if a reader or a
+MAIN ECB8 after EncRingBuffer), two text-record-like runs (DS:BE0C and after
+DemoFireCycle), and single bytes between routines. Classify them only if a reader or a
 layout argument appears (as the linker padding at far 10162 did).
 
 ## Semantics still open
@@ -16,7 +16,6 @@ layout argument appears (as the linker padding at far 10162 did).
 - PanelImageBytes/BlueBitsImageBytes groups: tie each size group to its images.
 - REC_TYPE handlers are named TypeNN<Behaviour>; roles of 09h (externally moved shot)
   and 26h (wall probe) are uncertain, and their inner loc_ labels remain.
-- Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
 
 ## Open questions worth settling statically
 
@@ -29,6 +28,6 @@ layout argument appears (as the linker padding at far 10162 did).
 - Hard-coded row strides outside the EGA blitters (ClearScreen104x200Ega, stars, the
   CGA/Tandy blitters and background save/restore): per-adapter stride constants.
 - KIND_EXHAUST is inferred from placement and animation; confirm from sprites 9..0Dh.
-- Raw game constants: sprite numbers, sfx ids, directions (0..7), X 60h screen centre,
-  music numbers and MapScrollPos landmarks (9Ch, 750h, 0E52h, 0EA0h).
+- Raw game constants: sprite numbers, sfx ids (shared by unrelated events), X 60h screen centre,
+  music numbers.
 - Remaining `loc_XXXXX` labels are local control flow; name them region by region.

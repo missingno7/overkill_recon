@@ -1361,6 +1361,7 @@ AutoMoveExtraRecord dw 0FFFFh
 ; DOS allocation strategy saved at startup (SetBestFitAllocStrategy), restored on exit (RestoreAllocStrategy).
 SavedAllocStrategy dw 0
 ; Cheat flags, set by the typed codes below (CheckCheatCodes).
+; Infinite fuel: DrainFuelUnit refills the tank instead of killing the ship.
 WhatOilShortageFlag db 0
 ; Keep the life count when a life is lost.
 KeepLivesFlag db 0
@@ -1370,7 +1371,8 @@ BonusKeysEnabled db 0
 LevelSkipEnabled db 0
 ; Fire without waiting for the fire latch (DS:A980) to clear.
 RapidFireEnabled db 0
-; Set only together with all the others; no reader found.
+; Set only together with all the others (CheckCheatRemindMe). Infinite energy:
+; LosePlayerEnergyTank refills three tanks instead of killing the ship.
 AllCheatsFlag db 0
 ; Typed cheat codes: a cursor to the next expected scancode, then the scancodes,
 ; 0-terminated. MatchCheatKey compares KeyLastMakeCode with the cursor's byte.
