@@ -14,6 +14,7 @@ extrn BlankMessage:byte
 extrn BlockBytes:word
 extrn BossKeyScreen:word
 extrn ByteAttributeTable:byte
+extrn ByteToNibbleMasks:byte
 extrn CalibPageList:word
 extrn CgaPanelPatch:byte
 extrn CheckpointCursorPtrs:word
@@ -1875,11 +1876,11 @@ loc_00FDA:
     loop loc_00FDA
     jmp near ptr loc_0526A
 
-; For every byte value, write four bytes at DS:1514+4*value expanding bits 7..0 into
+; For every byte value, write four bytes at ByteToNibbleMasks+4*value expanding bits 7..0 into
 ; nibble masks (F or 0), i.e. one mask byte per two Tandy 4-bit pixels.
 BuildByteToNibbleMaskTable:
     mov es, word ptr cs:[MainDataSegment]
-    mov di, 01517h
+    mov di, offset ByteToNibbleMasks + 3
     xor dh, dh
 loc_00FEE:
     mov dl, dh
@@ -5617,7 +5618,7 @@ loc_03161:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5636,7 +5637,7 @@ loc_031C1:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5655,7 +5656,7 @@ loc_031F0:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5674,7 +5675,7 @@ loc_0321F:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5693,7 +5694,7 @@ loc_0324E:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5712,7 +5713,7 @@ loc_0327D:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5731,7 +5732,7 @@ loc_032AC:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
@@ -5750,7 +5751,7 @@ loc_032DB:
     mov bx, ax
     shl bx, 1
     shl bx, 1
-    add bx, 01514h
+    add bx, offset ByteToNibbleMasks
     mov ax, word ptr ds:[bx]
     mov cx, ax
     and cx, dx
