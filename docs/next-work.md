@@ -20,15 +20,16 @@ layout argument appears (as the linker padding at far 10162 did).
 
 ## Open questions worth settling statically
 
-- Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
-- 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
+- DemoStepLaunchFrontPod and DemoStepSpawnPathEnemy51 do not check for FFFFh (pool full).
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
 - Record fields +1C and +36 are type-dependent.
 - Type 2Eh never sets SteerSpeed and inherits the previous handler's value.
 
 ## Next reconstruction targets
 
-- Unrolled screen-row offsets (`es:[di + 1Ah/34h/4Eh]` = playfield row stride multiples)
-  in the sprite and clear routines: express as row-stride constants.
+- Hard-coded row strides outside the EGA blitters (ClearScreen104x200Ega, stars, the
+  CGA/Tandy blitters and background save/restore): per-adapter stride constants.
 - KIND_EXHAUST is inferred from placement and animation; confirm from sprites 9..0Dh.
-- Replace remaining `loc_XXXXX` labels with control-flow names region by region.
+- Raw game constants: sprite numbers, sfx ids, directions (0..7), X 60h screen centre,
+  music numbers and MapScrollPos landmarks (9Ch, 750h, 0E52h, 0EA0h).
+- Remaining `loc_XXXXX` labels are local control flow; name them region by region.
