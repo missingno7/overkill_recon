@@ -1048,14 +1048,14 @@ loc_09A94:
     mov word ptr ds:[OffsetXGroupA], 0
     mov word ptr ds:[OffsetXGroupB], 0
     call FindFreeRecordPoolA
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 16h], 4
-    mov word ptr ds:[bx + 18h], 52h
-    mov word ptr ds:[bx + 14h], 2
-    mov word ptr ds:[bx + 28h], 0FFFFh
-    mov word ptr ds:[bx + 8], 0Fh
-    mov word ptr ds:[bx + 2], 20h
-    mov word ptr ds:[bx + 4], 58h
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
+    mov word ptr ds:[bx + REC_TYPE], 52h
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 2
+    mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
+    mov word ptr ds:[bx + REC_SPRITE], 0Fh
+    mov word ptr ds:[bx + REC_Y], 20h
+    mov word ptr ds:[bx + REC_X], 58h
     mov ds:[AutoMoveExtraRecord], bx
     jmp near ptr loc_099F6
 loc_09AD1:
@@ -1374,11 +1374,11 @@ loc_09D91:
 loc_09D99:
     call loc_074FE
     mov ds:[CompanionRecord], bx
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 14h], 1
-    mov word ptr ds:[bx + 16h], 1
-    mov word ptr ds:[bx + 8], 0Fh
-    mov word ptr ds:[bx + 20h], 14h
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 1
+    mov word ptr ds:[bx + REC_KIND], KIND_POD
+    mov word ptr ds:[bx + REC_SPRITE], 0Fh
+    mov word ptr ds:[bx + REC_HIT_POINTS], 14h
     ret
 
 loc_09DB9:
@@ -1534,12 +1534,12 @@ loc_09F30:
 loc_09F40:
     ret
 loc_09F41:
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 014h], 1
-    mov word ptr ds:[bx + 016h], 1
-    mov word ptr ds:[bx + 8], 014h
-    mov word ptr ds:[bx + 020h], 050h
-    mov word ptr ds:[bx + 0Ah], 1
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 1
+    mov word ptr ds:[bx + REC_KIND], KIND_POD
+    mov word ptr ds:[bx + REC_SPRITE], 014h
+    mov word ptr ds:[bx + REC_HIT_POINTS], 050h
+    mov word ptr ds:[bx + REC_DRAW_PASS], 1
     ret
 loc_09F5F:
     mov word ptr ds:[SlotFillBudget], 2
@@ -1565,8 +1565,8 @@ loc_09F88:
     mov bp, offset PrimaryRecord
     call loc_074FE
     call loc_09F41
-    mov word ptr ds:[bx + 8], 018h
-    mov word ptr ds:[bx + 0Ah], 1
+    mov word ptr ds:[bx + REC_SPRITE], 018h
+    mov word ptr ds:[bx + REC_DRAW_PASS], 1
     mov di, word ptr ds:[SlotFillPtr]
     mov word ptr ds:[di], bx
     call PlaceFourRecordsFromOffsetTables
@@ -2803,15 +2803,15 @@ loc_0AB24:
     mov dx, 0A414h
 loc_0AB34:
     mov bx, offset PrimaryRecord
-    mov si, word ptr ds:[bx + 8]
+    mov si, word ptr ds:[bx + REC_SPRITE]
     shl si, 1
     shl si, 1
     add si, dx
     lodsw
-    add ax, word ptr ds:[bx + 2]
+    add ax, word ptr ds:[bx + REC_Y]
     mov word ptr ss:[bp + REC_Y], ax
     lodsw
-    add ax, word ptr ds:[bx + 4]
+    add ax, word ptr ds:[bx + REC_X]
     mov word ptr ss:[bp + REC_X], ax
     ret
 loc_0AB4F:
@@ -2964,20 +2964,20 @@ loc_0AC8B:
     mov ax, word ptr ss:[bp + REC_X]
     mov di, word ptr ss:[bp + REC_Y]
 loc_0AC97:
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0ACD2
-    cmp word ptr ds:[bx + 018h], 1
+    cmp word ptr ds:[bx + REC_TYPE], 1
     je loc_0ACD2
-    cmp word ptr ds:[bx + 014h], 1
+    cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
     jne loc_0ACD2
-    mov si, word ptr ds:[bx + 2]
+    mov si, word ptr ds:[bx + REC_Y]
     add si, 010h
     cmp di, si
     jg loc_0ACD2
     sub si, 020h
     cmp di, si
     jl loc_0ACD2
-    mov si, word ptr ds:[bx + 4]
+    mov si, word ptr ds:[bx + REC_X]
     add si, 010h
     cmp ax, si
     jg loc_0ACD2
@@ -4726,7 +4726,7 @@ loc_0BD6D:
     mov si, word ptr ss:[bp + REC_SLOT_INDEX]
     shl si, 1
     add si, offset GroupTable
-    mov byte ptr ds:[si], 0
+    mov byte ptr ds:[si + GROUP_LIVE], 0
     ret
 loc_0BD7A:
     cmp word ptr ds:[ShotsLiveType9], 0
@@ -4994,16 +4994,16 @@ loc_0BFE1:
     mov si, word ptr ss:[bp + REC_SLOT_INDEX]
     shl si, 1
     add si, offset GroupTable
-    cmp byte ptr ds:[si], 0
+    cmp byte ptr ds:[si + GROUP_LIVE], 0
     je loc_0C017
-    dec byte ptr ds:[si]
+    dec byte ptr ds:[si + GROUP_LIVE]
     jne loc_0C017
 
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[DropX], ax
     mov ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[DropY], ax
-    mov al, byte ptr ds:[si + 1]
+    mov al, byte ptr ds:[si + GROUP_DROP_KIND]
     xor ah, ah
     mov word ptr ds:[DropKind], ax
     call loc_07420
@@ -5168,11 +5168,11 @@ loc_0C194:
     je loc_0C1A0
     mov byte ptr ds:[SfxRequest], 019h
 loc_0C1A0:
-    mov ax, word ptr ds:[bx + 018h]
-    mov word ptr ds:[bx + 01Ah], ax
-    mov word ptr ds:[bx + 018h], 1
-    mov word ptr ds:[bx + 022h], 0
-    mov word ptr ds:[bx + 8], 3
+    mov ax, word ptr ds:[bx + REC_TYPE]
+    mov word ptr ds:[bx + REC_PREV_TYPE], ax
+    mov word ptr ds:[bx + REC_TYPE], 1
+    mov word ptr ds:[bx + REC_ANIM_COUNTER], 0
+    mov word ptr ds:[bx + REC_SPRITE], 3
     ret
 ; BP = record: turn it toward the primary (REC_DIRECTION from AimQuadrantBits;
 ; unchanged when aligned, then return) and continue in TryTerrainStep.
@@ -6911,9 +6911,9 @@ loc_0D107Cases label word
     dw offset loc_0D13A, offset loc_0D159, offset CountXReturn, offset CountXReturn
 loc_0D13A:
     call SpawnEnemyHere
-    mov word ptr ds:[bx + 4], 0C0h
-    mov word ptr ds:[bx + 2], 0C8h
-    mov word ptr ds:[bx + 18h], 51h
+    mov word ptr ds:[bx + REC_X], 0C0h
+    mov word ptr ds:[bx + REC_Y], 0C8h
+    mov word ptr ds:[bx + REC_TYPE], 51h
     ret
 loc_0D14D:
     inc word ptr ds:[WeaponMode]
@@ -6956,9 +6956,9 @@ loc_0D1AB:
     call FindFreeRecordPoolA
     mov word ptr ds:[CompanionRecord], bx
     call loc_08209
-    mov word ptr ds:[bx + 2], 0
-    mov word ptr ds:[bx + 8], 0Fh
-    mov word ptr ds:[bx + 018h], 050h
+    mov word ptr ds:[bx + REC_Y], 0
+    mov word ptr ds:[bx + REC_SPRITE], 0Fh
+    mov word ptr ds:[bx + REC_TYPE], 050h
     mov bp, bx
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
@@ -8007,8 +8007,8 @@ loc_0F121:
     jmp near ptr ScrollRecordThenFinish
 loc_0F12C:
     call AimAtPlayer
-    mov word ptr ds:[bx + 8], 0CBh
-    mov word ptr ds:[bx + 18h], 60h
+    mov word ptr ds:[bx + REC_SPRITE], 0CBh
+    mov word ptr ds:[bx + REC_TYPE], 60h
     jmp near ptr ScrollRecordThenFinish
 ; Scrolls to Y 80h, then fires a burst in animation phase 2.
 Type88WaitThenFireBurst:
@@ -8766,13 +8766,13 @@ loc_10044:
     mov byte ptr ds:[Type93KilledPulse], 0
     ret
 loc_10079:
-    mov word ptr ds:[bx + 20h], 0C8h
-    mov word ptr ds:[bx + 4], 0
-    mov word ptr ds:[bx + 2], 0
-    mov word ptr ds:[bx + 14h], 2
-    mov word ptr ds:[bx + 28h], 0FFFFh
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 16h], 4
+    mov word ptr ds:[bx + REC_HIT_POINTS], 0C8h
+    mov word ptr ds:[bx + REC_X], 0
+    mov word ptr ds:[bx + REC_Y], 0
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 2
+    mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     retf
 loc_1009C:
     mov si, word ptr cs:[Type21PathCursor]

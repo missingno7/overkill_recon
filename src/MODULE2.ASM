@@ -237,6 +237,7 @@ public SpawnFromMapRow
 public Sprite16Offsets
 public Sprite32Offsets
 public Sprite8Offsets
+public StartLeaderScript
 public SteerTowardTarget
 public StepAlongDelta
 public Type13FormationLeader
@@ -376,7 +377,6 @@ public loc_0878C
 public loc_08D83
 public loc_0F953
 public loc_0F980
-public loc_0F9F9
 extrn BlitPackedStride104Cga:near
 extrn BlitPackedStride104Ega:near
 extrn BlitPackedStride160Cga:near
@@ -5473,9 +5473,9 @@ JoinMapGroup:
     je loc_081C2
     push bx
     mov bx, ds:[GroupSlotPtr]
-    inc byte ptr ds:[bx]
+    inc byte ptr ds:[bx + GROUP_LIVE]
     mov al, byte ptr ds:[GroupDropKind]
-    mov ds:[bx + 1], al
+    mov ds:[bx + GROUP_DROP_KIND], al
     pop bx
     mov ax, ds:[GroupSlotIndex]
 loc_081C2:
@@ -6877,7 +6877,7 @@ loc_0F953:
     mov word ptr ds:[GroupSlotIndex], 0
     mov bx, offset GroupTable
 loc_0F968:
-    cmp byte ptr ds:[bx], 0
+    cmp byte ptr ds:[bx + GROUP_LIVE], 0
     je loc_0F979
     add bx, 2
     inc word ptr ds:[GroupSlotIndex]
@@ -6950,10 +6950,12 @@ loc_0F9F2:
     inc word ptr ss:[bp + REC_Y]
     retf
 
-loc_0F9F9:
+; BX = new formation leader, AX = its leader script: starts the script and resets the
+; encounter and sway state; the leader gets 20 hit points.
+StartLeaderScript:
     mov word ptr ds:[LeaderScriptCursor], ax
     mov word ptr ds:[FormationSlotCursor], offset FormationSlots
-    mov word ptr ds:[bx + 020h], 014h
+    mov word ptr ds:[bx + REC_HIT_POINTS], 014h
     mov word ptr ds:[EncounterLiveCount], 1
     mov word ptr ds:[EncounterEndDelay], 064h
     mov word ptr ds:[SwayDirX], 1

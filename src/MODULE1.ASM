@@ -137,6 +137,7 @@ extrn StarMasksCga:byte
 extrn StarMasksEga:byte
 extrn StarMasksTandy:byte
 extrn Stars:word
+extrn StartLeaderScript:far
 extrn StateData:byte
 extrn SwapDisksMessage:byte
 extrn TextColor:byte
@@ -149,7 +150,6 @@ extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
 extrn loc_0F953:far
-extrn loc_0F9F9:far
 MAIN segment para public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AllocateBuffers
@@ -8745,9 +8745,9 @@ loc_04ADA:
     je loc_04AF5
     push bx
     mov bx, word ptr ds:[GroupSlotPtr]
-    inc byte ptr ds:[bx + REC_STATUS]
+    inc byte ptr ds:[bx + GROUP_LIVE]
     mov al, byte ptr ds:[GroupDropKind]
-    mov byte ptr ds:[bx + 1], al
+    mov byte ptr ds:[bx + GROUP_DROP_KIND], al
     pop bx
     mov ax, word ptr ds:[GroupSlotIndex]
 loc_04AF5:
@@ -8855,37 +8855,37 @@ loc_04BFE:
     mov word ptr ds:[bx + REC_FLASH_TIMER], 0
     cmp word ptr ds:[bx + REC_TYPE], 021h
     jne loc_04C0E
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C0E:
     mov ax, offset LeaderScript13
-    cmp word ptr ds:[bx + 018h], 013h
+    cmp word ptr ds:[bx + REC_TYPE], 013h
     jne loc_04C1C
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C1C:
     mov ax, offset LeaderScript15
-    cmp word ptr ds:[bx + 018h], 015h
+    cmp word ptr ds:[bx + REC_TYPE], 015h
     jne loc_04C2A
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C2A:
     mov ax, offset LeaderScript1C
-    cmp word ptr ds:[bx + 018h], 01Ch
+    cmp word ptr ds:[bx + REC_TYPE], 01Ch
     jne loc_04C38
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C38:
     mov ax, offset LeaderScript1F
-    cmp word ptr ds:[bx + 018h], 01Fh
+    cmp word ptr ds:[bx + REC_TYPE], 01Fh
     jne loc_04C46
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C46:
     mov ax, offset LeaderScript7D
-    cmp word ptr ds:[bx + 018h], 07Dh
+    cmp word ptr ds:[bx + REC_TYPE], 07Dh
     jne loc_04C54
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C54:
     mov ax, offset LeaderScript7E
-    cmp word ptr ds:[bx + 018h], 07Eh
+    cmp word ptr ds:[bx + REC_TYPE], 07Eh
     jne loc_04C62
-    call far ptr loc_0F9F9
+    call far ptr StartLeaderScript
 loc_04C62:
     add si, 4
     pop cx

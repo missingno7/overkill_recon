@@ -71,3 +71,8 @@ REC_SAVED_X equ 32h
 REC_SAVED_Y equ 34h
 ; Type-dependent.
 REC_FIELD_36 equ 36h
+
+; GroupTable entries (2 bytes): live members, and the item kind dropped when the
+; last member dies; REC_SLOT_INDEX links a record to its entry.
+GROUP_LIVE equ 0
+GROUP_DROP_KIND equ 1
