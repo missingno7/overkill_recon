@@ -14,24 +14,16 @@ assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
 ; c/movement.c ----------------------------------------------------------------------
 
-public MoveInDirection2, MoveInDirection3, MoveInDirection4, MoveInDirection8
+public MoveInDirection2, MoveInDirection4
 ; BP = record: moves N px along REC_DIRECTION; preserves AX like the oracle (which clobbers
-; only BX; this keeps BX too).
+; only BX; this keeps BX too). MoveInDirection3/8 have no ASM caller left (c/shots.c).
 MoveInDirection2:
     push di
     mov di, 2
     jmp short MoveInDirectionN
-MoveInDirection3:
-    push di
-    mov di, 3
-    jmp short MoveInDirectionN
 MoveInDirection4:
     push di
     mov di, 4
-    jmp short MoveInDirectionN
-MoveInDirection8:
-    push di
-    mov di, 8
 MoveInDirectionN:
     push ax
     push si

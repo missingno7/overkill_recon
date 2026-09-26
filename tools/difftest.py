@@ -198,7 +198,8 @@ def coverage(names=None, scale=1):
     from fuzz import region_instructions
     code = {name: region_instructions(m, [name]) for name in hybrid.owned_labels()}
     hit = set()
-    lo = min(min(v) for v in code.values()); hi = max(max(v) for v in code.values())
+    # (a label that is only a jump table has no instructions)
+    lo = min(min(v) for v in code.values() if v); hi = max(max(v) for v in code.values() if v)
     m.u.hook_add(UC_HOOK_CODE, lambda u, address, size, _: hit.add(address), None, lo, hi)
     run_suites(names, scale, pair=pair)
     missed = 0
