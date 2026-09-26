@@ -16,16 +16,21 @@ extrn BossKeyScreen:word
 extrn ByteAttributeTable:byte
 extrn ByteToNibbleMasks:byte
 extrn CalibPageList:word
+extrn CgaColorFill:byte
+extrn CgaNibbleToPixels:byte
 extrn CgaPanelPatch:byte
 extrn CheckpointCursorPtrs:word
 extrn CheckpointScriptCursor:word
 extrn ChooseSlot:word
+extrn ClearWorkspaceHalfOnly:word
 extrn CreditRandomWords:byte
 extrn DecimalToBuffer:word
 extrn DemoActive:word
 extrn DifficultySetting:word
+extrn EventMarkerFlag:byte
 extrn EventTrigger:word
 extrn EventX:word
+extrn EventY:word
 extrn FileBufferOffset:word
 extrn FileBufferSegment:word
 extrn FileByteCount:word
@@ -47,19 +52,25 @@ extrn FormationSizeClass:word
 extrn FormationType:word
 extrn GeometryWords:word
 extrn GridYSum:word
+extrn GroupDropKind:word
 extrn GroupDropKinds:byte
+extrn GroupSlotIndex:word
+extrn GroupSlotPtr:word
 extrn HiscoreBlock:byte
 extrn HiscoreFileName:byte
+extrn HiscoreQualified:word
 extrn InputBits:byte
 extrn InputDeviceMode:word
 extrn JoyButtonSelect:word
 extrn JoyCalAbortSp:word
+extrn JoyCalByte98BF:byte
 extrn JoyCalCenterX:word
 extrn JoyCalCenterY:word
 extrn JoyCalHighX:word
 extrn JoyCalHighY:word
 extrn JoyCalLowX:word
 extrn JoyCalLowY:word
+extrn JoyCalibratingFlag:word
 extrn JoyXHighThreshold:word
 extrn JoyXLowThreshold:word
 extrn JoyYHighThreshold:word
@@ -105,6 +116,7 @@ extrn RecordRowOffsets:word
 extrn SavedSettings:byte
 extrn ScoreBcd:byte
 extrn ScreenRowOffsets:word
+extrn ScrollSubRow:word
 extrn SfxEnabled:byte
 extrn ShowPageList:far
 extrn SoundModuleLoaded:byte
@@ -112,6 +124,9 @@ extrn SoundModuleSelect:byte
 extrn SoundModuleTickEntry:far
 extrn SoundOption:word
 extrn SoundOptionFlags:byte
+extrn SpawnScanColumn:word
+extrn SpawnScanRowPtr:word
+extrn SpawnScanStartX:word
 extrn Sprite16Bytes:word
 extrn Sprite32Bytes:word
 extrn Sprite8Bytes:word
@@ -128,6 +143,7 @@ extrn TextColumn:byte
 extrn TextInGraphics:word
 extrn TextRowOffset:word
 extrn TheEndBytes:word
+extrn TimerTickPhase:byte
 extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
@@ -398,19 +414,19 @@ TransparentColor db 05h
 ; caller, discarding every nested frame, and input falls back to key table A.
 AbortJoystickCalibration:
     mov sp, word ptr ds:[JoyCalAbortSp]
-    mov byte ptr ds:[098BFh], 0
+    mov byte ptr ds:[JoyCalByte98BF], 0
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_KEYS_A
     ret
 
 ; Switch input to the joystick and calibrate it; Esc aborts via AbortJoystickCalibration.
-; The roles of word DS:0014 and byte DS:98BF are unknown.
+; JoyCalibratingFlag and JoyCalByte98BF are only ever written.
 CalibrateJoystickWithAbort:
     mov word ptr ds:[JoyCalAbortSp], sp
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_JOYSTICK
-    mov word ptr ds:[014h], 1
+    mov word ptr ds:[JoyCalibratingFlag], 1
     call CalibrateJoystickThresholds
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_JOYSTICK
-    mov byte ptr ds:[098BFh], 0
+    mov byte ptr ds:[JoyCalByte98BF], 0
     ret
 
 ; Take three stick samples, each after the primary button is released and pressed again,
@@ -419,7 +435,7 @@ CalibrateJoystickWithAbort:
 ; are unreviewed.
 CalibrateJoystickThresholds:
     mov word ptr ds:[JoyButtonSelect], JOY_BUTTONS_PORT_A
-    mov byte ptr ds:[098BFh], 0
+    mov byte ptr ds:[JoyCalByte98BF], 0
     mov ax, offset CalibPageList
     call far ptr ShowPageList
     call WaitJoystickPrimaryRelease
@@ -1070,7 +1086,7 @@ RestoreTimerVector08:
 loc_00704:
     call SfxTimerTick
     mov ds, word ptr cs:[MainDataSegment]
-    test byte ptr ds:[054h], 1
+    test byte ptr ds:[TimerTickPhase], 1
     jne loc_00716
     call IncrementByteCS066B
 loc_00716:
@@ -1081,8 +1097,8 @@ loc_00716:
     pop dx
     pop cx
     pop bx
-    inc byte ptr ds:[054h]
-    and byte ptr ds:[054h], 3
+    inc byte ptr ds:[TimerTickPhase]
+    and byte ptr ds:[TimerTickPhase], 3
     je loc_0072F
     pop ds
     mov al, 020h
@@ -7713,7 +7729,7 @@ loc_0428C:
     mov bl, byte ptr ds:[TextColumn]
     add bx, word ptr ds:[TextRowOffset]
     mov di, bx
-    mov bx, 021AEh
+    mov bx, offset CgaNibbleToPixels
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7897,7 +7913,7 @@ loc_0445E:
     inc bp
     mov al, byte ptr ss:[bp]
     and al, 3
-    mov bx, 021BEh
+    mov bx, offset CgaColorFill
     xlat
     mov byte ptr ds:[TextColor], al
     ret
@@ -8687,18 +8703,18 @@ loc_04A7E:
     je loc_04A87
     jmp near ptr loc_04C74
 loc_04A87:
-    mov byte ptr ds:[020A2h], 1
+    mov byte ptr ds:[EventMarkerFlag], 1
     lodsw
     cmp ax, 0FFFFh
     jne loc_04A98
-    mov byte ptr ds:[020A2h], 0
+    mov byte ptr ds:[EventMarkerFlag], 0
     lodsw
 loc_04A98:
     mov cx, ax
     lodsw
     mov word ptr ds:[EventX], ax
     lodsw
-    mov word ptr ds:[0206Eh], ax
+    mov word ptr ds:[EventY], ax
     push bx
     mov bx, word ptr ds:[EventTrigger]
     and bx, 03Fh
@@ -8706,7 +8722,7 @@ loc_04A98:
     xor bh, bh
     mov ax, bx
     pop bx
-    mov word ptr ds:[02070h], ax
+    mov word ptr ds:[GroupDropKind], ax
     mov word ptr ds:[bx], si
     mov si, cx
     lodsw
@@ -8726,15 +8742,15 @@ loc_04ACE:
     jmp near ptr loc_04C70
 loc_04ADA:
     mov ax, 0FFFFh
-    cmp word ptr ds:[0209Ah], -1
+    cmp word ptr ds:[GroupSlotPtr], -1
     je loc_04AF5
     push bx
-    mov bx, word ptr ds:[0209Ah]
+    mov bx, word ptr ds:[GroupSlotPtr]
     inc byte ptr ds:[bx + REC_STATUS]
-    mov al, byte ptr ds:[02070h]
+    mov al, byte ptr ds:[GroupDropKind]
     mov byte ptr ds:[bx + 1], al
     pop bx
-    mov ax, word ptr ds:[02098h]
+    mov ax, word ptr ds:[GroupSlotIndex]
 loc_04AF5:
     mov word ptr ds:[bx + REC_SLOT_INDEX], ax
     mov word ptr ds:[bx + REC_STATUS], 1
@@ -8742,7 +8758,7 @@ loc_04AF5:
     mov word ptr ds:[bx + REC_DRAW_PASS], ax
     mov word ptr ds:[bx + REC_SPRITE], 0
     mov ax, word ptr ds:[si + 2]
-    add ax, word ptr ds:[0206Eh]
+    add ax, word ptr ds:[EventY]
     mov word ptr ds:[bx + REC_Y], ax
     mov ax, word ptr ds:[si]
     add ax, word ptr ds:[EventX]
@@ -8766,12 +8782,12 @@ loc_04B4A:
     and word ptr ds:[bx + REC_Y], 0FFF0h
     and word ptr ds:[bx + REC_X], 0FFF0h
     mov ax, word ptr ds:[bx + REC_X]
-    mov word ptr ds:[020A0h], ax
+    mov word ptr ds:[SpawnScanStartX], ax
     shr ax, 1
     shr ax, 1
     shr ax, 1
     shr ax, 1
-    mov word ptr ds:[0209Ch], ax
+    mov word ptr ds:[SpawnScanColumn], ax
     push si
     push bx
     mov es, word ptr cs:[LevelMapSegment]
@@ -8794,10 +8810,10 @@ loc_04B86:
     add ax, 010h
     jmp short loc_04B86
 loc_04B92:
-    mov word ptr ds:[0209Eh], bx
+    mov word ptr ds:[SpawnScanRowPtr], bx
 loc_04B96:
-    mov si, word ptr ds:[0209Eh]
-    mov ax, word ptr ds:[0209Ch]
+    mov si, word ptr ds:[SpawnScanRowPtr]
+    mov ax, word ptr ds:[SpawnScanColumn]
     add si, ax
     mov al, byte ptr es:[si]
 ; Same byte-attribute table as ReadIndexedByteAttribute; this consumer needs zero/nonzero.
@@ -8805,22 +8821,22 @@ loc_04B96:
     xlat
     or al, al
     je loc_04BD7
-    cmp word ptr ds:[020A0h], 060h
+    cmp word ptr ds:[SpawnScanStartX], 060h
     jb loc_04BC4
-    dec word ptr ds:[0209Ch]
-    cmp word ptr ds:[0209Ch], -1
+    dec word ptr ds:[SpawnScanColumn]
+    cmp word ptr ds:[SpawnScanColumn], -1
     jne loc_04B96
-    mov word ptr ds:[0209Ch], 0Ch
+    mov word ptr ds:[SpawnScanColumn], 0Ch
     jmp short loc_04B96
 loc_04BC4:
-    inc word ptr ds:[0209Ch]
-    cmp word ptr ds:[0209Ch], 0Dh
+    inc word ptr ds:[SpawnScanColumn]
+    cmp word ptr ds:[SpawnScanColumn], 0Dh
     jb loc_04BD5
-    mov word ptr ds:[0209Ch], 0
+    mov word ptr ds:[SpawnScanColumn], 0
 loc_04BD5:
     jmp short loc_04B96
 loc_04BD7:
-    mov ax, word ptr ds:[0209Ch]
+    mov ax, word ptr ds:[SpawnScanColumn]
     shl ax, 1
     shl ax, 1
     shl ax, 1
@@ -9072,7 +9088,7 @@ loc_04E0D:
     pop di
     cmp word ptr ds:[MapScrollPos], di
     ja loc_04E0D
-    cmp word ptr ds:[0234Eh], 0
+    cmp word ptr ds:[ScrollSubRow], 0
     jne loc_04E0D
     mov word ptr ds:[LevelScriptClock], si
     ret
@@ -9417,7 +9433,7 @@ GridOffsetNegativeY:
 ; Caller4FF9 needs no returned flags;4FF9 immediately overwrites them at501A. Memory writes only215A, apart
 ; from stack. Ordinary record and state are disjoint; no silent saturation or signed division.
 ComputeRecordGridOffset:
-    mov ax, word ptr ds:[0234Eh]
+    mov ax, word ptr ds:[ScrollSubRow]
     add ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[GridYSum], ax
     js GridOffsetNegativeY
@@ -9683,7 +9699,7 @@ loc_0526A:
     xor di, di
     mov ax, di
     mov cx, 08000h
-    cmp word ptr ds:[021C4h], 0
+    cmp word ptr ds:[ClearWorkspaceHalfOnly], 0
     je loc_05280
     mov cx, 04000h
 loc_05280:
@@ -9692,11 +9708,11 @@ loc_05280:
 
 ; Insert ScoreBcd into the high-score table (532D) and save hiscore.dat if it qualified.
 UpdateHighScoreTable:
-    mov word ptr ds:[02288h], 0
+    mov word ptr ds:[HiscoreQualified], 0
     call loc_05BEE
     mov bp, offset ScoreBcd
     call loc_0532D
-    cmp word ptr ds:[02288h], 0
+    cmp word ptr ds:[HiscoreQualified], 0
     jne SaveHiscoreFile
     ret
 

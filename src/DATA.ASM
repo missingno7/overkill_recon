@@ -67,6 +67,8 @@ public AimQuadrantBits
 public AllCheatsFlag
 public AttributePatchPointers
 public AutoMoveExtraRecord
+public AutopilotWaypointA
+public AutopilotWaypointB
 public BlankMessage
 public BlockBytes
 public BonusIntroItems
@@ -78,7 +80,13 @@ public BurstOriginY
 public ByteAttributeTable
 public ByteToNibbleMasks
 public CalibPageList
+public CgaColorFill
+public CgaNibbleToPixels
 public CgaPanelPatch
+public ChaseNegX
+public ChaseNegY
+public ChaseQuadrantBits
+public ChaseStepPixels
 public CheatBonusCheatOn
 public CheatEveryDayIDie
 public CheatGibStMirSchnellfeuer
@@ -93,12 +101,16 @@ public ChooseSlot
 public ChooseSlotPositions
 public ClampXHighSeen
 public ClampXLowSeen
+public ClearWorkspaceHalfOnly
 public Codeword
+public CompanionRecord
 public CorruptMsgHead
 public CorruptMsgPressKey
 public CorruptMsgTail
 public CountGate2324
 public CreditRandomWords
+public DacColor6Default
+public DacColor6Level1
 public DebugCodewordLine
 public DebugNonAsciiCodewordLine
 public DebugOldNonAsciiCodewordLine
@@ -118,6 +130,10 @@ public DispatchRecordX
 public DispatchRecordY
 public DriveAPresent
 public DriveBPresent
+public DropKind
+public DropX
+public DropY
+public EasyHitToggle
 public EmsAvailable
 public EmsDeviceName
 public EmsFreePages
@@ -126,8 +142,13 @@ public EmsTotalPages
 public EncounterEndDelay
 public EncounterLiveCount
 public EncounterTicks
+public EnergyCells
+public EnergyPoints
+public EnergyTanks
+public EventMarkerFlag
 public EventTrigger
 public EventX
+public EventY
 public ExitOrderScreen
 public FallerColumnCursor
 public FallerColumns
@@ -141,6 +162,8 @@ public FileCache
 public FileCacheEnd
 public FileHandle
 public FileNamePtr
+public FileNotFoundMsgHead
+public FileNotFoundMsgTail
 public FileStatus
 public File_1X1_BIC
 public File_2X2C_BIC
@@ -153,6 +176,7 @@ public File_PANEL_ENC
 public File_SHIP_BIC
 public File_THEND_BIC
 public File_WINDOW_BIC
+public FireLatch
 public Font8x8
 public FontPlaneRegs
 public FormationDrawPass
@@ -160,14 +184,35 @@ public FormationSizeClass
 public FormationSlotCursor
 public FormationSlots
 public FormationType
+public FrameCount128
+public FrameCount16
+public FrameCount32
+public FrameCount4
+public FrameCount64
+public FrameCount8
+public FrameDivider4
 public FramesSinceInvaderSpawn
+public Fuel
+public FuelGaugeOffset
 public GameOverRequest
 public GeometryWords
 public GridYSum
+public GroupDropKind
 public GroupDropKinds
+public GroupSlotIndex
+public GroupSlotPtr
+public GroupTable
+public HiscoreBlankLine
 public HiscoreBlock
+public HiscoreEntryRow
 public HiscoreFileName
+public HiscoreNameBuffer
+public HiscoreNameCursor
+public HiscoreNamePrefix
 public HiscorePageList
+public HiscoreQualified
+public HiscoreRankPrefix
+public HiscoreRowPrefix
 public HistoryCursor47
 public HistoryEnd
 public HistoryPairs
@@ -176,6 +221,7 @@ public HistoryReadCursor31
 public HistoryRecordSlot15
 public HistoryRecordSlot31
 public HistoryWriteCursor
+public HudTankCompare
 public IPageList
 public ImageEnd
 public InputBits
@@ -192,12 +238,14 @@ public InvaderSlotCursor
 public JitterAxisFields
 public JoyButtonSelect
 public JoyCalAbortSp
+public JoyCalByte98BF
 public JoyCalCenterX
 public JoyCalCenterY
 public JoyCalHighX
 public JoyCalHighY
 public JoyCalLowX
 public JoyCalLowY
+public JoyCalibratingFlag
 public JoyXHighThreshold
 public JoyXLowThreshold
 public JoyYHighThreshold
@@ -208,6 +256,8 @@ public KeyBitScancodesA
 public KeyBitScancodesB
 public KeyDownTable
 public KeyLastMakeCode
+public LastKeyExtended
+public LastTileStepBackward
 public LeaderScript13
 public LeaderScript13End
 public LeaderScript15
@@ -223,10 +273,13 @@ public LeaderScript7EEnd
 public LeaderScriptCursor
 public LevelBankFiles
 public LevelCheckpointPtrs
+public LevelDigitChars
 public LevelEndMapRows
 public LevelIndex
 public LevelMapCellHandlers
 public LevelMapFiles
+public LevelMusicTable
+public LevelNumberPrefix
 public LevelScript0
 public LevelScript1
 public LevelScript2
@@ -251,8 +304,15 @@ public MarchFireNow
 public MarchStepNow
 public MarchStepX
 public MarchWord98AC
+public MenuIdleFrames
+public MenuKeyLatchA
+public MenuKeyLatchK
+public MenuKeyLatchM
+public MenuShowingHiscores
 public MinusSlotA968
 public MinusSlotA96C
+public MissileAmmo
+public MissilesLive
 public ModuleSoundEnabled
 public ModuleSoundRequest
 public MoveModeA47C
@@ -298,7 +358,9 @@ public RandomWordCursor
 public RapidFireEnabled
 public ReadErrorMessage
 public RecordRowOffsets
+public RecordTickCounter
 public RedefPageList
+public RefuelActive
 public ResidentFiles
 public ResourceArchiveList
 public RevealCellOffset
@@ -311,8 +373,11 @@ public SavedAllocStrategy
 public SavedSettings
 public SavedUpgradeSlot
 public ScoreBcd
+public ScoreMessagePrefix
 public ScreenRowOffsets
 public ScrollDeltaY
+public ScrollSubRow
+public ScrollingBackward
 public SegBossActive
 public SegBossAnchor
 public SegBossCore
@@ -332,6 +397,19 @@ public SfxRequest
 public SfxTickPhase
 public SfxVoiceA
 public SfxVoiceB
+public ShotsLiveCompanion
+public ShotsLiveMain
+public ShotsLiveSide
+public ShotsLiveType9
+public SideShotsEnabled
+public SlotFillBudget
+public SlotFillPtr
+public SlowCount10
+public SlowCount3
+public SlowCount4
+public SlowCount5
+public SlowCount6
+public SlowCount8
 public SoundCardCaptionAdlib
 public SoundCardCaptionRoland
 public SoundCardCaptionTandy
@@ -343,6 +421,9 @@ public SoundModuleNameTandy
 public SoundModuleSelect
 public SoundOption
 public SoundOptionFlags
+public SpawnScanColumn
+public SpawnScanRowPtr
+public SpawnScanStartX
 public Sprite16Bytes
 public Sprite32Bytes
 public Sprite8Bytes
@@ -362,6 +443,10 @@ public SteerSpeed
 public SteerTargetX
 public SteerTargetY
 public SwapDisksMessage
+public SwayDirX
+public SwayDropY
+public SwayPhase
+public SwayReversals
 public SweepPath
 public SweepPathLeadIn
 public TargetSearchCursor
@@ -370,10 +455,13 @@ public TextColumn
 public TextInGraphics
 public TextRowOffset
 public TheEndBytes
+public ThrustDrainToggle
+public TimerTickPhase
 public TimerVectorInstalled
 public TitleLogoPiecePtr
 public TitleLogoPieces
 public TitleRevealRects
+public TurretPhaseTable
 public Type21Path
 public Type28FrameRamp
 public Type34SpriteByLevel
@@ -400,9 +488,11 @@ public UpgradeSlotPtrs
 public UpgradeTries
 public VideoBiosModeTable
 public WalkerFacingStep
+public WeaponMode
 public WhatOilShortageFlag
 public WideRowOffsets
 public WinScreenPageList
+public Word235A
 public XAdjustPathTaken
 StateData label byte
 ; UNKNOWN: not yet classified as code or data
@@ -416,11 +506,11 @@ InputDeviceMode dw 00000h
 ; PollJoystickInputBits writes JOY_BUTTONS_PORT_A before testing it, so port-B
 ; buttons are unreached there.
 JoyButtonSelect dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,011h,08h,00h,010h
-    db 03h,043h,045h,04Eh,054h,052h,045h,020h,053h,054h,049h,043h,04Bh,020h,048h,041h
-    db 04Eh,044h,04Ch,045h,020h,041h,04Eh,044h,020h,050h,055h,053h,048h,020h,046h,049h
-    db 052h,045h,00h,090h
+; Set during joystick calibration; no reader found.
+JoyCalibratingFlag dw 0h
+; Calibration prompt; no reference found.
+CentreStickMessage db TEXT_MOVE_TO, 8h, 0h, TEXT_SET_COLOR, 3h, 'CENTRE STICK HANDLE AND PUSH FIRE', 0h
+    even
 ; Unsigned midpoints of the LOW/CENTER and CENTER/HIGH calibration samples.
 JoyXLowThreshold dw 00000h
 JoyXHighThreshold dw 00000h
@@ -433,8 +523,8 @@ JoyCalHighY dw 00000h
 JoyCalCenterX dw 00000h
 JoyCalCenterY dw 00000h
 TimerVectorInstalled dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Timer interrupt phase 0..3 (chains to the old INT 08h every fourth tick).
+TimerTickPhase db 0h
 ; The module loads at SoundModuleSlot (SLOT1022.ASM); LoadSoundModule far-calls
 ; SoundModuleInitEntry and the timer handler calls SoundModuleTickEntry.
 ; DS byte: 1 after a module's +4 entry returns nonzero AL, else 0.
@@ -916,23 +1006,25 @@ CgaPanelPatch label byte
     db 55h,55h,55h,54h,04h,44h,04h,40h,40h,44h,55h,55h,55h,55h,55h,55h
     db 55h,55h,55h,55h,55h,55h
 EventX dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
-    db 00h,00h
+EventY dw 0h
+; Item kind dropped when the current group dies.
+GroupDropKind dw 0h
 FormationSizeClass dw 00000h
 FormationDrawPass dw 00000h
 FormationType dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h
-    db 00h,00h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h
-    db 00h,00h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,090h
+; 16 groups of script-spawned records: {live members, item kind to drop}.
+GroupTable db 16 dup (0, 0)
+; Index of the GroupTable entry allocated by loc_0F953.
+GroupSlotIndex dw 0h
+; That entry, or FFFFh.
+GroupSlotPtr dw 0h
+; Search for a free map cell for a spawn: column, map row pointer, start X.
+SpawnScanColumn dw 0h
+SpawnScanRowPtr dw 0h
+SpawnScanStartX dw 0h
+; 0 when the event had a 0FFFFh marker, else 1; no reader found.
+EventMarkerFlag db 0h
+    even
 EventTrigger dw 00000h
 ; Pseudo-random words: RandomWordCursor steps through the 16 words of this credit
 ; line (NextRandomWord returns the next one in BX).
@@ -954,12 +1046,10 @@ KbdSavedInt09 db 00h,00h,00h,00h
 ; Eight scancodes each, collected by RCL into InputBits bits 7..0 (slot n feeds bit
 ; 7-n). Table A initially holds Z,Space,Q,A,O,P for bits 5..0 and is rewritten by
 ; the key redefinition; table B's initial 77h..7Ch are not IBM set-1 keys.
-KeyBitScancodesA db 00h,00h
+KeyBitScancodesA db 00h,00h,02Ch,039h,010h,01Eh,018h,019h
+KeyBitScancodesB db 00h,00h,02Ch,077h,07Ch,07Bh,07Ah,079h
 ; UNKNOWN: not yet classified as code or data
-    db 02Ch,039h,010h,01Eh,018h,019h
-KeyBitScancodesB db 00h,00h,02Ch,077h,07Ch,07Bh,07Ah,079h,07h,00h
-; UNKNOWN: not yet classified as code or data
-    db 08h,00h,0Ah,00h,08h,00h,09h,00h,08h,00h
+    db 07h,00h,08h,00h,0Ah,00h,08h,00h,09h,00h,08h,00h
 ; ComputeRecordGridOffset stores its wrapped Y sum here.
 GridYSum dw 00000h
 TextColor db 00h
@@ -982,16 +1072,15 @@ FileBufferOffset dw 00000h
 FileByteCount dw 00000h
 FileNamePtr dw 00000h
 FileHandle dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,03h
-    db 0Ch,0Fh,030h,033h,03Ch,03Fh,0C0h,0C3h,0CCh,0CFh,0F0h,0F3h,0FCh,0FFh,00h,055h
-    db 0AAh,0FFh
+; CGA text: font nibble to four 2bpp pixels, and colour 0..3 to a fill byte.
+CgaNibbleToPixels db 0h,3h,0Ch,0Fh,30h,33h,3Ch,3Fh,0C0h,0C3h,0CCh,0CFh,0F0h,0F3h,0FCh,0FFh
+CgaColorFill db 0h,55h,0AAh,0FFh
 DecimalToBuffer dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Set while choose.enc loads: loc_0526A then clears only the first 4000h words.
+ClearWorkspaceHalfOnly dw 0h
 HiscoreFileName db 'hiscore.dat',00h
-; UNKNOWN: not yet classified as code or data
-    db 011h,04h,00h,010h,0Ah,00h
+; Prefix of a high-score row; loc_05461 patches the row byte.
+HiscoreRowPrefix db TEXT_MOVE_TO, 4h, 0h, TEXT_SET_COLOR, 0Ah, 0h
 ; hiscore.dat image: 8 score entries then 27 settings bytes (SavedSettings), followed
 ; in the file by an additive checksum word; stored XOR-coded (XorCodeHiscoreBlock).
 HiscoreBlock db 053h,074h,065h,020h,043h,06Fh,072h,06Bh
@@ -1007,61 +1096,114 @@ HiscoreBlock db 053h,074h,065h,020h,043h,06Fh,072h,06Bh
 SavedSettings db 00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h
+    db 90h    ; last byte of HiscoreBlock
+; Checksum word saved after HiscoreBlock.
+HiscoreChecksum dw 0h
+; Row of the new entry, 4 + 2 * rank.
+HiscoreEntryRow db 0h
+    even
+; 1 when the score made the table.
+HiscoreQualified dw 0h
+HiscoreBlankLine db '          $'
+HiscoreRankPrefix db TEXT_MOVE_TO, 0h, 0Bh, TEXT_SET_COLOR, 0h, 0h
+; Name typed for a new entry (10 characters and a 0).
+HiscoreNameBuffer db 0Dh, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
 ; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,00h,090h,00h,00h,020h,020h,020h,020h,020h,020h
-    db 020h,020h,020h,020h,024h,011h,00h,0Bh,010h,00h,00h,0Dh,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,011h,00h,00h,010h,0Fh,00h,090h
-    db 00h,00h,00h,00h
+    db 00h,00h,00h
+HiscoreNamePrefix db TEXT_MOVE_TO, 0h, 0h, TEXT_SET_COLOR, 0Fh, 0h
+    even
+; Name-edit cursor.
+HiscoreNameCursor dw 0h
+; 1 if the last DOS key was an extended one.
+LastKeyExtended dw 0h
 ; Quit prompt answer, 'N' or 'Y'.
 QuitAnswer db 00h
 SoundOption dw 00002h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h
+; Title menu page: 0 options, 1 high scores (toggles when idle).
+MenuShowingHiscores dw 0h
+; One-shot latches of the K, A and M menu keys.
+MenuKeyLatchK dw 0h
+MenuKeyLatchA dw 0h
+MenuKeyLatchM dw 0h
+; Idle frames on the title menu, 0..2EEh.
+MenuIdleFrames dw 0h
 ; Indexed by SoundOption (0..3): the high byte becomes SfxEnabled, the low byte
 ; ModuleSoundEnabled.
 SoundOptionFlags db 01h,00h,00h,01h,01h,01h,00h,00h,090h,00h,090h,0Dh,0Ah,024h,00h
-; UNKNOWN: not yet classified as code or data
-    db 07h,049h,020h,063h,06Fh,075h,06Ch,064h,020h,06Eh,06Fh,074h,020h,066h,069h,06Eh
-    db 064h,020h,074h,068h,065h,020h,066h,069h,06Ch,065h,020h,027h,024h,027h,020h,061h
-    db 06Eh,079h,077h,068h,065h,072h,065h,02Ch,020h,073h,06Fh,072h,072h,079h,02Eh,0Dh
-    db 0Ah,0Dh,0Ah,024h
+; Printed by ShutdownGame around the missing file's name (AH=09h).
+FileNotFoundMsgHead db 7h, 'I could not find the file ', 27h, '$'
+FileNotFoundMsgTail db 27h, ' anywhere, sorry.', 0Dh, 0Ah, 0Dh, 0Ah, '$'
 ; SteerTowardTarget: target position, step size index (0..3: 1, 2, 4 or 8 pixels,
 ; see StepBySteerSpeed) and 1 once the record is exactly on the target.
 SteerTargetX dw 00000h
 SteerTargetY dw 00000h
 SteerSpeed dw 00000h
 SteerArrived dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h
-    db 00h,00h,03h,00h
-ScoreBcd db 00h,00h,00h,00h,010h,0Ah,011h,0Dh,01Dh,00h,08h,01h
-; UNKNOWN: not yet classified as code or data
-    db 03h,07h,09h,0Ah
+; Chase step (loc_05E42): negative-delta flags, quadrant bits, step pixels (2 or 3).
+ChaseNegX dw 0h
+ChaseNegY dw 0h
+ChaseQuadrantBits dw 0h
+ChaseStepPixels dw 3h
+ScoreBcd db 00h,00h,00h,00h
+; Colour and position prefix of the printed score (loc_05EDB).
+ScoreMessagePrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Dh, 1Dh, 0
+; Music number per LevelIndex (loc_05F43, loc_05F61).
+LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
 CountGate2324 dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h
-    db 00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h
+; Wrapping frame counters (loc_05F89..): 0..3 up to 0..7Fh each frame; the slow
+; counters step when FrameDivider4 wraps (SlowCount10 and SlowCount3 have no reader).
+FrameCount4 dw 0h
+FrameCount8 dw 0h
+FrameCount16 dw 0h
+FrameCount32 dw 0h
+FrameCount64 dw 0h
+FrameCount128 dw 0h
+FrameDivider4 dw 0h
+SlowCount10 dw 0h
+SlowCount8 dw 0h
+SlowCount6 dw 0h
+SlowCount5 dw 0h
+SlowCount4 dw 0h
+SlowCount3 dw 0h
+; Counts pool-A record updates, wraps at 5DCh; also a handler timer.
+RecordTickCounter dw 0h
+; Sway oscillator stepped every 8 frames (loc_0F9F9 initialises it).
+SwayDirX dw 0h
+SwayPhase dw 0h
+SwayDropY dw 0h
+SwayReversals dw 0h
+; Toggled while the player sprite is 2: every other pass drains extra fuel.
+ThrustDrainToggle dw 0h
 ScrollWindowOffset dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Pixel row within the current map tile row, 0..0Fh.
+ScrollSubRow dw 0h
 ; View position in the level map, in map bytes (13 tiles per row); each scroll step
 ; moves it by 0Dh and LevelScriptClock by one.
 MapScrollPos dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h
+; 1 while scrolling backward (loc_0A781).
+ScrollingBackward dw 0h
+; 1 after a backward tile step.
+LastTileStepBackward dw 0h
 ; Level 0..5: selects LEVnMAP.BIC, the attribute patch stream and 6-entry tables;
 ; advanced modulo LEVEL_COUNT when a level is completed.
 LevelIndex dw 00000h
 ; Starts at INITIAL_LIVES; the HUD draws one icon per life; -1 ends the game.
 LivesLeft dw 00000h
+; Cleared by StartNewGame; no reader found.
+Word235A dw 0h
+; Printed before the level number (loc_060E3), and the digit per LevelIndex.
+LevelNumberPrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Fh, 20h, 0h
+LevelDigitChars db '612345'
+; HUD energy cells (0..4 each), rebuilt from EnergyPoints (loc_061DC).
+EnergyCells db 4, 0, 4, 0, 4, 0
 ; UNKNOWN: not yet classified as code or data
-    db 00h,00h,010h,0Ah,011h,0Fh
-    db 020h,00h,036h,031h,032h,033h,034h,035h,04h,00h,04h,00h,04h,00h,04h,00h
-    db 04h,00h,04h,00h,00h,080h,00h,00h,00h,00h,00h,00h
+    db 04h,00h,04h,00h,04h,00h
+; Compared with EnergyTanks (loc_061FC); never written.
+HudTankCompare dw 8000h
+; Pending item drop (loc_07420): position and kind.
+DropX dw 0h
+DropY dw 0h
+DropKind dw 0h
 ; The player's record; the last entry of PoolAPointers.
 PrimaryRecord db RECORD_SIZE dup (0)
 ; 35 records after the primary; FindFreeRecordPoolA scans from PoolACursor.
@@ -1092,13 +1234,12 @@ endm
 PoolBSaveBuffers db POOL_B_COUNT * POOL_B_SAVE_BYTES dup (0)
 PoolACursor dw 023B4h
 PoolBCursor dw 02B5Ch
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h
+; Screen offset of the fuel gauge (loc_077F6); no reader found.
+FuelGaugeOffset dw 0h
 ; Per LevelIndex: handler called with AL = level map byte while a map row is set up.
 LevelMapCellHandlers dw offset loc_07BCB, offset loc_07977, offset loc_07B06, offset loc_07C3F, offset loc_07CA2, offset loc_07DC8
-; UNKNOWN: not yet classified as code or data
-    db 01h,00h,00h,00h,01h,00h
-    db 02h,00h
+; Sprite frame and case per DS:2330 >> 5 (types 90h, 91h).
+TurretPhaseTable dw 1, 0, 1, 2
 ; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
 ; secondary button applies the selected slot's current entry (loc_08546).
 ; Hit box centre (Y, X) tested by loc_08331.
@@ -1243,8 +1384,8 @@ MarchWord98AC dw 0FFFFh
     db 00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 InputBits db 00h
-; UNKNOWN: not yet classified as code or data
-    db 00h
+; Cleared by the joystick calibration routines; no reader found.
+JoyCalByte98BF db 0h
 ; Every one of its 52 tests gates an SfxRequest write or waits on SfxActive.
 SfxEnabled db 01h
 ; Gates CB1C's copy of ModuleSoundRequest into module header word +8.
@@ -1314,11 +1455,16 @@ LifeLostRequest dw 00000h
 ; diagonals between them; FFh when aligned (no move).
 DirectionFromQuadrant db 0FFh,02h,06h,02h,04h,03h,05h,04h
     db 00h,01h,07h,00h,00h,02h,06h,02h
-; UNKNOWN: not yet classified as code or data
-    db 0AAh,00h,058h,00h,00h,00h,058h,00h
+; Autopilot waypoints (Y, X) for MoveModeA47C modes 1 and 2 (loc_09AD1).
+AutopilotWaypointA dw 0AAh, 58h
+AutopilotWaypointB dw 0h, 58h
 XAdjustPathTaken dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,090h,00h,00h,00h,00h
+; DifficultySetting 0: alternates so only every other hit costs a life (loc_09E85).
+EasyHitToggle db 0h
+    even
+; Slots still to fill (loc_09F5F).
+SlotFillBudget dw 0h
+SlotFillPtr dw 0h
 ; Offset pairs at DS:A368; three adjacent pairs, caller index bound not proven.
 OffsetTableA368 dw 010h ; offset pair 0 field Y, signed value 16
     dw 0FFF8h ; offset pair 0 field X, signed value -8
@@ -1364,13 +1510,11 @@ ClampXHighSeen db 00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
 ; Round-robin cursor over pool A used by the target search at B15A.
 TargetSearchCursor dw 023B4h
-; UNKNOWN: not yet classified as code or data
-    db 050h,00h,0B0h,00h
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,068h,00h,010h,00h,068h,00h,00h,00h,080h,00h,040h,00h,090h,00h
-    db 0A0h,00h,068h,00h,0B0h,00h,0B0h,00h,030h,075h,0B0h,00h,050h,00h,010h,00h
-    db 090h,00h,058h,00h,010h,00h,058h,00h,00h,00h,040h,00h,040h,00h,030h,00h
-    db 0A0h,00h,058h,00h,0B0h,00h,010h,00h,030h,075h,010h,00h
+; (Y, X) paths of types 11h and 10h (REC_FIELD_36, followed as type 12h).
+SteerPath11 dw 50h, 0B0h,  90h, 68h,  10h, 68h,  0h, 80h
+    dw 40h, 90h,  0A0h, 68h,  0B0h, 0B0h,  LEADER_END_Y, 0B0h
+SteerPath10 dw 50h, 10h,  90h, 58h,  10h, 58h,  0h, 40h
+    dw 40h, 30h,  0A0h, 58h,  0B0h, 10h,  LEADER_END_Y, 10h
 MoveModeA47C dw 00000h
 ; Encounter state. Waypoints and spawn points below are (Y, X) words; Y gets +20h
 ; when loaded (target Y at DS:2306 or REC_SAVED_Y), X is used as is.
@@ -1506,22 +1650,41 @@ AimQuadrantBits dw 00000h
 ; Counts spawn attempts in SpawnThrottledChild; DifficultySetting picks the modulus.
 ChildSpawnThrottle db 0
     even
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,00h,00h
-    db 00h,00h
+; Weapon mode 0..5, set by the upgrade apply routines.
+WeaponMode dw 0h
+; Reserve energy tanks -1..3 (3 at a new game); one is used when EnergyPoints run out.
+EnergyTanks dw 0h
+; Energy 0..18h (six HUD cells of 4); a hit costs 1, 2 or 3 by DifficultySetting.
+EnergyPoints dw 0h
+; Side-shot upgrade.
+SideShotsEnabled dw 0h
+; Missiles, +4 per pickup.
+MissileAmmo dw 0h
 HistoryRecordSlot15 dw 0FFFFh
 HistoryRecordSlot31 dw 0FFFFh
 PlusSlotA966 dw 0FFFFh
 MinusSlotA968 dw 0FFFFh
 PlusSlotA96A dw 0FFFFh
 MinusSlotA96C dw 0FFFFh
-; UNKNOWN: not yet classified as code or data
-    db 0FFh,0FFh
-    db 00h,00h,00h,00h,00h,00h,00h,00h
+; Companion pod record, FFFFh = none.
+CompanionRecord dw 0FFFFh
+; Live shots by class (main, type 9, companion, side), decremented as they are freed.
+ShotsLiveMain dw 0h
+ShotsLiveType9 dw 0h
+ShotsLiveCompanion dw 0h
+ShotsLiveSide dw 0h
 LevelScriptClock dw 00000h
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h
-    db 00h,00h,02Ah,015h,00h,030h,024h,04h
+; Fuel 0..58h, drained every 40h/80h frames (loc_09EE4); empty kills the player.
+Fuel dw 0h
+; Refuelling: +1 per frame up to 58h.
+RefuelActive dw 0h
+; Live missiles (at most 1).
+MissilesLive dw 0h
+; Set after firing; RapidFireEnabled ignores it.
+FireLatch dw 0h
+; VGA DAC colour 6 (RGB): default, and on level 1 (loc_0C57C, loc_0C591).
+DacColor6Default db 42, 21, 0
+DacColor6Level1 db 48, 36, 4
 ; Text-mode screen (80x25, attribute 07h) copied to B800h when the game exits.
 ; Box-drawing characters are CP437 bytes.
 ExitOrderScreen label word
@@ -2021,7 +2184,6 @@ ByteAttributeTable db 00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
-; UNKNOWN: not yet classified as code or data
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
