@@ -8813,7 +8813,7 @@ loc_04AF5:
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_SAVED_Y], 0
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov ax, word ptr ds:[FormationSizeClass]
     mov word ptr ds:[bx + REC_SIZE_CLASS], ax
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY

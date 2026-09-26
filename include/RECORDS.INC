@@ -16,6 +16,14 @@ REC_Y equ 02h
 REC_X equ 04h
 ; 0..7 clockwise from up (0 up, 2 right, 4 down, 6 left), see DirectionFromQuadrant.
 REC_DIRECTION equ 06h
+DIR_UP equ 0
+DIR_UP_RIGHT equ 1
+DIR_RIGHT equ 2
+DIR_DOWN_RIGHT equ 3
+DIR_DOWN equ 4
+DIR_DOWN_LEFT equ 5
+DIR_LEFT equ 6
+DIR_UP_LEFT equ 7
 ; Sprite-table index for drawing. On the primary record it is the ship form (0..2,
 ; 3 or more = destroyed), which also indexes the pod and exhaust offset tables.
 REC_SPRITE equ 08h

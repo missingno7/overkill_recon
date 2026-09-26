@@ -1784,7 +1784,7 @@ loc_0A128:
     mov ax, word ptr ds:[si + REC_X]
     sub ax, 4
     mov word ptr ds:[bx + REC_X], ax
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     inc word ptr ds:[ShotsLiveFrontPod]
     call AllocFrontPodShot
     sub ax, 2
@@ -1792,7 +1792,7 @@ loc_0A128:
     mov ax, word ptr ds:[si + REC_X]
     add ax, 0Ch
     mov word ptr ds:[bx + REC_X], ax
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     ret
 
 ; AllocPlayerShot as type 0Ch with REC_FIELD_1C 7; returns SI = FrontPodRecord, AX =
@@ -1847,15 +1847,15 @@ loc_0A1D4:
     call PlaceShotAtMuzzle
     call AllocPlayerShot
     call PlaceShotAtMuzzle
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_SPRITE], 01Fh
     test byte ptr ds:[InputBits], IN_XMINUS
     jne loc_0A211
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 019h
     test byte ptr ds:[InputBits], IN_XPLUS
     jne loc_0A211
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 018h
 loc_0A211:
     ret
@@ -2119,12 +2119,12 @@ PodForkShot:
     mov ds:[bx + REC_DIRECTION], ax
     cmp ax, 0FFFFh
     jne loc_0A4C6
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     cmp word ptr ds:[si + REC_X], 58h
     jna loc_0A4C6
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
 loc_0A4C6:
-    cmp word ptr ds:[bx + REC_DIRECTION], 1
+    cmp word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 19h
     je loc_0A4D6
     mov word ptr ds:[bx + REC_SPRITE], 1Fh
@@ -2145,7 +2145,7 @@ AllocPlayerShot:
     call AllocPoolBRecordEvicting
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIDE_FLAG], 1
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 032h
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
     mov word ptr ds:[bx + REC_KIND], KIND_TYPED
@@ -3215,7 +3215,7 @@ Type0CTimedTurnUpShot:
     je loc_0AE19
     dec word ptr ss:[bp + REC_FIELD_1C]
     jne loc_0AE1D
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0AE19:
     sub word ptr ss:[bp + REC_Y], 2
 loc_0AE1D:
@@ -3238,11 +3238,11 @@ Type06SideShotUpRight:
     call ComputeRecordGridOffset
     add bx, 0Eh
     call ReadIndexedByteAttribute
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     cmp al, 1
     je loc_0AE67
 loc_0AE5E:
-    mov word ptr ss:[bp + REC_DIRECTION], 1
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
     add word ptr ss:[bp + REC_X], 4
 loc_0AE67:
     mov ax, ds:[FrameCount4]
@@ -3268,11 +3268,11 @@ loc_0AE86:
     call ComputeRecordGridOffset
     add bx, 0Ch
     call ReadIndexedByteAttribute
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     cmp al, 1
     je loc_0AEB3
 loc_0AEAA:
-    mov word ptr ss:[bp + REC_DIRECTION], 7
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
     sub word ptr ss:[bp + REC_X], 4
 loc_0AEB3:
     mov ax, ss:[bp + REC_DIRECTION]
@@ -3288,7 +3288,7 @@ Type04StraightShot:
     je loc_0AECD
     jmp near ptr MoveInDirection4
 loc_0AECD:
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jne loc_0AED6
     jmp near ptr MoveInDirection4
 loc_0AED6:
@@ -4270,7 +4270,7 @@ loc_0B859:
 loc_0B85C:
     mov word ptr ds:[SteerSpeed], 2
     call SteerToSaved
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr FinishRecordUpdate
 ; Enters its slot, then bobs, sinks and shoots; chases the player when few remain or
 ; once low on screen.
@@ -4293,7 +4293,7 @@ loc_0B877:
     jne loc_0B8A8
     jmp near ptr FinishRecordUpdate
 loc_0B8A8:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr FinishRecordUpdate
 loc_0B8B0:
     cmp word ptr ds:[RecordTickCounter], 2EFh
@@ -4417,7 +4417,7 @@ loc_0B9CD:
     call SpawnThrottledChild
     cmp bx, -1
     je Type18SweepPathLooper
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     jmp short Type18SweepPathLooper
 loc_0B9EA:
     lodsw
@@ -4520,7 +4520,7 @@ loc_0BADF:
 ; SpawnThrottledChild with REC_DIRECTION temporarily down.
 SpawnShotDown:
     push word ptr ss:[bp + REC_DIRECTION]
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnThrottledChild
     pop word ptr ss:[bp + REC_DIRECTION]
     ret
@@ -4535,26 +4535,26 @@ Type19WallPatrolShooter:
     call SpawnShotDown
 ; Walks BP 1 px left or right, reversing at X 0/C0h or a blocked step; ends in the scroll tail.
 HorizontalTerrainPatrol:
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jne loc_0BB24
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0BB1C
     call TryTerrainStep
     jne loc_0BB1C
     jmp near ptr ScrollRecordThenFinish
 loc_0BB1C:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
 loc_0BB24:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     cmp word ptr ss:[bp + REC_X], 0C0h
     je loc_0BB38
     call TryTerrainStep
     jne loc_0BB38
     jmp near ptr ScrollRecordThenFinish
 loc_0BB38:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Types 8Dh/8Eh: as 8Bh with another sprite set.
 Type8DClimbWalkerB:
@@ -4577,7 +4577,7 @@ loc_0BB60:
     add ax, ds:[WalkerFacingStep]
     add ax, bx
     xor cx, cx
-    cmp word ptr ss:[bp + REC_DIRECTION], 0
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP
     je loc_0BB7C
     mov cx, 3
 loc_0BB7C:
@@ -4627,7 +4627,7 @@ loc_0BBE1:
 ; ZF (TerrainBlocked 1) when it cannot.
 ClimbWalkerStep:
     mov word ptr ds:[TerrainBlocked], 0
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     push word ptr ss:[bp + REC_Y]
     mov ax, ds:[ScrollDeltaY]
     add ss:[bp + REC_Y], ax
@@ -4646,7 +4646,7 @@ ClimbWalkerStep:
     cmp word ptr ds:[TerrainBlocked], 1
     ret
 loc_0BC2B:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     add bx, ds:[WalkerFacingStep]
     sub bx, 0Dh
     call ReadIndexedByteAttribute
@@ -4915,13 +4915,13 @@ AnimateExplosion16:
     je loc_0BE84
     jmp near ptr RemoveRecord
 loc_0BE6F:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     mov word ptr ss:[bp + REC_TYPE], 026h
     mov word ptr ss:[bp + REC_SPRITE], 097h
     sub word ptr ss:[bp + REC_X], 8
     jmp short StoreRecordSavedPosition
 loc_0BE84:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov word ptr ss:[bp + REC_TYPE], 026h
     mov word ptr ss:[bp + REC_SPRITE], 091h
     add word ptr ss:[bp + REC_X], 8
@@ -5521,7 +5521,7 @@ loc_0C3F1:
     mov word ptr ss:[bp + REC_STEP_ERROR], 0
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     mov word ptr ss:[bp + REC_TYPE], 0
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0C41E:
     mov ax, word ptr cs:[SaveBufferCursor]
     mov word ptr ss:[bp + REC_SAVE_BUFFER], ax
@@ -5579,7 +5579,7 @@ loc_0C4E5:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     mov word ptr ss:[bp + REC_TYPE], 0
     mov word ptr ss:[bp + REC_DRAW_PASS], 1
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     mov ax, word ptr cs:[SaveBufferCursor]
     mov word ptr ss:[bp + REC_SAVE_BUFFER], ax
     add word ptr cs:[SaveBufferCursor], POOL_A_SAVE_BYTES
@@ -8114,7 +8114,7 @@ Type86LaunchAimedEnemy:
     shr bx, 1
     shl bx, 1
     mov si, offset Type86FramesDir6
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     je loc_0F108
     mov si, offset Type86Frames
 loc_0F108:
@@ -8151,7 +8151,7 @@ loc_0F146:
     shr bx, 1
     shl bx, 1
     mov si, offset Type88FramesDir6
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     je loc_0F160
     mov si, offset Type88Frames
 loc_0F160:
@@ -8211,14 +8211,14 @@ loc_0F1D0:
     jmp near ptr loc_0878C
 ; Scrolls to Y B0h, then drops 4 px per frame without scrolling.
 Type55DropFrom_B0:
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     je loc_0F1F1
     mov word ptr ss:[bp + REC_SPRITE], 73h
     cmp word ptr ss:[bp + REC_Y], 0B0h
     je loc_0F1EC
     jmp near ptr ScrollRecordThenFinish
 loc_0F1EC:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
 loc_0F1F1:
     mov ax, ds:[FrameCount8]
     add ax, 77h
@@ -8295,7 +8295,7 @@ loc_0F28C:
     jnl loc_0F2B1
     jmp near ptr ScrollRecordThenFinish
 loc_0F2B1:
-    xor word ptr ss:[bp + REC_DIRECTION], 6
+    xor word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     call TryTerrainStep
     je loc_0F2BD
     jmp near ptr DestroyRecord
@@ -8330,16 +8330,16 @@ Type5ECrawlTurnDownToLeft:
     jne loc_0F2FC
     jmp near ptr ScrollRecordThenFinish
 loc_0F2FC:
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     je loc_0F30B
-    cmp word ptr ss:[bp + REC_DIRECTION], 5
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     je loc_0F313
     jmp near ptr DestroyRecord
 loc_0F30B:
-    mov word ptr ss:[bp + REC_DIRECTION], 5
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     jmp near ptr ScrollRecordThenFinish
 loc_0F313:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Crawls two steps per frame, alternating down and right when blocked.
 Type6ECrawlStaircase:
@@ -8353,12 +8353,12 @@ Type6ECrawlStaircase:
     jne loc_0F337
     jmp near ptr ScrollRecordThenFinish
 loc_0F337:
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     je loc_0F345
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jmp near ptr ScrollRecordThenFinish
 loc_0F345:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
 ; Crawls four steps per frame, bouncing between the two downward diagonals; destroyed
 ; otherwise when blocked.
@@ -8379,16 +8379,16 @@ loc_0F364:
     jne loc_0F375
     jmp near ptr ScrollRecordThenFinish
 loc_0F375:
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     je loc_0F384
-    cmp word ptr ss:[bp + REC_DIRECTION], 2
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     je loc_0F38C
     jmp near ptr DestroyRecord
 loc_0F384:
-    mov word ptr ss:[bp + REC_DIRECTION], 3
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_RIGHT
     jmp near ptr ScrollRecordThenFinish
 loc_0F38C:
-    mov word ptr ss:[bp + REC_DIRECTION], 5
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     jmp near ptr ScrollRecordThenFinish
 ; Steers to its invader slot (REC_SAVED) at speed 3, then becomes type 62h.
 Type61InvaderSteerToSlot:
@@ -8473,7 +8473,7 @@ loc_0F46C:
     jmp near ptr ScrollRecordThenFinish
 loc_0F476:
     inc word ptr ds:[RecordTickCounter]
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnThrottledChild
     cmp bx, -1
     jne loc_0F48A
@@ -8641,7 +8641,7 @@ Type73WaitThenRunRight:
     jae loc_0F601
     jmp near ptr ScrollRecordThenFinish
 loc_0F601:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov bx, ds:[SlowCount4]
     shl bx, 1
     mov bx, ds:[bx + PingPongFrames4]
@@ -8654,7 +8654,7 @@ Type74WaitThenRunLeft:
     jae loc_0F623
     jmp near ptr ScrollRecordThenFinish
 loc_0F623:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     mov bx, ds:[SlowCount4]
     shl bx, 1
     mov bx, ds:[bx + PingPongFrames4]
@@ -8663,12 +8663,12 @@ loc_0F623:
 ; Four terrain steps per frame in REC_DIRECTION; destroyed when blocked or at the screen
 ; edge.
 Type85ChargeUntilBlocked:
-    cmp word ptr ss:[bp + REC_DIRECTION], 2
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jne loc_0F646
     cmp word ptr ss:[bp + REC_X], 0C0h
     je loc_0F663
 loc_0F646:
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     jne loc_0F652
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0F663
@@ -8781,11 +8781,11 @@ Type75DescendSpreadShot:
     jmp near ptr ScrollRecordThenFinish
 loc_0F737:
     push word ptr ss:[bp + REC_DIRECTION]
-    mov word ptr ss:[bp + REC_DIRECTION], 5
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
     call SpawnChildAt12
-    mov word ptr ss:[bp + REC_DIRECTION], 3
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_RIGHT
     call SpawnChildAt12
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnChildAt12
     pop word ptr ss:[bp + REC_DIRECTION]
     jmp near ptr ScrollRecordThenFinish
@@ -8800,7 +8800,7 @@ Type77SegBossPart1:
 ; Segmented boss part at BossPartOffsets[2]; fires aimed shots early in each 128-frame
 ; cycle.
 Type78SegBossGunPart:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     cmp word ptr ds:[FrameCount128], 0Fh
     ja loc_0F771
     call SpawnAimedShot

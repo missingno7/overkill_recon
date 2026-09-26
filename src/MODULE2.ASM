@@ -4205,7 +4205,7 @@ loc_0749E:
 InitAimedShotRecord:
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIDE_FLAG], 0
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_SPRITE], 031h
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
@@ -4720,7 +4720,7 @@ SpawnCellCreeper48:
 loc_079C6:
     call InitMapLargeEnemy
     mov word ptr ds:[bx + REC_TYPE], 48h
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     jmp near ptr JoinMapGroup
 ; Level 0 byte F8h: large type 75h, joins group.
 SpawnCellSpreadShooter75:
@@ -4733,7 +4733,7 @@ loc_079E2:
     call InitMapLargeEnemy
     mov word ptr ds:[bx + REC_TYPE], 75h
     mov word ptr ds:[bx + REC_SPRITE], 24h
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     jmp near ptr JoinMapGroup
 ; Level 0 byte F7h: large type 72h, facing down.
 SpawnCellAimedDescender72:
@@ -4745,7 +4745,7 @@ SpawnCellAimedDescender72:
 loc_07A03:
     call InitMapLargeEnemy
     mov word ptr ds:[bx + REC_TYPE], 72h
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     ret
 ; Level 1/4 byte C9h: writes the hatch cells 26h..29h, large type 28h.
 SpawnCellHatch28:
@@ -4761,7 +4761,7 @@ loc_07A2D:
     call InitMapLargeEnemy
     mov word ptr ds:[bx + REC_TYPE], 028h
     mov word ptr ds:[bx + REC_SPRITE], 01Ch
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     ret
 ; BX = pool A record: a large (size class 2) KIND_ENEMY with 10 hit points at the
 ; top of the map row, X = MapCellX.
@@ -4827,7 +4827,7 @@ SpawnCellTurretLeft24:
 loc_07AB4:
     mov word ptr ds:[bx + REC_TYPE], 024h
     mov word ptr ds:[bx + REC_SPRITE], 08Fh
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     ret
 ; Level 1 byte 6Dh: type 25h facing right; the cell stays.
 SpawnCellTurretRight25:
@@ -4837,7 +4837,7 @@ SpawnCellTurretRight25:
 loc_07ACA:
     mov word ptr ds:[bx + REC_TYPE], 025h
     mov word ptr ds:[bx + REC_SPRITE], 090h
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 1/4 byte ACh, level 5 D3h: type 90h facing left; the cell stays.
 SpawnCellVolleyTurret90:
@@ -4847,7 +4847,7 @@ SpawnCellVolleyTurret90:
 loc_07AE0:
     mov word ptr ds:[bx + REC_TYPE], 090h
     mov word ptr ds:[bx + REC_SPRITE], 089h
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     ret
 ; Level 1/4 byte B1h, level 5 D2h: type 91h facing right; the cell stays.
 SpawnCellVolleyTurret91:
@@ -4857,7 +4857,7 @@ SpawnCellVolleyTurret91:
 loc_07AF6:
     mov word ptr ds:[bx + REC_TYPE], 091h
     mov word ptr ds:[bx + REC_SPRITE], 08Ch
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 Level2MapCell:
     cmp al, 30h
@@ -4885,7 +4885,7 @@ loc_07B1C:
     mov word ptr ds:[bx + REC_HIT_POINTS], 0Ah
     mov word ptr ds:[bx + REC_TYPE], 2Ah
     mov word ptr ds:[bx + REC_SPRITE], 1Ch
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     ret
 ; Level 2 byte 5Ah: type 2Eh, 6 px higher.
 SpawnCellPlunger2E:
@@ -4904,13 +4904,13 @@ SpawnCellFireBurst8F:
 loc_07B6A:
     mov word ptr ds:[bx + REC_TYPE], 8Fh
     mov word ptr ds:[bx + REC_SPRITE], 0BFh
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07B80
     ret
 loc_07B80:
     mov word ptr ds:[bx + REC_SPRITE], 0C2h
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 0 byte BCh (left half only): type 73h facing right.
 SpawnCellRunnerRight73:
@@ -4921,7 +4921,7 @@ loc_07B91:
     sub word ptr ds:[bx + REC_X], 0Ch
     push word ptr ds:[bx + REC_X]
     pop word ptr ds:[bx + REC_SAVED_X]
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     mov word ptr ds:[bx + REC_TYPE], 73h
     mov word ptr ds:[bx + REC_SPRITE], 14Ch
     ret
@@ -4934,7 +4934,7 @@ loc_07BB1:
     add word ptr ds:[bx + REC_X], 0Ch
     push word ptr ds:[bx + REC_X]
     pop word ptr ds:[bx + REC_SAVED_X]
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 74h
     mov word ptr ds:[bx + REC_SPRITE], 14Fh
     ret
@@ -5061,7 +5061,7 @@ SpawnCellWallBouncer38Right:
     ret
 loc_07D0E:
     mov word ptr ds:[bx + REC_TYPE], 38h
-    mov word ptr ds:[bx + REC_DIRECTION], 3
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_RIGHT
     ret
 ; Level 4 byte DBh: type 38h heading down-left.
 SpawnCellWallBouncer38Left:
@@ -5070,7 +5070,7 @@ SpawnCellWallBouncer38Left:
     ret
 loc_07D1F:
     mov word ptr ds:[bx + REC_TYPE], 38h
-    mov word ptr ds:[bx + REC_DIRECTION], 5
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_LEFT
     ret
 ; Level 4 D2h, level 5 DCh: type 54h.
 SpawnCellCrawler54UpRight:
@@ -5078,7 +5078,7 @@ SpawnCellCrawler54UpRight:
     jne loc_07D30
     ret
 loc_07D30:
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 172h
     cmp word ptr ds:[LevelIndex], 4
@@ -5093,7 +5093,7 @@ SpawnCellCrawler54UpLeft:
     jne loc_07D53
     ret
 loc_07D53:
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 173h
     cmp word ptr ds:[LevelIndex], 4
@@ -5108,7 +5108,7 @@ SpawnCellLurker84Up:
     jne loc_07D76
     ret
 loc_07D76:
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 156h
     ret
@@ -5118,7 +5118,7 @@ SpawnCellLurker84Right:
     jne loc_07D8C
     ret
 loc_07D8C:
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 157h
     ret
@@ -5128,7 +5128,7 @@ SpawnCellLurker84Down:
     jne loc_07DA2
     ret
 loc_07DA2:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 158h
     ret
@@ -5138,7 +5138,7 @@ SpawnCellLurker84Left:
     jne loc_07DB8
     ret
 loc_07DB8:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 84h
     mov word ptr ds:[bx + REC_SPRITE], 159h
     ret
@@ -5211,7 +5211,7 @@ SpawnCellWallPatroller19Right:
     ret
 loc_07E63:
     mov word ptr ds:[bx + REC_TYPE], 19h
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 5 byte E4h: type 30h facing down.
 SpawnCellShooter30:
@@ -5221,7 +5221,7 @@ SpawnCellShooter30:
 loc_07E74:
     mov word ptr ds:[bx + REC_SPRITE], 46h
     mov word ptr ds:[bx + REC_TYPE], 30h
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     ret
 ; Level 5 byte DAh: type 92h facing right.
 SpawnCellLevelFirer92Right:
@@ -5231,7 +5231,7 @@ SpawnCellLevelFirer92Right:
 loc_07E8A:
     mov word ptr ds:[bx + REC_TYPE], 92h
     mov word ptr ds:[bx + REC_SPRITE], 15Ah
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 5 byte DBh: type 92h facing left.
 SpawnCellLevelFirer92Left:
@@ -5241,7 +5241,7 @@ SpawnCellLevelFirer92Left:
 loc_07EA0:
     mov word ptr ds:[bx + REC_TYPE], 92h
     mov word ptr ds:[bx + REC_SPRITE], 15Bh
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     ret
 ; Level 3 bytes CEh, CFh: type 86h facing the centre.
 SpawnCellLauncher86:
@@ -5249,7 +5249,7 @@ SpawnCellLauncher86:
     jne loc_07EB6
     ret
 loc_07EB6:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 86h
     mov word ptr ds:[bx + REC_SPRITE], 0C8h
     cmp word ptr ds:[bx + REC_X], 60h
@@ -5257,7 +5257,7 @@ loc_07EB6:
     ret
 loc_07ECC:
     mov word ptr ds:[bx + REC_SPRITE], 0DAh
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 0 bytes E1h, E2h: type 88h facing the centre.
 SpawnCellBurstFirer88:
@@ -5265,7 +5265,7 @@ SpawnCellBurstFirer88:
     jne loc_07EDD
     ret
 loc_07EDD:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 88h
     mov word ptr ds:[bx + REC_SPRITE], 0FDh
     cmp word ptr ds:[bx + REC_X], 60h
@@ -5273,7 +5273,7 @@ loc_07EDD:
     ret
 loc_07EF3:
     mov word ptr ds:[bx + REC_SPRITE], 0FAh
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 3 D7h, level 5 E3h: type 63h facing right.
 SpawnCellSlider63:
@@ -5281,7 +5281,7 @@ SpawnCellSlider63:
     jne loc_07F04
     ret
 loc_07F04:
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     mov word ptr ds:[bx + REC_TYPE], 63h
     mov word ptr ds:[bx + REC_SPRITE], 0E7h
     ret
@@ -5291,7 +5291,7 @@ SpawnCellDiver71:
     jne loc_07F1A
     ret
 loc_07F1A:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 71h
     ret
 ; Level 0 EFh, level 4 D5h: type 8Ah, joins group.
@@ -5300,7 +5300,7 @@ SpawnCellPatroller8A:
     jne loc_07F2B
     ret
 loc_07F2B:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 8Ah
     ret
 ; Level 3 bytes D0h, D1h: type 54h heading up toward the centre.
@@ -5309,14 +5309,14 @@ SpawnCellCrawler54InwardA:
     jne loc_07F3C
     ret
 loc_07F3C:
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 0F5h
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07F52
     ret
 loc_07F52:
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 0F4h
     ret
 ; Level 0 byte E7h: type 6Bh.
@@ -5350,14 +5350,14 @@ SpawnCellCrawler6A:
     jne loc_07F8C
     ret
 loc_07F8C:
-    mov word ptr ds:[bx + REC_DIRECTION], 5
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_LEFT
     mov word ptr ds:[bx + REC_TYPE], 6Ah
     mov word ptr ds:[bx + REC_SPRITE], 11Eh
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07FA2
     ret
 loc_07FA2:
-    mov word ptr ds:[bx + REC_DIRECTION], 3
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 11Dh
     ret
 ; Level 0 bytes F0h, F1h: type 54h facing the centre.
@@ -5366,14 +5366,14 @@ SpawnCellCrawler54InwardB:
     jne loc_07FB3
     ret
 loc_07FB3:
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 143h
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07FC9
     ret
 loc_07FC9:
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 144h
     ret
 ; Level 3 E3h, level 4 E0h, level 5 EFh: type 5Eh, joins group.
@@ -5382,7 +5382,7 @@ SpawnCellCrawler5E:
     jne loc_07FDA
     ret
 loc_07FDA:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 5Eh
     mov word ptr ds:[bx + REC_SPRITE], 27h
     ret
@@ -5392,7 +5392,7 @@ SpawnCellCrawler6E:
     jne loc_07FF0
     ret
 loc_07FF0:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 6Eh
     ret
 ; Level 0 byte ECh: type 6Fh, 16 px outward, facing the centre.
@@ -5402,16 +5402,16 @@ SpawnCellCruiser6F:
     ret
 ; Offset-placement use of field+8 does not define its role in other record types.
 loc_08001:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 6Fh
     mov word ptr ds:[bx + REC_SPRITE], 136h
-    mov word ptr ds:[bx + REC_DIRECTION], 3
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_RIGHT
     sub word ptr ds:[bx + REC_X], 10h
     cmp word ptr ds:[bx + REC_X], 60h
     jae loc_08020
     ret
 loc_08020:
-    mov word ptr ds:[bx + REC_DIRECTION], 5
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_LEFT
     add word ptr ds:[bx + REC_X], 20h
     ret
 ; Level 3 E2h, level 5 EEh: type 2Dh, joins group.
@@ -5420,7 +5420,7 @@ SpawnCellPlunger2D:
     jne loc_08030
     ret
 loc_08030:
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_TYPE], 2Dh
     ret
 ; Level 3 E8h, level 5 E9h: type 47h, joins group.
@@ -5429,7 +5429,7 @@ SpawnCellPatroller47:
     jne loc_08041
     ret
 loc_08041:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 47h
     ret
 ; Level 0 F4h, level 3 D8h, level 4 D7h: type 59h facing the centre.
@@ -5438,14 +5438,14 @@ SpawnCellCrawler59:
     jne loc_08052
     ret
 loc_08052:
-    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 59h
     mov word ptr ds:[bx + REC_SPRITE], 0E3h
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_08068
     ret
 loc_08068:
-    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_RIGHT
     ret
 ; Level 3 D6h, level 4 D4h: type 5Fh facing the centre.
 SpawnCellCrawler5F:
@@ -5453,13 +5453,13 @@ SpawnCellCrawler5F:
     jne loc_08074
     ret
 loc_08074:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 5Fh
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_08085
     ret
 loc_08085:
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 3 byte E7h: type 5Bh facing up.
 SpawnCellRiser5B:
@@ -5467,7 +5467,7 @@ SpawnCellRiser5B:
     jne loc_08091
     ret
 loc_08091:
-    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_UP
     mov word ptr ds:[bx + REC_TYPE], 5Bh
     mov word ptr ds:[bx + REC_SPRITE], 74h
     ret
@@ -5477,7 +5477,7 @@ SpawnCellDropper5D:
     jne loc_080A7
     ret
 loc_080A7:
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 5Dh
     mov word ptr ds:[bx + REC_SPRITE], 77h
     ret
@@ -5487,14 +5487,14 @@ SpawnCellFireBurst87:
     jne loc_080BD
     ret
 loc_080BD:
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 87h
     mov word ptr ds:[bx + REC_SPRITE], 0E0h
     cmp word ptr ds:[bx + REC_X], 60h
     jna loc_080D3
     ret
 loc_080D3:
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     mov word ptr ds:[bx + REC_SPRITE], 0DDh
     ret
 ; Level 3 byte D4h: type 55h.
@@ -5596,7 +5596,7 @@ SpawnCellCrawler58Right:
 loc_08178:
     mov word ptr ds:[bx + REC_TYPE], 58h
     mov word ptr ds:[bx + REC_SPRITE], 99h
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 3 DAh, level 4 D1h, level 5 E6h: type 57h facing left.
 SpawnCellCrawler57Left:
@@ -5606,7 +5606,7 @@ SpawnCellCrawler57Left:
 loc_0818E:
     mov word ptr ds:[bx + REC_TYPE], 57h
     mov word ptr ds:[bx + REC_SPRITE], 9Bh
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     ret
 ; SpawnMapEnemy, then registers the record in the current enemy group.
 SpawnMapGroupEnemy:
@@ -5676,7 +5676,7 @@ InitEnemyRecordHere:
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_SAVED_X], ax
-    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     mov word ptr ds:[bx + REC_TYPE], 014h
@@ -6289,7 +6289,7 @@ loc_087B5:
     je loc_087C8
     jmp near ptr ScrollRecordThenFinish
 loc_087C8:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
 loc_087D3:
@@ -6395,7 +6395,7 @@ loc_088BB:
     jmp near ptr ScrollRecordThenFinish
 loc_088C5:
     mov word ptr ss:[bp + REC_TYPE], 33h
-    mov word ptr ss:[bp + REC_DIRECTION], 7
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
 ; Three terrain steps per frame on a diagonal, reflecting on a blocked step.
 Type33TerrainBouncer:
     call TryTerrainStep
@@ -6406,7 +6406,7 @@ Type33TerrainBouncer:
     jne loc_088E1
     jmp near ptr ScrollRecordThenFinish
 loc_088E1:
-    xor word ptr ss:[bp + REC_DIRECTION], 2
+    xor word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp near ptr ScrollRecordThenFinish
 ; Fires sideways with sfx 13h from FrameCount64 32h on; levels 0 and 6 wait until Y 50h.
 Type34SideFiringTurret:
@@ -6434,10 +6434,10 @@ loc_0891F:
     je loc_0892B
     mov byte ptr ds:[SfxRequest], 13h
 loc_0892B:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     cmp word ptr ds:[CountGate2324], 1
     je loc_0897C
-    mov word ptr ss:[bp + REC_DIRECTION], 3
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_RIGHT
     jmp short loc_0897C
 loc_0893E:
     cmp word ptr ds:[LevelIndex], 6
@@ -6457,10 +6457,10 @@ loc_0895F:
     je loc_0896B
     mov byte ptr ds:[SfxRequest], 13h
 loc_0896B:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     cmp word ptr ds:[CountGate2324], 1
     je loc_0897C
-    mov word ptr ss:[bp + REC_DIRECTION], 5
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
 loc_0897C:
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
@@ -6480,7 +6480,7 @@ Type37VerticalBouncerShooter:
     mov word ptr ds:[Type37Speed], 5
 loc_089AF:
     mov ax, ds:[Type37Speed]
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     je loc_089D1
     neg ax
     add ss:[bp + REC_Y], ax
@@ -6488,7 +6488,7 @@ loc_089AF:
     jna loc_089C6
     jmp near ptr ScrollRecordThenFinish
 loc_089C6:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
 loc_089D1:
@@ -6498,7 +6498,7 @@ loc_089D1:
     jmp near ptr ScrollRecordThenFinish
 loc_089DE:
     call SpawnThrottledChild
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
     jmp near ptr ScrollRecordThenFinish
 ; Terrain patrol firing down every 64 frames.
 Type83PatrolShootDown64:
@@ -6534,7 +6534,7 @@ Type39DashRightAtRow80:
     je loc_08A3D
     mov byte ptr ds:[SfxRequest], 0Bh
 loc_08A3D:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     call MoveInDirection4
     cmp word ptr ss:[bp + REC_X], 0C0h
     ja loc_08A4F
@@ -6587,7 +6587,7 @@ loc_08AB3:
     mov byte ptr ds:[SfxRequest], 1Dh
 loc_08ABF:
     inc word ptr ss:[bp + REC_TYPE]
-    mov word ptr ss:[bp + REC_DIRECTION], 7
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
 ; Animated type 33h.
 Type3DAnimatedTerrainBouncer:
     mov bx, ds:[SlowCount4]
@@ -6785,18 +6785,18 @@ Type4BDescendThenBounceUpRight:
     jmp near ptr ScrollRecordThenFinish
 loc_08C87:
     mov word ptr ss:[bp + REC_TYPE], 33h
-    mov word ptr ss:[bp + REC_DIRECTION], 1
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
     jmp near ptr Type33TerrainBouncer
 ; Scrolls to Y B0h, then rises 4 px per frame without scrolling.
 Type4CSinkThenRise:
-    cmp word ptr ss:[bp + REC_DIRECTION], 0
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP
     je loc_08CAE
     mov word ptr ss:[bp + REC_SPRITE], 74h
     cmp word ptr ss:[bp + REC_Y], 0B0h
     je loc_08CA9
     jmp near ptr ScrollRecordThenFinish
 loc_08CA9:
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_08CAE:
     mov ax, ds:[FrameCount8]
     shr ax, 1
@@ -6808,20 +6808,20 @@ loc_08CAE:
 ; Scrolls to Y 80h, rises to Y 60h, then dashes right as type 39h.
 Type4DSinkRiseThenDash:
     mov word ptr ss:[bp + REC_SPRITE], 6Eh
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jne loc_08CDC
     cmp word ptr ss:[bp + REC_Y], 80h
     je loc_08CD7
     jmp near ptr ScrollRecordThenFinish
 loc_08CD7:
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_08CDC:
     sub word ptr ss:[bp + REC_Y], 4
     cmp word ptr ss:[bp + REC_Y], 60h
     je loc_08CE9
     jmp near ptr FinishRecordUpdate
 loc_08CE9:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov word ptr ss:[bp + REC_TYPE], 39h
     jmp near ptr Type39DashRightAtRow80
 ; Animated type 32h.
@@ -7226,14 +7226,14 @@ loc_0FB16:
     mov word ptr ds:[bx + REC_SAVED_Y], ax
     lodsw
     mov word ptr ds:[bx + REC_SAVED_X], ax
-    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     shr ax, 1
     shr ax, 1
     shr ax, 1
     shr ax, 1
     test ax, 1
     je loc_0FB38
-    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
 loc_0FB38:
     mov word ptr ds:[bx + REC_TYPE], 081h
     mov word ptr ds:[bx + REC_FIELD_1C], 019h
@@ -7345,13 +7345,13 @@ loc_0FC6E:
     je loc_0FC7C
     jmp near ptr loc_0FE69
 loc_0FC7C:
-    cmp word ptr ss:[bp + REC_DIRECTION], 0
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP
     je loc_0FCC5
-    cmp word ptr ss:[bp + REC_DIRECTION], 1
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
     je loc_0FCC5
-    cmp word ptr ss:[bp + REC_DIRECTION], 7
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
     je loc_0FCC5
-    cmp word ptr ss:[bp + REC_DIRECTION], 4
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     jne loc_0FD12
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
@@ -7366,7 +7366,7 @@ loc_0FC7C:
     jae loc_0FCC0
     jmp near ptr loc_0FE75
 loc_0FCC0:
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0FCC5:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
@@ -7385,16 +7385,16 @@ loc_0FCDF:
 loc_0FCEC:
     jne loc_0FCF8
     mov word ptr ss:[bp + REC_FIELD_36], 0
-    mov word ptr ss:[bp + REC_DIRECTION], 0
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP
 loc_0FCF8:
     cmp word ptr ss:[bp + REC_Y], 020h
     jbe loc_0FD01
     jmp near ptr loc_0FE75
 loc_0FD01:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     test word ptr ss:[bp + REC_X], 2
     je loc_0FD12
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
 loc_0FD12:
     mov ax, word ptr ds:[FrameCount16]
     shr ax, 1
@@ -7405,7 +7405,7 @@ loc_0FD12:
     cmp byte ptr ds:[Type93KilledPulse], 0
     je loc_0FD5B
     push word ptr ss:[bp + REC_DIRECTION]
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     mov ax, offset TryTerrainStep
@@ -7439,13 +7439,13 @@ loc_0FD8D:
     je loc_0FE08
     cmp word ptr ss:[bp + REC_X], 0C0h
     je loc_0FDA5
-    cmp word ptr ss:[bp + REC_DIRECTION], 6
+    cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     je loc_0FDA3
     jmp near ptr loc_0FE35
 loc_0FDA3:
     jmp short loc_0FDD2
 loc_0FDA5:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     mov ax, offset TryTerrainStep
@@ -7457,7 +7457,7 @@ loc_0FDA5:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
 loc_0FDD2:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     jne loc_0FE01
@@ -7472,10 +7472,10 @@ loc_0FDD2:
     jne loc_0FE01
     jmp short loc_0FE69
 loc_0FE01:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jmp short loc_0FE69
 loc_0FE08:
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     mov ax, offset TryTerrainStep
@@ -7487,7 +7487,7 @@ loc_0FE08:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
 loc_0FE35:
-    mov word ptr ss:[bp + REC_DIRECTION], 2
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     jne loc_0FE64
@@ -7502,21 +7502,21 @@ loc_0FE35:
     jne loc_0FE64
     jmp short loc_0FE69
 loc_0FE64:
-    mov word ptr ss:[bp + REC_DIRECTION], 6
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
 loc_0FE69:
     cmp word ptr ss:[bp + REC_Y], 080h
     jb loc_0FE75
-    mov word ptr ss:[bp + REC_DIRECTION], 4
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN
 loc_0FE75:
     retf
 ; BP = type 93h: counts a blocked climb (REC_FIELD_36) and turns diagonally up toward
 ; the centre.
 Type93BlockedTurnUp:
     inc word ptr ss:[bp + REC_FIELD_36]
-    mov word ptr ss:[bp + REC_DIRECTION], 7
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
     cmp word ptr ss:[bp + REC_X], 060h
     ja loc_0FE89
-    mov word ptr ss:[bp + REC_DIRECTION], 1
+    mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
 loc_0FE89:
     ret
 Type7FMarchEnterBody:
