@@ -7538,17 +7538,17 @@ loc_0D6E8:
     jne loc_0D6F2
     jmp near ptr loc_0D84B
 loc_0D6F2:
-    cmp byte ptr ds:[990Bh], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_HOME], KEY_STATE_DOWN
     je loc_0D71E
-    cmp byte ptr ds:[9913h], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_END], KEY_STATE_DOWN
     je loc_0D729
-    cmp byte ptr ds:[990Ch], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_UP], KEY_STATE_DOWN
     je loc_0D756
-    cmp byte ptr ds:[9914h], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_DOWN], KEY_STATE_DOWN
     je loc_0D76E
-    cmp byte ptr ds:[990Dh], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_PGUP], KEY_STATE_DOWN
     je loc_0D734
-    cmp byte ptr ds:[9915h], 1
+    cmp byte ptr ds:[KeyDownTable + SCAN_PGDN], KEY_STATE_DOWN
     je loc_0D745
     jmp short loc_0D6E8
 loc_0D71E:

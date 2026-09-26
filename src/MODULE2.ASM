@@ -37,6 +37,7 @@ extrn EnergyCells:byte
 extrn EnergyPoints:word
 extrn EnergyTanks:word
 extrn ExitOrderScreen:word
+extrn ExitWithError:byte
 extrn FileBufferOffset:word
 extrn FileBufferSegment:word
 extrn FileNamePtr:word
@@ -132,6 +133,7 @@ extrn QuitAnswer:byte
 extrn RapidFireEnabled:byte
 extrn RecordTickCounter:word
 extrn RedefPageList:word
+extrn RedefPromptRow:byte
 extrn RefuelActive:word
 extrn SavedAllocStrategy:word
 extrn SavedUpgradeSlot:word
@@ -648,14 +650,14 @@ loc_0536F:
     mov ah, DOS_PRINT_STRING
     int 021h
     mov al, byte ptr ds:[HiscoreEntryRow]
-    mov byte ptr ds:[02296h], al
+    mov byte ptr ds:[HiscoreRankPrefix + 1], al
     mov bp, offset HiscoreRankPrefix
     call PrintMessageBP
     mov bp, offset ScoreBcd
     call loc_05EE4
     mov al, byte ptr ds:[HiscoreEntryRow]
-    mov byte ptr ds:[022AAh], al
-    mov word ptr ds:[HiscoreNameCursor], 0229Bh
+    mov byte ptr ds:[HiscoreNamePrefix + 1], al
+    mov word ptr ds:[HiscoreNameCursor], offset HiscoreNameBuffer
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset HiscoreNameBuffer
     mov al, 020h
@@ -693,7 +695,7 @@ loc_05401:
     int 010h
     ret
 loc_05408:
-    cmp word ptr ds:[HiscoreNameCursor], 0229Bh
+    cmp word ptr ds:[HiscoreNameCursor], offset HiscoreNameBuffer
     je loc_053FC
     dec word ptr ds:[HiscoreNameCursor]
     mov di, word ptr ds:[HiscoreNameCursor]
@@ -775,10 +777,10 @@ loc_054B7:
 loc_054C0:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_054CE
-    mov byte ptr ds:[02299h], 0Ah
+    mov byte ptr ds:[HiscoreRankPrefix + 4], 0Ah
     ret
 loc_054CE:
-    mov byte ptr ds:[02299h], 3
+    mov byte ptr ds:[HiscoreRankPrefix + 4], 3
     ret
 
 loc_054D4:
@@ -1009,7 +1011,7 @@ loc_0573E:
     je loc_0573E
     mov ax, offset RedefPageList
     call far ptr ShowPageList
-    mov byte ptr ds:[022CAh], 03Fh
+    mov byte ptr ds:[RedefPromptRow], 03Fh
     mov si, 050h
     mov di, offset KeyBitScancodesA + KEY_SLOT_YMINUS
     call PromptAndCaptureKeyBinding
@@ -1038,8 +1040,8 @@ loc_0573E:
 PromptAndCaptureKeyBinding:
     push di
     mov byte ptr ds:[KeyLastMakeCode], 0
-    mov ah, byte ptr ds:[022CAh]
-    add byte ptr ds:[022CAh], 017h
+    mov ah, byte ptr ds:[RedefPromptRow]
+    add byte ptr ds:[RedefPromptRow], 017h
     mov al, 1
     call DrawPanelGraphic
 loc_057AB:
@@ -1531,7 +1533,7 @@ loc_05D01:
     ret
 loc_05D0B:
     mov ds, word ptr cs:[MainDataSegment]
-    inc byte ptr ds:[022CFh]
+    inc byte ptr ds:[ExitWithError]
 ; Common exit: silence the speaker, save hiscore.dat, stop sound, restore the keyboard
 ; vector, return to text mode and exit to DOS. If DS:22CF is nonzero an error message
 ; naming FileNamePtr is printed first.
@@ -1550,7 +1552,7 @@ ShutdownGame:
     call RestoreTimerVector08
     mov ax, 3
     int 010h
-    cmp byte ptr ds:[022CFh], 0
+    cmp byte ptr ds:[ExitWithError], 0
     je loc_05D7E
     mov dx, offset FileNotFoundMsgHead
     mov ah, DOS_PRINT_STRING

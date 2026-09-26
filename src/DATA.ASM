@@ -154,6 +154,7 @@ public EventTrigger
 public EventX
 public EventY
 public ExitOrderScreen
+public ExitWithError
 public FallerColumnCursor
 public FallerColumns
 public FallerColumnsEnd
@@ -372,6 +373,7 @@ public ReadErrorMessage
 public RecordRowOffsets
 public RecordTickCounter
 public RedefPageList
+public RedefPromptRow
 public RefuelActive
 public ResidentFiles
 public ResourceArchiveList
@@ -1151,7 +1153,12 @@ MenuKeyLatchM dw 0h
 MenuIdleFrames dw 0h
 ; Indexed by SoundOption (0..3): the high byte becomes SfxEnabled, the low byte
 ; ModuleSoundEnabled.
-SoundOptionFlags db 01h,00h,00h,01h,01h,01h,00h,00h,090h,00h,090h,0Dh,0Ah,024h,00h
+SoundOptionFlags db 01h,00h,00h,01h,01h,01h,00h,00h,090h
+; Row of the next key-redefinition prompt graphic (17h rows apart).
+RedefPromptRow db 00h
+    db 090h,0Dh,0Ah,024h
+; Set when a file was not found: ShutdownGame then prints FileNotFoundMsg*.
+ExitWithError db 00h
 ; Printed by ShutdownGame around the missing file's name (AH=09h).
 FileNotFoundMsgHead db 7h, 'I could not find the file ', 27h, '$'
 FileNotFoundMsgTail db 27h, ' anywhere, sorry.', 0Dh, 0Ah, 0Dh, 0Ah, '$'
