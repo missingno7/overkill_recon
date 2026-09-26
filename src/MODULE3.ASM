@@ -4003,7 +4003,7 @@ loc_0B58A:
     mov ax, 0Ah
     mul cx
     mov ss:[bp + REC_HIT_POINTS], ax
-    mov word ptr ss:[bp + REC_X], 60h
+    mov word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     jmp near ptr FinishRecordUpdate
 
 ResetInvaderFormation:
@@ -4193,7 +4193,7 @@ loc_0B789:
     jmp near ptr FinishRecordUpdate
 loc_0B791:
     mov ax, word ptr ds:[SlowCount6]
-    cmp word ptr ss:[bp + REC_X], 060h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     jae loc_0B7A1
     neg ax
     add ax, 07Fh
@@ -4548,7 +4548,7 @@ loc_0BB1C:
     jmp near ptr ScrollRecordThenFinish
 loc_0BB24:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     je loc_0BB38
     call TryTerrainStep
     jne loc_0BB38
@@ -4703,13 +4703,13 @@ loc_0BCB0:
 
 ; Clamp REC_X to 0..0C0h.
 ClampRecordX:
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jg loc_0BCBF
     cmp word ptr ss:[bp + REC_X], 0
     jl loc_0BCC5
     ret
 loc_0BCBF:
-    mov word ptr ss:[bp + REC_X], 0C0h
+    mov word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     ret
 loc_0BCC5:
     mov word ptr ss:[bp + REC_X], 0
@@ -7026,7 +7026,7 @@ DemoStepActions label word
     dw offset DemoStepSpawnPathEnemy51, offset DemoStepGiveMissile, offset CountXReturn, offset CountXReturn
 DemoStepSpawnPathEnemy51:
     call SpawnEnemyHere
-    mov word ptr ds:[bx + REC_X], 0C0h
+    mov word ptr ds:[bx + REC_X], PLAYFIELD_MAX_X
     mov word ptr ds:[bx + REC_Y], 0C8h
     mov word ptr ds:[bx + REC_TYPE], 51h
     ret
@@ -7138,7 +7138,7 @@ loc_0D256:
 DemoLaunchPod:
     call StoreRecordSavedPosition
     mov word ptr ss:[bp + REC_Y], 0C8h
-    mov word ptr ss:[bp + REC_X], 0C0h
+    mov word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     mov word ptr ss:[bp + REC_TYPE], 050h
     mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     ret
@@ -8203,7 +8203,7 @@ Type87AnimFireBurstA:
     mov bx, ds:[bx]
     add bx, 0DDh
     mov ss:[bp + REC_SPRITE], bx
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     jae loc_0F1D0
     jmp near ptr loc_0878C
 loc_0F1D0:
@@ -8291,7 +8291,7 @@ loc_0F28C:
     jne loc_0F2B1
     cmp word ptr ss:[bp + REC_X], 0
     jng loc_0F2B1
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jnl loc_0F2B1
     jmp near ptr ScrollRecordThenFinish
 loc_0F2B1:
@@ -8513,7 +8513,7 @@ loc_0F4BC:
     jmp near ptr ScrollRecordThenFinish
 loc_0F4DF:
     add word ptr ss:[bp + REC_X], 2
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     je loc_0F4EC
     jmp near ptr ScrollRecordThenFinish
 loc_0F4EC:
@@ -8584,7 +8584,7 @@ loc_0F577:
     je loc_0F583
     jmp near ptr ScrollRecordThenFinish
 loc_0F583:
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     je loc_0F596
     cmp word ptr ds:[FrameCount16], 0Fh
     jne loc_0F593
@@ -8665,7 +8665,7 @@ loc_0F623:
 Type85ChargeUntilBlocked:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     jne loc_0F646
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     je loc_0F663
 loc_0F646:
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT

@@ -48,3 +48,7 @@ WEAPON_FORK equ 2
 WEAPON_TWIN_RISING3 equ 3
 WEAPON_TWIN_RISING16 equ 4
 WEAPON_BEAM equ 5
+; Record X range on the playfield (0..PLAYFIELD_MAX_X) and its centre line, which
+; decides which way edge-spawned enemies face.
+PLAYFIELD_MAX_X equ 0C0h
+PLAYFIELD_CENTER_X equ 60h

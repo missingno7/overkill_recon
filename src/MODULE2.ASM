@@ -4905,7 +4905,7 @@ loc_07B6A:
     mov word ptr ds:[bx + REC_TYPE], 8Fh
     mov word ptr ds:[bx + REC_SPRITE], 0BFh
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07B80
     ret
 loc_07B80:
@@ -5252,7 +5252,7 @@ loc_07EB6:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 86h
     mov word ptr ds:[bx + REC_SPRITE], 0C8h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07ECC
     ret
 loc_07ECC:
@@ -5268,7 +5268,7 @@ loc_07EDD:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 88h
     mov word ptr ds:[bx + REC_SPRITE], 0FDh
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07EF3
     ret
 loc_07EF3:
@@ -5312,7 +5312,7 @@ loc_07F3C:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 0F5h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07F52
     ret
 loc_07F52:
@@ -5353,7 +5353,7 @@ loc_07F8C:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_LEFT
     mov word ptr ds:[bx + REC_TYPE], 6Ah
     mov word ptr ds:[bx + REC_SPRITE], 11Eh
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07FA2
     ret
 loc_07FA2:
@@ -5369,7 +5369,7 @@ loc_07FB3:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 54h
     mov word ptr ds:[bx + REC_SPRITE], 143h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_07FC9
     ret
 loc_07FC9:
@@ -5407,7 +5407,7 @@ loc_08001:
     mov word ptr ds:[bx + REC_SPRITE], 136h
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN_RIGHT
     sub word ptr ds:[bx + REC_X], 10h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jae loc_08020
     ret
 loc_08020:
@@ -5441,7 +5441,7 @@ loc_08052:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_UP_LEFT
     mov word ptr ds:[bx + REC_TYPE], 59h
     mov word ptr ds:[bx + REC_SPRITE], 0E3h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_08068
     ret
 loc_08068:
@@ -5455,7 +5455,7 @@ SpawnCellCrawler5F:
 loc_08074:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 5Fh
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_08085
     ret
 loc_08085:
@@ -5490,7 +5490,7 @@ loc_080BD:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_LEFT
     mov word ptr ds:[bx + REC_TYPE], 87h
     mov word ptr ds:[bx + REC_SPRITE], 0E0h
-    cmp word ptr ds:[bx + REC_X], 60h
+    cmp word ptr ds:[bx + REC_X], PLAYFIELD_CENTER_X
     jna loc_080D3
     ret
 loc_080D3:
@@ -5771,7 +5771,7 @@ Type26WallProbeExtender:
     je loc_082EC
     call TryTerrainStep
     jne loc_0831F
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jae loc_0831F
     jmp near ptr ScrollRecordThenFinish
 loc_0831F:
@@ -6239,7 +6239,7 @@ Type60FlyAlongAimLine:
     mov word ptr ds:[ChaseStepPixels], 2
     call StepAlongDelta
     mov word ptr ds:[ChaseStepPixels], 3
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jg loc_08763
     cmp word ptr ss:[bp + REC_X], 0
     jl loc_08763
@@ -6258,7 +6258,7 @@ Type8FAnimFireBurstB:
     mov bx, ds:[bx + PingPongFrames8]
     add bx, 0BFh
     mov ss:[bp + REC_SPRITE], bx
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     ja loc_0878C
     add word ptr ss:[bp + REC_SPRITE], 3
 loc_0878C:
@@ -6416,7 +6416,7 @@ Type34SideFiringTurret:
     shl bx, 1
     mov bx, ds:[bx + Type34SpriteByLevel]
     mov ss:[bp + REC_SPRITE], bx
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     jae loc_0893E
     dec word ptr ss:[bp + REC_SPRITE]
     cmp word ptr ds:[LevelIndex], 6
@@ -6472,7 +6472,7 @@ Type37VerticalBouncerShooter:
     add ax, 0B5h
     mov ss:[bp + REC_SPRITE], ax
     mov word ptr ds:[Type37Speed], 1
-    cmp word ptr ss:[bp + REC_X], 60h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     je loc_089AF
     mov word ptr ds:[Type37Speed], 3
     cmp word ptr ss:[bp + REC_X], 50h
@@ -6518,7 +6518,7 @@ Type38WallBounceDescend:
     cmp word ptr ss:[bp + REC_X], 0
     je loc_08A15
     mov ax, 5
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     je loc_08A15
     mov ax, ss:[bp + REC_DIRECTION]
 loc_08A15:
@@ -6538,7 +6538,7 @@ Type39DashRightAtRow80:
 loc_08A3D:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
     call MoveInDirection4
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     ja loc_08A4F
     jmp near ptr ScrollRecordThenFinish
 loc_08A4F:
@@ -7439,7 +7439,7 @@ loc_0FD81:
 loc_0FD8D:
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0FE08
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     je loc_0FDA5
     cmp word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
     je loc_0FDA3
@@ -7516,7 +7516,7 @@ loc_0FE75:
 Type93BlockedTurnUp:
     inc word ptr ss:[bp + REC_BLOCKED_CLIMBS]
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_LEFT
-    cmp word ptr ss:[bp + REC_X], 060h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_CENTER_X
     ja loc_0FE89
     mov word ptr ss:[bp + REC_DIRECTION], DIR_UP_RIGHT
 loc_0FE89:
@@ -7576,7 +7576,7 @@ loc_0FF0E:
     add ss:[bp + REC_X], ax
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0FF28
-    cmp word ptr ss:[bp + REC_X], 0C0h
+    cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jne loc_0FF2C
 loc_0FF28:
     inc byte ptr ds:[MarchEdgeHit]
