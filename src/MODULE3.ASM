@@ -14,6 +14,7 @@ extrn AutopilotWaypointA:word
 extrn AutopilotWaypointB:word
 extrn BonusIntroItems:byte
 extrn BonusKeysEnabled:byte
+extrn BossPartOffsets:word
 extrn BossPath:word
 extrn BurstOriginX:word
 extrn BurstOriginY:word
@@ -87,6 +88,7 @@ extrn File_WINDOW_BIC:byte
 extrn FireLatch:word
 extrn FormationSlotCursor:word
 extrn FormationSlots:word
+extrn FormationSlotsEnd:word
 extrn FrameCount128:word
 extrn FrameCount16:word
 extrn FrameCount32:word
@@ -167,6 +169,8 @@ extrn OpenResourceFile:far
 extrn PageIndex:word
 extrn PageListPtr:word
 extrn Password:byte
+extrn PathType66:word
+extrn PathType67:word
 extrn PaymentFileName:byte
 extrn PaymentHelpRow:word
 extrn PingPongFrames4:word
@@ -279,7 +283,9 @@ extrn loc_0F980:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public BlueBitsSegment
+public DestroyRecord
 public FinishRecordUpdate
+public HorizontalTerrainPatrol
 public LevelBlocksSegment
 public LevelMapSegment
 public LevelSpritesSegment
@@ -318,12 +324,16 @@ public SfxStopAll
 public SfxStreamStoreAndWait
 public SfxTimerTick
 public ShipSegment
+public SpawnShotDown
 public SpawnThrottledChild
 public Sprites1x1Segment
 public Sprites2x2CSegment
 public Sprites2x2Segment
+public StartPathFollow
+public SteerToSaved
 public TextVideoSegment
 public TheEndSegment
+public TryTerrainStep
 public VideoAdapter
 public WaitVerticalRetracePulse
 public WideRowBytes
@@ -334,20 +344,15 @@ public loc_09F1A
 public loc_09F5F
 public loc_0A781
 public loc_0AF22
-public loc_0AFD8
 public loc_0B2AC
-public loc_0B2C8
-public loc_0B729
-public loc_0BAE1
-public loc_0BB03
 public loc_0BEC5
-public loc_0BFC7
 public loc_0C57C
 public loc_0CB3E
 public loc_0CBE8
 public loc_10044
 public loc_1009C
 public loc_10108
+extrn AimAtPlayer:near
 extrn AllocateBuffers:near
 extrn BlitPackedStride104:near
 extrn BlitPackedStride160:near
@@ -390,70 +395,75 @@ extrn PollInputBits:near
 extrn PrintMessageBP:near
 extrn ReadIndexedByteAttribute:near
 extrn RestartAtCheckpoint:near
+extrn SetDeltaToward:near
 extrn SetMapTile1:near
 extrn SetMapTile28:near
 extrn ShowFatalErrorAndExit:near
+extrn SpawnAimedShot:near
+extrn SpawnEnemyHere:near
+extrn SpawnEnemyHereQuiet:near
 extrn SteerTowardTarget:near
-extrn TypeHandler13:near
-extrn TypeHandler24:near
-extrn TypeHandler25:near
-extrn TypeHandler26:near
-extrn TypeHandler27:near
-extrn TypeHandler28:near
-extrn TypeHandler29:near
-extrn TypeHandler2B:near
-extrn TypeHandler2D:near
-extrn TypeHandler2E:near
-extrn TypeHandler2F:near
-extrn TypeHandler30:near
-extrn TypeHandler31:near
-extrn TypeHandler32:near
-extrn TypeHandler33:near
-extrn TypeHandler34:near
-extrn TypeHandler37:near
-extrn TypeHandler38:near
-extrn TypeHandler39:near
-extrn TypeHandler3A:near
-extrn TypeHandler3B:near
-extrn TypeHandler3C:near
-extrn TypeHandler3D:near
-extrn TypeHandler3E:near
-extrn TypeHandler3F:near
-extrn TypeHandler40:near
-extrn TypeHandler41:near
-extrn TypeHandler42:near
-extrn TypeHandler43:near
-extrn TypeHandler44:near
-extrn TypeHandler45:near
-extrn TypeHandler46:near
-extrn TypeHandler47:near
-extrn TypeHandler48:near
-extrn TypeHandler49:near
-extrn TypeHandler4A:near
-extrn TypeHandler4B:near
-extrn TypeHandler4C:near
-extrn TypeHandler4D:near
-extrn TypeHandler4E:near
-extrn TypeHandler4F:near
-extrn TypeHandler51:near
-extrn TypeHandler52:near
-extrn TypeHandler53:near
-extrn TypeHandler60:near
-extrn TypeHandler68:near
-extrn TypeHandler69:near
-extrn TypeHandler71:near
-extrn TypeHandler7A:near
-extrn TypeHandler7B:near
-extrn TypeHandler7C:near
-extrn TypeHandler7F:near
-extrn TypeHandler80:near
-extrn TypeHandler81:near
-extrn TypeHandler83:near
-extrn TypeHandler8A:near
-extrn TypeHandler8F:near
-extrn TypeHandler90:near
-extrn TypeHandler91:near
-extrn TypeHandler93:near
+extrn StepAlongDelta:near
+extrn Type13FormationLeader:near
+extrn Type24TurretLeftFire32:near
+extrn Type25TurretRightFire32:near
+extrn Type26WallProbeExtender:near
+extrn Type27SlowDescender:near
+extrn Type28EnemyHatch:near
+extrn Type29EmergeThenDart:near
+extrn Type2BAimedDart:near
+extrn Type2DHoverFireThenPlunge:near
+extrn Type2EPlungeAtPlayerColumn:near
+extrn Type2FScrollingShuttle:near
+extrn Type30AnimatedShooter:near
+extrn Type31FallFast3:near
+extrn Type32DescendThenBounce:near
+extrn Type33TerrainBouncer:near
+extrn Type34SideFiringTurret:near
+extrn Type37VerticalBouncerShooter:near
+extrn Type38WallBounceDescend:near
+extrn Type39DashRightAtRow80:near
+extrn Type3AHomeOnPlayerBelow80:near
+extrn Type3BFallRandomFlicker:near
+extrn Type3CDescendThenBounceAlt:near
+extrn Type3DAnimatedTerrainBouncer:near
+extrn Type3EDropThenAimedDash:near
+extrn Type3FStraightLineToAimPoint:near
+extrn Type40JitterFallShooter:near
+extrn Type41FollowPathType41:near
+extrn Type42DescendSway:near
+extrn Type43FollowPathType43:near
+extrn Type44FollowPathType44:near
+extrn Type45FollowPathType45:near
+extrn Type46HoverShootThenDive:near
+extrn Type47PatrolDropShooter:near
+extrn Type48CreeperAimedFire:near
+extrn Type49RadialBurstFaller:near
+extrn Type4AFollowPathType4A:near
+extrn Type4BDescendThenBounceUpRight:near
+extrn Type4CSinkThenRise:near
+extrn Type4DSinkRiseThenDash:near
+extrn Type4EAnimDescendThenBounce:near
+extrn Type4FFallFast4Flicker:near
+extrn Type51FollowType51Path:near
+extrn Type52ScrollOnly:near
+extrn Type53AnimateFromField36:near
+extrn Type60FlyAlongAimLine:near
+extrn Type68JitterDescendFiring:near
+extrn Type69JitterDropToY18:near
+extrn Type71FireThenDiveBelow60:near
+extrn Type7AAimLineFlyer:near
+extrn Type7BDropThenAim:near
+extrn Type7CAimLineFlyerAlt:near
+extrn Type7FMarchEnterSteer:near
+extrn Type80MarchFormationMember:near
+extrn Type81SweeperEnterSteer:near
+extrn Type83PatrolShootDown64:near
+extrn Type8APatrolShootDown32Alt:near
+extrn Type8FAnimFireBurstB:near
+extrn Type90TurretVolley:near
+extrn Type91TurretVolleyAlt:near
+extrn Type93SweepDescendClimb:near
 extrn UpdateHighScoreTable:near
 extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
@@ -486,8 +496,6 @@ extrn loc_05C22:near
 extrn loc_05C35:near
 extrn loc_05C9A:near
 extrn loc_05D0B:near
-extrn loc_05E1B:near
-extrn loc_05E42:near
 extrn loc_05F0D:near
 extrn loc_05F43:near
 extrn loc_05F61:near
@@ -498,8 +506,6 @@ extrn loc_061DC:near
 extrn loc_062AA:near
 extrn loc_062F6:near
 extrn loc_07420:near
-extrn loc_07476:near
-extrn loc_074E2:near
 extrn loc_074FE:near
 extrn loc_07547:near
 extrn loc_07596:near
@@ -507,8 +513,6 @@ extrn loc_07746:near
 extrn loc_077C5:near
 extrn loc_077DF:near
 extrn loc_07948:near
-extrn loc_081E9:near
-extrn loc_081F4:near
 extrn loc_08209:near
 extrn loc_08331:near
 extrn loc_0837A:near
@@ -2116,7 +2120,7 @@ loc_0A525:
     call CopyRecordPositionPlus10
     push bp
     mov bp, bx
-    call loc_0B15A
+    call FindMissileTarget
     mov ax, bx
     mov bx, bp
     pop bp
@@ -2843,7 +2847,7 @@ loc_0AB8F:
 loc_0AB99:
     push bp
     mov bp, bx
-    call loc_0BFC7
+    call DestroyRecord
     mov bx, bp
     pop bp
     ret
@@ -3050,10 +3054,12 @@ loc_0AD4D:
     jmp near ptr loc_0ABA3
 loc_0AD59:
     ret
-loc_0AD5A:
+; Shot tail: scrolls, then the bounds test below.
+ShotScrollAndBounds:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
-loc_0AD60:
+; Removes the shot outside Y 8..E0h or past X C8h, or a player shot hitting a wall.
+ShotBoundsCheck:
     cmp word ptr ss:[bp + REC_Y], 8
     jae loc_0AD69
     jmp near ptr RemoveRecord
@@ -3097,35 +3103,43 @@ loc_0ADAF:
     jmp near ptr RemoveRecord
 loc_0ADC8:
     ret
-loc_0ADC9:
+; Removes the shot through the bounds test (Y = FFFFh).
+ExpireShot:
     mov word ptr ss:[bp + REC_Y], 0FFFFh
-    jmp short loc_0AD60
+    jmp short ShotBoundsCheck
 loc_0ADD0:
     inc word ptr ss:[bp + REC_Y]
     inc word ptr ss:[bp + REC_Y]
-    jmp near ptr loc_0B250
-TypeHandler08:
+    jmp near ptr ShotHitPlayerCheck
+; Rises 16 px per frame; counted in ShotsLiveMain.
+Type08RisingShot16:
     sub word ptr ss:[bp + REC_Y], 10h
-    jmp short loc_0AD60
-TypeHandler07:
+    jmp short ShotBoundsCheck
+; Rises 3 px per frame (no scroll); counted in ShotsLiveMain.
+Type07RisingShot3:
     mov ax, ds:[FrameCount4]
     add ax, 5Ah
     mov ss:[bp + REC_SPRITE], ax
     sub word ptr ss:[bp + REC_Y], 3
-    jmp near ptr loc_0AD60
-TypeHandler09:
-    jmp near ptr loc_0AD60
-TypeHandler0F:
+    jmp near ptr ShotBoundsCheck
+; Only the shot bounds tail; its position is set elsewhere (ShotsLiveType9). Role
+; uncertain.
+Type09ExternallyMovedShot:
+    jmp near ptr ShotBoundsCheck
+; 2 px per frame in REC_DIRECTION until REC_FIELD_1C runs out, then the player-hit test.
+Type0FTimedShot2:
     mov ax, ds:[FrameCount16]
     shr ax, 1
     add ax, 0
     mov ss:[bp + REC_SPRITE], ax
     dec word ptr ss:[bp + REC_FIELD_1C]
-    je loc_0ADC9
+    je ExpireShot
     mov ax, 0B250h
     push ax
     jmp near ptr MoveInDirection2
-TypeHandler0C:
+; 3 px per frame in REC_DIRECTION while REC_FIELD_1C counts down, then turns straight
+; up.
+Type0CTimedTurnUpShot:
     cmp word ptr ss:[bp + REC_FIELD_1C], 0
     je loc_0AE19
     dec word ptr ss:[bp + REC_FIELD_1C]
@@ -3138,10 +3152,11 @@ loc_0AE1D:
     add ax, 28h
     mov ss:[bp + REC_SPRITE], ax
     call loc_0AF22
-    jmp near ptr loc_0AD60
-TypeHandler06:
+    jmp near ptr ShotBoundsCheck
+; Mirror of type 05h drifting up-right; removed at X = C0h.
+Type06SideShotUpRight:
     cmp word ptr ss:[bp + REC_X], 0C8h
-    je loc_0ADC9
+    je ExpireShot
     sub word ptr ss:[bp + REC_Y], 4
     test word ptr ss:[bp + REC_X], 7
     jne loc_0AE5E
@@ -3166,11 +3181,13 @@ loc_0AE67:
     add ax, ss:[bp + REC_DIRECTION]
     add ax, 8
     mov ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0AD5A
-TypeHandler05:
+    jmp near ptr ShotScrollAndBounds
+; Rises 4 px per frame; every 16 px of X probes the map: a wall turns it straight up,
+; otherwise it keeps drifting up-left.
+Type05SideShotUpLeft:
     cmp word ptr ss:[bp + REC_X], 0
     jne loc_0AE86
-    jmp near ptr loc_0ADC9
+    jmp near ptr ExpireShot
 loc_0AE86:
     sub word ptr ss:[bp + REC_Y], 4
     test word ptr ss:[bp + REC_X], 0Fh
@@ -3190,8 +3207,10 @@ loc_0AEB3:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 8
     mov ss:[bp + REC_SPRITE], ax
-    jmp near ptr loc_0AD5A
-TypeHandler04:
+    jmp near ptr ShotScrollAndBounds
+; 4 px per frame in REC_DIRECTION (8 px on level 0 unless heading down), then the
+; player-hit test; the SpawnThrottledChild shot.
+Type04StraightShot:
     mov ax, 0B250h
     push ax
     cmp word ptr ds:[LevelIndex], 0
@@ -3203,10 +3222,12 @@ loc_0AECD:
     jmp near ptr MoveInDirection4
 loc_0AED6:
     jmp short MoveInDirection8
-TypeHandler02:
+; Types 02h/03h: 8 px per frame in REC_DIRECTION until REC_FIELD_1C runs out, then the
+; player-hit test; type 3 hits deal 1/3/5 damage by difficulty.
+Type02TimedStraightShot:
     dec word ptr ss:[bp + REC_FIELD_1C]
     jne loc_0AEE0
-    jmp near ptr loc_0ADC9
+    jmp near ptr ExpireShot
 loc_0AEE0:
     mov ax, 0B250h
     push ax
@@ -3321,7 +3342,8 @@ loc_0AFD1:
 loc_0AFD4:
     dec word ptr ss:[bp + REC_X]
     ret
-loc_0AFD8:
+; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and DS:A430 = 1) when blocked.
+TryTerrainStep:
     mov word ptr ds:[0A430h], 0
     mov ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[0A432h], ax
@@ -3486,25 +3508,26 @@ loc_0B158:
     dec dx
     ret
 
-loc_0B15A:
+; Finds the next live KIND_ENEMY record for the homing missile.
+FindMissileTarget:
     mov cx, POOL_A_COUNT
     mov bx, word ptr ds:[TargetSearchCursor]
 loc_0B161:
     cmp bx, offset PoolAEnd
     jae loc_0B19A
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0B191
-    cmp word ptr ds:[bx + 018h], 1
+    cmp word ptr ds:[bx + REC_TYPE], 1
     je loc_0B191
-    cmp word ptr ds:[bx + 018h], 026h
+    cmp word ptr ds:[bx + REC_TYPE], 026h
     je loc_0B191
-    cmp word ptr ds:[bx + 018h], 021h
+    cmp word ptr ds:[bx + REC_TYPE], 021h
     je loc_0B191
-    cmp word ptr ds:[bx + 018h], 022h
+    cmp word ptr ds:[bx + REC_TYPE], 022h
     je loc_0B191
-    cmp word ptr ds:[bx + 2], 0E0h
+    cmp word ptr ds:[bx + REC_Y], 0E0h
     ja loc_0B191
-    cmp word ptr ds:[bx + 016h], 4
+    cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
     je loc_0B1A6
 loc_0B191:
     add bx, RECORD_SIZE
@@ -3521,7 +3544,9 @@ loc_0B1A6:
     mov word ptr ds:[TargetSearchCursor], bx
     pop bx
     ret
-TypeHandler0A:
+; Rides with the player, then locks the next live KIND_ENEMY record and chases it 3 px
+; per step; back to the player when the target is lost.
+Type0AHomingMissile:
     mov ax, ds:[FrameCount8]
     add ax, 6Dh
     mov ss:[bp + REC_SPRITE], ax
@@ -3541,16 +3566,16 @@ TypeHandler0A:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
     jne loc_0B1F6
-    jmp near ptr loc_0AD60
+    jmp near ptr ShotBoundsCheck
 loc_0B1F6:
     cmp word ptr ds:[MissilesLive], 0
     je loc_0B201
     dec word ptr ds:[MissilesLive]
 loc_0B201:
-    call loc_0B15A
+    call FindMissileTarget
     cmp bx, -1
     jne loc_0B20C
-    jmp near ptr loc_0ADC9
+    jmp near ptr ExpireShot
 loc_0B20C:
     mov ss:[bp + REC_TARGET], bx
     mov word ptr ss:[bp + REC_FIELD_1C], 1
@@ -3559,24 +3584,26 @@ loc_0B20C:
     mov byte ptr ds:[SfxRequest], 11h
 loc_0B220:
     inc word ptr ds:[MissilesLive]
-    jmp near ptr loc_0AD60
+    jmp near ptr ShotBoundsCheck
 loc_0B227:
     mov bx, ss:[bp + REC_TARGET]
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0B245
-    cmp word ptr ds:[bx + 2], 0DCh
+    cmp word ptr ds:[bx + REC_Y], 0DCh
     ja loc_0B245
-    cmp word ptr ds:[bx + 18h], 1
+    cmp word ptr ds:[bx + REC_TYPE], 1
     je loc_0B245
-    call loc_05E1B
-    call loc_05E42
-    jmp near ptr loc_0AD5A
+    call SetDeltaToward
+    call StepAlongDelta
+    jmp near ptr ShotScrollAndBounds
 loc_0B245:
     mov word ptr ss:[bp + REC_FIELD_1C], 0
-    jmp near ptr loc_0AD5A
-TypeHandler0B:
-    call loc_05E42
-loc_0B250:
+    jmp near ptr ShotScrollAndBounds
+; 3 px Bresenham steps along REC_DELTA, then the player-hit test.
+Type0BAimedEnemyShot:
+    call StepAlongDelta
+; Damages the player and removes the shot on a hit; otherwise the scroll and bounds tail.
+ShotHitPlayerCheck:
     cmp word ptr ss:[bp + REC_SIDE_FLAG], 1
     je loc_0B2A3
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
@@ -3608,27 +3635,33 @@ loc_0B297:
     pop bp
     pop cx
     loop loc_0B297
-    jmp near ptr loc_0ADC9
+    jmp near ptr ExpireShot
 loc_0B2A3:
-    jmp near ptr loc_0AD5A
-TypeHandler89:
+    jmp near ptr ShotScrollAndBounds
+; Types 89h/8Ah: terrain patrol firing down every 32 frames.
+Type89PatrolShootDown32:
     mov ax, ds:[SlowCount4]
     add ax, 1Ch
 loc_0B2AC:
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount32], 1Fh
     jne loc_0B2B9
-    call loc_0BAE1
+    call SpawnShotDown
 loc_0B2B9:
-    jmp near ptr loc_0BB03
-TypeHandler10:
+    jmp near ptr HorizontalTerrainPatrol
+; Starts the waypoint path at DS:A45C as type 12h.
+Type10StartPathFollowerA:
     mov word ptr ss:[bp + REC_FIELD_36], 0A45Ch
-    jmp short loc_0B2C8
-TypeHandler11:
+    jmp short StartPathFollow
+; Starts the waypoint path at DS:A43C as type 12h.
+Type11StartPathFollowerB:
     mov word ptr ss:[bp + REC_FIELD_36], 0A43Ch
-loc_0B2C8:
+; Turns BP into a type 12h waypoint follower of the path at REC_FIELD_36.
+StartPathFollow:
     mov word ptr ss:[bp + REC_TYPE], 12h
-TypeHandler12:
+; Steers (speed 1, 2 on level 0 and in the demo) through the (Y, X) waypoints at
+; REC_FIELD_36; no end-of-path check and no scroll.
+Type12WaypointPathFollower:
     mov si, ss:[bp + REC_FIELD_36]
     lodsw
     add ax, 20h
@@ -3647,7 +3680,7 @@ loc_0B2F5:
     cmp word ptr ds:[SteerArrived], 0
     je loc_0B304
     mov ss:[bp + REC_FIELD_36], si
-    jmp short TypeHandler12
+    jmp short Type12WaypointPathFollower
 loc_0B304:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 3Bh
@@ -3724,7 +3757,8 @@ loc_0B3BF:
     add ax, 71h
     mov ss:[bp + REC_SPRITE], ax
     ret
-TypeHandler36:
+; As type 22h falling 2 px per frame.
+Type36SwayFallThenBurst:
     call loc_0B3BF
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ss:[bp + REC_Y], 0A0h
@@ -3732,7 +3766,9 @@ TypeHandler36:
     jmp near ptr ScrollRecordThenFinish
 loc_0B3DD:
     jmp short loc_0B3F9
-TypeHandler22:
+; Types 22h/35h: sways down (1 px, 2 on level 0) to Y A0h, then destroys itself in an
+; eight-way burst of type 3 shots.
+Type22DescendThenBurst:
     call loc_0B3BF
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ds:[LevelIndex], 0
@@ -3743,10 +3779,11 @@ loc_0B3EF:
     jae loc_0B3F9
     jmp near ptr ScrollRecordThenFinish
 loc_0B3F9:
-    call loc_0BFC7
-    call loc_0B402
+    call DestroyRecord
+    call SpawnEightWayBurst
     jmp near ptr ScrollRecordThenFinish
-loc_0B402:
+; Spawns up to eight type 3 shots from BP in directions 0..7.
+SpawnEightWayBurst:
     mov dx, 0Ch
     cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     je loc_0B40E
@@ -3774,7 +3811,7 @@ loc_0B421:
     mov ds:[bx + REC_X], ax
     mov ax, ds:[BurstOriginY]
     mov ds:[bx + REC_Y], ax
-    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIDE_FLAG], 0
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
@@ -3838,31 +3875,33 @@ loc_0B4AD:
     cmp bx, -1
     je loc_0B54A
     call far ptr loc_10079
-    mov word ptr ds:[bx + 18h], 76h
-    mov word ptr ds:[bx + 8], 20h
+    mov word ptr ds:[bx + REC_TYPE], 76h
+    mov word ptr ds:[bx + REC_SPRITE], 20h
     mov ds:[SegBossAnchor], bx
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_0B54A
     call far ptr loc_10079
-    mov word ptr ds:[bx + 18h], 77h
-    mov word ptr ds:[bx + 8], 21h
-    mov word ptr ds:[bx + 4], 20h
+    mov word ptr ds:[bx + REC_TYPE], 77h
+    mov word ptr ds:[bx + REC_SPRITE], 21h
+    mov word ptr ds:[bx + REC_X], 20h
     mov ds:[SegBossPart77], bx
     call FindFreeRecordPoolA
     cmp bx, -1
     je loc_0B54A
     call far ptr loc_10079
-    mov word ptr ds:[bx + 18h], 79h
-    mov word ptr ds:[bx + 8], 23h
-    mov word ptr ds:[bx + 4], 20h
+    mov word ptr ds:[bx + REC_TYPE], 79h
+    mov word ptr ds:[bx + REC_SPRITE], 23h
+    mov word ptr ds:[bx + REC_X], 20h
     mov ds:[SegBossPart79], bx
     jmp near ptr FinishRecordUpdate
 loc_0B54A:
     mov word ptr ds:[EncounterLiveCount], 0
     call loc_062AA
     jmp near ptr FinishRecordUpdate
-TypeHandler21:
+; Per level encounter driver: spawns type 23h fallers, then becomes boss type 22h (level
+; 0: segmented boss 78h; level 3: invaders).
+Type21EncounterDirector:
     cmp word ptr ds:[LevelIndex], 4
     jne loc_0B560
     jmp near ptr loc_08D83
@@ -3912,17 +3951,17 @@ loc_0B5D8:
     je loc_0B5BC
     mov si, ds:[InvaderSlotCursor]
     push si
-    call loc_081F4
+    call SpawnEnemyHere
     pop si
     cmp bx, -1
     je loc_0B612
     lodsw
     add ax, 20h
-    mov ds:[bx + 34h], ax
+    mov ds:[bx + REC_SAVED_Y], ax
     lodsw
-    mov ds:[bx + 32h], ax
-    mov word ptr ds:[bx + 18h], 61h
-    mov word ptr ds:[bx + 8], 0E7h
+    mov ds:[bx + REC_SAVED_X], ax
+    mov word ptr ds:[bx + REC_TYPE], 61h
+    mov word ptr ds:[bx + REC_SPRITE], 0E7h
     inc word ptr ds:[EncounterLiveCount]
     add word ptr ds:[InvaderSlotCursor], 4
 loc_0B612:
@@ -3932,14 +3971,14 @@ loc_0B615:
     je loc_0B61F
     jmp near ptr FinishRecordUpdate
 loc_0B61F:
-    call loc_081E9
+    call SpawnEnemyHereQuiet
     cmp bx, -1
     jne loc_0B62A
     jmp near ptr FinishRecordUpdate
 loc_0B62A:
     call loc_0B673
-    mov word ptr ds:[bx + 34h], 10h
-    mov word ptr ds:[bx + 18h], 23h
+    mov word ptr ds:[bx + REC_SAVED_Y], 10h
+    mov word ptr ds:[bx + REC_TYPE], 23h
     cmp word ptr ds:[LevelIndex], 1
     je loc_0B65E
     cmp word ptr ds:[LevelIndex], 2
@@ -3950,14 +3989,14 @@ loc_0B62A:
     je loc_0B65E
     jmp near ptr FinishRecordUpdate
 loc_0B656:
-    mov word ptr ds:[bx + 20h], 1
+    mov word ptr ds:[bx + REC_HIT_POINTS], 1
     jmp near ptr FinishRecordUpdate
 loc_0B65E:
-    mov word ptr ds:[bx + 20h], 0FFFFh
+    mov word ptr ds:[bx + REC_HIT_POINTS], 0FFFFh
     mov ax, ds:[RecordTickCounter]
     inc word ptr ds:[RecordTickCounter]
     and ax, 3
-    mov ds:[bx + 1Ch], ax
+    mov ds:[bx + REC_FIELD_1C], ax
     jmp near ptr FinishRecordUpdate
 loc_0B673:
     mov si, ds:[FallerColumnCursor]
@@ -3967,10 +4006,12 @@ loc_0B673:
     mov si, ds:[FallerColumnCursor]
 loc_0B687:
     lodsw
-    mov ds:[bx + 32h], ax
+    mov ds:[bx + REC_SAVED_X], ax
     mov ds:[FallerColumnCursor], si
     ret
-TypeHandler23:
+; Steers to its column top, then falls by the FallerVariants[REC_FIELD_1C] profile; on
+; level 2 aims at the player as type 2Ch.
+Type23ColumnFaller:
     mov ax, ss:[bp + REC_X]
     cmp ax, ss:[bp + REC_SAVED_X]
     je loc_0B69B
@@ -4019,18 +4060,20 @@ loc_0B6E9:
     jmp near ptr FinishRecordUpdate
 loc_0B701:
     mov bx, bp
-    call loc_074E2
+    call AimAtPlayer
     mov word ptr ss:[bp + REC_TYPE], 2Ch
     jmp near ptr FinishRecordUpdate
-TypeHandler2C:
+; 2 px steps along REC_DELTA; no scroll and no X exit test.
+Type2CAimedDrifter:
     mov ax, ds:[SlowCount4]
     add ax, 0B9h
     mov ss:[bp + REC_SPRITE], ax
     mov word ptr ds:[ChaseStepPixels], 2
-    call loc_05E42
+    call StepAlongDelta
     mov word ptr ds:[ChaseStepPixels], 3
     jmp near ptr FinishRecordUpdate
-loc_0B729:
+; Steers BP toward REC_SAVED_X/Y; NZ on arrival.
+SteerToSaved:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
     mov word ptr ds:[SteerTargetX], ax
     mov ax, word ptr ss:[bp + REC_SAVED_Y]
@@ -4038,13 +4081,15 @@ loc_0B729:
     call SteerTowardTarget
     cmp word ptr ds:[SteerArrived], 0
     ret
-TypeHandler20:
+; Hops between formation slots; when few remain, moves above the player and drops 4 px
+; per frame.
+Type20SlotHopperDropper:
     cmp word ptr ss:[bp + REC_FIELD_1C], -1
     je loc_0B791
     mov bx, word ptr ss:[bp + REC_FIELD_1C]
     shl bx, 1
-    jmp word ptr cs:[bx + TypeHandler20Cases]
-TypeHandler20Cases label word
+    jmp word ptr cs:[bx + Type20Cases]
+Type20Cases label word
     dw offset loc_0B754, offset loc_0B770, offset loc_0B77B
 loc_0B754:
     mov ax, word ptr ss:[bp + REC_X]
@@ -4117,7 +4162,7 @@ loc_0B7F3:
     call NextRandomWord
     and bx, 1
     jne loc_0B80E
-    call loc_07476
+    call SpawnAimedShot
 loc_0B80E:
     cmp word ptr ds:[EncounterLiveCount], 3
     jbe loc_0B7C7
@@ -4128,7 +4173,7 @@ loc_0B80E:
     jmp near ptr FinishRecordUpdate
 loc_0B826:
     mov si, word ptr ds:[FormationSlotCursor]
-    cmp si, 0A894h
+    cmp si, offset FormationSlotsEnd
     jb loc_0B83A
     mov word ptr ds:[FormationSlotCursor], offset FormationSlots
     mov si, word ptr ds:[FormationSlotCursor]
@@ -4149,10 +4194,12 @@ loc_0B859:
     jmp near ptr FinishRecordUpdate
 loc_0B85C:
     mov word ptr ds:[SteerSpeed], 2
-    call loc_0B729
+    call SteerToSaved
     mov word ptr ss:[bp + REC_DIRECTION], 4
     jmp near ptr FinishRecordUpdate
-TypeHandler1D:
+; Enters its slot, then bobs, sinks and shoots; chases the player when few remain or
+; once low on screen.
+Type1DSlotBobThenChase:
     cmp word ptr ds:[EncounterLiveCount], 2
     ja loc_0B877
     jmp near ptr loc_0B8F8
@@ -4167,7 +4214,7 @@ loc_0B877:
     and word ptr ss:[bp + REC_X], -2
     and word ptr ss:[bp + REC_SAVED_Y], -2
     and word ptr ss:[bp + REC_Y], -2
-    call loc_0B729
+    call SteerToSaved
     jne loc_0B8A8
     jmp near ptr FinishRecordUpdate
 loc_0B8A8:
@@ -4176,15 +4223,15 @@ loc_0B8A8:
 loc_0B8B0:
     cmp word ptr ds:[RecordTickCounter], 2EFh
     jne loc_0B8BB
-    call loc_07476
+    call SpawnAimedShot
 loc_0B8BB:
     cmp word ptr ds:[RecordTickCounter], 159h
     jne loc_0B8C6
-    call loc_07476
+    call SpawnAimedShot
 loc_0B8C6:
     cmp word ptr ds:[RecordTickCounter], 79h
     jne loc_0B8D0
-    call loc_07476
+    call SpawnAimedShot
 loc_0B8D0:
     mov ax, ds:[SwayDirX]
     neg ax
@@ -4202,18 +4249,20 @@ loc_0B8F2:
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr FinishRecordUpdate
 loc_0B8F8:
-    mov bx, 237Ch
-    call loc_05E1B
-    call loc_05E42
+    mov bx, offset PrimaryRecord
+    call SetDeltaToward
+    call StepAlongDelta
     mov word ptr ss:[bp + REC_SPRITE], 76h
     jmp near ptr FinishRecordUpdate
-TypeHandler1E:
+; Steers to REC_SAVED; on arrival fires an aimed shot and toggles REC_SAVED_X between 0
+; and C0h.
+Type1EShuttleShooter:
     mov word ptr ds:[SteerSpeed], 2
-    call loc_0B729
+    call SteerToSaved
     jne loc_0B917
     jmp near ptr FinishRecordUpdate
 loc_0B917:
-    call loc_07476
+    call SpawnAimedShot
     cmp word ptr ss:[bp + REC_SAVED_X], 0
     je loc_0B928
     mov word ptr ss:[bp + REC_SAVED_X], 0
@@ -4221,13 +4270,15 @@ loc_0B917:
 loc_0B928:
     mov word ptr ss:[bp + REC_SAVED_X], 0C0h
     jmp near ptr FinishRecordUpdate
-TypeHandler16:
+; Types 16h/17h: steers to REC_SAVED, waits REC_FIELD_1C, moves to Y 20h (16h) or 40h
+; (17h); becomes type 18h at EncounterTicks 31h.
+Type16SweepLeadIn:
     mov word ptr ds:[SteerSpeed], 1
     cmp word ptr ds:[LevelIndex], 0
     jne loc_0B943
     mov word ptr ds:[SteerSpeed], 2
 loc_0B943:
-    call loc_0B729
+    call SteerToSaved
     pushf
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 10Dh
@@ -4256,12 +4307,14 @@ loc_0B97A:
 loc_0B984:
     mov word ptr ss:[bp + REC_TYPE], 18h
     jmp near ptr FinishRecordUpdate
-TypeHandler18:
+; Walks the REC_FIELD_36 waypoints at speed 3 (FFFFh, address = jump); random downward
+; shots and a periodic aimed shot.
+Type18SweepPathLooper:
     mov ax, ds:[RecordTickCounter]
     and ax, 3FFh
     cmp ax, 0Ch
     jne loc_0B99E
-    call loc_07476
+    call SpawnAimedShot
     inc word ptr ds:[RecordTickCounter]
 loc_0B99E:
     mov si, ss:[bp + REC_FIELD_36]
@@ -4285,22 +4338,24 @@ loc_0B9CD:
     call NextRandomWord
     and bx, 7
     cmp bx, 2
-    jne TypeHandler18
+    jne Type18SweepPathLooper
     call SpawnThrottledChild
     cmp bx, -1
-    je TypeHandler18
+    je Type18SweepPathLooper
     mov word ptr ds:[bx + REC_DIRECTION], 4
-    jmp short TypeHandler18
+    jmp short Type18SweepPathLooper
 loc_0B9EA:
     lodsw
     mov ss:[bp + REC_FIELD_36], ax
-    jmp short TypeHandler18
-TypeHandler14:
+    jmp short Type18SweepPathLooper
+; Sways in its formation slot after the leader script ends; dives at the player when few
+; remain or on a tick, wraps below D0h and returns to the slot.
+Type14FormationSwayDiver:
     cmp word ptr ds:[LeaderScriptCursor], offset LeaderScript13End
     jne loc_0BA67
     cmp word ptr ds:[RecordTickCounter], 2EFh
     jne loc_0BA07
-    call loc_07476
+    call SpawnAimedShot
     inc word ptr ds:[RecordTickCounter]
 loc_0BA07:
     mov ax, ds:[SwayDirX]
@@ -4334,9 +4389,9 @@ loc_0BA4E:
 loc_0BA56:
     inc word ptr ds:[RecordTickCounter]
 loc_0BA5A:
-    mov bx, 237Ch
-    call loc_05E1B
-    call loc_05E42
+    mov bx, offset PrimaryRecord
+    call SetDeltaToward
+    call StepAlongDelta
     add word ptr ss:[bp + REC_Y], 2
 loc_0BA67:
     mov ax, ds:[SlowCount4]
@@ -4359,12 +4414,12 @@ loc_0BA99:
     mov ax, ss:[bp + REC_Y]
     cmp ax, ss:[bp + REC_SAVED_Y]
     jna loc_0BA73
-    call loc_05E42
+    call StepAlongDelta
     cmp word ptr ds:[EncounterLiveCount], 6
     jae loc_0BAB5
     cmp word ptr ds:[FrameCount64], 3Fh
     jne loc_0BAB5
-    call loc_07476
+    call SpawnAimedShot
 loc_0BAB5:
     cmp word ptr ss:[bp + REC_Y], 0D0h
     ja loc_0BABF
@@ -4372,39 +4427,45 @@ loc_0BAB5:
 loc_0BABF:
     mov word ptr ss:[bp + REC_Y], 10h
     jmp near ptr FinishRecordUpdate
-TypeHandler1B:
+; Type 19h patrol without firing (sprite 27h based).
+Type1BWallPatrolB:
     mov ax, ds:[SlowCount6]
     shr ax, 1
     add ax, 27h
     mov ss:[bp + REC_SPRITE], ax
     jmp short loc_0BADF
-TypeHandler1A:
+; Type 19h patrol without firing (sprite 24h based).
+Type1AWallPatrolA:
     mov ax, ds:[SlowCount6]
     shr ax, 1
     add ax, 24h
     mov ss:[bp + REC_SPRITE], ax
 loc_0BADF:
-    jmp short loc_0BB03
-loc_0BAE1:
+    jmp short HorizontalTerrainPatrol
+; SpawnThrottledChild with REC_DIRECTION temporarily down.
+SpawnShotDown:
     push word ptr ss:[bp + REC_DIRECTION]
     mov word ptr ss:[bp + REC_DIRECTION], 4
     call SpawnThrottledChild
     pop word ptr ss:[bp + REC_DIRECTION]
     ret
-TypeHandler19:
+; Patrols left and right 1 px per frame, reversing at X 0/C0h or a wall; fires downward
+; every 64 frames.
+Type19WallPatrolShooter:
     mov ax, ds:[SlowCount5]
     add ax, 36h
     mov ss:[bp + REC_SPRITE], ax
     cmp word ptr ds:[FrameCount64], 3Fh
-    jne loc_0BB03
-    call loc_0BAE1
-loc_0BB03:
+    jne HorizontalTerrainPatrol
+    call SpawnShotDown
+; Walks BP 1 px left or right, reversing at X 0/C0h or a blocked step; ends in the scroll tail.
+HorizontalTerrainPatrol:
     cmp word ptr ss:[bp + REC_DIRECTION], 6
     jne loc_0BB24
     mov word ptr ss:[bp + REC_DIRECTION], 6
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0BB1C
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0BB1C
     jmp near ptr ScrollRecordThenFinish
 loc_0BB1C:
@@ -4414,16 +4475,18 @@ loc_0BB24:
     mov word ptr ss:[bp + REC_DIRECTION], 2
     cmp word ptr ss:[bp + REC_X], 0C0h
     je loc_0BB38
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0BB38
     jmp near ptr ScrollRecordThenFinish
 loc_0BB38:
     mov word ptr ss:[bp + REC_DIRECTION], 6
     jmp near ptr ScrollRecordThenFinish
-TypeHandler8D:
+; Types 8Dh/8Eh: as 8Bh with another sprite set.
+Type8DClimbWalkerB:
     mov word ptr ds:[WalkerFacingStep], 0FFFFh
     jmp short loc_0BB4E
-TypeHandler8E:
+; Type 8Dh facing the other way.
+Type8EClimbWalkerBFlipped:
     mov word ptr ds:[WalkerFacingStep], 1
 loc_0BB4E:
     call loc_0BBED
@@ -4445,10 +4508,12 @@ loc_0BB60:
 loc_0BB7C:
     add ax, cx
     jmp short loc_0BBB2
-TypeHandler8C:
+; Type 8Bh facing the other way.
+Type8CClimbWalkerAFlipped:
     mov word ptr ds:[WalkerFacingStep], 0FFFFh
     jmp short loc_0BB8E
-TypeHandler8B:
+; Types 8Bh/8Ch: climbs toward the player's Y along a wall, firing aimed shots.
+Type8BClimbWalkerA:
     mov word ptr ds:[WalkerFacingStep], 1
 loc_0BB8E:
     call loc_0BBED
@@ -4472,7 +4537,7 @@ loc_0BBB2:
     cmp word ptr ds:[FrameCount128], 57h
     jne ScrollRecordThenFinish
 loc_0BBCA:
-    call loc_07476
+    call SpawnAimedShot
     cmp bx, -1
     je ScrollRecordThenFinish
     mov word ptr ds:[bx + REC_SPRITE], 3
@@ -4487,7 +4552,7 @@ loc_0BBED:
     mov word ptr ds:[0A430h], 0
     mov word ptr ss:[bp + REC_DIRECTION], 0
     push word ptr ss:[bp + REC_Y]
-    mov ax, ds:[StackTop]
+    mov ax, ds:[ScrollDeltaY]
     add ss:[bp + REC_Y], ax
     sub word ptr ss:[bp + REC_Y], 10h
     call ComputeRecordGridOffset
@@ -4500,7 +4565,7 @@ loc_0BBED:
     add bx, ds:[WalkerFacingStep]
     call ReadIndexedByteAttribute
     je loc_0BBE1
-    call loc_0AFD8
+    call TryTerrainStep
     cmp word ptr ds:[0A430h], 1
     ret
 loc_0BC2B:
@@ -4509,7 +4574,7 @@ loc_0BC2B:
     sub bx, 0Dh
     call ReadIndexedByteAttribute
     je loc_0BBE1
-    call loc_0AFD8
+    call TryTerrainStep
     cmp word ptr ds:[0A430h], 1
     ret
 ; BP = record: move it with the playfield scroll (REC_Y += ScrollDeltaY), then
@@ -4605,7 +4670,7 @@ loc_0BCFC:
 loc_0BCFF:
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BD09
-    call loc_0BFC7
+    call DestroyRecord
 loc_0BD09:
     call loc_09E69
     ret
@@ -4711,26 +4776,26 @@ loc_0BDD0:
     mov ax, word ptr ds:[0A436h]
     mov di, word ptr ds:[0A438h]
 loc_0BDE3:
-    cmp word ptr ds:[bx], 0
+    cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0BE35
-    cmp word ptr ds:[bx + 0Ah], 1
+    cmp word ptr ds:[bx + REC_DRAW_PASS], 1
     je loc_0BE35
-    cmp word ptr ds:[bx + 014h], 1
+    cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
     jne loc_0BE35
-    cmp word ptr ds:[bx + 016h], 4
+    cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
     jne loc_0BE35
-    cmp word ptr ds:[bx + 018h], 082h
+    cmp word ptr ds:[bx + REC_TYPE], 082h
     jb loc_0BE35
-    cmp word ptr ds:[bx + 018h], 094h
+    cmp word ptr ds:[bx + REC_TYPE], 094h
     ja loc_0BE35
-    mov si, word ptr ds:[bx + 2]
+    mov si, word ptr ds:[bx + REC_Y]
     add si, 010h
     cmp di, si
     jge loc_0BE35
     sub si, 020h
     cmp di, si
     jle loc_0BE35
-    mov si, word ptr ds:[bx + 4]
+    mov si, word ptr ds:[bx + REC_X]
     add si, 010h
     cmp ax, si
     jge loc_0BE35
@@ -4738,7 +4803,7 @@ loc_0BDE3:
     cmp ax, si
     jle loc_0BE35
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
-    cmp si, word ptr ds:[bx + 0Eh]
+    cmp si, word ptr ds:[bx + REC_SAVE_BUFFER]
     je loc_0BE35
     jmp near ptr loc_05059
 loc_0BE35:
@@ -4747,7 +4812,9 @@ loc_0BE35:
 loc_0BE3A:
     clc
     ret
-TypeHandler01:
+; Explosion: REC_ANIM advances every 2nd frame; small ones end at 9 (types 24h/25h leave
+; a type 26h wreck), large ones at 0Ch. Size class 0 only scrolls.
+Type01ExplosionAnimation:
     cmp word ptr ds:[CountGate2324], 1
     je loc_0BE46
     jmp near ptr ScrollRecordThenFinish
@@ -4833,7 +4900,7 @@ loc_0BF07:
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0BF1B:
     mov word ptr ds:[bx], 0
     cmp word ptr ds:[bx + 8], 033h
@@ -4841,23 +4908,23 @@ loc_0BF1B:
 loc_0BF25:
     dec word ptr ss:[bp + REC_HIT_POINTS]
     jne loc_0BF2D
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0BF2D:
     dec word ptr ss:[bp + REC_HIT_POINTS]
     jne loc_0BF35
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0BF35:
     cmp word ptr ds:[DifficultySetting], 1
     je loc_0BF4D
     cmp word ptr ds:[DifficultySetting], 0
     jne loc_0BF52
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    je loc_0BFC7
+    je DestroyRecord
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    je loc_0BFC7
+    je DestroyRecord
 loc_0BF4D:
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    je loc_0BFC7
+    je DestroyRecord
 loc_0BF52:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
     cmp word ptr ds:[SegBossActive], 1
@@ -4887,20 +4954,21 @@ loc_0BF97:
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF25
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
-    jmp short loc_0BFC7
+    jmp short DestroyRecord
 loc_0BFA8:
     cmp word ptr ds:[SegBossActive], 1
     jne loc_0BFB2
     jmp near ptr loc_0BF25
 loc_0BFB2:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
-    jmp short loc_0BFC7
+    jmp short DestroyRecord
 loc_0BFB9:
     cmp word ptr ds:[SegBossActive], 1
     je loc_0BF92
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
-    jmp short loc_0BFC7
-loc_0BFC7:
+    jmp short DestroyRecord
+; Starts BP's explosion: REC_PREV_TYPE = type, type 1, sfx 19h, score and group drop.
+DestroyRecord:
     cmp word ptr ss:[bp + REC_TYPE], 021h
     jne loc_0BFD5
     cmp word ptr ds:[LevelIndex], 4
@@ -5101,7 +5169,7 @@ loc_0C1A0:
     mov word ptr ds:[bx + 8], 3
     ret
 ; BP = record: turn it toward the primary (REC_DIRECTION from AimQuadrantBits;
-; unchanged when aligned, then return) and continue in loc_0AFD8.
+; unchanged when aligned, then return) and continue in TryTerrainStep.
 loc_0C1B6:
     mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
@@ -5144,7 +5212,7 @@ loc_0C20B:
     ret
 loc_0C217:
     mov word ptr ss:[bp + REC_DIRECTION], ax
-    jmp near ptr loc_0AFD8
+    jmp near ptr TryTerrainStep
 
 ; BP = parent: as SpawnThrottledChild without the throttle, the child placed at
 ; parent +0Ch,+0Ch instead of +4,+4.
@@ -6836,7 +6904,7 @@ loc_0D107Cases label word
     dw offset loc_0D14D, offset loc_0D14D, offset loc_0D14D, offset loc_0D14D
     dw offset loc_0D13A, offset loc_0D159, offset CountXReturn, offset CountXReturn
 loc_0D13A:
-    call loc_081F4
+    call SpawnEnemyHere
     mov word ptr ds:[bx + 4], 0C0h
     mov word ptr ds:[bx + 2], 0C8h
     mov word ptr ds:[bx + 18h], 51h
@@ -6950,7 +7018,9 @@ loc_0D269:
     mov word ptr ss:[bp + REC_TYPE], 050h
     mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     ret
-TypeHandler50:
+; Steers to REC_SAVED; on arrival becomes KIND_POD (sfx 0Eh) and returns without the
+; scroll tail.
+Type50SteerHomeThenBecomePod:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
     mov word ptr ds:[SteerTargetX], ax
     mov ax, word ptr ss:[bp + REC_SAVED_Y]
@@ -7863,45 +7933,46 @@ RunTypeHandler:
     jmp word ptr cs:[bx + TypeHandlers]
 ; Behaviour handler per REC_TYPE (0..94h), entered with BP = record.
 TypeHandlers label word
-    dw offset ScrollRecordThenFinish, offset TypeHandler01, offset TypeHandler02, offset TypeHandler02
-    dw offset TypeHandler04, offset TypeHandler05, offset TypeHandler06, offset TypeHandler07
-    dw offset TypeHandler08, offset TypeHandler09, offset TypeHandler0A, offset TypeHandler0B
-    dw offset TypeHandler0C, offset ScrollRecordThenFinish, offset ScrollRecordThenFinish, offset TypeHandler0F
-    dw offset TypeHandler10, offset TypeHandler11, offset TypeHandler12, offset TypeHandler13
-    dw offset TypeHandler14, offset TypeHandler13, offset TypeHandler16, offset TypeHandler16
-    dw offset TypeHandler18, offset TypeHandler19, offset TypeHandler1A, offset TypeHandler1B
-    dw offset TypeHandler13, offset TypeHandler1D, offset TypeHandler1E, offset TypeHandler13
-    dw offset TypeHandler20, offset TypeHandler21, offset TypeHandler22, offset TypeHandler23
-    dw offset TypeHandler24, offset TypeHandler25, offset TypeHandler26, offset TypeHandler27
-    dw offset TypeHandler28, offset TypeHandler29, offset TypeHandler28, offset TypeHandler2B
-    dw offset TypeHandler2C, offset TypeHandler2D, offset TypeHandler2E, offset TypeHandler2F
-    dw offset TypeHandler30, offset TypeHandler31, offset TypeHandler32, offset TypeHandler33
-    dw offset TypeHandler34, offset TypeHandler22, offset TypeHandler36, offset TypeHandler37
-    dw offset TypeHandler38, offset TypeHandler39, offset TypeHandler3A, offset TypeHandler3B
-    dw offset TypeHandler3C, offset TypeHandler3D, offset TypeHandler3E, offset TypeHandler3F
-    dw offset TypeHandler40, offset TypeHandler41, offset TypeHandler42, offset TypeHandler43
-    dw offset TypeHandler44, offset TypeHandler45, offset TypeHandler46, offset TypeHandler47
-    dw offset TypeHandler48, offset TypeHandler49, offset TypeHandler4A, offset TypeHandler4B
-    dw offset TypeHandler4C, offset TypeHandler4D, offset TypeHandler4E, offset TypeHandler4F
-    dw offset TypeHandler50, offset TypeHandler51, offset TypeHandler52, offset TypeHandler53
-    dw offset TypeHandler54, offset TypeHandler55, offset TypeHandler56, offset TypeHandler57
-    dw offset TypeHandler57, offset TypeHandler59, offset TypeHandler5A, offset TypeHandler5B
-    dw offset TypeHandler5C, offset TypeHandler5D, offset TypeHandler5E, offset TypeHandler5F
-    dw offset TypeHandler60, offset TypeHandler61, offset TypeHandler62, offset TypeHandler63
-    dw offset TypeHandler64, offset TypeHandler65, offset TypeHandler66, offset TypeHandler67
-    dw offset TypeHandler68, offset TypeHandler69, offset TypeHandler6A, offset TypeHandler6B
-    dw offset TypeHandler6C, offset TypeHandler6D, offset TypeHandler6E, offset TypeHandler6F
-    dw offset TypeHandler70, offset TypeHandler71, offset TypeHandler72, offset TypeHandler73
-    dw offset TypeHandler74, offset TypeHandler75, offset TypeHandler76, offset TypeHandler77
-    dw offset TypeHandler78, offset TypeHandler79, offset TypeHandler7A, offset TypeHandler7B
-    dw offset TypeHandler7C, offset TypeHandler13, offset TypeHandler13, offset TypeHandler7F
-    dw offset TypeHandler80, offset TypeHandler81, offset ScrollRecordThenFinish, offset TypeHandler83
-    dw offset TypeHandler84, offset TypeHandler85, offset TypeHandler86, offset TypeHandler87
-    dw offset TypeHandler88, offset TypeHandler89, offset TypeHandler8A, offset TypeHandler8B
-    dw offset TypeHandler8C, offset TypeHandler8D, offset TypeHandler8E, offset TypeHandler8F
-    dw offset TypeHandler90, offset TypeHandler91, offset TypeHandler92, offset TypeHandler93
+    dw offset ScrollRecordThenFinish, offset Type01ExplosionAnimation, offset Type02TimedStraightShot, offset Type02TimedStraightShot
+    dw offset Type04StraightShot, offset Type05SideShotUpLeft, offset Type06SideShotUpRight, offset Type07RisingShot3
+    dw offset Type08RisingShot16, offset Type09ExternallyMovedShot, offset Type0AHomingMissile, offset Type0BAimedEnemyShot
+    dw offset Type0CTimedTurnUpShot, offset ScrollRecordThenFinish, offset ScrollRecordThenFinish, offset Type0FTimedShot2
+    dw offset Type10StartPathFollowerA, offset Type11StartPathFollowerB, offset Type12WaypointPathFollower, offset Type13FormationLeader
+    dw offset Type14FormationSwayDiver, offset Type13FormationLeader, offset Type16SweepLeadIn, offset Type16SweepLeadIn
+    dw offset Type18SweepPathLooper, offset Type19WallPatrolShooter, offset Type1AWallPatrolA, offset Type1BWallPatrolB
+    dw offset Type13FormationLeader, offset Type1DSlotBobThenChase, offset Type1EShuttleShooter, offset Type13FormationLeader
+    dw offset Type20SlotHopperDropper, offset Type21EncounterDirector, offset Type22DescendThenBurst, offset Type23ColumnFaller
+    dw offset Type24TurretLeftFire32, offset Type25TurretRightFire32, offset Type26WallProbeExtender, offset Type27SlowDescender
+    dw offset Type28EnemyHatch, offset Type29EmergeThenDart, offset Type28EnemyHatch, offset Type2BAimedDart
+    dw offset Type2CAimedDrifter, offset Type2DHoverFireThenPlunge, offset Type2EPlungeAtPlayerColumn, offset Type2FScrollingShuttle
+    dw offset Type30AnimatedShooter, offset Type31FallFast3, offset Type32DescendThenBounce, offset Type33TerrainBouncer
+    dw offset Type34SideFiringTurret, offset Type22DescendThenBurst, offset Type36SwayFallThenBurst, offset Type37VerticalBouncerShooter
+    dw offset Type38WallBounceDescend, offset Type39DashRightAtRow80, offset Type3AHomeOnPlayerBelow80, offset Type3BFallRandomFlicker
+    dw offset Type3CDescendThenBounceAlt, offset Type3DAnimatedTerrainBouncer, offset Type3EDropThenAimedDash, offset Type3FStraightLineToAimPoint
+    dw offset Type40JitterFallShooter, offset Type41FollowPathType41, offset Type42DescendSway, offset Type43FollowPathType43
+    dw offset Type44FollowPathType44, offset Type45FollowPathType45, offset Type46HoverShootThenDive, offset Type47PatrolDropShooter
+    dw offset Type48CreeperAimedFire, offset Type49RadialBurstFaller, offset Type4AFollowPathType4A, offset Type4BDescendThenBounceUpRight
+    dw offset Type4CSinkThenRise, offset Type4DSinkRiseThenDash, offset Type4EAnimDescendThenBounce, offset Type4FFallFast4Flicker
+    dw offset Type50SteerHomeThenBecomePod, offset Type51FollowType51Path, offset Type52ScrollOnly, offset Type53AnimateFromField36
+    dw offset Type54ScrollUntilY_B0ThenType56, offset Type55DropFrom_B0, offset Type56CrawlDestroyOnBlock, offset Type57ScrollToY80ThenCrawl
+    dw offset Type57ScrollToY80ThenCrawl, offset Type59ScrollThenAnimateThenType5A, offset Type5ACrawlMirrorDiagonal, offset Type5BScrollPastY_B0ThenType5C
+    dw offset Type5CRiseFast4, offset Type5DDropFast8, offset Type5ECrawlTurnDownToLeft, offset Type5FCrawlBounceDiagonal
+    dw offset Type60FlyAlongAimLine, offset Type61InvaderSteerToSlot, offset Type62InvaderMarch, offset Type63ScriptedSlideThenDrop
+    dw offset Type64DropSlow, offset Type65InvaderDiveFiring, offset Type66FollowPathType66, offset Type67FollowPathType67
+    dw offset Type68JitterDescendFiring, offset Type69JitterDropToY18, offset Type6AScrollUntilY50ThenType56, offset Type6BDescendToX50
+    dw offset Type6CDescendToX60Firing, offset Type6DDescendToX70, offset Type6ECrawlStaircase, offset Type6FWaitThenType70
+    dw offset Type70CruiseFiring, offset Type71FireThenDiveBelow60, offset Type72DescendFiringAimed, offset Type73WaitThenRunRight
+    dw offset Type74WaitThenRunLeft, offset Type75DescendSpreadShot, offset Type76SegBossPart0, offset Type77SegBossPart1
+    dw offset Type78SegBossGunPart, offset Type79SegBossPart3, offset Type7AAimLineFlyer, offset Type7BDropThenAim
+    dw offset Type7CAimLineFlyerAlt, offset Type13FormationLeader, offset Type13FormationLeader, offset Type7FMarchEnterSteer
+    dw offset Type80MarchFormationMember, offset Type81SweeperEnterSteer, offset ScrollRecordThenFinish, offset Type83PatrolShootDown64
+    dw offset Type84LurkUntilAligned, offset Type85ChargeUntilBlocked, offset Type86LaunchAimedEnemy, offset Type87AnimFireBurstA
+    dw offset Type88WaitThenFireBurst, offset Type89PatrolShootDown32, offset Type8APatrolShootDown32Alt, offset Type8BClimbWalkerA
+    dw offset Type8CClimbWalkerAFlipped, offset Type8DClimbWalkerB, offset Type8EClimbWalkerBFlipped, offset Type8FAnimFireBurstB
+    dw offset Type90TurretVolley, offset Type91TurretVolleyAlt, offset Type92FireWhenPlayerLevel, offset Type93SweepDescendClimb
     dw offset ScrollRecordThenFinish
-TypeHandler86:
+; Animates, then launches an aimed type 60h enemy.
+Type86LaunchAimedEnemy:
     mov bx, ds:[FrameCount64]
     shr bx, 1
     shr bx, 1
@@ -7924,16 +7995,17 @@ loc_0F117:
     je loc_0F121
     jmp near ptr ScrollRecordThenFinish
 loc_0F121:
-    call loc_081F4
+    call SpawnEnemyHere
     cmp bx, -1
     jne loc_0F12C
     jmp near ptr ScrollRecordThenFinish
 loc_0F12C:
-    call loc_074E2
+    call AimAtPlayer
     mov word ptr ds:[bx + 8], 0CBh
     mov word ptr ds:[bx + 18h], 60h
     jmp near ptr ScrollRecordThenFinish
-TypeHandler88:
+; Scrolls to Y 80h, then fires a burst in animation phase 2.
+Type88WaitThenFireBurst:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F146
     jmp near ptr ScrollRecordThenFinish
@@ -7958,31 +8030,35 @@ loc_0F160:
 loc_0F16F:
     call SpawnThrottledChild
     jmp near ptr ScrollRecordThenFinish
-TypeHandler6A:
+; Scrolls until Y is exactly 50h, then continues as type 56h.
+Type6AScrollUntilY50ThenType56:
     cmp word ptr ss:[bp + REC_Y], 50h
     je loc_0F17E
     jmp near ptr ScrollRecordThenFinish
 loc_0F17E:
     mov word ptr ss:[bp + REC_TYPE], 56h
-    jmp short TypeHandler56
-TypeHandler54:
+    jmp short Type56CrawlDestroyOnBlock
+; Scrolls until Y is exactly B0h, then continues as type 56h.
+Type54ScrollUntilY_B0ThenType56:
     cmp word ptr ss:[bp + REC_Y], 0B0h
     je loc_0F18F
     jmp near ptr ScrollRecordThenFinish
 loc_0F18F:
     mov word ptr ss:[bp + REC_TYPE], 56h
-TypeHandler56:
-    call loc_0AFD8
+; Three terrain steps per frame; destroyed when one is blocked.
+Type56CrawlDestroyOnBlock:
+    call TryTerrainStep
     jne loc_0F1A6
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0F1A6
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0F1A6
     jmp near ptr ScrollRecordThenFinish
 loc_0F1A6:
-    call loc_0BFC7
+    call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
-TypeHandler87:
+; Fires a burst while its animation is in phase 3.
+Type87AnimFireBurstA:
     mov bx, ds:[FrameCount64]
     shr bx, 1
     shr bx, 1
@@ -7999,7 +8075,8 @@ TypeHandler87:
 loc_0F1D0:
     add word ptr ss:[bp + REC_SPRITE], 3
     jmp near ptr loc_0878C
-TypeHandler55:
+; Scrolls to Y B0h, then drops 4 px per frame without scrolling.
+Type55DropFrom_B0:
     cmp word ptr ss:[bp + REC_DIRECTION], 4
     je loc_0F1F1
     mov word ptr ss:[bp + REC_SPRITE], 73h
@@ -8014,7 +8091,9 @@ loc_0F1F1:
     mov ss:[bp + REC_SPRITE], ax
     add word ptr ss:[bp + REC_Y], 4
     jmp near ptr FinishRecordUpdate
-TypeHandler57:
+; Types 57h/58h: scrolls to Y 80h, then crawls two steps per frame and is destroyed when
+; blocked.
+Type57ScrollToY80ThenCrawl:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F20B
     jmp near ptr ScrollRecordThenFinish
@@ -8022,17 +8101,18 @@ loc_0F20B:
     jne loc_0F210
     call loc_0F221
 loc_0F210:
-    call loc_0AFD8
-    call loc_0AFD8
+    call TryTerrainStep
+    call TryTerrainStep
     jne loc_0F21B
     jmp near ptr ScrollRecordThenFinish
 loc_0F21B:
-    jmp near ptr loc_0BFC7
-    jmp near ptr loc_0BB03
+    jmp near ptr DestroyRecord
+    jmp near ptr HorizontalTerrainPatrol
 loc_0F221:
     inc word ptr ss:[bp + REC_SPRITE]
     ret
-TypeHandler59:
+; Scrolls to Y 80h, animates, and becomes type 5Ah below Y C0h.
+Type59ScrollThenAnimateThenType5A:
     mov word ptr ss:[bp + REC_SPRITE], 148h
     cmp word ptr ds:[LevelIndex], 0
     je loc_0F249
@@ -8054,7 +8134,9 @@ loc_0F253:
     jmp near ptr ScrollRecordThenFinish
 loc_0F263:
     mov word ptr ss:[bp + REC_TYPE], 5Ah
-TypeHandler5A:
+; Crawls three steps per frame, mirroring its diagonal at the edges or a wall; destroyed
+; when still blocked.
+Type5ACrawlMirrorDiagonal:
     mov word ptr ss:[bp + REC_SPRITE], 148h
     cmp word ptr ds:[LevelIndex], 0
     je loc_0F28C
@@ -8067,11 +8149,11 @@ TypeHandler5A:
 loc_0F28C:
     mov ax, ds:[FrameCount4]
     add ss:[bp + REC_SPRITE], ax
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0F2B1
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0F2B1
-    call loc_0AFD8
+    call TryTerrainStep
     jne loc_0F2B1
     cmp word ptr ss:[bp + REC_X], 0
     jng loc_0F2B1
@@ -8080,32 +8162,37 @@ loc_0F28C:
     jmp near ptr ScrollRecordThenFinish
 loc_0F2B1:
     xor word ptr ss:[bp + REC_DIRECTION], 6
-    call loc_0AFD8
+    call TryTerrainStep
     je loc_0F2BD
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0F2BD:
     jmp near ptr ScrollRecordThenFinish
-TypeHandler5B:
+; Scrolls past Y B0h, then continues as type 5Ch.
+Type5BScrollPastY_B0ThenType5C:
     cmp word ptr ss:[bp + REC_Y], 0B0h
     jg loc_0F2CA
     jmp near ptr ScrollRecordThenFinish
 loc_0F2CA:
     mov word ptr ss:[bp + REC_TYPE], 5Ch
-TypeHandler5C:
+; Rises 4 px per frame.
+Type5CRiseFast4:
     mov word ptr ss:[bp + REC_SPRITE], 73h
     sub word ptr ss:[bp + REC_Y], 4
     jmp near ptr ScrollRecordThenFinish
-TypeHandler5D:
+; Drops 8 px per frame.
+Type5DDropFast8:
     mov ax, ds:[SlowCount8]
     add ax, 77h
     mov ss:[bp + REC_SPRITE], ax
     add word ptr ss:[bp + REC_Y], 8
     jmp near ptr ScrollRecordThenFinish
-TypeHandler5E:
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
+; Crawls four steps per frame, turning down, then down-left, then left; destroyed when
+; blocked after that.
+Type5ECrawlTurnDownToLeft:
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
     jne loc_0F2FC
     jmp near ptr ScrollRecordThenFinish
 loc_0F2FC:
@@ -8113,21 +8200,22 @@ loc_0F2FC:
     je loc_0F30B
     cmp word ptr ss:[bp + REC_DIRECTION], 5
     je loc_0F313
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0F30B:
     mov word ptr ss:[bp + REC_DIRECTION], 5
     jmp near ptr ScrollRecordThenFinish
 loc_0F313:
     mov word ptr ss:[bp + REC_DIRECTION], 6
     jmp near ptr ScrollRecordThenFinish
-TypeHandler6E:
+; Crawls two steps per frame, alternating down and right when blocked.
+Type6ECrawlStaircase:
     mov bx, ds:[SlowCount4]
     shl bx, 1
     mov bx, ds:[bx + PingPongFrames4]
     add bx, 128h
     mov ss:[bp + REC_SPRITE], bx
-    call loc_0AFD8
-    call loc_0AFD8
+    call TryTerrainStep
+    call TryTerrainStep
     jne loc_0F337
     jmp near ptr ScrollRecordThenFinish
 loc_0F337:
@@ -8138,7 +8226,9 @@ loc_0F337:
 loc_0F345:
     mov word ptr ss:[bp + REC_DIRECTION], 2
     jmp near ptr ScrollRecordThenFinish
-TypeHandler5F:
+; Crawls four steps per frame, bouncing between the two downward diagonals; destroyed
+; otherwise when blocked.
+Type5FCrawlBounceDiagonal:
     mov ax, ds:[FrameCount4]
     add ax, 0F6h
     mov ss:[bp + REC_SPRITE], ax
@@ -8148,10 +8238,10 @@ TypeHandler5F:
     jae loc_0F364
     jmp near ptr ScrollRecordThenFinish
 loc_0F364:
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
     jne loc_0F375
     jmp near ptr ScrollRecordThenFinish
 loc_0F375:
@@ -8159,14 +8249,15 @@ loc_0F375:
     je loc_0F384
     cmp word ptr ss:[bp + REC_DIRECTION], 2
     je loc_0F38C
-    jmp near ptr loc_0BFC7
+    jmp near ptr DestroyRecord
 loc_0F384:
     mov word ptr ss:[bp + REC_DIRECTION], 3
     jmp near ptr ScrollRecordThenFinish
 loc_0F38C:
     mov word ptr ss:[bp + REC_DIRECTION], 5
     jmp near ptr ScrollRecordThenFinish
-TypeHandler61:
+; Steers to its invader slot (REC_SAVED) at speed 3, then becomes type 62h.
+Type61InvaderSteerToSlot:
     mov ax, ss:[bp + REC_SAVED_Y]
     mov ds:[SteerTargetY], ax
     mov ax, ss:[bp + REC_SAVED_X]
@@ -8179,7 +8270,8 @@ TypeHandler61:
 loc_0F3B3:
     mov word ptr ss:[bp + REC_TYPE], 62h
     jmp near ptr ScrollRecordThenFinish
-TypeHandler62:
+; Marches with the invader block (March* state).
+Type62InvaderMarch:
     cmp word ptr ds:[FramesSinceInvaderSpawn], 18h
     jae loc_0F3C5
     jmp near ptr ScrollRecordThenFinish
@@ -8193,7 +8285,7 @@ loc_0F3C5:
     and word ptr ss:[bp + REC_Y], -8
     and word ptr ss:[bp + REC_X], -8
     mov word ptr ss:[bp + REC_SAVED_Y], 20h
-    jmp short TypeHandler61
+    jmp short Type61InvaderSteerToSlot
 loc_0F3EB:
     mov ax, 1
     cmp word ptr ds:[EncounterLiveCount], 10h
@@ -8225,7 +8317,7 @@ loc_0F431:
     jne loc_0F446
     mov ds:[InvaderNextMarchLeft], cx
     mov word ptr ds:[InvaderNextDropStep], 2
-    call loc_07476
+    call SpawnAimedShot
 loc_0F446:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ss:[bp + REC_X], ax
@@ -8234,7 +8326,7 @@ loc_0F446:
     and bx, 1Fh
     jne loc_0F45D
     mov word ptr ss:[bp + REC_TYPE], 65h
-    jmp short TypeHandler63
+    jmp short Type63ScriptedSlideThenDrop
 loc_0F45D:
     mov ax, ds:[RecordTickCounter]
     and ax, 7Fh
@@ -8255,7 +8347,8 @@ loc_0F476:
 loc_0F48A:
     mov word ptr ds:[bx + REC_SPRITE], 63h
     jmp near ptr ScrollRecordThenFinish
-TypeHandler65:
+; Dives 4 px per frame, firing aimed shots while its sprite advances.
+Type65InvaderDiveFiring:
     add word ptr ss:[bp + REC_Y], 4
     cmp word ptr ds:[FrameCount4], 3
     je loc_0F4A0
@@ -8266,9 +8359,10 @@ loc_0F4A0:
     jmp near ptr ScrollRecordThenFinish
 loc_0F4AA:
     inc word ptr ss:[bp + REC_SPRITE]
-    call loc_07476
+    call SpawnAimedShot
     jmp near ptr ScrollRecordThenFinish
-TypeHandler63:
+; Waits for Y 50h, then plays a scripted slide by sprite and drops 4 px per frame.
+Type63ScriptedSlideThenDrop:
     cmp word ptr ss:[bp + REC_Y], 50h
     jae loc_0F4BC
     jmp near ptr ScrollRecordThenFinish
@@ -8297,7 +8391,8 @@ loc_0F4EE:
 loc_0F4F8:
     inc word ptr ss:[bp + REC_SPRITE]
     jmp near ptr ScrollRecordThenFinish
-TypeHandler64:
+; Drops 4 px per frame (2 on level 4).
+Type64DropSlow:
     mov ax, 2
     cmp word ptr ds:[LevelIndex], 4
     je loc_0F50A
@@ -8305,15 +8400,18 @@ TypeHandler64:
 loc_0F50A:
     add ss:[bp + REC_Y], ax
     jmp near ptr ScrollRecordThenFinish
-TypeHandler66:
-    mov word ptr ss:[bp + REC_FIELD_36], 0D222h
+; Starts PathType66 with 20 hit points as type 12h.
+Type66FollowPathType66:
+    mov word ptr ss:[bp + REC_FIELD_36], offset PathType66
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
-    jmp near ptr loc_0B2C8
-TypeHandler67:
-    mov word ptr ss:[bp + REC_FIELD_36], 0D272h
+    jmp near ptr StartPathFollow
+; Starts PathType67 (type 66h mirrored) with 20 hit points as type 12h.
+Type67FollowPathType67:
+    mov word ptr ss:[bp + REC_FIELD_36], offset PathType67
     mov word ptr ss:[bp + REC_HIT_POINTS], 14h
-    jmp near ptr loc_0B2C8
-TypeHandler6B:
+    jmp near ptr StartPathFollow
+; Descends while sliding 2 px per frame toward X 50h.
+Type6BDescendToX50:
     mov word ptr ds:[DescentTargetX], 50h
     mov ax, ds:[FrameCount16]
     shr ax, 1
@@ -8321,7 +8419,8 @@ TypeHandler6B:
     add ax, 11Fh
     mov ss:[bp + REC_SPRITE], ax
     jmp short loc_0F55A
-TypeHandler6D:
+; Descends while sliding toward X 70h.
+Type6DDescendToX70:
     mov word ptr ds:[DescentTargetX], 70h
     mov ax, ds:[FrameCount16]
     shr ax, 1
@@ -8329,7 +8428,8 @@ TypeHandler6D:
     add ax, 124h
     mov ss:[bp + REC_SPRITE], ax
     jmp short loc_0F55A
-TypeHandler6C:
+; Descends toward X 60h and fires; the only one of 6Bh..6Dh that shoots.
+Type6CDescendToX60Firing:
     mov word ptr ds:[DescentTargetX], 60h
 loc_0F55A:
     cmp word ptr ss:[bp + REC_Y], 40h
@@ -8363,7 +8463,8 @@ loc_0F596:
     call SpawnThrottledChild
 loc_0F5A0:
     jmp near ptr ScrollRecordThenFinish
-TypeHandler6F:
+; Scrolls to Y 50h and becomes type 70h unless the player is just below.
+Type6FWaitThenType70:
     cmp word ptr ss:[bp + REC_Y], 50h
     jae loc_0F5AC
     jmp near ptr ScrollRecordThenFinish
@@ -8375,7 +8476,8 @@ loc_0F5AC:
     jmp near ptr ScrollRecordThenFinish
 loc_0F5BA:
     mov word ptr ss:[bp + REC_TYPE], 70h
-TypeHandler70:
+; Moves 2 px per frame in REC_DIRECTION, firing every 8 frames.
+Type70CruiseFiring:
     mov ax, ds:[FrameCount16]
     shr ax, 1
     shr ax, 1
@@ -8387,7 +8489,8 @@ TypeHandler70:
     call SpawnThrottledChild
 loc_0F5D9:
     jmp near ptr ScrollRecordThenFinish
-TypeHandler72:
+; Descends 1 px per frame, firing an aimed shot every other frame.
+Type72DescendFiringAimed:
     mov ax, ds:[FrameCount8]
     shr ax, 1
     add ax, 1Ch
@@ -8395,10 +8498,11 @@ TypeHandler72:
     inc word ptr ss:[bp + REC_Y]
     cmp word ptr ds:[CountGate2324], 1
     jne loc_0F5F4
-    call loc_07476
+    call SpawnAimedShot
 loc_0F5F4:
     jmp near ptr ScrollRecordThenFinish
-TypeHandler73:
+; Scrolls to Y 80h, then charges right as type 85h code.
+Type73WaitThenRunRight:
     cmp word ptr ss:[bp + REC_Y], 80h
     jae loc_0F601
     jmp near ptr ScrollRecordThenFinish
@@ -8409,8 +8513,9 @@ loc_0F601:
     mov bx, ds:[bx + PingPongFrames4]
     add bx, 14Ch
     mov ss:[bp + REC_SPRITE], bx
-    jmp short TypeHandler85
-TypeHandler74:
+    jmp short Type85ChargeUntilBlocked
+; Scrolls to Y 90h, then charges left as type 85h code.
+Type74WaitThenRunLeft:
     cmp word ptr ss:[bp + REC_Y], 90h
     jae loc_0F623
     jmp near ptr ScrollRecordThenFinish
@@ -8421,7 +8526,9 @@ loc_0F623:
     mov bx, ds:[bx + PingPongFrames4]
     add bx, 14Fh
     mov ss:[bp + REC_SPRITE], bx
-TypeHandler85:
+; Four terrain steps per frame in REC_DIRECTION; destroyed when blocked or at the screen
+; edge.
+Type85ChargeUntilBlocked:
     cmp word ptr ss:[bp + REC_DIRECTION], 2
     jne loc_0F646
     cmp word ptr ss:[bp + REC_X], 0C0h
@@ -8432,30 +8539,32 @@ loc_0F646:
     cmp word ptr ss:[bp + REC_X], 0
     je loc_0F663
 loc_0F652:
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
-    call loc_0AFD8
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
+    call TryTerrainStep
     jne loc_0F663
     jmp near ptr ScrollRecordThenFinish
 loc_0F663:
-    call loc_0BFC7
+    call DestroyRecord
     jmp near ptr ScrollRecordThenFinish
-TypeHandler84:
+; Waits until the player lines up with REC_DIRECTION, then becomes type 85h; the
+; switching frame returns without the scroll tail.
+Type84LurkUntilAligned:
     mov bx, ss:[bp + REC_DIRECTION]
     shr bx, 1
-loc_0F66E:
     shl bx, 1
-    jmp word ptr cs:[bx - 98Ah]
-    nop
-    jng loc_0F66E
-    mov sp, 0AFF6h
-    mul bl
-    mul byte ptr ds:[bx + di + 237Eh]
+    jmp word ptr cs:[bx + Type84DirCases]
+    even
+Type84DirCases label word
+    dw offset Type84FacingUp, offset Type84FacingRight, offset Type84FacingDown, offset Type84FacingLeft
+; Facing up: the player must be at or above, in the same 16-pixel column.
+Type84FacingUp:
+    mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     cmp ax, ss:[bp + REC_Y]
-    jna loc_0F689
+    jna Type84SameColumn
     jmp near ptr ScrollRecordThenFinish
-loc_0F689:
+Type84SameColumn:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
@@ -8466,40 +8575,47 @@ loc_0F699:
     and ax, 0FFF0h
     and bx, -10h
     cmp ax, bx
-    je loc_0F6A9
+    je Type84StartCharge
     jmp near ptr ScrollRecordThenFinish
-loc_0F6A9:
+Type84StartCharge:
     mov word ptr ss:[bp + REC_TYPE], 85h
     ret
+; Facing down: the player must be at or below, in the same column.
+Type84FacingDown:
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     cmp ax, ss:[bp + REC_Y]
     jae loc_0F6BA
     jmp near ptr ScrollRecordThenFinish
 loc_0F6BA:
-    jmp short loc_0F689
+    jmp short Type84SameColumn
+; Facing right: the player must be at or to the right, on the same 4-pixel row.
+Type84FacingRight:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ax, ss:[bp + REC_X]
-    jae loc_0F6C7
+    jae Type84SameRow
     jmp near ptr ScrollRecordThenFinish
-loc_0F6C7:
+Type84SameRow:
     mov bx, ss:[bp + REC_Y]
     add bx, 14h
     and bx, -4
     mov ax, word ptr ds:[PrimaryRecord + REC_Y]
     and ax, 0FFFCh
     cmp ax, bx
-    je loc_0F6DD
+    je Type84StartChargeH
     jmp near ptr ScrollRecordThenFinish
-loc_0F6DD:
+Type84StartChargeH:
     mov word ptr ss:[bp + REC_TYPE], 85h
     ret
+; Facing left: the player must be at or to the left, on the same row.
+Type84FacingLeft:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
     cmp ax, ss:[bp + REC_X]
     jna loc_0F6EE
     jmp near ptr ScrollRecordThenFinish
 loc_0F6EE:
-    jmp short loc_0F6C7
-TypeHandler92:
+    jmp short Type84SameRow
+; Fires two shots when the player is on its row.
+Type92FireWhenPlayerLevel:
     mov bx, ss:[bp + REC_Y]
     add bx, 14h
     and bx, -4
@@ -8522,7 +8638,8 @@ loc_0F71B:
     mov word ptr ds:[bx + REC_SPRITE], 44h
 loc_0F728:
     ret
-TypeHandler75:
+; Descends 2 px per frame, firing a three-way downward spread every 4 frames.
+Type75DescendSpreadShot:
     add word ptr ss:[bp + REC_Y], 2
     cmp word ptr ds:[FrameCount4], 3
     je loc_0F737
@@ -8537,22 +8654,27 @@ loc_0F737:
     call loc_0C21D
     pop word ptr ss:[bp + REC_DIRECTION]
     jmp near ptr ScrollRecordThenFinish
-TypeHandler76:
-    mov si, 0D2C4h
+; Segmented boss part at (SegBossY, SegBossX) + BossPartOffsets[0].
+Type76SegBossPart0:
+    mov si, offset BossPartOffsets
     jmp short loc_0F779
-TypeHandler77:
-    mov si, 0D2C8h
+; Segmented boss part at BossPartOffsets[1].
+Type77SegBossPart1:
+    mov si, offset BossPartOffsets + 4
     jmp short loc_0F779
-TypeHandler78:
+; Segmented boss part at BossPartOffsets[2]; fires aimed shots early in each 128-frame
+; cycle.
+Type78SegBossGunPart:
     mov word ptr ss:[bp + REC_DIRECTION], 4
     cmp word ptr ds:[FrameCount128], 0Fh
     ja loc_0F771
-    call loc_07476
+    call SpawnAimedShot
 loc_0F771:
-    mov si, 0D2CCh
+    mov si, offset BossPartOffsets + 8
     jmp short loc_0F779
-TypeHandler79:
-    mov si, 0D2D0h
+; Segmented boss part at BossPartOffsets[3].
+Type79SegBossPart3:
+    mov si, offset BossPartOffsets + 0Ch
 loc_0F779:
     lodsw
     add ax, ds:[SegBossY]
@@ -8656,7 +8778,7 @@ loc_1009C:
     lodsw
     mov ds:[SteerTargetX], ax
     mov word ptr ds:[SteerSpeed], 3
-    mov ax, 5DB2h
+    mov ax, offset SteerTowardTarget
     call far ptr FarCallMainNearViaAX
     cmp word ptr ds:[SteerArrived], 0
     je loc_100F9

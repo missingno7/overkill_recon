@@ -14,8 +14,9 @@ layout argument appears (as the linker padding at far 10162 did).
 ## Semantics still open
 
 - GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
-- Handler-level meaning of the REC_TYPE handlers (TypeHandlerNN) and the remaining
-  loc_ labels; `[bx + N]` record fields where BX provenance is not a null check.
+- REC_TYPE handlers are named TypeNN<Behaviour>; roles of 09h (externally moved shot)
+  and 26h (wall probe) are uncertain, and their inner loc_ labels remain.
+- `[bx + N]` record fields where BX provenance is not a null check.
 - Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
 
 ## Open questions worth settling statically
@@ -26,15 +27,10 @@ layout argument appears (as the linker padding at far 10162 did).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
 - Record fields +1C and +36 are type-dependent.
+- Type 2Eh never sets SteerSpeed and inherits the previous handler's value.
 
 ## Next reconstruction targets
 
-- TypeHandlers (REC_TYPE 0..94h): the handlers carry TypeHandlerNN labels only; name
-  them by behaviour, bottom-up from the shared helpers they call (loc_0AFD8 step,
-  loc_0BC45/loc_0BC4B post-move, loc_0BFC7 destroy).
-
-- Record update handlers dispatched by REC_KIND through the table at CS:AA36
-  (BC45, AD04, EFAE, 44AF, AAC2, AB10) and the destroy/free path BFC7/BD0D/BD17.
 - About 330 `[bx + N]` record accesses whose BX provenance is inherited.
 - Collision loops 62F6..741F (pool B unrolled) and AC8B/BDD0.
 - Replace remaining `loc_XXXXX` labels with control-flow names region by region.

@@ -74,6 +74,7 @@ public BlockBytes
 public BonusIntroItems
 public BonusKeysEnabled
 public BossKeyScreen
+public BossPartOffsets
 public BossPath
 public BurstOriginX
 public BurstOriginY
@@ -183,6 +184,7 @@ public FormationDrawPass
 public FormationSizeClass
 public FormationSlotCursor
 public FormationSlots
+public FormationSlotsEnd
 public FormationType
 public FrameCount128
 public FrameCount16
@@ -333,6 +335,8 @@ public OldNonAsciiCodeword
 public PageIndex
 public PageListPtr
 public Password
+public PathType66
+public PathType67
 public PaymentFileName
 public PaymentHelpRow
 public PendingSpriteFile
@@ -1139,7 +1143,7 @@ SteerTargetX dw 00000h
 SteerTargetY dw 00000h
 SteerSpeed dw 00000h
 SteerArrived dw 00000h
-; Chase step (loc_05E42): negative-delta flags, quadrant bits, step pixels (2 or 3).
+; Chase step (StepAlongDelta): negative-delta flags, quadrant bits, step pixels (2 or 3).
 ChaseNegX dw 0h
 ChaseNegY dw 0h
 ChaseQuadrantBits dw 0h
@@ -1364,7 +1368,7 @@ Type21Path dw 10h, 10h,  40h, 40h,  10h, 40h,  20h, 20h,  0h, 0h
     dw 10h, 0C0h,  0h, 0B0h,  30h, 20h,  30h, 80h,  10h, 0h
     dw 30h, 60h,  40h, 10h,  0h, 60h,  20h, 90h,  40h, 80h
     dw 0FFFFh
-; Level-5 march (loc_0A940 drives it, TypeHandler80 marchers follow).
+; Level-5 march (loc_0A940 drives it, Type80MarchFormationMember marchers follow).
 MarchEdgeHit db 0
 MarchStepNow db 0
 MarchDropNow db 0
@@ -1598,18 +1602,19 @@ LeaderScript1C dw 0h, 0C0h,  30h, 8h,  10h, 0C0h,  20h, 10h
 LeaderScript1CEnd dw LEADER_END_Y, 0h
 LeaderScript1F dw 50h, 0C0h,  50h, 0h,  0h, 0h,  0h, 0C0h
 LeaderScript1FEnd dw LEADER_END_Y, 0h
-; Next group of five FormationSlots (wraps at FallerColumnCursor).
+; Next group of five FormationSlots (wraps at FormationSlotsEnd).
 FormationSlotCursor dw offset FormationSlots
 ; Four groups of five (Y, X) slots for the type 20h children.
 FormationSlots dw 40h, 90h,  40h, 80h,  30h, 80h,  30h, 90h,  20h, 70h
     dw 20h, 50h,  30h, 40h,  30h, 30h,  40h, 30h,  40h, 40h
     dw 30h, 10h,  20h, 10h,  10h, 10h,  10h, 20h,  10h, 30h
     dw 10h, 90h,  10h, 0A0h,  10h, 0B0h,  20h, 0B0h,  30h, 0B0h
+FormationSlotsEnd label word
 ; Next of the FallerColumns X values (wraps at FallerColumnsEnd).
 FallerColumnCursor dw offset FallerColumns
 FallerColumns dw 80h, 30h, 0h, 70h, 90h, 20h, 0C0h, 10h, 0A0h, 40h, 60h, 0B0h, 90h, 50h
 FallerColumnsEnd label word
-; Scratch origin of the eight-shard burst (loc_0B402).
+; Scratch origin of the eight-shard burst (SpawnEightWayBurst).
 BurstOriginX dw 0
 BurstOriginY dw 0
 ; The level-0 multi-part boss: anchor position and part records (types 76h..79h).
@@ -1621,7 +1626,7 @@ SegBossCore dw 0
 SegBossPart79 dw 0
 SegBossActive dw 0
 SegBossPathCursor dw 0
-; Invader march (TypeHandler62): 0 = right towards X C0h, 1 = left towards 0; the
+; Invader march (Type62InvaderMarch): 0 = right towards X C0h, 1 = left towards 0; the
 ; Next* values are latched at an edge and copied by loc_0A940 once per frame.
 InvaderMarchLeft dw 0
 InvaderNextMarchLeft dw 0
