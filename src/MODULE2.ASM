@@ -4026,13 +4026,13 @@ loc_07591:
     ret
 
 loc_07596:
-    mov bx, word ptr ss:[bp + 014h]
+    mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
     jmp word ptr cs:[bx + loc_07596Cases]
 loc_07596Cases label word
     dw offset loc_07746, offset loc_0768E, offset loc_075A6
 loc_075A6:
-    mov bx, word ptr ss:[bp + 8]
+    mov bx, word ptr ss:[bp + REC_SPRITE]
     mov cx, word ptr cs:[ManExplSegment]
     cmp bx, 01Ch
     jb loc_075BB
@@ -4044,14 +4044,14 @@ loc_075BB:
     mov si, word ptr cs:[bx]
     mov word ptr cs:[07624h], si
     mov word ptr cs:[07626h], cx
-    mov di, word ptr ss:[bp + 0Ch]
+    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
     cmp di, -1
     je loc_075DB
     push bp
     call loc_075F5
     pop bp
 loc_075DB:
-    mov di, word ptr ss:[bp + 010h]
+    mov di, word ptr ss:[bp + REC_SCREEN_OFS_LOWER]
     cmp di, -1
     jne loc_075E4
     ret
@@ -4096,13 +4096,13 @@ loc_07688:
     mov ds, cs:[MainDataSegment]
     ret
 loc_0768E:
-    mov di, word ptr ss:[bp + 0Ch]
+    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
     cmp di, -1
     jne loc_07697
     ret
 loc_07697:
     mov es, word ptr cs:[WorkspaceSegment]
-    mov bx, word ptr ss:[bp + 8]
+    mov bx, word ptr ss:[bp + REC_SPRITE]
     mov cx, word ptr cs:[Sprites2x2Segment]
     cmp bx, 0FAh
     jb loc_076B3
@@ -4142,13 +4142,13 @@ FlashSprite16Blitters label word
     dw offset loc_02F40, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
 
 loc_07746:
-    mov di, word ptr ss:[bp + 0Ch]
+    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
     cmp di, -1
     jne loc_0774F
     ret
 loc_0774F:
     mov es, word ptr cs:[WorkspaceSegment]
-    mov bx, word ptr ss:[bp + 8]
+    mov bx, word ptr ss:[bp + REC_SPRITE]
     mov cx, word ptr cs:[Sprites1x1Segment]
     shl bx, 1
     add bx, offset Sprite8Offsets
@@ -4157,7 +4157,7 @@ loc_0774F:
     shl bx, 1
     shl bx, 1
     shl bx, 1
-    add bx, word ptr ss:[bp + 012h]
+    add bx, word ptr ss:[bp + REC_PIXEL_PHASE]
     mov ds, cx
     mov bp, 8
     mov cx, bp
@@ -4544,18 +4544,18 @@ loc_07B13:
     jne loc_07B1C
     ret
 loc_07B1C:
-    mov word ptr ds:[bx + 16h], 4
+    mov word ptr ds:[bx + REC_KIND], 4
     mov ax, ds:[0A40Ah]
-    mov ds:[bx + 4], ax
+    mov ds:[bx + REC_X], ax
     mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 0Ah], 0
-    mov word ptr ds:[bx + 2], 0
-    mov word ptr ds:[bx + 14h], 2
-    mov word ptr ds:[bx + 24h], 0
-    mov word ptr ds:[bx + 20h], 0Ah
-    mov word ptr ds:[bx + 18h], 2Ah
-    mov word ptr ds:[bx + 8], 1Ch
-    mov word ptr ds:[bx + 6], 0
+    mov word ptr ds:[bx + REC_DRAW_PASS], 0
+    mov word ptr ds:[bx + REC_Y], 0
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 2
+    mov word ptr ds:[bx + REC_FLASH_TIMER], 0
+    mov word ptr ds:[bx + REC_HIT_POINTS], 0Ah
+    mov word ptr ds:[bx + REC_TYPE], 2Ah
+    mov word ptr ds:[bx + REC_SPRITE], 1Ch
+    mov word ptr ds:[bx + REC_DIRECTION], 0
     ret
 loc_07B54:
     call loc_081C9
@@ -5252,9 +5252,9 @@ loc_081CC:
     ret
 loc_081D5:
     mov ax, word ptr ds:[0A40Ah]
-    mov word ptr ds:[bx + 4], ax
-    mov word ptr ds:[bx + 2], 010h
-    mov word ptr ds:[bx + 0Ah], 0
+    mov word ptr ds:[bx + REC_X], ax
+    mov word ptr ds:[bx + REC_Y], 010h
+    mov word ptr ds:[bx + REC_DRAW_PASS], 0
     or ax, 1
     ret
 loc_081E9:
@@ -5277,10 +5277,10 @@ loc_08209:
     mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[bx + REC_Y], ax
     mov word ptr ds:[bx + REC_SAVED_Y], ax
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_DIRECTION], 4
@@ -5300,7 +5300,7 @@ loc_08252:
     jne loc_0825D
     jmp near ptr loc_0BC45
 loc_0825D:
-    mov word ptr ds:[bx + 8], 1Eh
+    mov word ptr ds:[bx + REC_SPRITE], 1Eh
     jmp near ptr loc_0BC45
 TypeHandler25:
     cmp word ptr ds:[232Ch], 1Fh
@@ -5312,7 +5312,7 @@ loc_0826F:
     jne loc_0827A
     jmp near ptr loc_0BC45
 loc_0827A:
-    mov word ptr ds:[bx + 8], 1Ah
+    mov word ptr ds:[bx + REC_SPRITE], 1Ah
     jmp near ptr loc_0BC45
 TypeHandler90:
     mov ax, 88h
@@ -5385,17 +5385,17 @@ loc_0832E:
 loc_08331:
     mov si, word ptr ds:[UpgradeHitY]
     add si, 010h
-    cmp word ptr ss:[bp + 2], si
+    cmp word ptr ss:[bp + REC_Y], si
     jg loc_0835B
     sub si, 020h
-    cmp word ptr ss:[bp + 2], si
+    cmp word ptr ss:[bp + REC_Y], si
     jl loc_0835B
     mov si, word ptr ds:[UpgradeHitX]
     add si, 010h
-    cmp word ptr ss:[bp + 4], si
+    cmp word ptr ss:[bp + REC_X], si
     jg loc_0835B
     sub si, 020h
-    cmp word ptr ss:[bp + 4], si
+    cmp word ptr ss:[bp + REC_X], si
     jl loc_0835B
     stc
     ret
@@ -5762,9 +5762,9 @@ loc_086A0:
     jne loc_086AE
     jmp near ptr loc_0BC45
 loc_086AE:
-    mov word ptr ds:[bx + 20h], 4
-    add word ptr ds:[bx + 2], 8
-    add word ptr ds:[bx + 4], 8
+    mov word ptr ds:[bx + REC_HIT_POINTS], 4
+    add word ptr ds:[bx + REC_Y], 8
+    add word ptr ds:[bx + REC_X], 8
     cmp word ptr ds:[LevelIndex], 1
     je loc_086DA
     cmp word ptr ds:[LevelIndex], 4
@@ -5851,7 +5851,7 @@ loc_08794:
     jne loc_0879F
     jmp near ptr loc_0BC45
 loc_0879F:
-    mov word ptr ds:[bx + 8], 44h
+    mov word ptr ds:[bx + REC_SPRITE], 44h
     jmp near ptr loc_0BC45
 TypeHandler71:
     mov ax, ds:[2336h]
@@ -6309,9 +6309,9 @@ loc_08C51:
     jne loc_08C5E
     jmp near ptr loc_0BC45
 loc_08C5E:
-    mov word ptr ds:[bx + 18h], 4
+    mov word ptr ds:[bx + REC_TYPE], 4
     dec cx
-    mov ds:[bx + 6], cx
+    mov ds:[bx + REC_DIRECTION], cx
     inc cx
     loop loc_08C51
     jmp near ptr loc_0BC45

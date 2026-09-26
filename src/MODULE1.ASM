@@ -4136,26 +4136,26 @@ loc_02557:
     loop loc_02557
     ret
 loc_02580:
-    mov bx, word ptr ss:[bp + 2]
+    mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
     jae loc_025B2
     shl bx, 1
     mov bx, word ptr ds:[bx + RecordRowOffsets]
     cmp bx, -1
     je loc_025B2
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
     mov cx, ax
     and cx, 7
-    mov word ptr ss:[bp + 012h], cx
+    mov word ptr ss:[bp + REC_PIXEL_PHASE], cx
     shr ax, 1
     shr ax, 1
     shr ax, 1
     add ax, bx
-    cmp word ptr ss:[bp + 024h], 0
+    cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
     jne loc_025AE
     ret
 loc_025AE:
-    dec word ptr ss:[bp + 024h]
+    dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
 loc_025B2:
     mov ax, 0FFFFh
@@ -5516,14 +5516,14 @@ loc_030DE:
     jmp near ptr loc_025B2
 loc_030EC:
     mov ax, word ptr ss:[bp + REC_X]
-    mov word ptr ss:[bp + 012h], 0
+    mov word ptr ss:[bp + REC_PIXEL_PHASE], 0
     shr ax, 1
     add ax, bx
-    cmp word ptr ss:[bp + 024h], 0
+    cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
     jne loc_030FF
     ret
 loc_030FF:
-    dec word ptr ss:[bp + 024h]
+    dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
 
 ; AX = DI = ScreenRowOffsets[AH] + 4*AL (AL in 8-pixel units); BX = the table
@@ -7522,7 +7522,7 @@ loc_041E7:
     loop loc_041E7
     ret
 loc_041F5:
-    mov bx, word ptr ss:[bp + 2]
+    mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
     jb loc_04201
     jmp near ptr loc_025B2
@@ -7533,18 +7533,18 @@ loc_04201:
     jne loc_0420F
     jmp near ptr loc_025B2
 loc_0420F:
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
     mov cx, ax
     and cx, 3
-    mov word ptr ss:[bp + 012h], cx
+    mov word ptr ss:[bp + REC_PIXEL_PHASE], cx
     shr ax, 1
     shr ax, 1
     add ax, bx
-    cmp word ptr ss:[bp + 024h], 0
+    cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
     jne loc_04227
     ret
 loc_04227:
-    dec word ptr ss:[bp + 024h]
+    dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
 
 DrawOffsetFromScreenRowCga:
@@ -9212,7 +9212,7 @@ loc_04FCC:
     ret
 
 loc_04FF9:
-    mov si, word ptr ss:[bp + 8]
+    mov si, word ptr ss:[bp + REC_SPRITE]
     cmp si, 3
     jae loc_05059
     shl si, 1

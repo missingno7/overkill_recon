@@ -958,8 +958,8 @@ loc_09AFF:
     je loc_09B07
     ret
 loc_09B07:
-    inc word ptr ss:[bp + 8]
-    cmp word ptr ss:[bp + 8], 0Fh
+    inc word ptr ss:[bp + REC_SPRITE]
+    cmp word ptr ss:[bp + REC_SPRITE], 0Fh
     je loc_09B11
     ret
 loc_09B11:
@@ -1673,15 +1673,15 @@ loc_0A1AB:
     call loc_0A4EA
 
 loc_0A1AE:
-    mov si, word ptr ss:[bp + 8]
+    mov si, word ptr ss:[bp + REC_SPRITE]
     shl si, 1
     shl si, 1
     add si, 0A3A8h
     lodsw
-    add ax, word ptr ss:[bp + 2]
+    add ax, word ptr ss:[bp + REC_Y]
     mov word ptr ds:[bx + 2], ax
     lodsw
-    add ax, word ptr ss:[bp + 4]
+    add ax, word ptr ss:[bp + REC_X]
     mov word ptr ds:[bx + 4], ax
     ret
 loc_0A1C8:
@@ -1723,7 +1723,7 @@ loc_0A22A:
     jne loc_0A234
     ret
 loc_0A234:
-    cmp word ptr ds:[bx + 4], 0
+    cmp word ptr ds:[bx + REC_X], 0
     je loc_0A255
     call loc_0A2D6
     mov bx, word ptr ds:[0A3B4h]
@@ -2575,7 +2575,7 @@ loc_0AA22:
     ret
 
 loc_0AA2B:
-    mov bx, word ptr ss:[bp + 016h]
+    mov bx, word ptr ss:[bp + REC_KIND]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0AA2BCases]
 ; UNKNOWN: not yet classified as code or data
@@ -2587,7 +2587,7 @@ loc_0AA44:
     clc
     ret
 loc_0AA46:
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
     js loc_0AA44
     mov si, word ptr ds:[PrimaryRecord + REC_SPRITE]
@@ -2604,10 +2604,10 @@ loc_0AA46:
     mov word ptr ds:[095F4h], ax
     jmp near ptr loc_08331
 loc_0AA71:
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
     or ax, ax
     js loc_0AA44
-    mov ax, word ptr ss:[bp + 4]
+    mov ax, word ptr ss:[bp + REC_X]
     add ax, 018h
     cmp ax, word ptr ds:[PrimaryRecord + REC_X]
     jl loc_0AA44
@@ -2616,7 +2616,7 @@ loc_0AA71:
     jg loc_0AA44
     cmp word ptr ds:[SegBossActive], 1
     jne loc_0AAAB
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
     add ax, 8
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
     jb loc_0AA44
@@ -2626,7 +2626,7 @@ loc_0AA71:
     stc
     ret
 loc_0AAAB:
-    mov ax, word ptr ss:[bp + 2]
+    mov ax, word ptr ss:[bp + REC_Y]
     add ax, 018h
     cmp ax, word ptr ds:[PrimaryRecord + REC_Y]
     jb loc_0AA44
@@ -2636,7 +2636,7 @@ loc_0AAAB:
     stc
     ret
 loc_0AAC2:
-    inc word ptr ss:[bp + 2]
+    inc word ptr ss:[bp + REC_Y]
     call loc_0AA46
     jb loc_0AACD
     jmp near ptr loc_0BC45
@@ -2656,7 +2656,7 @@ loc_0AAE7:
     call loc_05F0D
     push bp
     push word ptr cs:[0AB0Ah]
-    mov bx, word ptr ss:[bp + 026h]
+    mov bx, word ptr ss:[bp + REC_ITEM_INDEX]
     mov bp, offset PrimaryRecord
     shl bx, 1
     jmp word ptr cs:[bx + loc_0AAE7Cases]
@@ -3651,20 +3651,20 @@ loc_0B421:
     je loc_0B467
     push cx
     dec cx
-    mov ds:[bx + 6], cx
+    mov ds:[bx + REC_DIRECTION], cx
     add cx, 8
-    mov ds:[bx + 8], cx
+    mov ds:[bx + REC_SPRITE], cx
     mov ax, ds:[BurstOriginX]
-    mov ds:[bx + 4], ax
+    mov ds:[bx + REC_X], ax
     mov ax, ds:[BurstOriginY]
-    mov ds:[bx + 2], ax
+    mov ds:[bx + REC_Y], ax
     mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 1Eh], 0
-    mov word ptr ds:[bx + 0Ah], 1
-    mov word ptr ds:[bx + 14h], 0
-    mov word ptr ds:[bx + 16h], 2
-    mov word ptr ds:[bx + 18h], 3
-    mov word ptr ds:[bx + 1Ch], 0FFFFh
+    mov word ptr ds:[bx + REC_SIDE_FLAG], 0
+    mov word ptr ds:[bx + REC_DRAW_PASS], 1
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 0
+    mov word ptr ds:[bx + REC_KIND], 2
+    mov word ptr ds:[bx + REC_TYPE], 3
+    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
     pop cx
     loop loc_0B421
 loc_0B467:
@@ -4173,7 +4173,7 @@ loc_0B9CD:
     call SpawnThrottledChild
     cmp bx, -1
     je TypeHandler18
-    mov word ptr ds:[bx + 6], 4
+    mov word ptr ds:[bx + REC_DIRECTION], 4
     jmp short TypeHandler18
 loc_0B9EA:
     lodsw
@@ -4359,9 +4359,9 @@ loc_0BBCA:
     call loc_07476
     cmp bx, -1
     je loc_0BC45
-    mov word ptr ds:[bx + 8], 3
-    sub word ptr ds:[bx + 4], 8
-    sub word ptr ds:[bx + 2], 8
+    mov word ptr ds:[bx + REC_SPRITE], 3
+    sub word ptr ds:[bx + REC_X], 8
+    sub word ptr ds:[bx + REC_Y], 8
     jmp short loc_0BC45
 loc_0BBE1:
     mov word ptr ds:[0A430h], 1
@@ -4440,37 +4440,37 @@ loc_0BCB0:
     ret
 
 loc_0BCB1:
-    cmp word ptr ss:[bp + 4], 0C0h
+    cmp word ptr ss:[bp + REC_X], 0C0h
     jg loc_0BCBF
-    cmp word ptr ss:[bp + 4], 0
+    cmp word ptr ss:[bp + REC_X], 0
     jl loc_0BCC5
     ret
 loc_0BCBF:
-    mov word ptr ss:[bp + 4], 0C0h
+    mov word ptr ss:[bp + REC_X], 0C0h
     ret
 loc_0BCC5:
-    mov word ptr ss:[bp + 4], 0
+    mov word ptr ss:[bp + REC_X], 0
     ret
 loc_0BCCB:
     cmp word ptr ss:[bp], 0
     jne loc_0BCD2
     ret
 loc_0BCD2:
-    cmp word ptr ss:[bp + 016h], 5
+    cmp word ptr ss:[bp + REC_KIND], 5
     jne loc_0BCD9
     ret
 loc_0BCD9:
-    cmp word ptr ss:[bp + 018h], 0
+    cmp word ptr ss:[bp + REC_TYPE], 0
     jne loc_0BCE0
     ret
 loc_0BCE0:
-    cmp word ptr ss:[bp + 018h], 1
+    cmp word ptr ss:[bp + REC_TYPE], 1
     jne loc_0BCE7
     ret
 loc_0BCE7:
-    cmp word ptr ss:[bp + 014h], 1
+    cmp word ptr ss:[bp + REC_SIZE_CLASS], 1
     je loc_0BCF4
-    cmp word ptr ss:[bp + 014h], 2
+    cmp word ptr ss:[bp + REC_SIZE_CLASS], 2
     je loc_0BCF9
     ret
 loc_0BCF4:
@@ -8087,7 +8087,7 @@ loc_0F476:
     jne loc_0F48A
     jmp near ptr loc_0BC45
 loc_0F48A:
-    mov word ptr ds:[bx + 8], 63h
+    mov word ptr ds:[bx + REC_SPRITE], 63h
     jmp near ptr loc_0BC45
 TypeHandler65:
     add word ptr ss:[bp + REC_Y], 4
@@ -8353,7 +8353,7 @@ loc_0F71B:
     call SpawnThrottledChild
     cmp bx, -1
     je loc_0F728
-    mov word ptr ds:[bx + 8], 44h
+    mov word ptr ds:[bx + REC_SPRITE], 44h
 loc_0F728:
     ret
 TypeHandler75:
@@ -8501,12 +8501,12 @@ loc_1009C:
     cmp bx, -1
     je loc_100F9
     mov ax, ss:[bp + REC_Y]
-    mov ds:[bx + 34h], ax
+    mov ds:[bx + REC_SAVED_Y], ax
     mov ax, ss:[bp + REC_X]
-    mov ds:[bx + 32h], ax
-    mov word ptr ds:[bx + 18h], 64h
-    mov word ptr ds:[bx + 20h], 3
-    mov word ptr ds:[bx + 8], 8Eh
+    mov ds:[bx + REC_SAVED_X], ax
+    mov word ptr ds:[bx + REC_TYPE], 64h
+    mov word ptr ds:[bx + REC_HIT_POINTS], 3
+    mov word ptr ds:[bx + REC_SPRITE], 8Eh
 loc_100F9:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 3Bh
