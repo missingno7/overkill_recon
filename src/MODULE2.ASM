@@ -5960,15 +5960,15 @@ loc_085EF:
     push word ptr ds:[DemoUpgradeStatus]
     jmp short loc_08605
 loc_08602:
-    push word ptr ss:[bp + REC_STATUS]
+    push word ptr ss:[bp + UPGRADE_SLOT_ICON]
 loc_08605:
     push ax
-    mov si, word ptr ss:[bp + REC_X]
+    mov si, word ptr ss:[bp + UPGRADE_SLOT_IMAGE]
     add si, ax
     shl si, 1
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
-    mov di, word ptr ss:[bp + REC_Y]
+    mov di, word ptr ss:[bp + UPGRADE_SLOT_SCREEN]
     push di
     mov cx, 5
 loc_0861B:

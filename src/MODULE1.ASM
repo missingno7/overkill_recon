@@ -112,6 +112,7 @@ extrn PanelImageBytes2:word
 extrn PendingSpriteFile:word
 extrn PlaqueBytes:word
 extrn PlaqueFiles:word
+extrn PlayerHitOffsets:word
 extrn PlayfieldRowOffsets:word
 extrn RandomWordCursor:word
 extrn ReadErrorMessage:byte
@@ -9375,7 +9376,7 @@ loc_04FF9:
     jae loc_05059
     shl si, 1
     shl si, 1
-    add si, 0214Eh
+    add si, offset PlayerHitOffsets
     push word ptr ss:[bp + REC_Y]
     push word ptr ss:[bp + REC_X]
     lodsw

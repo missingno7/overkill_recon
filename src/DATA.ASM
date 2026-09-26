@@ -350,6 +350,7 @@ public PingPongFrames4
 public PingPongFrames8
 public PlaqueBytes
 public PlaqueFiles
+public PlayerHitOffsets
 public PlayfieldRowOffsets
 public PodShotDirection
 public PoolA
@@ -1093,8 +1094,9 @@ KbdSavedInt09 db 00h,00h,00h,00h
 ; the key redefinition; table B's initial 77h..7Ch are not IBM set-1 keys.
 KeyBitScancodesA db 00h,00h,02Ch,039h,010h,01Eh,018h,019h
 KeyBitScancodesB db 00h,00h,02Ch,077h,07Ch,07Bh,07Ah,079h
-; UNKNOWN: not yet classified as code or data
-    db 07h,00h,08h,00h,0Ah,00h,08h,00h,09h,00h,08h,00h
+; (Y, X) of the player's hit point from its position, per ship form (REC_SPRITE 0..2):
+; terrain contact (loc_04FF9) and pickup/collision tests (loc_0AA46).
+PlayerHitOffsets dw 7, 8,  0Ah, 8,  9, 8
 ; ComputeRecordGridOffset stores its wrapped Y sum here.
 GridYSum dw 00000h
 TextColor db 00h

@@ -175,6 +175,7 @@ extrn PaymentFileName:byte
 extrn PaymentHelpRow:word
 extrn PingPongFrames4:word
 extrn PingPongFrames8:word
+extrn PlayerHitOffsets:word
 extrn PodShotDirection:word
 extrn PoolA:byte
 extrn PoolAEnd:byte
@@ -1110,7 +1111,7 @@ loc_09B07:
     je loc_09B11
     ret
 loc_09B11:
-    mov word ptr ss:[bp], 0
+    mov word ptr ss:[bp + REC_STATUS], 0
     call RestartAtCheckpoint
     mov word ptr ds:[LifeLostRequest], 1
     cmp word ptr ds:[Fuel], 0
@@ -2733,7 +2734,7 @@ loc_0AA46:
     jae loc_0AA44
     shl si, 1
     shl si, 1
-    add si, 0214Eh
+    add si, offset PlayerHitOffsets
     lodsw
     add ax, word ptr ds:[PrimaryRecord + REC_Y]
     mov word ptr ds:[UpgradeHitY], ax
@@ -4674,7 +4675,7 @@ loc_0BCC5:
     mov word ptr ss:[bp + REC_X], 0
     ret
 loc_0BCCB:
-    cmp word ptr ss:[bp], 0
+    cmp word ptr ss:[bp + REC_STATUS], 0
     jne loc_0BCD2
     ret
 loc_0BCD2:
@@ -5433,7 +5434,8 @@ ShotSfx18:
     ret
 ; Next background save buffer while REC_SAVE_BUFFER is assigned to each record.
 SaveBufferCursor dw 00000h
-    add ds:[bx + si], al
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h
 
 loc_0C3A6:
     mov es, word ptr cs:[MainDataSegment]
@@ -8825,7 +8827,7 @@ loc_1009C:
     je loc_100F9
     mov word ptr ss:[bp + REC_HIT_POINTS], 2
     add word ptr cs:[Type21PathCursor], 4
-    mov ax, 81F4h
+    mov ax, offset SpawnEnemyHere
     call far ptr FarCallMainNearViaAX
     cmp bx, -1
     je loc_100F9
