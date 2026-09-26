@@ -18,40 +18,40 @@ public ResLibSetup
 ; 1000h ResBufferPtr = ES:DI. The game calls it with 4000h and ResourceArchiveList.
 ResLibSetup:
     test ax, 08000h
-    je loc_153AE
+    je @@checkCopyList
     push ax
     and ax, 0FFh
     mov word ptr cs:[ResOptions], ax
     pop ax
-loc_153AE:
+@@checkCopyList:
     test ax, 04000h
-    je loc_153C5
+    je @@checkOwnExe
     push ax
     push di
     push es
     push cs
     pop es
     mov di, offset ResArchiveList
-loc_153BB:
+@@copyListByte:
     movsb
     cmp byte ptr ds:[si - 1], 0FFh
-    jne loc_153BB
+    jne @@copyListByte
     pop es
     pop di
     pop ax
-loc_153C5:
+@@checkOwnExe:
     test ax, 02000h
-    je loc_153D0
+    je @@checkBufferPtr
     push ax
     push cs
     call UseOwnExeAsArchive
     pop ax
-loc_153D0:
+@@checkBufferPtr:
     test ax, 01000h
-    je loc_153DF
+    je @@done
     mov word ptr cs:[ResBufferPtr + 2], es
     mov word ptr cs:[ResBufferPtr], di
-loc_153DF:
+@@done:
     retf
 ; Further resource-library routines (far entries ending in RETF). The game only calls
 ; 153A:0000 (ResLibSetup) and OpenResourceFile; no caller of these was found.
@@ -63,7 +63,7 @@ ResLoadWholeFile:
     call OpenResourceFile
     pop es
     pop di
-    jb loc_153FC
+    jb @@done
     push bx
     push cx
     push dx
@@ -78,7 +78,7 @@ ResLoadWholeFile:
     call CloseHandleIfOpen
     pop ax
     popf
-loc_153FC:
+@@done:
     retf
 ; Far. Load and run an MZ program stored in the archive (DS:DX = "NAME args"),
 ; hooking INT 21h to catch its exit; AX = ExecStatus:ExecExitCode. No caller found.
@@ -89,13 +89,13 @@ ExecResourceProgram:
     mov si, dx
     mov di, offset ExecProgramName
     cld
-loc_15406:
+@@copyNameChar:
     movsb
     cmp byte ptr ds:[si - 1h], 0
-    je loc_15413
+    je @@nameEnd
     cmp byte ptr ds:[si - 1h], 20h
-    jne loc_15406
-loc_15413:
+    jne @@copyNameChar
+@@nameEnd:
     mov byte ptr es:[di - 1h], 0
     dec si
     mov word ptr cs:[ExecTailPtr], si
@@ -107,9 +107,9 @@ loc_15413:
     mov dx, offset ExecProgramName
     push cs
     call OpenResourceFile
-    jae loc_1543C
+    jae @@readHeader
     jmp near ptr ExecCleanup
-loc_1543C:
+@@readHeader:
     mov cx, 1Bh
     xor dx, dx
     mov di, offset ExecMzHeader
@@ -118,15 +118,15 @@ loc_1543C:
     push cs
     call ReadHuge
     mov byte ptr ds:[ExecStatus], 2
-    jae loc_15454
+    jae @@checkMzSignature
     jmp near ptr ExecCleanup
-loc_15454:
+@@checkMzSignature:
     mov di, offset ExecMzHeader
     cmp word ptr ds:[ExecMzHeader], 5A4Dh
     mov byte ptr ds:[ExecStatus], 4
-    je loc_15467
+    je @@computeSizes
     jmp near ptr ExecCleanup
-loc_15467:
+@@computeSizes:
     mov bx, word ptr ds:[ExecMzHeader + 8]
     xor cx, cx
     add bx, bx
@@ -169,9 +169,9 @@ loc_15467:
     mov ah, 48h
     int 21h
     mov byte ptr ds:[ExecStatus], 3
-    jae loc_154DB
+    jae @@allocated
     jmp near ptr ExecCleanup
-loc_154DB:
+@@allocated:
     mov ds:[ExecChildSeg], ax
     mov ah, 2Fh
     int 21h
@@ -192,10 +192,10 @@ loc_154DB:
     mov es, ds:[ExecChildSeg]
     mov di, 81h
     lds si, dword ptr ds:[ExecTailPtr]
-loc_15511:
+@@copyTailChar:
     movsb
     cmp byte ptr ds:[si - 1h], 0
-    jne loc_15511
+    jne @@copyTailChar
     dec si
     mov byte ptr es:[di - 1h], 0Dh
     mov byte ptr es:[di], 0
@@ -213,9 +213,9 @@ loc_15511:
     mov ax, 4201h
     int 21h
     mov byte ptr ds:[ExecStatus], 2
-    jae loc_15551
+    jae @@readImage
     jmp near ptr ExecCleanup
-loc_15551:
+@@readImage:
     mov cx, word ptr ds:[ExecImageBytes]
     mov dx, word ptr ds:[ExecImageBytes + 2]
     mov ax, ds:[ExecChildSeg]
@@ -226,9 +226,9 @@ loc_15551:
     push cs
     call ReadHuge
     mov byte ptr ds:[ExecStatus], 2
-    jae loc_15575
+    jae @@seekRelocations
     jmp near ptr ExecCleanup
-loc_15575:
+@@seekRelocations:
     mov si, offset ResEntryBuf
     mov cx, ds:[si + 5]
     mov dx, ds:[si + 7]
@@ -241,11 +241,11 @@ loc_15575:
     mov ax, 4200h
     int 21h
     mov byte ptr ds:[ExecStatus], 2
-    jae loc_155A2
+    jae @@nextRelocation
     jmp near ptr ExecCleanup
-loc_155A2:
+@@nextRelocation:
     cmp word ptr ds:[ExecMzHeader + 6], 0
-    je loc_155F3
+    je @@startChild
     mov cx, 4
     mov di, offset ExecRelocEntry
     push cs
@@ -254,9 +254,9 @@ loc_155A2:
     push cs
     call ReadHuge
     mov byte ptr ds:[ExecStatus], 2
-    jae loc_155C3
+    jae @@applyRelocation
     jmp near ptr ExecCleanup
-loc_155C3:
+@@applyRelocation:
     mov ax, word ptr ds:[ExecRelocEntry]
     mov bx, word ptr ds:[ExecRelocEntry + 2]
     mov si, ax
@@ -275,8 +275,8 @@ loc_155C3:
     mov es, ax
     add es:[si], cx
     dec word ptr ds:[ExecMzHeader + 6]
-    jmp short loc_155A2
-loc_155F3:
+    jmp short @@nextRelocation
+@@startChild:
     mov bx, ds:[ResHandle]
     push cs
     call CloseHandleIfOpen
@@ -295,7 +295,7 @@ loc_155F3:
     int 21h
     mov word ptr ds:[OldInt21], bx
     mov word ptr ds:[OldInt21 + 2], es
-    mov dx, 31Ah
+    mov dx, offset ExecInt21Hook
     mov ax, 2521h
     int 21h
     mov ds, ds:[ExecChildSeg]
@@ -342,12 +342,12 @@ ExecChildTerminated:
     mov byte ptr ds:[ExecStatus], 0
 ExecCleanup:
     cmp word ptr ds:[ExecChildSeg], 0
-    je loc_156AD
+    je @@closeArchive
     mov es, ds:[ExecChildSeg]
     mov ah, 49h
     int 21h
     mov word ptr ds:[ExecChildSeg], 0
-loc_156AD:
+@@closeArchive:
     mov bx, ds:[ResHandle]
     push cs
     call CloseHandleIfOpen
@@ -358,16 +358,16 @@ loc_156AD:
 ; returns to ExecChildTerminated. Everything else chains to OldInt21.
 ExecInt21Hook:
     cmp ah, 4Ch
-    jne loc_156CE
+    jne @@checkExec
     cmp word ptr cs:[ExecNestDepth], 0
     je ExecChildTerminated
     dec word ptr cs:[ExecNestDepth]
-    jmp short loc_156D8
-loc_156CE:
+    jmp short @@chainOldInt21
+@@checkExec:
     cmp ah, 4Bh
-    jne loc_156D8
+    jne @@chainOldInt21
     inc word ptr cs:[ExecNestDepth]
-loc_156D8:
+@@chainOldInt21:
     jmp dword ptr cs:[OldInt21]
 ; ExecResourceProgram state (it runs an MZ program stored in the archive).
 OldInt21 dd 0
@@ -393,33 +393,35 @@ ExecSavedSs dw 0
 ; The 1Bh-byte MZ header of the program being loaded.
 ExecMzHeader db 01Bh dup (0)
 ; Read CX (low):DX (high) bytes from handle BX to ES:DI in chunks, stepping the
-; segment on wrap. AX = 0, CF clear, or AX = error, CF set.
+; segment on wrap. AX = 0, CF clear, or AX = error, CF set. The count drops by the
+; requested chunk, not the bytes DOS returned, so a short read at end of file goes
+; unnoticed.
 ReadHuge:
     mov cs:[ReadHugeHandle], bx
     mov ax, cx
     or ax, dx
-    je loc_157A3
+    je @@success
     push ds
     push es
     pop ds
-loc_1576E:
+@@readChunk:
     push bx
     push cx
     push dx
     push di
     or dx, dx
-    jne loc_1577B
+    jne @@clampChunk
     cmp cx, -1
-    jb loc_1577E
-loc_1577B:
+    jb @@issueRead
+@@clampChunk:
     mov cx, 0FFFFh
-loc_1577E:
+@@issueRead:
     mov dx, di
     mov ah, 3Fh
     push cx
     int 21h
     pop bp
-    jb loc_157A6
+    jb @@readFailed
     pop di
     pop dx
     pop cx
@@ -427,19 +429,19 @@ loc_1577E:
     sub cx, bp
     sbb dx, 0
     add di, bp
-    jae loc_1579C
+    jae @@checkRemaining
     mov ax, ds
     add ax, 1000h
     mov ds, ax
-loc_1579C:
+@@checkRemaining:
     mov ax, cx
     or ax, dx
-    jne loc_1576E
+    jne @@readChunk
     pop ds
-loc_157A3:
+@@success:
     xor ax, ax
     retf
-loc_157A6:
+@@readFailed:
     pop di
     pop dx
     pop cx
@@ -454,28 +456,28 @@ WriteHuge:
     mov cs:[WriteHugeHandle], bx
     mov ax, cx
     or ax, dx
-    je loc_157F3
+    je @@success
     mov di, si
     push ds
     push es
     pop ds
-loc_157BE:
+@@writeChunk:
     push bx
     push cx
     push dx
     push di
     or dx, dx
-    jne loc_157CB
+    jne @@clampChunk
     cmp cx, -1
-    jb loc_157CE
-loc_157CB:
+    jb @@issueWrite
+@@clampChunk:
     mov cx, 0FFFFh
-loc_157CE:
+@@issueWrite:
     mov dx, di
     mov ah, 40h
     push cx
     int 21h
-    jb loc_157F6
+    jb @@writeFailed
     pop bp
     pop di
     pop dx
@@ -484,19 +486,19 @@ loc_157CE:
     sub cx, bp
     sbb dx, 0
     add di, bp
-    jae loc_157EC
+    jae @@checkRemaining
     mov ax, ds
     add ax, 1000h
     mov ds, ax
-loc_157EC:
+@@checkRemaining:
     mov ax, cx
     or ax, dx
-    jne loc_157BE
+    jne @@writeChunk
     pop ds
-loc_157F3:
+@@success:
     xor ax, ax
     retf
-loc_157F6:
+@@writeFailed:
     pop di
     pop dx
     pop cx
@@ -511,42 +513,42 @@ CopyFileData:
     mov cs:[CopySourceHandle], bx
     mov cs:[CopyDestHandle], ax
     test word ptr cs:[ResOptions], 4
-    je loc_1581A
+    je @@setBuffer
     mov es, word ptr cs:[ResBufferPtr + 2]
     mov di, word ptr cs:[ResBufferPtr]
-loc_1581A:
+@@setBuffer:
     mov word ptr cs:[ResBufferPtr], di
     mov ax, cx
     or ax, dx
-    je loc_15868
+    je @@success
     xor di, di
     push ds
     push es
     pop ds
-loc_1582A:
+@@copyChunk:
     push bx
     push cx
     push dx
     push di
     or dx, dx
-    jne loc_15839
+    jne @@clampChunk
     cmp cx, cs:[CopyChunkBytes]
-    jb loc_1583E
-loc_15839:
+    jb @@issueRead
+@@clampChunk:
     mov cx, cs:[CopyChunkBytes]
-loc_1583E:
+@@issueRead:
     mov dx, di
     mov ah, 3Fh
     push cx
     int 21h
-    jb loc_1586B
+    jb @@copyFailed
     mov bx, cs:[CopyDestHandle]
     mov ax, 4000h
     int 21h
     pop bp
-    jb loc_1586B
+    jb @@copyFailed
     cmp ax, bp
-    jne loc_1586B
+    jne @@copyFailed
     pop di
     pop dx
     pop cx
@@ -555,12 +557,12 @@ loc_1583E:
     sbb dx, 0
     mov ax, cx
     or ax, dx
-    jne loc_1582A
+    jne @@copyChunk
     pop ds
-loc_15868:
+@@success:
     xor ax, ax
     retf
-loc_1586B:
+@@copyFailed:
     pop di
     pop dx
     pop cx
@@ -582,20 +584,20 @@ OpenResourceFile:
     push cs
     pop ds
     test word ptr ds:[ResOptions], 1
-    je loc_15892
-    jmp near ptr loc_15A21
-loc_15892:
+    je @@searchArchives
+    jmp near ptr @@openLooseFile
+@@searchArchives:
     mov word ptr ds:[ResHandle], 0
     mov ax, word ptr ds:[ResCurArchive]
     mov word ptr ds:[ResSearchStart], ax
     mov word ptr ds:[ResHandle], 0
-loc_158A4:
+@@openArchive:
     mov dx, word ptr ds:[ResCurArchive]
     mov ax, 03D02h
     int 021h
-    jae loc_158B2
-    jmp near ptr loc_159E0
-loc_158B2:
+    jae @@readHeader
+    jmp near ptr @@tryNextArchive
+@@readHeader:
     mov word ptr ds:[ResHandle], ax
     mov word ptr ds:[ResArchiveBase], 0
     mov word ptr ds:[ResArchiveBase + 2], 0
@@ -604,11 +606,11 @@ loc_158B2:
     mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
-    jae loc_158D4
-    jmp near ptr loc_159E0
-loc_158D4:
+    jae @@checkMzStub
+    jmp near ptr @@tryNextArchive
+@@checkMzStub:
     cmp word ptr ds:[ResEntryCount], 05A4Dh
-    jne loc_15919
+    jne @@checkSignature
     mov ax, word ptr ds:[ResSignature]
     dec ax
     add ax, ax
@@ -624,53 +626,53 @@ loc_158D4:
     xchg cx, dx
     mov ax, 04200h
     int 021h
-    jae loc_15906
-    jmp near ptr loc_159E0
-loc_15906:
+    jae @@readShadowHeader
+    jmp near ptr @@tryNextArchive
+@@readShadowHeader:
     mov dx, offset ResEntryCount
     mov cx, 0Ch
     mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
-    jae loc_15919
-    jmp near ptr loc_159E0
-loc_15919:
+    jae @@checkSignature
+    jmp near ptr @@tryNextArchive
+@@checkSignature:
     mov si, offset ResSignature
     mov di, offset ShadowSignature
     mov cx, 6
-loc_15922:
+@@compareSignature:
     lodsb
     cmp al, byte ptr ds:[di]
-    je loc_1592A
-    jmp near ptr loc_159E0
-loc_1592A:
+    je @@nextSignatureByte
+    jmp near ptr @@tryNextArchive
+@@nextSignatureByte:
     inc di
-    loop loc_15922
+    loop @@compareSignature
     mov cx, word ptr ds:[ResEntryCount]
     or cx, cx
-    jne loc_15938
-    jmp near ptr loc_159E0
-loc_15938:
+    jne @@checkEntryCount
+    jmp near ptr @@tryNextArchive
+@@checkEntryCount:
     cmp cx, 0320h
-    jb loc_15941
-    jmp near ptr loc_159E0
-loc_15941:
+    jb @@readEntry
+    jmp near ptr @@tryNextArchive
+@@readEntry:
     mov dx, offset ResEntryBuf
     mov cx, word ptr ds:[ResEntrySize]
     mov bx, word ptr ds:[ResHandle]
     mov ah, DOS_READ_FILE
     int 021h
-    jae loc_15955
-    jmp near ptr loc_159E0
-loc_15955:
+    jae @@decryptEntry
+    jmp near ptr @@tryNextArchive
+@@decryptEntry:
     mov di, offset ResEntryBuf
     mov cx, word ptr ds:[ResEntrySize]
     mov ax, word ptr ds:[ResKey]
-loc_1595F:
+@@decryptByte:
     xor byte ptr ds:[di], al
     inc di
     add al, ah
-    loop loc_1595F
+    loop @@decryptByte
     mov word ptr ds:[ResKey], ax
     mov si, offset ResEntryBuf
     add si, 0Dh
@@ -678,33 +680,33 @@ loc_1595F:
     mov ah, 3
     push cs
     call StripDirectories
-loc_15979:
+@@skipNameSpaces:
     cmp byte ptr es:[di], 020h
-    jne loc_15982
+    jne @@skipEntrySpaces
     inc di
-    jmp short loc_15979
-loc_15982:
+    jmp short @@skipNameSpaces
+@@skipEntrySpaces:
     cmp byte ptr ds:[si], 020h
-    jne loc_1598A
+    jne @@compareNameChar
     inc si
-    jmp short loc_15982
-loc_1598A:
+    jmp short @@skipEntrySpaces
+@@compareNameChar:
     mov al, byte ptr es:[di]
     inc di
     mov ah, byte ptr ds:[si]
     inc si
     cmp al, 061h
-    jb loc_1599B
+    jb @@compareUpper
     cmp al, 07Ah
-    ja loc_1599B
+    ja @@compareUpper
     and al, 05Fh
-loc_1599B:
+@@compareUpper:
     cmp al, ah
-    jne loc_159D7
+    jne @@nextEntry
     or al, al
-    jne loc_15979
+    jne @@skipNameSpaces
     or ah, ah
-    jne loc_159D7
+    jne @@nextEntry
     mov si, offset ResEntryBuf
     mov dx, word ptr ds:[si + 5]
     mov cx, word ptr ds:[si + 7]
@@ -713,11 +715,11 @@ loc_1599B:
     mov ax, 04200h
     mov bx, word ptr ds:[ResHandle]
     int 021h
-    jb loc_159E0
+    jb @@tryNextArchive
     mov si, offset ResEntryBuf
     mov cx, word ptr ds:[si + 9]
     mov dx, word ptr ds:[si + 0Bh]
-loc_159CC:
+@@returnHandle:
     mov ax, word ptr ds:[ResHandle]
     mov bx, ax
     clc
@@ -726,38 +728,38 @@ loc_159CC:
     pop di
     pop si
     retf
-loc_159D7:
+@@nextEntry:
     dec word ptr ds:[ResEntryCount]
-    je loc_159E0
-    jmp near ptr loc_15941
-loc_159E0:
+    je @@tryNextArchive
+    jmp near ptr @@readEntry
+@@tryNextArchive:
     mov bx, word ptr ds:[ResHandle]
     or bx, bx
-    je loc_159EE
+    je @@advanceArchive
     mov ah, DOS_CLOSE_FILE
     int 021h
-    jb loc_15A0C
-loc_159EE:
+    jb @@notFound
+@@advanceArchive:
     mov si, word ptr ds:[ResCurArchive]
-loc_159F2:
+@@skipArchiveName:
     lodsb
     or al, al
-    jne loc_159F2
+    jne @@skipArchiveName
     cmp byte ptr ds:[si], 0FFh
-    jne loc_159FF
+    jne @@setCurArchive
     mov si, offset ResArchiveList
-loc_159FF:
+@@setCurArchive:
     mov word ptr ds:[ResCurArchive], si
     cmp si, word ptr ds:[ResSearchStart]
-    je loc_15A0C
-    jmp near ptr loc_158A4
-loc_15A0C:
+    je @@notFound
+    jmp near ptr @@openArchive
+@@notFound:
     mov bx, word ptr ds:[ResHandle]
     or bx, bx
-    je loc_15A18
+    je @@returnError
     mov ah, DOS_CLOSE_FILE
     int 021h
-loc_15A18:
+@@returnError:
     mov ax, 2
     stc
     pop es
@@ -765,7 +767,7 @@ loc_15A18:
     pop di
     pop si
     retf
-loc_15A21:
+@@openLooseFile:
     mov word ptr ds:[ResHandle], 0
     les di, dword ptr ds:[ResNamePtr]
     mov ah, 2
@@ -778,14 +780,14 @@ loc_15A21:
     mov ax, 03D02h
     int 021h
     pop ds
-    jb loc_15A0C
+    jb @@notFound
     mov word ptr ds:[ResHandle], ax
     xor cx, cx
     mov dx, cx
     mov bx, ax
     mov ax, 04202h
     int 021h
-    jb loc_15A0C
+    jb @@notFound
     push ax
     push dx
     xor cx, cx
@@ -795,14 +797,14 @@ loc_15A21:
     int 021h
     pop dx
     pop cx
-    jb loc_15A0C
-    jmp near ptr loc_159CC
+    jb @@notFound
+    jmp near ptr @@returnHandle
 CloseHandleIfOpen:
     or bx, bx
-    je loc_15A6C
+    je @@done
     mov ah, 3Eh
     int 21h
-loc_15A6C:
+@@done:
     retf
 
 ; Copy the program's own path (from its environment) to ResArchiveList.
@@ -812,14 +814,14 @@ UseOwnExeAsArchive:
     mov es, bx
     mov es, word ptr es:[02Ch]
     xor si, si
-loc_15A7A:
+@@skipEnvironment:
     mov al, byte ptr es:[si]
     inc si
     or al, al
-    jne loc_15A7A
+    jne @@skipEnvironment
     mov al, byte ptr es:[si]
     or al, al
-    jne loc_15A7A
+    jne @@skipEnvironment
     add si, 3
     push ds
     push cs
@@ -828,10 +830,10 @@ loc_15A7A:
     pop es
     cld
     mov di, offset ResArchiveList
-loc_15A95:
+@@copyPathChar:
     movsb
     cmp byte ptr ds:[si - 1], 0
-    jne loc_15A95
+    jne @@copyPathChar
     mov al, 0FFh
     stosb
     pop ds
@@ -840,36 +842,36 @@ loc_15A95:
 ; With ResOptions bit 2: skip DS:SI (AH bit 1) or ES:DI (AH bit 2) past the last "\".
 StripDirectories:
     test word ptr cs:[ResOptions], 2
-    je loc_15AD9
+    je @@done
     test ah, 1
-    je loc_15AC0
+    je @@checkDestName
     mov bp, si
-loc_15AB1:
+@@scanSourceName:
     lodsb
     or al, al
-    je loc_15ABE
+    je @@setSourceStart
     cmp al, 05Ch
-    jne loc_15AB1
+    jne @@scanSourceName
     mov bp, si
-    jmp short loc_15AB1
-loc_15ABE:
+    jmp short @@scanSourceName
+@@setSourceStart:
     mov si, bp
-loc_15AC0:
+@@checkDestName:
     test ah, 2
-    je loc_15AD9
+    je @@done
     mov bp, di
-loc_15AC7:
+@@scanDestName:
     mov al, byte ptr es:[di]
     inc di
     or al, al
-    je loc_15AD7
+    je @@setDestStart
     cmp al, 05Ch
-    jne loc_15AC7
+    jne @@scanDestName
     mov bp, di
-    jmp short loc_15AC7
-loc_15AD7:
+    jmp short @@scanDestName
+@@setDestStart:
     mov di, bp
-loc_15AD9:
+@@done:
     retf
 ; Library options (ResLibSetup AX bit 8000h): bit 1 open loose files instead of
 ; searching archives, bit 2 strip directories, bit 4 CopyFileData uses ResBufferPtr.

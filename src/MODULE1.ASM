@@ -323,6 +323,7 @@ public RestoreBackground8Ega
 public RestoreBackground8Tandy
 public RestoreKeyboardVector09
 public RestoreTimerVector08
+public ReturnCarrySet
 public RunLevelScriptEvents
 public SaveBackground16Cga
 public SaveBackground16Ega
@@ -346,7 +347,6 @@ public UpdateHighScoreTable
 public WaitTimerTick
 public WaitVerticalRetrace
 public XorCodeHiscoreBlock
-public loc_05059
 extrn AdapterDrawHandlers:word
 extrn ApplyLevelPalette:near
 extrn BlockOffsets:word
@@ -1084,16 +1084,16 @@ RestoreTimerVector08:
     push es
     mov ds, word ptr cs:[MainDataSegment]
     cmp byte ptr ds:[SoundModuleLoaded], 1
-    jne loc_00704
+    jne @@tickSfx
     call far ptr SoundModuleTickEntry
     mov ds, word ptr cs:[MainDataSegment]
-loc_00704:
+@@tickSfx:
     call SfxTimerTick
     mov ds, word ptr cs:[MainDataSegment]
     test byte ptr ds:[TimerTickPhase], 1
-    jne loc_00716
+    jne @@restoreRegs
     call IncrementTimerTick
-loc_00716:
+@@restoreRegs:
     pop es
     pop bp
     pop si
@@ -1103,13 +1103,13 @@ loc_00716:
     pop bx
     inc byte ptr ds:[TimerTickPhase]
     and byte ptr ds:[TimerTickPhase], 3
-    je loc_0072F
+    je @@chainBiosTimer
     pop ds
     mov al, 020h
     out 020h, al
     pop ax
     iret
-loc_0072F:
+@@chainBiosTimer:
     pop ds
     pop ax
     sti
@@ -1122,9 +1122,9 @@ SavedInt08 db 00h,00h,00h,00h
 ; F9 down: ShowBossKeyScreen, then falls into RedrawStatusPanel.
 CheckBossKey:
     cmp byte ptr ds:[KeyDownTable + SCAN_F9], KEY_STATE_DOWN
-    je loc_00744
+    je @@showBossKey
     ret
-loc_00744:
+@@showBossKey:
     call ShowBossKeyScreen
 
 ; Draws the panel background and, outside the demo, the HUD, fuel gauge, upgrade slots
@@ -1132,9 +1132,9 @@ loc_00744:
 RedrawStatusPanel:
     call DrawStatusPanel
     cmp word ptr ds:[DemoActive], 1
-    jne loc_00752
+    jne @@drawHud
     ret
-loc_00752:
+@@drawHud:
     call DrawHud
     call DrawFuelGauge
     call DrawUpgradeSlots
@@ -1161,7 +1161,7 @@ ShowBossKeyScreen:
     mov cx, 01E0h
     call FillTextAttributes
     mov cx, 0Fh
-loc_0078C:
+@@colorRow:
     push cx
     mov al, 0Eh
     mov cx, 1
@@ -1170,7 +1170,7 @@ loc_0078C:
     mov cx, 04Fh
     call FillTextAttributes
     pop cx
-    loop loc_0078C
+    loop @@colorRow
     mov al, 01Eh
     call FillTextAttributeRow
     mov al, 01Eh
@@ -1185,16 +1185,16 @@ loc_0078C:
     mov bh, 0
     int 010h
     mov ds, word ptr cs:[MainDataSegment]
-loc_007C4:
+@@waitF9Release:
     cmp byte ptr ds:[KeyDownTable + SCAN_F9], KEY_STATE_DOWN
-    je loc_007C4
+    je @@waitF9Release
     mov byte ptr ds:[KeyLastMakeCode], 0
-loc_007D0:
+@@waitAnyKey:
     cmp byte ptr ds:[KeyLastMakeCode], 0
-    je loc_007D0
-loc_007D7:
+    je @@waitAnyKey
+@@waitF9ReleaseAgain:
     cmp byte ptr ds:[KeyDownTable + SCAN_F9], KEY_STATE_DOWN
-    je loc_007D7
+    je @@waitF9ReleaseAgain
     mov ax, word ptr cs:[VideoAdapter]
     mov bx, offset VideoBiosModeTable
     xlat
@@ -1310,9 +1310,9 @@ AllocateBuffers:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_008F1
+    jae @@workspaceAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_008F1:
+@@workspaceAllocated:
     mov word ptr cs:[WorkspaceSegment], ax
     mov ax, 075h
     mul word ptr ds:[Sprite8Bytes]
@@ -1325,9 +1325,9 @@ loc_008F1:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00915
+    jae @@sprites1x1Allocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00915:
+@@sprites1x1Allocated:
     mov word ptr cs:[Sprites1x1Segment], ax
     mov ax, 0FFh
     mul word ptr ds:[Sprite16Bytes]
@@ -1340,9 +1340,9 @@ loc_00915:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00939
+    jae @@sprites2x2Allocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00939:
+@@sprites2x2Allocated:
     mov word ptr cs:[Sprites2x2Segment], ax
     mov ax, 082h
     mul word ptr ds:[Sprite16Bytes]
@@ -1355,9 +1355,9 @@ loc_00939:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_0095D
+    jae @@sprites2x2CAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_0095D:
+@@sprites2x2CAllocated:
     mov word ptr cs:[Sprites2x2CSegment], ax
     mov ax, 0Dh
     mul word ptr ds:[Sprite32Bytes]
@@ -1370,9 +1370,9 @@ loc_0095D:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00981
+    jae @@levelSpritesAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00981:
+@@levelSpritesAllocated:
     mov word ptr cs:[LevelSpritesSegment], ax
     mov ax, 01Ch
     mul word ptr ds:[Sprite32Bytes]
@@ -1385,9 +1385,9 @@ loc_00981:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_009A5
+    jae @@manExplAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_009A5:
+@@manExplAllocated:
     mov word ptr cs:[ManExplSegment], ax
     mov ax, word ptr ds:[TheEndBytes]
     shr ax, 1
@@ -1399,9 +1399,9 @@ loc_009A5:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_009C5
+    jae @@theEndAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_009C5:
+@@theEndAllocated:
     mov word ptr cs:[TheEndSegment], ax
     mov bx, word ptr ds:[PanelImageBytes ]
     mov ax, 010h
@@ -1462,9 +1462,9 @@ loc_009C5:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00A6B
+    jae @@panelAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00A6B:
+@@panelAllocated:
     mov word ptr cs:[PanelSegment], ax
     mov bx, word ptr ds:[PlaqueBytes]
     shr bx, 1
@@ -1475,9 +1475,9 @@ loc_00A6B:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00A8A
+    jae @@plaqueAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00A8A:
+@@plaqueAllocated:
     mov word ptr cs:[PlaqueSegment], ax
     mov bx, word ptr ds:[BlueBitsImageBytes ]
     add bx, word ptr ds:[BlueBitsImageBytes + 002h]
@@ -1506,9 +1506,9 @@ loc_00A8A:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00AF1
+    jae @@blueBitsAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00AF1:
+@@blueBitsAllocated:
     mov word ptr cs:[BlueBitsSegment], ax
     mov ax, 0100h
     mul word ptr ds:[BlockBytes]
@@ -1521,9 +1521,9 @@ loc_00AF1:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00B15
+    jae @@levelBlocksAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00B15:
+@@levelBlocksAllocated:
     mov word ptr cs:[LevelBlocksSegment], ax
     mov ax, 02Ch
     mul word ptr ds:[BlockBytes]
@@ -1536,9 +1536,9 @@ loc_00B15:
     add word ptr cs:[AllocatedParagraphs], bx
     mov ah, DOS_ALLOCATE_MEMORY
     int 021h
-    jae loc_00B39
+    jae @@shipAllocated
     jmp near ptr ShowOutOfMemoryAndExit
-loc_00B39:
+@@shipAllocated:
     mov word ptr cs:[ShipSegment], ax
     ret
 
@@ -1559,12 +1559,12 @@ LoadLevelMap:
     mov ax, word ptr cs:[LevelMapSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
-loc_00B7F:
+@@retryLoad:
     call LoadResourceFile
     cmp word ptr ds:[FileStatus], FILE_STATUS_OK
     je InitializeByteAttributes
     call PromptLoadErrorWaitFire
-    jmp short loc_00B7F
+    jmp short @@retryLoad
 ; Initialize shared byte attributes to 1, then apply a selected sparse patch stream.
 ; ES uses MainDataSegment for fill; DS addresses the patch stream and table writes.
 ; Forward traversal requires DF=0; do not infer the selector range from this loop.
@@ -1645,21 +1645,21 @@ LoadGraphicsFile:
     mov ax, word ptr cs:[LoadNamePtr]
     mov word ptr ds:[FileNamePtr], ax
     push ax
-loc_00D0E:
+@@retryLoad:
     call LoadResourceFile
     cmp word ptr ds:[FileStatus], FILE_STATUS_OK
-    je loc_00D1D
+    je @@loaded
     call PromptLoadErrorWaitFire
-    jmp short loc_00D0E
-loc_00D1D:
+    jmp short @@retryLoad
+@@loaded:
     pop bp
     dec bp
     dec bp
     mov bp, word ptr ss:[bp]
     cmp byte ptr cs:[PerFileFlagsEnabled], 1
-    je loc_00D2E
+    je @@decode
     mov bp, 0FFFFh
-loc_00D2E:
+@@decode:
     mov ds, word ptr cs:[WorkspaceSegment]
     mov es, word ptr cs:[LoadDestSegment]
     mov di, word ptr cs:[LoadDestOffset]
@@ -1698,7 +1698,7 @@ LoadCommonGraphics:
     call LoadGraphicsRecordImages
     mov byte ptr ds:[LoadIsEnc], 0
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
-    jne loc_00DE3
+    jne @@loadBlueBits
     mov es, word ptr cs:[PanelSegment]
     xor di, di
     mov ax, 0Fh
@@ -1706,7 +1706,7 @@ LoadCommonGraphics:
     mov cx, ax
     mov si, offset CgaPanelPatch
     rep movsb
-loc_00DE3:
+@@loadBlueBits:
     mov word ptr cs:[LoadNamePtr], offset File_BLUEBITS_BIC
     mov ax, word ptr cs:[BlueBitsSegment]
     mov word ptr cs:[LoadDestSegment], ax
@@ -1853,31 +1853,31 @@ BuildRowTables:
     shl ax, 1
     neg ax
     mov cx, 0D0h
-loc_00F31:
+@@fillRecordRows:
     stosw
     add ax, word ptr cs:[PlayfieldRowBytes]
-    loop loc_00F31
+    loop @@fillRecordRows
     mov ax, 0FFFFh
     mov cx, 020h
     rep stosw
     mov di, offset PlayfieldRowOffsets
     xor ax, ax
     mov cx, 0C8h
-loc_00F49:
+@@fillPlayfieldRows:
     stosw
     add ax, word ptr cs:[PlayfieldRowBytes]
-    loop loc_00F49
+    loop @@fillPlayfieldRows
     mov di, offset WideRowOffsets
     xor ax, ax
     mov cx, 0C8h
-loc_00F59:
+@@fillWideRows:
     stosw
     add ax, word ptr cs:[WideRowBytes]
-    loop loc_00F59
+    loop @@fillWideRows
     mov di, offset ScreenRowOffsets
     mov cx, 0C8h
     xor ax, ax
-loc_00F69:
+BuildScreenRowLoop:
     stosw
     xchg ax, di
     mov bx, word ptr cs:[VideoAdapter]
@@ -1890,54 +1890,54 @@ ScreenRowStepCases label word
 NextScreenRowCga:
     add di, 02000h
     test di, 04000h
-    je loc_00F8B
+    je @@stepped
     add di, 0C050h
-loc_00F8B:
-    jmp short loc_00FA0
+@@stepped:
+    jmp short ScreenRowStepped
 
 NextScreenRowEga:
     add di, 028h
-    jmp short loc_00FA0
+    jmp short ScreenRowStepped
 
 ; DI += one Tandy scan line (four interleaved 8K banks).
 NextScreenRowTandy:
     add di, 02000h
     test di, 08000h
-    je loc_00FA0
+    je ScreenRowStepped
     add di, 080A0h
-loc_00FA0:
+ScreenRowStepped:
     xchg ax, di
-    loop loc_00F69
+    loop BuildScreenRowLoop
     push cs
     pop es
     mov di, offset BlockOffsets
     mov cx, 0100h
     xor ax, ax
-loc_00FAD:
+@@fillBlockOffsets:
     stosw
     add ax, word ptr ds:[BlockBytes]
-    loop loc_00FAD
+    loop @@fillBlockOffsets
     mov di, offset Sprite8Offsets
     mov cx, 0100h
     xor ax, ax
-loc_00FBC:
+@@fillSprite8Offsets:
     stosw
     add ax, word ptr ds:[Sprite8Bytes]
-    loop loc_00FBC
+    loop @@fillSprite8Offsets
     mov di, offset Sprite16Offsets
     mov cx, 0100h
     xor ax, ax
-loc_00FCB:
+@@fillSprite16Offsets:
     stosw
     add ax, word ptr ds:[Sprite16Bytes]
-    loop loc_00FCB
+    loop @@fillSprite16Offsets
     mov di, offset Sprite32Offsets
     mov cx, 0100h
     xor ax, ax
-loc_00FDA:
+@@fillSprite32Offsets:
     stosw
     add ax, word ptr ds:[Sprite32Bytes]
-    loop loc_00FDA
+    loop @@fillSprite32Offsets
     jmp near ptr ClearWorkspace
 
 ; For every byte value, write four bytes at ByteToNibbleMasks+4*value expanding bits 7..0 into
@@ -1946,55 +1946,55 @@ BuildByteToNibbleMaskTable:
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset ByteToNibbleMasks + 3
     xor dh, dh
-loc_00FEE:
+@@nextValue:
     mov dl, dh
     xor al, al
     rcr dl, 1
-    jae loc_00FF8
+    jae @@bit1
     mov al, 0Fh
-loc_00FF8:
+@@bit1:
     rcr dl, 1
-    jae loc_00FFE
+    jae @@storeMask0
     add al, 0F0h
-loc_00FFE:
+@@storeMask0:
     mov byte ptr ds:[di], al
     dec di
     xor al, al
     rcr dl, 1
-    jae loc_01009
+    jae @@bit3
     mov al, 0Fh
-loc_01009:
+@@bit3:
     rcr dl, 1
-    jae loc_0100F
+    jae @@storeMask1
     add al, 0F0h
-loc_0100F:
+@@storeMask1:
     mov byte ptr ds:[di], al
     dec di
     xor al, al
     rcr dl, 1
-    jae loc_0101A
+    jae @@bit5
     mov al, 0Fh
-loc_0101A:
+@@bit5:
     rcr dl, 1
-    jae loc_01020
+    jae @@storeMask2
     add al, 0F0h
-loc_01020:
+@@storeMask2:
     mov byte ptr ds:[di], al
     dec di
     xor al, al
     rcr dl, 1
-    jae loc_0102B
+    jae @@bit7
     mov al, 0Fh
-loc_0102B:
+@@bit7:
     rcr dl, 1
-    jae loc_01031
+    jae @@storeMask3
     add al, 0F0h
-loc_01031:
+@@storeMask3:
     mov byte ptr ds:[di], al
     dec di
     add di, 8
     inc dh
-    jne loc_00FEE
+    jne @@nextValue
     ret
 ; EGA masked sprite blitters, one per pixel phase (REC_PIXEL_PHASE 0..7), reached
 ; through Sprite32Blitters, FlashSprite32Blitters, Sprite16Blitters, FlashSprite16Blitters
@@ -2129,11 +2129,11 @@ DrawSprite32Shift1Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_011AF
-    jmp short loc_011B2
-loc_011AF:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift1Ega
-loc_011B2:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift2Ega:
@@ -2230,11 +2230,11 @@ DrawSprite32Shift2Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_012AD
-    jmp short loc_012B0
-loc_012AD:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift2Ega
-loc_012B0:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift3Ega:
@@ -2357,11 +2357,11 @@ DrawSprite32Shift3Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_013DE
-    jmp short loc_013E1
-loc_013DE:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift3Ega
-loc_013E1:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift4Ega:
@@ -2510,11 +2510,11 @@ DrawSprite32Shift4Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01542
-    jmp short loc_01545
-loc_01542:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift4Ega
-loc_01545:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift5Ega:
@@ -2637,11 +2637,11 @@ DrawSprite32Shift5Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01673
-    jmp short loc_01676
-loc_01673:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift5Ega
-loc_01676:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift6Ega:
@@ -2738,11 +2738,11 @@ DrawSprite32Shift6Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01771
-    jmp short loc_01774
-loc_01771:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift6Ega
-loc_01774:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift7Ega:
@@ -2813,11 +2813,11 @@ DrawSprite32Shift7Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_0183C
-    jmp short loc_0183F
-loc_0183C:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite32Shift7Ega
-loc_0183F:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 FlashSprite32Shift1Ega:
@@ -3212,11 +3212,11 @@ DrawSprite16Shift2Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_01C58
-    jmp short loc_01C5B
-loc_01C58:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite16Shift2Ega
-loc_01C5B:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift3Ega:
@@ -3295,11 +3295,11 @@ DrawSprite16Shift3Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_01D12
-    jmp short loc_01D15
-loc_01D12:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite16Shift3Ega
-loc_01D15:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift4Ega:
@@ -3394,11 +3394,11 @@ DrawSprite16Shift4Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_01DEB
-    jmp short loc_01DEE
-loc_01DEB:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite16Shift4Ega
-loc_01DEE:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift5Ega:
@@ -3477,11 +3477,11 @@ DrawSprite16Shift5Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_01EA5
-    jmp short loc_01EA8
-loc_01EA5:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite16Shift5Ega
-loc_01EA8:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift6Ega:
@@ -3544,11 +3544,11 @@ DrawSprite16Shift6Ega:
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
     or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_01F40
-    jmp short loc_01F43
-loc_01F40:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite16Shift6Ega
-loc_01F43:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift7Ega:
@@ -3996,11 +3996,11 @@ DrawSprite8Shift4Ega:
     rcr ah, 1
     or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     add di, EGA_WORKSPACE_ROW_BYTES
-    loop loc_02384
-    jmp short loc_02387
-loc_02384:
+    loop @@nextRow
+    jmp short @@done
+@@nextRow:
     jmp near ptr DrawSprite8Shift4Ega
-loc_02387:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite8Shift5Ega:
@@ -4152,7 +4152,7 @@ BlitPackedToScreenEga:
     mov al, 2
     out dx, al
     inc dx
-loc_024E9:
+@@nextRow:
     push cx
     mov al, 1
     out dx, al
@@ -4176,7 +4176,7 @@ loc_024E9:
     sub di, bp
     add di, 028h
     pop cx
-    loop loc_024E9
+    loop @@nextRow
     mov al, 0Fh
     out dx, al
     ret
@@ -4187,7 +4187,7 @@ BlitPackedStride104Ega:
     mov cx, ax
     lodsw
     mov bp, ax
-loc_02523:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
@@ -4206,7 +4206,7 @@ loc_02523:
     sub di, bp
     add di, 01Ah
     pop cx
-    loop loc_02523
+    loop @@nextRow
     ret
 
 BlitPackedStride160Ega:
@@ -4215,7 +4215,7 @@ BlitPackedStride160Ega:
     mov cx, ax
     lodsw
     mov bp, ax
-loc_02557:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
@@ -4234,16 +4234,16 @@ loc_02557:
     sub di, bp
     add di, 028h
     pop cx
-    loop loc_02557
+    loop @@nextRow
     ret
 RecordWorkspaceOffsetEga:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
-    jae loc_025B2
+    jae RecordWorkspaceOffscreen
     shl bx, 1
     mov bx, word ptr ds:[bx + RecordRowOffsets]
     cmp bx, -1
-    je loc_025B2
+    je RecordWorkspaceOffscreen
     mov ax, word ptr ss:[bp + REC_X]
     mov cx, ax
     and cx, 7
@@ -4253,12 +4253,12 @@ RecordWorkspaceOffsetEga:
     shr ax, 1
     add ax, bx
     cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
-    jne loc_025AE
+    jne @@countFlash
     ret
-loc_025AE:
+@@countFlash:
     dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
-loc_025B2:
+RecordWorkspaceOffscreen:
     mov ax, 0FFFFh
     ret
 
@@ -4304,17 +4304,17 @@ RecordScreenOffsetEga:
 
 PrintGraphicsCharEga:
     cmp al, 010h
-    jne loc_02605
-    jmp near ptr loc_0272F
-loc_02605:
+    jne @@checkSetPosition
+    jmp near ptr @@setColor
+@@checkSetPosition:
     cmp al, 011h
-    jne loc_0260C
-    jmp near ptr loc_02718
-loc_0260C:
+    jne @@checkNewLine
+    jmp near ptr @@setPosition
+@@checkNewLine:
     cmp al, 0Eh
-    jne loc_02613
-    jmp near ptr loc_0270C
-loc_02613:
+    jne @@drawGlyph
+    jmp near ptr @@newLine
+@@drawGlyph:
     xor ah, ah
     shl ax, 1
     shl ax, 1
@@ -4347,7 +4347,7 @@ loc_02613:
     mov bl, byte ptr ds:[TextColor]
     mov bh, 1
     mov cx, 4
-loc_02672:
+@@nextPlane:
     mov al, bh
     out dx, al
     shl bh, 1
@@ -4358,7 +4358,7 @@ loc_02672:
     inc byte ptr ds:[FontPlaneRegs + 1]
     pop dx
     shr bl, 1
-    jae loc_026B8
+    jae @@clearPlaneBits
     lodsb
     or byte ptr es:[di], al
     lodsb
@@ -4376,8 +4376,8 @@ loc_02672:
     lodsb
     or byte ptr es:[di + 0118h], al
     sub si, 8
-    jmp short loc_026F6
-loc_026B8:
+    jmp short @@planeDone
+@@clearPlaneBits:
     lodsb
     not al
     and byte ptr es:[di], al
@@ -4403,23 +4403,23 @@ loc_026B8:
     not al
     and byte ptr es:[di + 0118h], al
     sub si, 8
-loc_026F6:
-    loop loc_026FA
-    jmp short loc_026FD
-loc_026FA:
-    jmp near ptr loc_02672
-loc_026FD:
+@@planeDone:
+    loop @@nextPlaneFar
+    jmp short @@advanceColumn
+@@nextPlaneFar:
+    jmp near ptr @@nextPlane
+@@advanceColumn:
     mov al, 0Fh
     out dx, al
     add byte ptr ds:[TextColumn], 1
     cmp byte ptr ds:[TextColumn], 028h
-    jb loc_02717
-loc_0270C:
+    jb @@done
+@@newLine:
     mov byte ptr ds:[TextColumn], 0
     add word ptr ds:[TextRowOffset], 0140h
-loc_02717:
+@@done:
     ret
-loc_02718:
+@@setPosition:
     mov al, byte ptr ss:[bp + 1]
     mov cx, 0140h
     xor ah, ah
@@ -4429,7 +4429,7 @@ loc_02718:
     mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
-loc_0272F:
+@@setColor:
     inc bp
     mov al, byte ptr ss:[bp]
     mov byte ptr ds:[TextColor], al
@@ -4461,7 +4461,7 @@ CopyWorkspaceToScreenEga:
     out dx, al
     inc dx
     mov bp, 0C0h
-loc_0276E:
+@@nextRow:
     mov al, 1
     out dx, al
     mov cx, bx
@@ -4483,7 +4483,7 @@ loc_0276E:
     rep movsw
     add di, 0Eh
     dec bp
-    jne loc_0276E
+    jne @@nextRow
     mov al, 0Fh
     out dx, al
     mov ds, word ptr cs:[MainDataSegment]
@@ -4492,11 +4492,11 @@ loc_0276E:
 ClearScreen104x200Ega:
     call ClearEgaPage104x200
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    jne loc_027B6
+    jne @@done
     call FlipEgaDrawPage
     call ClearEgaPage104x200
     call FlipEgaDrawPage
-loc_027B6:
+@@done:
     ret
 
 ClearEgaPage104x200:
@@ -4509,59 +4509,59 @@ ClearEgaPage104x200:
     out dx, al
     xor di, di
     mov bp, 0C8h
-loc_027CB:
+@@nextRow:
     mov cx, 0Dh
     xor ax, ax
     rep stosw
     add di, 0Eh
     dec bp
-    jne loc_027CB
+    jne @@nextRow
     ret
 
 DecodeGraphicsImagesEga:
     inc word ptr cs:[DecodeImageIndex]
     call ReadDecodeImageHeader
-    jne loc_027E6
-    jmp near ptr loc_044AA
-loc_027E6:
+    jne @@decodeImage
+    jmp near ptr RestoreMainDataSegment
+@@decodeImage:
     mov cx, word ptr cs:[DecodeRows]
-loc_027EB:
+@@nextRow:
     push cx
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_02802
+    je @@splitPlanes
     push si
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-loc_027FA:
+@@nextMaskByte:
     push cx
     call BuildEgaTransparencyMask
     pop cx
-    loop loc_027FA
+    loop @@nextMaskByte
     pop si
-loc_02802:
+@@splitPlanes:
     mov word ptr cs:[DecodeDest], di
     mov di, offset DecodeRowBuffer
     mov bp, 4
-loc_0280D:
+@@nextPlane:
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-loc_02812:
+@@copyPlaneByte:
     lodsb
     mov byte ptr cs:[di], al
     inc di
-    loop loc_02812
+    loop @@copyPlaneByte
     sub di, word ptr cs:[DecodePlaneRowBytes]
     add di, 028h
     dec bp
-    jne loc_0280D
+    jne @@nextPlane
     mov di, offset DecodeRowBuffer
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-loc_0282C:
+@@nextColumn:
     push cx
     mov al, byte ptr cs:[di]
     mov ah, byte ptr cs:[di + 028h]
     mov dl, byte ptr cs:[di + 050h]
     mov dh, byte ptr cs:[di + 078h]
     mov cx, 8
-loc_0283F:
+@@nextPixel:
     rol dh, 1
     rcl bl, 1
     rol dl, 1
@@ -4572,34 +4572,34 @@ loc_0283F:
     rcl bl, 1
     and bl, 0Fh
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_02863
+    je @@checkColorRemap
     cmp bl, byte ptr cs:[TransparentColor]
-    jne loc_02863
+    jne @@checkColorRemap
     xor bl, bl
-loc_02863:
+@@checkColorRemap:
     cmp byte ptr cs:[PerFileFlagsEnabled], 1
-    jne loc_0289A
+    jne @@storePixelBits
     mov bp, word ptr cs:[DecodeFileFlags]
     cmp bp, -1
-    je loc_0289A
+    je @@storePixelBits
     add bp, word ptr cs:[DecodeImageIndex]
     cmp byte ptr ss:[bp], 1
-    je loc_0288A
+    je @@swapColors6And12
     cmp byte ptr ss:[bp], 2
-    je loc_02888
-    jmp short loc_0289A
-loc_02888:
-    jmp short loc_0289A
-loc_0288A:
+    je @@noRemap
+    jmp short @@storePixelBits
+@@noRemap:
+    jmp short @@storePixelBits
+@@swapColors6And12:
     cmp bl, 6
-    je loc_02898
+    je @@setColor12
     cmp bl, 0Ch
-    jne loc_0289A
+    jne @@storePixelBits
     mov bl, 6
-    jmp short loc_0289A
-loc_02898:
+    jmp short @@storePixelBits
+@@setColor12:
     mov bl, 0Ch
-loc_0289A:
+@@storePixelBits:
     shr bl, 1
     rcl byte ptr cs:[DecodePlaneBits + 0],1
     shr bl, 1
@@ -4608,7 +4608,7 @@ loc_0289A:
     rcl byte ptr cs:[DecodePlaneBits + 2],1
     shr bl, 1
     rcl byte ptr cs:[DecodePlaneBits + 3],1
-    loop loc_0283F
+    loop @@nextPixel
     mov al, byte ptr cs:[DecodePlaneBits + 0]
     mov byte ptr cs:[di], al
     mov al, byte ptr cs:[DecodePlaneBits + 1]
@@ -4619,11 +4619,11 @@ loc_0289A:
     mov byte ptr cs:[di + 078h], al
     inc di
     pop cx
-    loop loc_028DD
-    jmp short loc_028E0
-loc_028DD:
-    jmp near ptr loc_0282C
-loc_028E0:
+    loop @@nextColumnFar
+    jmp short @@storeRow
+@@nextColumnFar:
+    jmp near ptr @@nextColumn
+@@storeRow:
     mov di, offset DecodeRowBuffer
     mov cx, word ptr cs:[DecodePlaneRowBytes]
     call StoreDecodedPlaneRow
@@ -4638,11 +4638,11 @@ loc_028E0:
     call StoreDecodedPlaneRow
     mov di, word ptr cs:[DecodeDest]
     pop cx
-    loop loc_02916
-    jmp short loc_02919
-loc_02916:
-    jmp near ptr loc_027EB
-loc_02919:
+    loop @@nextRowFar
+    jmp short @@nextImage
+@@nextRowFar:
+    jmp near ptr @@nextRow
+@@nextImage:
     jmp near ptr DecodeGraphicsImagesEga
 
 ; EGA decoder: copies CX bytes from CS:DI to ES:[DecodeDest] and advances DecodeDest.
@@ -4671,7 +4671,7 @@ BuildEgaTransparencyMask:
     add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
     mov cx, 8
-loc_0294F:
+@@nextPixel:
     push cx
     rcl dh, 1
     rcl byte ptr cs:[DecodeByte5BA1],1
@@ -4684,24 +4684,24 @@ loc_0294F:
     and byte ptr cs:[DecodeByte5BA1], 0Fh
     mov cl, byte ptr cs:[TransparentColor]
     cmp byte ptr cs:[DecodeByte5BA1], cl
-    jne loc_02981
+    jne @@opaque
     stc
-    jmp short loc_02982
-loc_02981:
+    jmp short @@shiftMaskBit
+@@opaque:
     clc
-loc_02982:
+@@shiftMaskBit:
     rcl byte ptr cs:[DecodeByte5BA0],1
     pop cx
-    loop loc_0294F
+    loop @@nextPixel
     mov al, byte ptr cs:[DecodeByte5BA0]
     stosb
     inc si
     ret
 RestoreBackground32Ega:
     cmp di, -1
-    je loc_02999
+    je @@lowerHalf
     call RestoreEgaBackgroundHalf
-loc_02999:
+@@lowerHalf:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
@@ -4712,7 +4712,7 @@ loc_02999:
 RestoreEgaBackgroundHalf:
     mov bx, 15h
     mov cx, 10h
-loc_029AF:
+@@nextRow:
     movsw
     movsw
     movsb
@@ -4729,16 +4729,16 @@ loc_029AF:
     movsw
     movsb
     add di, bx
-    loop loc_029AF
+    loop @@nextRow
     ret
 RestoreBackground16Ega:
     cmp di, -1
-    jne loc_029CC
+    jne @@restore
     ret
-loc_029CC:
+@@restore:
     mov bx, 17h
     mov cx, 10h
-loc_029D2:
+@@nextRow:
     movsw
     movsb
     add di, bx
@@ -4751,13 +4751,13 @@ loc_029D2:
     movsw
     movsb
     add di, bx
-    loop loc_029D2
+    loop @@nextRow
     ret
 RestoreBackground8Ega:
     cmp di, -1
-    jne loc_029EB
+    jne @@restore
     ret
-loc_029EB:
+@@restore:
     mov bx, 18h
     movsw
     add di, bx
@@ -4828,21 +4828,21 @@ SaveBackground32Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    je loc_02A69
+    je @@lowerHalf
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     call SaveEgaBackgroundHalf
-loc_02A69:
+@@lowerHalf:
     add word ptr ss:[bp + REC_Y], 10h
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 10h
     cmp ax, 0FFFFh
-    jne loc_02A7D
+    jne @@saveLowerHalf
     ret
-loc_02A7D:
+@@saveLowerHalf:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
@@ -4854,7 +4854,7 @@ SaveEgaBackgroundHalf:
     mov ds, cs:[WorkspaceSegment]
     mov bx, 15h
     mov cx, 10h
-loc_02A9D:
+@@nextRow:
     movsb
     movsw
     movsw
@@ -4871,16 +4871,16 @@ loc_02A9D:
     movsw
     movsw
     add si, bx
-    loop loc_02A9D
+    loop @@nextRow
     mov ds, cs:[MainDataSegment]
     ret
 SaveBackground16Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_02AC5
+    jne @@save
     ret
-loc_02AC5:
+@@save:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -4889,7 +4889,7 @@ loc_02AC5:
     mov ds, cs:[WorkspaceSegment]
     mov bx, 17h
     mov cx, 10h
-loc_02AE1:
+@@nextRow:
     movsw
     movsb
     add si, bx
@@ -4902,16 +4902,16 @@ loc_02AE1:
     movsw
     movsb
     add si, bx
-    loop loc_02AE1
+    loop @@nextRow
     mov ds, cs:[MainDataSegment]
     ret
 SaveBackground8Ega:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_02B05
+    jne @@save
     ret
-loc_02B05:
+@@save:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -4991,11 +4991,11 @@ DrawMapRowBlocksEga:
     mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
-    jb loc_02B99
+    jb @@setBlockSegment
     mov ax, word ptr cs:[ShipSegment]
-loc_02B99:
+@@setBlockSegment:
     mov ds, ax
-loc_02B9B:
+@@nextBlock:
     push cx
     push bx
     mov es, word ptr cs:[LevelMapSegment]
@@ -5154,11 +5154,11 @@ loc_02B9B:
     pop bx
     add bx, 1
     pop cx
-    loop loc_02D24
-    jmp short loc_02D27
-loc_02D24:
-    jmp near ptr loc_02B9B
-loc_02D27:
+    loop @@nextBlockFar
+    jmp short @@done
+@@nextBlockFar:
+    jmp near ptr @@nextBlock
+@@done:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
@@ -5169,7 +5169,7 @@ DrawStretchedImageEga:
     mov cx, word ptr cs:[StretchImageRows]
     mov bp, word ptr cs:[StretchRowBytes]
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_02D5C
+    je @@padTop
     mov ax, bp
     shl ax, 1
     shl ax, 1
@@ -5177,7 +5177,7 @@ DrawStretchedImageEga:
     mul cx
     inc cx
     add si, ax
-loc_02D5C:
+@@padTop:
     mov dx, 03C4h
     mov al, 2
     out dx, al
@@ -5186,50 +5186,50 @@ loc_02D5C:
     mov cx, word ptr cs:[StretchImageRows]
     sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
-    js loc_02D8C
+    js @@startRows
     shr cx, 1
-    jcxz loc_02D8C
+    jcxz @@startRows
     dec cx
-    jcxz loc_02D81
+    jcxz @@clearPadRow
     mov al, 0Fh
     out dx, al
-loc_02D7C:
+@@skipPadRow:
     add di, 028h
-    loop loc_02D7C
-loc_02D81:
+    loop @@skipPadRow
+@@clearPadRow:
     xor al, al
     mov cx, bp
     rep stosb
     sub di, bp
     add di, 028h
-loc_02D8C:
+@@startRows:
     pop cx
-loc_02D8D:
+@@nextSourceRow:
     mov ax, word ptr cs:[StretchShownRows]
     cmp ax, word ptr cs:[StretchImageRows]
-    je loc_02DCB
+    je @@copyRow
     add word ptr cs:[StretchRowError], ax
     mov ax, word ptr cs:[StretchImageRows]
     cmp ax, word ptr cs:[StretchRowError]
-    ja loc_02DC6
+    ja @@emitRow
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_02DBA
+    je @@skipRowForward
     sub si, bp
     sub si, bp
     sub si, bp
     sub si, bp
-    jmp short loc_02DC2
-loc_02DBA:
+    jmp short @@skipRowNext
+@@skipRowForward:
     add si, bp
     add si, bp
     add si, bp
     add si, bp
-loc_02DC2:
-    loop loc_02D8D
-    jmp short loc_02E23
-loc_02DC6:
+@@skipRowNext:
+    loop @@nextSourceRow
+    jmp short @@clearBottomRow
+@@emitRow:
     sub word ptr cs:[StretchRowError], ax
-loc_02DCB:
+@@copyRow:
     push cx
     mov al, 1
     out dx, al
@@ -5250,18 +5250,18 @@ loc_02DCB:
     out dx, al
     mov cx, bp
     cmp word ptr cs:[StretchFlagB], 1
-    je loc_02DF8
+    je @@clearPlane3
     rep movsb
-    jmp short loc_02DFE
-loc_02DF8:
+    jmp short @@rowCopied
+@@clearPlane3:
     xor al, al
     rep stosb
     add si, bp
-loc_02DFE:
+@@rowCopied:
     sub di, bp
     add di, 028h
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_02E1B
+    je @@nextRow
     sub si, bp
     sub si, bp
     sub si, bp
@@ -5270,13 +5270,13 @@ loc_02DFE:
     sub si, bp
     sub si, bp
     sub si, bp
-loc_02E1B:
+@@nextRow:
     pop cx
-    loop loc_02E20
-    jmp short loc_02E23
-loc_02E20:
-    jmp near ptr loc_02D8D
-loc_02E23:
+    loop @@nextRowFar
+    jmp short @@clearBottomRow
+@@nextRowFar:
+    jmp near ptr @@nextSourceRow
+@@clearBottomRow:
     mov al, 0Fh
     out dx, al
     xor al, al
@@ -5290,7 +5290,7 @@ CopyFullWorkspaceToScreenEga:
     mov al, 2
     out dx, al
     inc dx
-loc_02E39:
+@@nextRow:
     mov al, 1
     out dx, al
     mov cx, 014h
@@ -5311,7 +5311,7 @@ loc_02E39:
     mov cx, 014h
     rep movsw
     dec bp
-    jne loc_02E39
+    jne @@nextRow
     mov al, 0Fh
     out dx, al
     mov ds, word ptr cs:[MainDataSegment]
@@ -5567,18 +5567,18 @@ CopyPackedRowsToTandyBanks:
     shl ax, 1
     shl ax, 1
     mov bp, ax
-loc_0307E:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 02000h
     test di, 08000h
-    je loc_03093
+    je @@bankAdvanced
     add di, 080A0h
-loc_03093:
+@@bankAdvanced:
     pop cx
-    loop loc_0307E
+    loop @@nextRow
     ret
 
 ; Copy a packed image (DS:SI: row count, width units) into the 104-byte-wide workspace
@@ -5591,14 +5591,14 @@ CopyPackedRowsStride104:
     shl ax, 1
     shl ax, 1
     mov bp, ax
-loc_030A6:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 068h
     pop cx
-    loop loc_030A6
+    loop @@nextRow
     ret
 
 ; As CopyPackedRowsStride104, but into a 160-byte-wide buffer.
@@ -5610,35 +5610,35 @@ CopyPackedRowsStride160:
     shl ax, 1
     shl ax, 1
     mov bp, ax
-loc_030C3:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 0A0h
     pop cx
-    loop loc_030C3
+    loop @@nextRow
     ret
 RecordWorkspaceOffsetTandy:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
-    jb loc_030DE
-    jmp near ptr loc_025B2
-loc_030DE:
+    jb @@lookupRow
+    jmp near ptr RecordWorkspaceOffscreen
+@@lookupRow:
     shl bx, 1
     mov bx, word ptr ds:[bx + RecordRowOffsets]
     cmp bx, -1
-    jne loc_030EC
-    jmp near ptr loc_025B2
-loc_030EC:
+    jne @@computeOffset
+    jmp near ptr RecordWorkspaceOffscreen
+@@computeOffset:
     mov ax, word ptr ss:[bp + REC_X]
     mov word ptr ss:[bp + REC_PIXEL_PHASE], 0
     shr ax, 1
     add ax, bx
     cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
-    jne loc_030FF
+    jne @@countFlash
     ret
-loc_030FF:
+@@countFlash:
     dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
 
@@ -5690,15 +5690,16 @@ RecordScreenOffsetTandy:
     add ax, bx
     ret
 
+; Unlike the EGA version, no case for the newline code 0Eh: it is drawn as a glyph.
 PrintGraphicsCharTandy:
     cmp al, 010h
-    jne loc_0315A
-    jmp near ptr loc_0333D
-loc_0315A:
+    jne @@checkSetPosition
+    jmp near ptr @@setColor
+@@checkSetPosition:
     cmp al, 011h
-    jne loc_03161
-    jmp near ptr loc_03322
-loc_03161:
+    jne @@drawGlyph
+    jmp near ptr @@setPosition
+@@drawGlyph:
     xor ah, ah
     shl ax, 1
     shl ax, 1
@@ -5733,9 +5734,9 @@ loc_03161:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_031C1
+    je @@row1
     add di, 080A0h
-loc_031C1:
+@@row1:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5752,9 +5753,9 @@ loc_031C1:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_031F0
+    je @@row2
     add di, 080A0h
-loc_031F0:
+@@row2:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5771,9 +5772,9 @@ loc_031F0:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_0321F
+    je @@row3
     add di, 080A0h
-loc_0321F:
+@@row3:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5790,9 +5791,9 @@ loc_0321F:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_0324E
+    je @@row4
     add di, 080A0h
-loc_0324E:
+@@row4:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5809,9 +5810,9 @@ loc_0324E:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_0327D
+    je @@row5
     add di, 080A0h
-loc_0327D:
+@@row5:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5828,9 +5829,9 @@ loc_0327D:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_032AC
+    je @@row6
     add di, 080A0h
-loc_032AC:
+@@row6:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5847,9 +5848,9 @@ loc_032AC:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_032DB
+    je @@row7
     add di, 080A0h
-loc_032DB:
+@@row7:
     lodsb
     xor ah, ah
     mov bx, ax
@@ -5866,17 +5867,17 @@ loc_032DB:
     mov word ptr es:[di + 2], cx
     add di, 02000h
     test di, 08000h
-    je loc_0330A
+    je @@advanceColumn
     add di, 080A0h
-loc_0330A:
+@@advanceColumn:
     add byte ptr ds:[TextColumn], 4
     cmp byte ptr ds:[TextColumn], 0A0h
-    jb loc_03321
+    jb @@done
     mov byte ptr ds:[TextColumn], 0
     add word ptr ds:[TextRowOffset], 0140h
-loc_03321:
+@@done:
     ret
-loc_03322:
+@@setPosition:
     mov al, byte ptr ss:[bp + 1]
     mov cx, 0140h
     xor ah, ah
@@ -5888,7 +5889,7 @@ loc_03322:
     mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
-loc_0333D:
+@@setColor:
     inc bp
     mov al, byte ptr ss:[bp]
     mov byte ptr ds:[TextColor], al
@@ -5913,17 +5914,17 @@ CopyWorkspace104x192ToTandy:
     mov bx, 034h
     mov di, 0A0h
     mov bp, 0C0h
-loc_0336B:
+@@nextRow:
     mov cx, bx
     rep movsw
     sub di, 068h
     add di, 02000h
     test di, 08000h
-    je loc_03380
+    je @@bankAdvanced
     add di, 080A0h
-loc_03380:
+@@bankAdvanced:
     dec bp
-    jne loc_0336B
+    jne @@nextRow
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
@@ -5932,39 +5933,39 @@ ClearTandy104x200:
     mov es, word ptr cs:[ScreenSegment]
     xor di, di
     mov bp, 0C8h
-loc_03393:
+@@nextRow:
     mov cx, 034h
     xor ax, ax
     rep stosw
     sub di, 068h
     add di, 02000h
     test di, 08000h
-    je loc_033AB
+    je @@bankAdvanced
     add di, 080A0h
-loc_033AB:
+@@bankAdvanced:
     dec bp
-    jne loc_03393
+    jne @@nextRow
     ret
 
 DecodeGraphicsImagesTandy:
     call ReadDecodeImageHeader
-    jne loc_033B7
-    jmp near ptr loc_044AA
-loc_033B7:
+    jne @@decodeImage
+    jmp near ptr RestoreMainDataSegment
+@@decodeImage:
     mov cx, word ptr cs:[DecodeRows]
-loc_033BC:
+@@nextRow:
     push cx
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-loc_033C2:
+@@nextPixelGroup:
     push cx
     call DecodeTandyPixelGroup
     pop cx
-    loop loc_033C2
+    loop @@nextPixelGroup
     add si, word ptr cs:[DecodePlaneRowBytes]
     add si, word ptr cs:[DecodePlaneRowBytes]
     add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
-    loop loc_033BC
+    loop @@nextRow
     jmp short DecodeGraphicsImagesTandy
 
 ; Tandy decoder: 8 planar pixels at DS:SI to 4bpp at ES:DI (with mask words when
@@ -5991,17 +5992,17 @@ DecodeTandyPixelGroup:
     mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_03433
+    je @@storeFirstPixels
     mov ax, word ptr cs:[DecodePixelBytes + 6]
     stosw
-loc_03433:
+@@storeFirstPixels:
     mov ax, word ptr cs:[DecodePixelBytes + 2]
     stosw
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_03445
+    je @@storeSecondPixels
     mov ax, word ptr cs:[DecodePixelBytes + 4]
     stosw
-loc_03445:
+@@storeSecondPixels:
     mov ax, word ptr cs:[DecodePixelBytes + 0]
     stosw
     ret
@@ -6030,18 +6031,18 @@ ExtractTandyPixelPair:
     ror cl, 1
     ror cl, 1
     cmp word ptr cs:[LoadMakeMask], 0
-    jne loc_0347C
+    jne @@buildMask
     ret
-loc_0347C:
+@@buildMask:
     mov bx, ax
     xor ch, ch
     mov al, cl
     and al, 0Fh
     cmp al, byte ptr cs:[TransparentColor]
-    jne loc_03491
+    jne @@checkHighPixel
     or ch, 0Fh
     and cl, 0F0h
-loc_03491:
+@@checkHighPixel:
     mov al, cl
     and al, 0F0h
     shr al, 1
@@ -6049,17 +6050,17 @@ loc_03491:
     shr al, 1
     shr al, 1
     cmp al, byte ptr cs:[TransparentColor]
-    jne loc_034AA
+    jne @@done
     or ch, 0F0h
     and cl, 0Fh
-loc_034AA:
+@@done:
     mov ax, bx
     ret
 RestoreBackground32Tandy:
     cmp di, -1
-    je loc_034B5
+    je @@lowerHalf
     call RestoreTandyBackgroundHalf
-loc_034B5:
+@@lowerHalf:
     mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     add si, 0140h
@@ -6069,7 +6070,7 @@ loc_034B5:
 RestoreTandyBackgroundHalf:
     mov bx, 058h
     mov cx, 010h
-loc_034CB:
+@@nextRow:
     movsw
     movsw
     movsw
@@ -6079,13 +6080,13 @@ loc_034CB:
     movsw
     movsw
     add di, bx
-    loop loc_034CB
+    loop @@nextRow
     ret
 RestoreBackground16Tandy:
     cmp di, -1
-    jne loc_034DE
+    jne @@restore
     ret
-loc_034DE:
+@@restore:
     mov bx, 060h
     movsw
     movsw
@@ -6170,9 +6171,9 @@ loc_034DE:
     ret
 RestoreBackground8Tandy:
     cmp di, -1
-    jne loc_03548
+    jne @@restore
     ret
-loc_03548:
+@@restore:
     mov bx, 064h
     movsw
     movsw
@@ -6203,21 +6204,21 @@ SaveBackground32Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    je loc_03586
+    je @@lowerHalf
     add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     call SaveTandyBackgroundHalf
-loc_03586:
+@@lowerHalf:
     add word ptr ss:[bp + REC_Y], 010h
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 010h
     cmp ax, 0FFFFh
-    jne loc_0359A
+    jne @@saveLowerHalf
     ret
-loc_0359A:
+@@saveLowerHalf:
     add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
@@ -6228,7 +6229,7 @@ SaveTandyBackgroundHalf:
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, 058h
     mov cx, 010h
-loc_035BA:
+@@nextRow:
     movsw
     movsw
     movsw
@@ -6238,16 +6239,16 @@ loc_035BA:
     movsw
     movsw
     add si, bx
-    loop loc_035BA
+    loop @@nextRow
     mov ds, word ptr cs:[MainDataSegment]
     ret
 SaveBackground16Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_035D8
+    jne @@save
     ret
-loc_035D8:
+@@save:
     add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -6341,9 +6342,9 @@ SaveBackground8Tandy:
     call RecordWorkspaceOffset
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_03663
+    jne @@save
     ret
-loc_03663:
+@@save:
     add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -6383,11 +6384,11 @@ DrawMapRowBlocksTandy:
     mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
-    jb loc_036B7
+    jb @@setBlockSegment
     mov ax, word ptr cs:[ShipSegment]
-loc_036B7:
+@@setBlockSegment:
     mov ds, ax
-loc_036B9:
+@@nextBlock:
     push cx
     push bx
     mov es, word ptr cs:[LevelMapSegment]
@@ -6482,11 +6483,11 @@ loc_036B9:
     pop bx
     add bx, 1
     pop cx
-    loop loc_03752
-    jmp short loc_03755
-loc_03752:
-    jmp near ptr loc_036B9
-loc_03755:
+    loop @@nextBlockFar
+    jmp short @@done
+@@nextBlockFar:
+    jmp near ptr @@nextBlock
+@@done:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
@@ -6499,77 +6500,77 @@ DrawStretchedImageTandy:
     shl bp, 1
     shl bp, 1
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_0378A
+    je @@padTop
     mov ax, bp
     dec cx
     mul cx
     inc cx
     add si, ax
-loc_0378A:
+@@padTop:
     push cx
     mov cx, word ptr cs:[StretchImageRows]
     sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
-    js loc_037C6
+    js @@startRows
     shr cx, 1
-    jcxz loc_037C6
+    jcxz @@startRows
     dec cx
-    jcxz loc_037B0
-loc_037A0:
+    jcxz @@clearPadRow
+@@skipPadRow:
     add di, 02000h
     test di, 08000h
-    je loc_037AE
+    je @@padRowAdvanced
     add di, 080A0h
-loc_037AE:
-    loop loc_037A0
-loc_037B0:
+@@padRowAdvanced:
+    loop @@skipPadRow
+@@clearPadRow:
     xor al, al
     mov cx, bp
     rep stosb
     sub di, bp
     add di, 02000h
     test di, 08000h
-    je loc_037C6
+    je @@startRows
     add di, 080A0h
-loc_037C6:
+@@startRows:
     pop cx
-loc_037C7:
+@@nextSourceRow:
     mov ax, word ptr cs:[StretchShownRows]
     cmp ax, word ptr cs:[StretchImageRows]
-    je loc_037F9
+    je @@copyRow
     add word ptr cs:[StretchRowError], ax
     mov ax, word ptr cs:[StretchImageRows]
     cmp ax, word ptr cs:[StretchRowError]
-    ja loc_037F4
+    ja @@emitRow
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_037EE
+    je @@skipRowForward
     sub si, bp
-    jmp short loc_037F0
-loc_037EE:
+    jmp short @@skipRowNext
+@@skipRowForward:
     add si, bp
-loc_037F0:
-    loop loc_037C7
-    jmp short loc_0381D
-loc_037F4:
+@@skipRowNext:
+    loop @@nextSourceRow
+    jmp short @@clearBottomRow
+@@emitRow:
     sub word ptr cs:[StretchRowError], ax
-loc_037F9:
+@@copyRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 02000h
     test di, 08000h
-    je loc_0380E
+    je @@rowAdvanced
     add di, 080A0h
-loc_0380E:
+@@rowAdvanced:
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_0381A
+    je @@nextRow
     sub si, bp
     sub si, bp
-loc_0381A:
+@@nextRow:
     pop cx
-    loop loc_037C7
-loc_0381D:
+    loop @@nextSourceRow
+@@clearBottomRow:
     xor al, al
     mov cx, bp
     rep stosb
@@ -6577,17 +6578,17 @@ loc_0381D:
 
 CopyFullWorkspaceToScreenTandy:
     mov ds, word ptr cs:[WorkspaceSegment]
-loc_03829:
+@@nextRow:
     mov cx, 050h
     rep movsw
     sub di, 0A0h
     add di, 02000h
     test di, 08000h
-    je loc_03840
+    je @@bankAdvanced
     add di, 080A0h
-loc_03840:
+@@bankAdvanced:
     dec bp
-    jne loc_03829
+    jne @@nextRow
     mov ds, word ptr cs:[MainDataSegment]
     ret
 ; CGA masked sprite blitters, one per pixel phase (REC_PIXEL_PHASE 0..3), same
@@ -6682,14 +6683,14 @@ DrawSprite8Shift0Cga:
     loop DrawSprite8Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_0390E:
+UnusedFlashSprite8Shift0Cga:
     lodsw
     not ax
     or es:[di], ax
     add si, 2
     add di, 2
     add di, 32h
-    loop loc_0390E
+    loop UnusedFlashSprite8Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
 ; Ninth byte of an eight-byte mask row shifted right in registers by DrawSprite32Shift1Cga.
@@ -6758,9 +6759,9 @@ DrawSprite32Shift1Cga:
     add si, 10h
     add di, 34h
     dec bp
-    je loc_039D9
+    je @@done
     jmp near ptr DrawSprite32Shift1Cga
-loc_039D9:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift2Cga:
@@ -6865,9 +6866,9 @@ DrawSprite32Shift2Cga:
     add si, 10h
     add di, 34h
     dec bp
-    je loc_03AE8
+    je @@done
     jmp near ptr DrawSprite32Shift2Cga
-loc_03AE8:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite32Shift3Cga:
@@ -7010,9 +7011,9 @@ DrawSprite32Shift3Cga:
     add si, 10h
     add di, 34h
     dec bp
-    je loc_03C4D
+    je @@done
     jmp near ptr DrawSprite32Shift3Cga
-loc_03C4D:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 FlashSprite32Shift1Cga:
@@ -7110,9 +7111,9 @@ FlashSprite32Shift2Cga:
     add si, 10h
     add di, 34h
     dec bp
-    je loc_03D4C
+    je @@done
     jmp near ptr FlashSprite32Shift2Cga
-loc_03D4C:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 FlashSprite32Shift3Cga:
@@ -7188,9 +7189,9 @@ FlashSprite32Shift3Cga:
     add si, 10h
     add di, 34h
     dec bp
-    je loc_03E0C
+    je @@done
     jmp near ptr FlashSprite32Shift3Cga
-loc_03E0C:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift1Cga:
@@ -7294,9 +7295,9 @@ DrawSprite16Shift2Cga:
     add si, 8
     add di, 34h
     dec bp
-    je loc_03EF5
+    je @@done
     jmp near ptr DrawSprite16Shift2Cga
-loc_03EF5:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 DrawSprite16Shift3Cga:
@@ -7381,9 +7382,9 @@ DrawSprite16Shift3Cga:
     add si, 8
     add di, 34h
     dec bp
-    je loc_03FAA
+    je @@done
     jmp near ptr DrawSprite16Shift3Cga
-loc_03FAA:
+@@done:
     mov ds, cs:[MainDataSegment]
     ret
 FlashSprite16Shift1Cga:
@@ -7628,18 +7629,18 @@ BlitPackedToScreenCga:
     mov es, word ptr cs:[ScreenSegment]
     shl ax, 1
     mov bp, ax
-loc_041A6:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 02000h
     test di, 04000h
-    je loc_041BB
+    je @@bankAdvanced
     add di, 0C050h
-loc_041BB:
+@@bankAdvanced:
     pop cx
-    loop loc_041A6
+    loop @@nextRow
     ret
 
 BlitPackedStride104Cga:
@@ -7649,14 +7650,14 @@ BlitPackedStride104Cga:
     lodsw
     shl ax, 1
     mov bp, ax
-loc_041CC:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 034h
     pop cx
-    loop loc_041CC
+    loop @@nextRow
     ret
 
 BlitPackedStride160Cga:
@@ -7666,27 +7667,27 @@ BlitPackedStride160Cga:
     lodsw
     shl ax, 1
     mov bp, ax
-loc_041E7:
+@@nextRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 050h
     pop cx
-    loop loc_041E7
+    loop @@nextRow
     ret
 RecordWorkspaceOffsetCga:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
-    jb loc_04201
-    jmp near ptr loc_025B2
-loc_04201:
+    jb @@lookupRow
+    jmp near ptr RecordWorkspaceOffscreen
+@@lookupRow:
     shl bx, 1
     mov bx, word ptr ds:[bx + RecordRowOffsets]
     cmp bx, -1
-    jne loc_0420F
-    jmp near ptr loc_025B2
-loc_0420F:
+    jne @@rowVisible
+    jmp near ptr RecordWorkspaceOffscreen
+@@rowVisible:
     mov ax, word ptr ss:[bp + REC_X]
     mov cx, ax
     and cx, 3
@@ -7695,9 +7696,9 @@ loc_0420F:
     shr ax, 1
     add ax, bx
     cmp word ptr ss:[bp + REC_FLASH_TIMER], 0
-    jne loc_04227
+    jne @@countFlashTimer
     ret
-loc_04227:
+@@countFlashTimer:
     dec word ptr ss:[bp + REC_FLASH_TIMER]
     ret
 
@@ -7746,17 +7747,17 @@ RecordScreenOffsetCga:
 ; AL = character or control code, drawn at TextRowOffset + TextColumn.
 PrintGraphicsCharCga:
     cmp al, 010h
-    jne loc_0427E
-    jmp near ptr loc_0445E
-loc_0427E:
+    jne @@notColorCode
+    jmp near ptr @@setColor
+@@notColorCode:
     cmp al, 011h
-    jne loc_04285
-    jmp near ptr loc_04445
-loc_04285:
+    jne @@notPositionCode
+    jmp near ptr @@setPosition
+@@notPositionCode:
     cmp al, 0Eh
-    jne loc_0428C
-    jmp near ptr loc_04439
-loc_0428C:
+    jne @@drawGlyph
+    jmp near ptr @@newLine
+@@drawGlyph:
     xor ah, ah
     shl ax, 1
     shl ax, 1
@@ -7786,9 +7787,9 @@ loc_0428C:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_042DD
+    je @@glyphRow1
     add di, 0C050h
-loc_042DD:
+@@glyphRow1:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7806,9 +7807,9 @@ loc_042DD:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_0430D
+    je @@glyphRow2
     add di, 0C050h
-loc_0430D:
+@@glyphRow2:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7826,9 +7827,9 @@ loc_0430D:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_0433D
+    je @@glyphRow3
     add di, 0C050h
-loc_0433D:
+@@glyphRow3:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7846,9 +7847,9 @@ loc_0433D:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_0436D
+    je @@glyphRow4
     add di, 0C050h
-loc_0436D:
+@@glyphRow4:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7866,9 +7867,9 @@ loc_0436D:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_0439D
+    je @@glyphRow5
     add di, 0C050h
-loc_0439D:
+@@glyphRow5:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7886,9 +7887,9 @@ loc_0439D:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_043CD
+    je @@glyphRow6
     add di, 0C050h
-loc_043CD:
+@@glyphRow6:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7906,9 +7907,9 @@ loc_043CD:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_043FD
+    je @@glyphRow7
     add di, 0C050h
-loc_043FD:
+@@glyphRow7:
     mov al, byte ptr ds:[si]
     shr al, 1
     shr al, 1
@@ -7926,18 +7927,18 @@ loc_043FD:
     mov byte ptr es:[di + 1], ah
     add di, 02000h
     test di, 04000h
-    je loc_0442D
+    je @@advanceColumn
     add di, 0C050h
-loc_0442D:
+@@advanceColumn:
     add byte ptr ds:[TextColumn], 2
     cmp byte ptr ds:[TextColumn], 050h
-    jb loc_04444
-loc_04439:
+    jb @@done
+@@newLine:
     mov byte ptr ds:[TextColumn], 0
     add word ptr ds:[TextRowOffset], 0140h
-loc_04444:
+@@done:
     ret
-loc_04445:
+@@setPosition:
     mov al, byte ptr ss:[bp + 1]
     mov cx, 0140h
     xor ah, ah
@@ -7948,7 +7949,7 @@ loc_04445:
     mov byte ptr ds:[TextColumn], al
     add bp, 2
     ret
-loc_0445E:
+@@setColor:
     inc bp
     mov al, byte ptr ss:[bp]
     and al, 3
@@ -7972,18 +7973,18 @@ CopyWorkspaceToScreenCga:
     mov bx, 01Ah
     mov di, 0A0h
     mov bp, 0C0h
-loc_04492:
+@@copyRow:
     mov cx, bx
     rep movsw
     sub di, 034h
     add di, 02000h
     test di, 04000h
-    je loc_044A7
+    je @@nextRow
     add di, 0C050h
-loc_044A7:
+@@nextRow:
     dec bp
-    jne loc_04492
-loc_044AA:
+    jne @@copyRow
+RestoreMainDataSegment:
     mov ds, word ptr cs:[MainDataSegment]
 CountXReturn:
     ret
@@ -7992,18 +7993,18 @@ ClearScreen104x200Cga:
     mov es, word ptr cs:[ScreenSegment]
     xor di, di
     mov bp, 0C8h
-loc_044BA:
+@@clearRow:
     mov cx, 01Ah
     xor ax, ax
     rep stosw
     sub di, 034h
     add di, 02000h
     test di, 04000h
-    je loc_044D2
+    je @@nextRow
     add di, 0C050h
-loc_044D2:
+@@nextRow:
     dec bp
-    jne loc_044BA
+    jne @@clearRow
     ret
 ; UNKNOWN: not yet classified as code or data
     db 00h
@@ -8014,23 +8015,23 @@ loc_044D2:
 ReadDecodeImageHeader:
     mov ax, word ptr ds:[si]
     or ax, word ptr ds:[si + 2]
-    jne loc_044DF
+    jne @@readHeader
     ret
-loc_044DF:
+@@readHeader:
     mov bx, word ptr cs:[LoadImageSlot]
     add word ptr cs:[LoadImageSlot], 2
     lodsw
     cmp word ptr cs:[LoadRecordImages], 0
-    je loc_044F7
+    je @@storeRows
     mov word ptr cs:[bx], di
     stosw
-loc_044F7:
+@@storeRows:
     mov word ptr cs:[DecodeRows], ax
     lodsw
     cmp word ptr cs:[LoadRecordImages], 0
-    je loc_04505
+    je @@storeRowBytes
     stosw
-loc_04505:
+@@storeRowBytes:
     mov word ptr cs:[DecodePlaneRowBytes], ax
     inc ax
     ret
@@ -8039,21 +8040,21 @@ loc_04505:
 
 DecodeGraphicsImagesCga:
     call ReadDecodeImageHeader
-    je loc_044AA
+    je RestoreMainDataSegment
     mov cx, word ptr cs:[DecodeRows]
-loc_04516:
+@@decodeRow:
     push cx
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-loc_0451C:
+@@decodeGroup:
     push cx
     call DecodeCgaPixelGroup
     pop cx
-    loop loc_0451C
+    loop @@decodeGroup
     add si, word ptr cs:[DecodePlaneRowBytes]
     add si, word ptr cs:[DecodePlaneRowBytes]
     add si, word ptr cs:[DecodePlaneRowBytes]
     pop cx
-    loop loc_04516
+    loop @@decodeRow
     jmp short DecodeGraphicsImagesCga
 
 ; CGA decoder: 8 planar pixels at DS:SI to one CGA pixel word at ES:DI (colours through
@@ -8080,7 +8081,7 @@ DecodeCgaPixelGroup:
     mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_045A9
+    je @@packColorWord
     mov al, byte ptr cs:[DecodePixelBytes + 4]
     call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 5]
@@ -8091,7 +8092,7 @@ DecodeCgaPixelGroup:
     call PackCgaPixelPair
     mov ax, word ptr cs:[CgaPixelWord]
     stosw
-loc_045A9:
+@@packColorWord:
     mov al, byte ptr cs:[DecodePixelBytes + 0]
     call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 1]
@@ -8145,16 +8146,16 @@ ExtractCgaPixelPair:
     ror cl, 1
     ror cl, 1
     cmp word ptr cs:[LoadMakeMask], 0
-    je loc_04656
+    je @@mapColors
     mov bx, ax
     xor ch, ch
     mov al, cl
     and al, 0Fh
     cmp al, byte ptr cs:[TransparentColor]
-    jne loc_0463B
+    jne @@checkHighPixel
     or ch, 0Fh
     and cl, 0F0h
-loc_0463B:
+@@checkHighPixel:
     mov al, cl
     and al, 0F0h
     shr al, 1
@@ -8162,12 +8163,12 @@ loc_0463B:
     shr al, 1
     shr al, 1
     cmp al, byte ptr cs:[TransparentColor]
-    jne loc_04654
+    jne @@restoreInput
     or ch, 0F0h
     and cl, 0Fh
-loc_04654:
+@@restoreInput:
     mov ax, bx
-loc_04656:
+@@mapColors:
     mov word ptr cs:[CgaSavedAX], ax
     mov al, cl
     and al, 0Fh
@@ -8191,9 +8192,9 @@ loc_04656:
     ret
 RestoreBackground32Cga:
     cmp di, -1
-    je loc_0468C
+    je @@restoreLowerHalf
     call RestoreCgaBackgroundHalf
-loc_0468C:
+@@restoreLowerHalf:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
@@ -8202,20 +8203,20 @@ loc_0468C:
     ret
 RestoreCgaBackgroundHalf:
     mov cx, 10h
-loc_0469F:
+@@copyRow:
     movsw
     movsw
     movsw
     movsw
     movsb
     add di, 2Bh
-    loop loc_0469F
+    loop @@copyRow
     ret
 RestoreBackground16Cga:
     cmp di, -1
-    jne loc_046B0
+    jne @@restore
     ret
-loc_046B0:
+@@restore:
     movsw
     movsw
     movsb
@@ -8283,9 +8284,9 @@ loc_046B0:
     ret
 RestoreBackground8Cga:
     cmp di, -1
-    jne loc_04717
+    jne @@restore
     ret
-loc_04717:
+@@restore:
     movsw
     movsb
     add di, 31h
@@ -8315,21 +8316,21 @@ SaveBackground32Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    je loc_0475A
+    je @@saveLowerHalf
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     call SaveCgaBackgroundHalf
-loc_0475A:
+@@saveLowerHalf:
     add word ptr ss:[bp + REC_Y], 10h
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 10h
     cmp ax, 0FFFFh
-    jne loc_0476E
+    jne @@lowerHalfVisible
     ret
-loc_0476E:
+@@lowerHalfVisible:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
@@ -8440,9 +8441,9 @@ SaveBackground16Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_0481A
+    jne @@save
     ret
-loc_0481A:
+@@save:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -8519,9 +8520,9 @@ SaveBackground8Cga:
     call RecordWorkspaceOffset
     mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
-    jne loc_048A2
+    jne @@save
     ret
-loc_048A2:
+@@save:
     add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
@@ -8560,11 +8561,11 @@ DrawMapRowBlocksCga:
     mov cx, MAP_ROW_BYTES
     mov ax, word ptr cs:[LevelBlocksSegment]
     cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
-    jb loc_048FB
+    jb @@setBlockSegment
     mov ax, word ptr cs:[ShipSegment]
-loc_048FB:
+@@setBlockSegment:
     mov ds, ax
-loc_048FD:
+@@drawBlock:
     push cx
     push bx
     mov es, word ptr cs:[LevelMapSegment]
@@ -8627,7 +8628,7 @@ loc_048FD:
     pop bx
     add bx, 1
     pop cx
-    loop loc_048FD
+    loop @@drawBlock
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
@@ -8640,77 +8641,77 @@ DrawStretchedImageCga:
     mov bp, word ptr cs:[StretchRowBytes]
     shl bp, 1
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_049A7
+    je @@computeMargin
     mov ax, bp
     dec cx
     mul cx
     inc cx
     add si, ax
-loc_049A7:
+@@computeMargin:
     push cx
     mov cx, word ptr cs:[StretchImageRows]
     sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
-    js loc_049E3
+    js @@marginDone
     shr cx, 1
-    jcxz loc_049E3
+    jcxz @@marginDone
     dec cx
-    jcxz loc_049CD
-loc_049BD:
+    jcxz @@clearLeadRow
+@@skipMarginRow:
     add di, 02000h
     test di, 04000h
-    je loc_049CB
+    je @@nextMarginRow
     add di, 0C050h
-loc_049CB:
-    loop loc_049BD
-loc_049CD:
+@@nextMarginRow:
+    loop @@skipMarginRow
+@@clearLeadRow:
     xor al, al
     mov cx, bp
     rep stosb
     sub di, bp
     add di, 02000h
     test di, 04000h
-    je loc_049E3
+    je @@marginDone
     add di, 0C050h
-loc_049E3:
+@@marginDone:
     pop cx
-loc_049E4:
+@@nextSourceRow:
     mov ax, word ptr cs:[StretchShownRows]
     cmp ax, word ptr cs:[StretchImageRows]
-    je loc_04A16
+    je @@copyRow
     add word ptr cs:[StretchRowError], ax
     mov ax, word ptr cs:[StretchImageRows]
     cmp ax, word ptr cs:[StretchRowError]
-    ja loc_04A11
+    ja @@consumeRowError
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_04A0B
+    je @@stepForward
     sub si, bp
-    jmp short loc_04A0D
-loc_04A0B:
+    jmp short @@nextSkippedRow
+@@stepForward:
     add si, bp
-loc_04A0D:
-    loop loc_049E4
-    jmp short loc_04A3A
-loc_04A11:
+@@nextSkippedRow:
+    loop @@nextSourceRow
+    jmp short @@clearTrailRow
+@@consumeRowError:
     sub word ptr cs:[StretchRowError], ax
-loc_04A16:
+@@copyRow:
     push cx
     mov cx, bp
     rep movsb
     sub di, bp
     add di, 02000h
     test di, 04000h
-    je loc_04A2B
+    je @@checkReverse
     add di, 0C050h
-loc_04A2B:
+@@checkReverse:
     cmp word ptr cs:[StretchFlagA], 0
-    je loc_04A37
+    je @@nextRow
     sub si, bp
     sub si, bp
-loc_04A37:
+@@nextRow:
     pop cx
-    loop loc_049E4
-loc_04A3A:
+    loop @@nextSourceRow
+@@clearTrailRow:
     xor al, al
     mov cx, bp
     rep stosb
@@ -8718,17 +8719,17 @@ loc_04A3A:
 
 CopyFullWorkspaceToScreenCga:
     mov ds, word ptr cs:[WorkspaceSegment]
-loc_04A46:
+@@copyRow:
     mov cx, 028h
     rep movsw
     sub di, 050h
     add di, 02000h
     test di, 04000h
-    je loc_04A5C
+    je @@nextRow
     add di, 0C050h
-loc_04A5C:
+@@nextRow:
     dec bp
-    jne loc_04A46
+    jne @@copyRow
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
@@ -8744,20 +8745,20 @@ ProcessLevelScript:
     lodsw
     mov word ptr ds:[EventTrigger], ax
     cmp ax, 0FFFFh
-    jne loc_04A7E
-    jmp near ptr loc_04C74
-loc_04A7E:
+    jne @@checkTrigger
+    jmp near ptr @@done
+@@checkTrigger:
     cmp ax, word ptr ds:[LevelScriptClock]
-    je loc_04A87
-    jmp near ptr loc_04C74
-loc_04A87:
+    je @@startEvent
+    jmp near ptr @@done
+@@startEvent:
     mov byte ptr ds:[EventMarkerFlag], 1
     lodsw
     cmp ax, 0FFFFh
-    jne loc_04A98
+    jne @@readFormation
     mov byte ptr ds:[EventMarkerFlag], 0
     lodsw
-loc_04A98:
+@@readFormation:
     mov cx, ax
     lodsw
     mov word ptr ds:[EventX], ax
@@ -8782,16 +8783,16 @@ loc_04A98:
     lodsw
     mov cx, ax
     call far ptr AllocGroupSlot
-loc_04ACE:
+@@spawnMember:
     push cx
     call FindFreeRecordPoolA
     cmp bx, -1
-    jne loc_04ADA
-    jmp near ptr loc_04C70
-loc_04ADA:
+    jne @@fillRecord
+    jmp near ptr @@poolFull
+@@fillRecord:
     mov ax, 0FFFFh
     cmp word ptr ds:[GroupSlotPtr], -1
-    je loc_04AF5
+    je @@setSlotIndex
     push bx
     mov bx, word ptr ds:[GroupSlotPtr]
     inc byte ptr ds:[bx + GROUP_LIVE]
@@ -8799,7 +8800,7 @@ loc_04ADA:
     mov byte ptr ds:[bx + GROUP_DROP_KIND], al
     pop bx
     mov ax, word ptr ds:[GroupSlotIndex]
-loc_04AF5:
+@@setSlotIndex:
     mov word ptr ds:[bx + REC_SLOT_INDEX], ax
     mov word ptr ds:[bx + REC_STATUS], 1
     mov ax, word ptr ds:[FormationDrawPass]
@@ -8820,13 +8821,13 @@ loc_04AF5:
     mov ax, word ptr ds:[FormationType]
     mov word ptr ds:[bx + REC_TYPE], ax
     cmp word ptr ds:[bx + REC_DRAW_PASS], 1
-    jne loc_04B41
-    jmp near ptr loc_04BE7
-loc_04B41:
+    jne @@checkSizeClass
+    jmp near ptr @@setHitPoints
+@@checkSizeClass:
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
-    je loc_04B4A
-    jmp near ptr loc_04BE7
-loc_04B4A:
+    je @@snapToClearColumn
+    jmp near ptr @@setHitPoints
+@@snapToClearColumn:
     and word ptr ds:[bx + REC_Y], 0FFF0h
     and word ptr ds:[bx + REC_X], 0FFF0h
     mov ax, word ptr ds:[bx + REC_X]
@@ -8843,23 +8844,23 @@ loc_04B4A:
     mov bx, word ptr ds:[MapScrollPos]
     add bx, MAP_ROW_BYTES
     or ax, ax
-    je loc_04B92
-    js loc_04B86
-loc_04B7A:
+    je @@storeScanRow
+    js @@stepRowsForward
+@@stepRowsBack:
     or ax, ax
-    je loc_04B92
+    je @@storeScanRow
     sub bx, MAP_ROW_BYTES
     sub ax, 010h
-    jmp short loc_04B7A
-loc_04B86:
+    jmp short @@stepRowsBack
+@@stepRowsForward:
     or ax, ax
-    je loc_04B92
+    je @@storeScanRow
     add bx, MAP_ROW_BYTES
     add ax, 010h
-    jmp short loc_04B86
-loc_04B92:
+    jmp short @@stepRowsForward
+@@storeScanRow:
     mov word ptr ds:[SpawnScanRowPtr], bx
-loc_04B96:
+@@testColumn:
     mov si, word ptr ds:[SpawnScanRowPtr]
     mov ax, word ptr ds:[SpawnScanColumn]
     add si, ax
@@ -8868,22 +8869,22 @@ loc_04B96:
     mov bx, offset ByteAttributeTable
     xlat
     or al, al
-    je loc_04BD7
+    je @@columnClear
     cmp word ptr ds:[SpawnScanStartX], 060h
-    jb loc_04BC4
+    jb @@scanRight
     dec word ptr ds:[SpawnScanColumn]
     cmp word ptr ds:[SpawnScanColumn], -1
-    jne loc_04B96
+    jne @@testColumn
     mov word ptr ds:[SpawnScanColumn], 0Ch
-    jmp short loc_04B96
-loc_04BC4:
+    jmp short @@testColumn
+@@scanRight:
     inc word ptr ds:[SpawnScanColumn]
     cmp word ptr ds:[SpawnScanColumn], 0Dh
-    jb loc_04BD5
+    jb @@retryColumn
     mov word ptr ds:[SpawnScanColumn], 0
-loc_04BD5:
-    jmp short loc_04B96
-loc_04BD7:
+@@retryColumn:
+    jmp short @@testColumn
+@@columnClear:
     mov ax, word ptr ds:[SpawnScanColumn]
     shl ax, 1
     shl ax, 1
@@ -8892,69 +8893,71 @@ loc_04BD7:
     pop bx
     mov word ptr ds:[bx + REC_X], ax
     pop si
-loc_04BE7:
+@@setHitPoints:
     mov word ptr ds:[bx + REC_HIT_POINTS], 1
     mov ax, word ptr ds:[LevelIndex]
     inc ax
     mov word ptr ds:[bx + REC_HIT_POINTS], ax
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
-    je loc_04BFE
+    je @@checkType21
     mov word ptr ds:[bx + REC_HIT_POINTS], 0Ch
-loc_04BFE:
+@@checkType21:
     mov word ptr ds:[bx + REC_FLASH_TIMER], 0
     cmp word ptr ds:[bx + REC_TYPE], 021h
-    jne loc_04C0E
+    jne @@checkType13
+; Type 21h starts a leader script without loading AX, which still holds LevelIndex + 1
+; (every other leader type loads its LeaderScript offset).
     call far ptr StartLeaderScript
-loc_04C0E:
+@@checkType13:
     mov ax, offset LeaderScript13
     cmp word ptr ds:[bx + REC_TYPE], 013h
-    jne loc_04C1C
+    jne @@checkType15
     call far ptr StartLeaderScript
-loc_04C1C:
+@@checkType15:
     mov ax, offset LeaderScript15
     cmp word ptr ds:[bx + REC_TYPE], 015h
-    jne loc_04C2A
+    jne @@checkType1C
     call far ptr StartLeaderScript
-loc_04C2A:
+@@checkType1C:
     mov ax, offset LeaderScript1C
     cmp word ptr ds:[bx + REC_TYPE], 01Ch
-    jne loc_04C38
+    jne @@checkType1F
     call far ptr StartLeaderScript
-loc_04C38:
+@@checkType1F:
     mov ax, offset LeaderScript1F
     cmp word ptr ds:[bx + REC_TYPE], 01Fh
-    jne loc_04C46
+    jne @@checkType7D
     call far ptr StartLeaderScript
-loc_04C46:
+@@checkType7D:
     mov ax, offset LeaderScript7D
     cmp word ptr ds:[bx + REC_TYPE], 07Dh
-    jne loc_04C54
+    jne @@checkType7E
     call far ptr StartLeaderScript
-loc_04C54:
+@@checkType7E:
     mov ax, offset LeaderScript7E
     cmp word ptr ds:[bx + REC_TYPE], 07Eh
-    jne loc_04C62
+    jne @@nextMember
     call far ptr StartLeaderScript
-loc_04C62:
+@@nextMember:
     add si, 4
     pop cx
-    loop loc_04C6A
-    jmp short loc_04C6D
-loc_04C6A:
-    jmp near ptr loc_04ACE
-loc_04C6D:
+    loop @@spawnNext
+    jmp short @@nextEvent
+@@spawnNext:
+    jmp near ptr @@spawnMember
+@@nextEvent:
     jmp near ptr ProcessLevelScript
-loc_04C70:
+@@poolFull:
     pop cx
     jmp near ptr ProcessLevelScript
-loc_04C74:
+@@done:
     pop di
     ret
 
 InitStars:
     mov si, offset Stars
     mov cx, 028h
-loc_04C7C:
+InitNextStar:
     lodsw
     lodsw
     mov bx, word ptr cs:[VideoAdapter]
@@ -8973,7 +8976,7 @@ InitStarCga:
     add bx, offset StarMasksCga
     mov bx, word ptr ds:[bx]
     mov word ptr ds:[si], bx
-    jmp short loc_04CE7
+    jmp short InitStarNext
 
 InitStarEga:
     mov bx, ax
@@ -8985,7 +8988,7 @@ InitStarEga:
     add bx, offset StarMasksEga
     mov bx, word ptr ds:[bx]
     mov word ptr ds:[si], bx
-    jmp short loc_04CE7
+    jmp short InitStarNext
 
 ; Also counts StarBrightCount down; at zero dims StarMasksTandy.
 InitStarTandy:
@@ -8997,24 +9000,24 @@ InitStarTandy:
     mov bx, word ptr ds:[bx]
     mov word ptr ds:[si], bx
     cmp word ptr ds:[StarBrightCount], 0
-    je loc_04CE7
+    je InitStarNext
     dec word ptr ds:[StarBrightCount]
-    jne loc_04CE7
+    jne InitStarNext
     and byte ptr ds:[StarMasksTandy], 7
     and byte ptr ds:[StarMasksTandy + 1], 070h
-loc_04CE7:
+InitStarNext:
     add si, 2
-    loop loc_04C7C
+    loop InitNextStar
     ret
 
 DrawStars:
     mov es, word ptr cs:[WorkspaceSegment]
     mov si, offset Stars
     mov di, offset StarDrawnOffsets
-    mov bp, offset loc_04D4D
+    mov bp, offset PlotStarFourPlanes
     mov cx, 014h
     call DrawStarGroup
-    mov bp, offset loc_04D51
+    mov bp, offset PlotStarThreePlanes
     mov cx, 0Ah
     call DrawStarGroup
     mov cx, 0Ah
@@ -9035,26 +9038,26 @@ DrawStarGroup:
     add bx, ax
     lodsw
     cmp byte ptr es:[bx], 0
-    jne loc_04D61
+    jne DrawStarNext
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    jne loc_04D59
+    jne PlotStar
     cmp byte ptr es:[bx + 01Ah], 0
-    jne loc_04D61
+    jne DrawStarNext
     cmp byte ptr es:[bx + 034h], 0
-    jne loc_04D61
+    jne DrawStarNext
     cmp byte ptr es:[bx + 04Eh], 0
-    jne loc_04D61
+    jne DrawStarNext
     jmp bp
-loc_04D4D:
+PlotStarFourPlanes:
     mov es:[bx + 4Eh], al
-loc_04D51:
+PlotStarThreePlanes:
     mov es:[bx + 34h], al
     mov es:[bx + 1Ah], al
-loc_04D59:
+PlotStar:
     mov byte ptr es:[bx], al
     mov word ptr ds:[di], bx
     add di, 2
-loc_04D61:
+DrawStarNext:
     loop DrawStarGroup
     ret
 
@@ -9062,27 +9065,27 @@ EraseStars:
     mov es, word ptr cs:[WorkspaceSegment]
     mov si, offset StarDrawnOffsets
     mov cx, 028h
-loc_04D6F:
+@@eraseNext:
     lodsw
     cmp ax, 0FFFFh
-    je loc_04D94
+    je @@done
     mov di, ax
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    jne loc_04D8E
+    jne @@eraseBasePlane
     mov byte ptr es:[di + 04Eh], 0
     mov byte ptr es:[di + 034h], 0
     mov byte ptr es:[di + 01Ah], 0
-loc_04D8E:
+@@eraseBasePlane:
     mov byte ptr es:[di], 0
-    loop loc_04D6F
-loc_04D94:
+    loop @@eraseNext
+@@done:
     ret
 NextRandomWord:
     add word ptr ds:[RandomWordCursor], 2
     cmp word ptr ds:[RandomWordCursor], offset CreditRandomWords + 31
-    jb loc_04DA8
+    jb @@readWord
     mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
-loc_04DA8:
+@@readWord:
     mov bx, word ptr ds:[RandomWordCursor]
     mov bx, word ptr ds:[bx]
     ret
@@ -9104,12 +9107,12 @@ RestartAtCheckpoint:
     add bx, offset LevelCheckpointPtrs
     mov si, word ptr ds:[bx]
     mov cx, 3
-loc_04DCE:
+@@findCheckpoint:
     call ReadCheckpoint
-    jb loc_04DD8
-    loop loc_04DCE
+    jb @@checkpointFound
+    loop @@findCheckpoint
     call ReadCheckpoint
-loc_04DD8:
+@@checkpointFound:
     mov si, dx
     push si
     push di
@@ -9162,30 +9165,30 @@ ResetMapBeforeView:
     mov es, word ptr cs:[LevelMapSegment]
     mov si, word ptr ds:[MapScrollPos]
     mov cx, 09Ch
-loc_04E3B:
+ResetMapScanByte:
     dec si
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
     mov bx, word ptr ds:[bx + MapResetLists]
-loc_04E46:
+@@matchResetEntry:
     cmp word ptr cs:[bx], -1
-    je loc_04E69
+    je ResetMapNextByte
     mov al, byte ptr es:[si]
     xor ah, ah
     cmp ax, word ptr cs:[bx]
-    jne loc_04E5A
+    jne @@nextResetEntry
     jmp word ptr cs:[bx + 2]
-loc_04E5A:
+@@nextResetEntry:
     add bx, 4
-    jmp short loc_04E46
+    jmp short @@matchResetEntry
 ; Map tile rewrites named in MapResetLists (entered by the jump above).
 SetMapTile28:
     mov byte ptr es:[si], 28h
-    jmp short loc_04E69
+    jmp short ResetMapNextByte
 SetMapTile1:
     mov byte ptr es:[si], 1
-loc_04E69:
-    loop loc_04E3B
+ResetMapNextByte:
+    loop ResetMapScanByte
     pop ds
     pop es
     pop bp
@@ -9202,18 +9205,18 @@ loc_04E69:
 PromptLoadErrorWaitFire:
     mov bp, offset SwapDisksMessage
     cmp word ptr ds:[FileStatus], FILE_STATUS_OPEN_FAILED
-    je loc_04E82
+    je @@showMessage
     mov bp, offset ReadErrorMessage
-loc_04E82:
+@@showMessage:
     call PrintMessageBP
-loc_04E85:
+@@waitPress:
     call PollInputBits
     cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne loc_04E85
-loc_04E8F:
+    jne @@waitPress
+@@waitRelease:
     call PollInputBits
     cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    je loc_04E8F
+    je @@waitRelease
     mov bp, offset BlankMessage
     jmp near ptr PrintMessageBP
 
@@ -9319,9 +9322,9 @@ Interrupt09KeyboardHandler:
 ; Bright palette 1 with the colour burst off (cyan/red/white).
 CgaSelectBrightPaletteNoBurst:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
-    je loc_04F40
+    je @@isCga
     ret
-loc_04F40:
+@@isCga:
     call CgaSelectBrightPalette1
     mov ax, 40h
     mov es, ax
@@ -9334,9 +9337,9 @@ loc_04F40:
 
 CgaSelectBrightPalette0:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
-    je loc_04F60
+    je @@isCga
     ret
-loc_04F60:
+@@isCga:
     call CgaIntensityOn
 ; BIOS palette 0, colour burst on (mode register bit 2 clear), palette-select bit 5 clear.
 CgaSelectPalette0:
@@ -9372,9 +9375,9 @@ CgaIntensityOn:
 ; CGA only: intensity off, palette 0, intensity off. No caller found in this image.
 CgaResetPalette:
     cmp word ptr cs:[VideoAdapter], 0
-    je loc_04FA9
+    je @@isCga
     ret
-loc_04FA9:
+@@isCga:
     call CgaIntensityOff
     call CgaSelectPalette0
 CgaIntensityOff:
@@ -9389,9 +9392,9 @@ CgaIntensityOff:
 
 CgaSelectBrightPalette1:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
-    je loc_04FCC
+    je @@isCga
     ret
-loc_04FCC:
+@@isCga:
     call CgaIntensityOn
     mov ah, 0Bh
     mov bh, 1
@@ -9417,7 +9420,7 @@ loc_04FCC:
 ProbeShipTerrainCollision:
     mov si, word ptr ss:[bp + REC_SPRITE]
     cmp si, 3
-    jae loc_05059
+    jae ReturnCarrySet
     shl si, 1
     shl si, 1
     add si, offset PlayerHitOffsets
@@ -9435,33 +9438,33 @@ ProbeShipTerrainCollision:
     and ax, 0Fh
     cmp ax, 0Ah
     mov cx, 1
-    jbe loc_0502E
+    jbe @@testRow
     mov cx, 2
-loc_0502E:
+@@testRow:
     push cx
     push bx
     call ReadIndexedByteAttribute
-    jne loc_05051
+    jne @@solidHit
     test word ptr ss:[bp + REC_X], 0Fh
-    je loc_05042
+    je @@nextRow
     inc bx
     call ReadIndexedByteAttribute
-    jne loc_05051
-loc_05042:
+    jne @@solidHit
+@@nextRow:
     pop bx
     sub bx, MAP_ROW_BYTES
     pop cx
-    loop loc_0502E
+    loop @@testRow
     pop word ptr ss:[bp + REC_X]
     pop word ptr ss:[bp + REC_Y]
     clc
     ret
-loc_05051:
+@@solidHit:
     pop bx
     pop cx
     pop word ptr ss:[bp + REC_X]
     pop word ptr ss:[bp + REC_Y]
-loc_05059:
+ReturnCarrySet:
     stc
     ret
 
@@ -9539,20 +9542,20 @@ WaitVerticalRetrace:
 WaitInputReleased:
     push ds
     mov ds, cs:[MainDataSegment]
-loc_050D2:
+@@poll:
     call PollInputBits
     cmp byte ptr ds:[InputBits], 0
-    jne loc_050D2
+    jne @@poll
     pop ds
     ret
 ; Wait until some input bit is set.
 WaitInputPressed:
     push ds
     mov ds, cs:[MainDataSegment]
-loc_050E4:
+@@poll:
     call PollInputBits
     cmp byte ptr ds:[InputBits], 0
-    je loc_050E4
+    je @@poll
     pop ds
     ret
 ; Wait for a press, then for the release.
@@ -9563,7 +9566,7 @@ WaitInputClick:
 SetBorderBlack:
     mov ah, 0
     cmp word ptr cs:[VideoAdapter], 2
-    je loc_05110
+    je @@tandyBorder
     mov dx, 3DAh
     in al, dx
     mov dx, 3C0h
@@ -9574,7 +9577,7 @@ SetBorderBlack:
     mov al, 20h
     out dx, al
     ret
-loc_05110:
+@@tandyBorder:
     mov ah, 0
     mov dx, 3DAh
     mov al, 2
@@ -9587,24 +9590,24 @@ loc_05110:
 ; EGA only: toggles EgaPageToggle and ScreenSegment (A000h/A200h).
 FlipEgaDrawPage:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    je loc_05128
+    je @@togglePage
     ret
-loc_05128:
+@@togglePage:
     inc word ptr cs:[EgaPageToggle]
     and word ptr cs:[EgaPageToggle], 1
     mov word ptr cs:[ScreenSegment], 0A000h
-    jne loc_0513D
+    jne @@usePage1
     ret
-loc_0513D:
+@@usePage1:
     mov word ptr cs:[ScreenSegment], 0A200h
     ret
 
 ; EGA only: draws and shows page 0.
 ResetEgaPages:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    je loc_0514E
+    je @@resetPages
     ret
-loc_0514E:
+@@resetPages:
     mov word ptr cs:[EgaPageToggle], 0
     mov word ptr cs:[ScreenSegment], 0A000h
     jmp short ShowEgaDrawPage
@@ -9614,21 +9617,21 @@ EgaPageToggle dw 0
 ; EGA only: sets the CRTC start address for EgaPageToggle outside retrace.
 ShowEgaDrawPage:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
-    je loc_05169
+    je @@selectStart
     ret
-loc_05169:
+@@selectStart:
     xor bx, bx
     cmp word ptr cs:[EgaPageToggle], 0
-    je loc_05176
+    je @@waitRetraceEnd
     mov bx, 02000h
-loc_05176:
+@@waitRetraceEnd:
     mov dx, CRT_STATUS_PORT
     in al, dx
     test al, 8
-loc_0517C:
+@@pollRetrace:
     in al, dx
     test al, 8
-    jne loc_0517C
+    jne @@pollRetrace
     cli
     sub dl, 6
     mov ah, bh
@@ -9640,9 +9643,9 @@ loc_0517C:
 PrintMessageBP:
     mov al, byte ptr ss:[bp]
     or al, al
-    jne loc_05194
+    jne @@printChar
     ret
-loc_05194:
+@@printChar:
     call PrintTextChar
     inc bp
     jmp short PrintMessageBP
@@ -9650,24 +9653,24 @@ loc_05194:
 PrintTextChar:
     mov es, word ptr cs:[MainDataSegment]
     cmp word ptr ds:[TextInGraphics], 0
-    je loc_051B8
+    je @@textMode
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + PrintGraphicsCharCases]
 PrintGraphicsCharCases label word
     dw PrintGraphicsCharCga, PrintGraphicsCharEga, PrintGraphicsCharTandy    ; per VideoAdapter: CGA, EGA, Tandy
-loc_051B8:
+@@textMode:
     cmp al, 010h
-    je loc_051F3
+    je @@setColor
     cmp al, 011h
-    je loc_051D6
+    je @@setPosition
     mov es, word ptr cs:[TextVideoSegment]
     mov di, word ptr ds:[TextRowOffset]
     mov ah, byte ptr ds:[TextColor]
     mov word ptr es:[di], ax
     add word ptr ds:[TextRowOffset], 2
     ret
-loc_051D6:
+@@setPosition:
     mov al, byte ptr ss:[bp + 1]
     mov cx, 050h
     xor ah, ah
@@ -9680,7 +9683,7 @@ loc_051D6:
     mov word ptr ds:[TextRowOffset], bx
     add bp, 2
     ret
-loc_051F3:
+@@setColor:
     inc bp
     mov al, byte ptr ss:[bp]
     mov byte ptr ds:[TextColor], al
@@ -9712,43 +9715,43 @@ PrintDecimalDX:
     mov cl, 0F6h
     call EmitDecimalDigit
     mov al, dl
-    jmp short loc_05250
+    jmp short EmitDecimalDigitChar
 ; PrintDecimalDX step: CX = -10^n, DX = value; a leading zero prints as a space.
 EmitDecimalDigit:
     xor al, al
-loc_05235:
+@@subtractPower:
     add dx, cx
     inc al
-    jb loc_05235
+    jb @@subtractPower
     sub dx, cx
     dec al
-    jne loc_05250
+    jne EmitDecimalDigitChar
     cmp word ptr ds:[DecimalToBuffer], 1
-    je loc_0524E
+    je @@zeroDigit
     or bl, bl
     mov al, 20h
-    je loc_05254
-loc_0524E:
+    je OutputChar
+@@zeroDigit:
     xor al, al
-loc_05250:
+EmitDecimalDigitChar:
     inc bl
     add al, 30h
-loc_05254:
+OutputChar:
     push dx
     push cx
     push bx
     cmp word ptr ds:[DecimalToBuffer], 1
-    je loc_05265
+    je @@storeToBuffer
     call PrintTextChar
-loc_05261:
+@@done:
     pop bx
     pop cx
     pop dx
     ret
-loc_05265:
+@@storeToBuffer:
     mov ds:[di], al
     inc di
-    jmp short loc_05261
+    jmp short @@done
 
 ; Zeroes WorkspaceSegment (64 KB, or 32 KB with ClearWorkspaceHalfOnly).
 ClearWorkspace:
@@ -9757,9 +9760,9 @@ ClearWorkspace:
     mov ax, di
     mov cx, 08000h
     cmp word ptr ds:[ClearWorkspaceHalfOnly], 0
-    je loc_05280
+    je @@clear
     mov cx, 04000h
-loc_05280:
+@@clear:
     rep stosw
     ret
 
@@ -9860,13 +9863,13 @@ XorCodeHiscoreBlock:
     mov si, offset HiscoreBlock
     mov cx, HISCORE_BLOCK_BYTES
     xor ax, ax
-loc_0F86E:
+@@codeByte:
     xor byte ptr ds:[si], 0AAh
     xor byte ptr ds:[si], cl
     add al, byte ptr ds:[si]
     adc ah, 0
     inc si
-    loop loc_0F86E
+    loop @@codeByte
     retf
 FAR0F7F ends
 end

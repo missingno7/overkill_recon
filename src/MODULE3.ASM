@@ -455,6 +455,7 @@ extrn ResetEgaPages:near
 extrn ResetPageAndClearScreen:near
 extrn RestartAtCheckpoint:near
 extrn RestoreRecordBackground:near
+extrn ReturnCarrySet:near
 extrn RunLevelScriptEvents:near
 extrn RunOptionsMenu:near
 extrn SaveRecordBackground:near
@@ -544,7 +545,6 @@ extrn UpdateHighScoreTable:near
 extrn UpdateRefuelTimersAndScore:near
 extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
-extrn loc_05059:near
 ; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer).
 LevelMapSegment dw seg SoundModuleSlot + SLOT_BUFFER_PARAGRAPH
 ; Colour text-mode video segment, used when printing without graphics (TextInGraphics = 0).
@@ -3067,7 +3067,7 @@ PodCollideRecords:
 ; Always taken: the scan only accepts size class 1.
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
     je @@checkEnemy
-    jmp near ptr loc_05059
+    jmp near ptr ReturnCarrySet
 @@checkEnemy:
     cmp word ptr ds:[bx + REC_KIND], KIND_ENEMY
     jne @@nextRecord
@@ -4891,7 +4891,7 @@ ProbeOverlapsWalker:
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     cmp si, word ptr ds:[bx + REC_SAVE_BUFFER]
     je @@nextRecord
-    jmp near ptr loc_05059
+    jmp near ptr ReturnCarrySet
 @@nextRecord:
     add bx, RECORD_SIZE
     loop @@checkRecord
@@ -5047,9 +5047,9 @@ SideShotHit:
     jmp short DestroyRecord
 BeamHit:
     cmp word ptr ds:[SegBossActive], 1
-    jne loc_0BFB2
+    jne @@destroyOutright
     jmp near ptr DamageTwo
-loc_0BFB2:
+@@destroyOutright:
     mov word ptr ss:[bp + REC_HIT_POINTS], 0
     jmp short DestroyRecord
 PiercingHit:

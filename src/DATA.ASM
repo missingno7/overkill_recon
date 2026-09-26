@@ -1218,7 +1218,7 @@ SlowCount4 dw 0h
 SlowCount3 dw 0h
 ; Counts pool-A record updates, wraps at 5DCh; also a handler timer.
 RecordTickCounter dw 0h
-; Sway oscillator stepped every 8 frames (loc_0F9F9 initialises it).
+; Sway oscillator stepped every 8 frames (StartLeaderScript initialises it).
 SwayDirX dw 0h
 SwayPhase dw 0h
 SwayDropY dw 0h
