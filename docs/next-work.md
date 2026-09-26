@@ -15,11 +15,6 @@ layout argument appears (as the linker padding at far 10162 did).
 
 - PanelImageBytes/BlueBitsImageBytes groups: tie each size group to its images.
 
-## Open questions worth settling statically
-
-- DemoStepLaunchFrontPod and DemoStepSpawnPathEnemy51 do not check for FFFFh (pool full).
-- MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
-- Type 2Eh never sets SteerSpeed and inherits the previous handler's value.
 
 ## Next reconstruction targets
 

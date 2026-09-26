@@ -287,6 +287,7 @@ public LevelDigitChars
 public LevelEndMapRows
 public LevelEndPhase
 public LevelIndex
+public LevelIntroFrames
 public LevelMapCellHandlers
 public LevelMapFiles
 public LevelMusicTable
@@ -402,7 +403,6 @@ public SegBossPathCursor
 public SegBossX
 public SegBossY
 public SelectedUpgradeSlot
-public SequenceFrameCount
 public SfxActive
 public SfxCommandTable
 public SfxEffectTable
@@ -1930,8 +1930,8 @@ WinScreenPageList dw offset File_WINSCR_ENC, 0FFFFh
 ; Page shown by ShowPageList within PageListPtr.
 PageIndex dw 0
 PageListPtr dw 0
-; Frames run so far by RunTimedSequenceUntilPrimary.
-SequenceFrameCount dw 0
+; Frames shown so far by ShowLevelIntro.
+LevelIntroFrames dw 0
 ; Choose-screen slot 0..5 (RunChooseScreen; saved in hiscore.dat).
 ChooseSlot dw 0
 ; 0..2, cycled in the options menu and saved in hiscore.dat. Throttles enemy child

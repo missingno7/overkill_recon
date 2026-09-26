@@ -139,6 +139,7 @@ extrn LeaderScript7EEnd:word
 extrn LeaderScriptCursor:word
 extrn LevelEndPhase:word
 extrn LevelIndex:word
+extrn LevelIntroFrames:word
 extrn LevelScriptClock:word
 extrn LevelSkipEnabled:byte
 extrn LifeLostRequest:word
@@ -214,7 +215,6 @@ extrn SegBossPathCursor:word
 extrn SegBossX:word
 extrn SegBossY:word
 extrn SelectedUpgradeSlot:word
-extrn SequenceFrameCount:word
 extrn SetBestFitAllocStrategy:far
 extrn SfxActive:byte
 extrn SfxCommandTable:word
@@ -778,7 +778,7 @@ StartLife:
     call RequestLifeStartMusic
     cmp word ptr ds:[MapScrollPos], MAP_START_POS
     jne GameFrame
-    call RunTimedSequenceUntilPrimary
+    call ShowLevelIntro
 ; One game frame, paced by the timer (WaitTimerTick): update and draw, act on the
 ; requests raised this frame, then F4 (level skip), F10 (pause) and Esc (quit prompt).
 GameFrame:
@@ -7030,6 +7030,7 @@ DemoStepActions label word
     dw offset CountXReturn, offset CountXReturn, offset DemoStepNextWeaponMode, offset DemoStepEnableSideShots
     dw offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode
     dw offset DemoStepSpawnPathEnemy51, offset DemoStepGiveMissile, offset CountXReturn, offset CountXReturn
+; Uses BX without checking for FFFFh (pool A full).
 DemoStepSpawnPathEnemy51:
     call SpawnEnemyHere
     mov word ptr ds:[bx + REC_X], PLAYFIELD_MAX_X
@@ -7068,6 +7069,7 @@ DemoStepNextShipForm:
     mov word ptr ds:[DemoStepTimer], 032h
     mov bp, offset PrimaryRecord
     jmp near ptr PlaceSidePods
+; Uses BX without checking for FFFFh (pool A full).
 DemoStepLaunchFrontPod:
     cmp byte ptr ds:[SfxEnabled], 0
     je @@launch
@@ -7193,13 +7195,15 @@ LoadAndShowPage:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-; Frame loop of up to 200 frames or until the primary button; entered when DS:2350 is 9Ch.
-RunTimedSequenceUntilPrimary:
+; Level intro: the plaque over the moving starfield for up to 200 frames or until the
+; primary button. Runs when a life starts at the level start (MAP_START_POS), not at a
+; later checkpoint.
+ShowLevelIntro:
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    jne RunTimedSequenceUntilPrimary
+    jne ShowLevelIntro
     call CopyWorkspaceToScreen
-    mov word ptr ds:[SequenceFrameCount], 0
+    mov word ptr ds:[LevelIntroFrames], 0
 @@frame:
     call ClearTimerTick
     call FlipEgaDrawPage
@@ -7216,8 +7220,8 @@ RunTimedSequenceUntilPrimary:
     call ShowEgaDrawPage
     call WaitTimerTick
     call WaitVerticalRetrace
-    inc word ptr ds:[SequenceFrameCount]
-    cmp word ptr ds:[SequenceFrameCount], 0C8h
+    inc word ptr ds:[LevelIntroFrames]
+    cmp word ptr ds:[LevelIntroFrames], 0C8h
     ja @@waitRelease
     call PollInputBits
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
