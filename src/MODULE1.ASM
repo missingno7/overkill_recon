@@ -398,19 +398,19 @@ extrn Sprites1x1Segment:word
 extrn Sprites2x2CSegment:word
 extrn Sprites2x2Segment:word
 extrn StopModuleMusic:near
+extrn StretchDest:word
+extrn StretchFlagA:word
+extrn StretchFlagB:word
+extrn StretchImageRows:word
+extrn StretchRowBytes:word
+extrn StretchRowError:word
+extrn StretchShownRows:word
+extrn StretchSource:word
 extrn TextVideoSegment:word
 extrn TheEndSegment:word
 extrn VideoAdapter:word
 extrn WaitVerticalRetracePulse:near
 extrn WideRowBytes:word
-extrn WipeDest:word
-extrn WipeFlagA:word
-extrn WipeFlagB:word
-extrn WipeHeight:word
-extrn WipeProgress:word
-extrn WipeSource:word
-extrn WipeStep:word
-extrn WipeWidth:word
 extrn WorkspaceSegment:word
 extrn loc_05BAC:near
 ; Palette index treated as transparent when sprites are loaded and drawn.
@@ -1215,14 +1215,14 @@ DrawStatusPanel:
     mov si, word ptr cs:[si]
     mov ds, word ptr cs:[PanelSegment]
     lodsw
-    mov word ptr cs:[WipeWidth], ax
+    mov word ptr cs:[StretchImageRows], ax
     lodsw
-    mov word ptr cs:[WipeHeight], ax
-    mov word ptr cs:[WipeSource], si
-    mov word ptr cs:[WipeDest], di
-    mov word ptr cs:[WipeFlagA], 0
-    mov word ptr cs:[WipeFlagB], 0
-    mov word ptr cs:[WipeStep], 0C6h
+    mov word ptr cs:[StretchRowBytes], ax
+    mov word ptr cs:[StretchSource], si
+    mov word ptr cs:[StretchDest], di
+    mov word ptr cs:[StretchFlagA], 0
+    mov word ptr cs:[StretchFlagB], 0
+    mov word ptr cs:[StretchShownRows], 0C6h
     mov es, word ptr cs:[ScreenSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
@@ -5160,12 +5160,12 @@ loc_02D27:
     ret
 
 loc_02D2D:
-    mov word ptr cs:[WipeProgress], 0
-    mov di, word ptr cs:[WipeDest]
-    mov si, word ptr cs:[WipeSource]
-    mov cx, word ptr cs:[WipeWidth]
-    mov bp, word ptr cs:[WipeHeight]
-    cmp word ptr cs:[WipeFlagA], 0
+    mov word ptr cs:[StretchRowError], 0
+    mov di, word ptr cs:[StretchDest]
+    mov si, word ptr cs:[StretchSource]
+    mov cx, word ptr cs:[StretchImageRows]
+    mov bp, word ptr cs:[StretchRowBytes]
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_02D5C
     mov ax, bp
     shl ax, 1
@@ -5180,8 +5180,8 @@ loc_02D5C:
     out dx, al
     inc dx
     push cx
-    mov cx, word ptr cs:[WipeWidth]
-    sub cx, word ptr cs:[WipeStep]
+    mov cx, word ptr cs:[StretchImageRows]
+    sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
     js loc_02D8C
     shr cx, 1
@@ -5202,14 +5202,14 @@ loc_02D81:
 loc_02D8C:
     pop cx
 loc_02D8D:
-    mov ax, word ptr cs:[WipeStep]
-    cmp ax, word ptr cs:[WipeWidth]
+    mov ax, word ptr cs:[StretchShownRows]
+    cmp ax, word ptr cs:[StretchImageRows]
     je loc_02DCB
-    add word ptr cs:[WipeProgress], ax
-    mov ax, word ptr cs:[WipeWidth]
-    cmp ax, word ptr cs:[WipeProgress]
+    add word ptr cs:[StretchRowError], ax
+    mov ax, word ptr cs:[StretchImageRows]
+    cmp ax, word ptr cs:[StretchRowError]
     ja loc_02DC6
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_02DBA
     sub si, bp
     sub si, bp
@@ -5225,7 +5225,7 @@ loc_02DC2:
     loop loc_02D8D
     jmp short loc_02E23
 loc_02DC6:
-    sub word ptr cs:[WipeProgress], ax
+    sub word ptr cs:[StretchRowError], ax
 loc_02DCB:
     push cx
     mov al, 1
@@ -5246,7 +5246,7 @@ loc_02DCB:
     shl al, 1
     out dx, al
     mov cx, bp
-    cmp word ptr cs:[WipeFlagB], 1
+    cmp word ptr cs:[StretchFlagB], 1
     je loc_02DF8
     rep movsb
     jmp short loc_02DFE
@@ -5257,7 +5257,7 @@ loc_02DF8:
 loc_02DFE:
     sub di, bp
     add di, 028h
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_02E1B
     sub si, bp
     sub si, bp
@@ -6488,14 +6488,14 @@ loc_03755:
     ret
 
 loc_0375B:
-    mov word ptr cs:[WipeProgress], 0
-    mov di, word ptr cs:[WipeDest]
-    mov si, word ptr cs:[WipeSource]
-    mov cx, word ptr cs:[WipeWidth]
-    mov bp, word ptr cs:[WipeHeight]
+    mov word ptr cs:[StretchRowError], 0
+    mov di, word ptr cs:[StretchDest]
+    mov si, word ptr cs:[StretchSource]
+    mov cx, word ptr cs:[StretchImageRows]
+    mov bp, word ptr cs:[StretchRowBytes]
     shl bp, 1
     shl bp, 1
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_0378A
     mov ax, bp
     dec cx
@@ -6504,8 +6504,8 @@ loc_0375B:
     add si, ax
 loc_0378A:
     push cx
-    mov cx, word ptr cs:[WipeWidth]
-    sub cx, word ptr cs:[WipeStep]
+    mov cx, word ptr cs:[StretchImageRows]
+    sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
     js loc_037C6
     shr cx, 1
@@ -6531,14 +6531,14 @@ loc_037B0:
 loc_037C6:
     pop cx
 loc_037C7:
-    mov ax, word ptr cs:[WipeStep]
-    cmp ax, word ptr cs:[WipeWidth]
+    mov ax, word ptr cs:[StretchShownRows]
+    cmp ax, word ptr cs:[StretchImageRows]
     je loc_037F9
-    add word ptr cs:[WipeProgress], ax
-    mov ax, word ptr cs:[WipeWidth]
-    cmp ax, word ptr cs:[WipeProgress]
+    add word ptr cs:[StretchRowError], ax
+    mov ax, word ptr cs:[StretchImageRows]
+    cmp ax, word ptr cs:[StretchRowError]
     ja loc_037F4
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_037EE
     sub si, bp
     jmp short loc_037F0
@@ -6548,7 +6548,7 @@ loc_037F0:
     loop loc_037C7
     jmp short loc_0381D
 loc_037F4:
-    sub word ptr cs:[WipeProgress], ax
+    sub word ptr cs:[StretchRowError], ax
 loc_037F9:
     push cx
     mov cx, bp
@@ -6559,7 +6559,7 @@ loc_037F9:
     je loc_0380E
     add di, 080A0h
 loc_0380E:
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_0381A
     sub si, bp
     sub si, bp
@@ -8628,13 +8628,13 @@ loc_048FD:
     ret
 
 loc_0497A:
-    mov word ptr cs:[WipeProgress], 0
-    mov di, word ptr cs:[WipeDest]
-    mov si, word ptr cs:[WipeSource]
-    mov cx, word ptr cs:[WipeWidth]
-    mov bp, word ptr cs:[WipeHeight]
+    mov word ptr cs:[StretchRowError], 0
+    mov di, word ptr cs:[StretchDest]
+    mov si, word ptr cs:[StretchSource]
+    mov cx, word ptr cs:[StretchImageRows]
+    mov bp, word ptr cs:[StretchRowBytes]
     shl bp, 1
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_049A7
     mov ax, bp
     dec cx
@@ -8643,8 +8643,8 @@ loc_0497A:
     add si, ax
 loc_049A7:
     push cx
-    mov cx, word ptr cs:[WipeWidth]
-    sub cx, word ptr cs:[WipeStep]
+    mov cx, word ptr cs:[StretchImageRows]
+    sub cx, word ptr cs:[StretchShownRows]
     or cx, cx
     js loc_049E3
     shr cx, 1
@@ -8670,14 +8670,14 @@ loc_049CD:
 loc_049E3:
     pop cx
 loc_049E4:
-    mov ax, word ptr cs:[WipeStep]
-    cmp ax, word ptr cs:[WipeWidth]
+    mov ax, word ptr cs:[StretchShownRows]
+    cmp ax, word ptr cs:[StretchImageRows]
     je loc_04A16
-    add word ptr cs:[WipeProgress], ax
-    mov ax, word ptr cs:[WipeWidth]
-    cmp ax, word ptr cs:[WipeProgress]
+    add word ptr cs:[StretchRowError], ax
+    mov ax, word ptr cs:[StretchImageRows]
+    cmp ax, word ptr cs:[StretchRowError]
     ja loc_04A11
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_04A0B
     sub si, bp
     jmp short loc_04A0D
@@ -8687,7 +8687,7 @@ loc_04A0D:
     loop loc_049E4
     jmp short loc_04A3A
 loc_04A11:
-    sub word ptr cs:[WipeProgress], ax
+    sub word ptr cs:[StretchRowError], ax
 loc_04A16:
     push cx
     mov cx, bp
@@ -8698,7 +8698,7 @@ loc_04A16:
     je loc_04A2B
     add di, 0C050h
 loc_04A2B:
-    cmp word ptr cs:[WipeFlagA], 0
+    cmp word ptr cs:[StretchFlagA], 0
     je loc_04A37
     sub si, bp
     sub si, bp

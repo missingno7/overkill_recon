@@ -278,9 +278,17 @@ public Sprite8Offsets
 public StartLeaderScript
 public SteerTowardTarget
 public StepAlongDelta
+public StretchDest
+public StretchFlagA
+public StretchFlagB
+public StretchImageRows
 public StretchInHudPanel
 public StretchInTheEndImage
 public StretchInWindowImage
+public StretchRowBytes
+public StretchRowError
+public StretchShownRows
+public StretchSource
 public TickFrameTimers
 public TickRefuel
 public TrailingPodsAvailable
@@ -345,14 +353,6 @@ public Type90TurretVolley
 public Type91TurretVolleyAlt
 public Type93SweepDescendClimb
 public UpdateRefuelTimersAndScore
-public WipeDest
-public WipeFlagA
-public WipeFlagB
-public WipeHeight
-public WipeProgress
-public WipeSource
-public WipeStep
-public WipeWidth
 public loc_05A7E
 public loc_05BAC
 public loc_05D0B
@@ -1166,19 +1166,19 @@ loc_058A4:
     xor si, si
     mov cx, 1
     lodsw
-    mov word ptr cs:[WipeWidth], ax
+    mov word ptr cs:[StretchImageRows], ax
     lodsw
-    mov word ptr cs:[WipeHeight], ax
-    mov word ptr cs:[WipeSource], si
-    mov word ptr cs:[WipeDest], di
-    mov word ptr cs:[WipeFlagA], 0
-    mov word ptr cs:[WipeFlagB], 0
+    mov word ptr cs:[StretchRowBytes], ax
+    mov word ptr cs:[StretchSource], si
+    mov word ptr cs:[StretchDest], di
+    mov word ptr cs:[StretchFlagA], 0
+    mov word ptr cs:[StretchFlagB], 0
     mov es, word ptr cs:[ScreenSegment]
-    mov cx, word ptr cs:[WipeWidth]
+    mov cx, word ptr cs:[StretchImageRows]
     sub cx, 2
 loc_058DF:
     push cx
-    mov word ptr cs:[WipeStep], cx
+    mov word ptr cs:[StretchShownRows], cx
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
@@ -1187,31 +1187,32 @@ loc_058DF:
     dec cx
     loop loc_058DF
     ret
-; State of the progressive packed-image drawers (loc_058DF and the adapter variants):
-; destination, source, width and height from the image header, step, progress, two
-; alternating flags, and a word used only by the uncalled variant below.
-WipeDest dw 0
-WipeSource dw 0
-WipeWidth dw 0
-WipeHeight dw 0
-WipeStep dw 0
-WipeProgress dw 0
-WipeFlagA dw 0
-WipeFlagB dw 0
-WipeWord5909 dw 0
+; State of the vertical stretch/squash drawers of packed images (AdapterDrawHandlers):
+; destination, source, rows and bytes per row from the image header, rows shown
+; (spread evenly by the StretchRowError accumulator), two alternating flags, and a word
+; used only by the uncalled variant below.
+StretchDest dw 0
+StretchSource dw 0
+StretchImageRows dw 0
+StretchRowBytes dw 0
+StretchShownRows dw 0
+StretchRowError dw 0
+StretchFlagA dw 0
+StretchFlagB dw 0
+StretchWord5909 dw 0
 ; Uncalled variant of the progressive drawer.
 loc_0590B:
 loc_0590B:
     mov byte ptr ss:[KeyLastMakeCode], 0
     lodsw
-    mov cs:[WipeWidth], ax
+    mov cs:[StretchImageRows], ax
     lodsw
-    mov cs:[WipeHeight], ax
-    mov cs:[WipeSource], si
-    mov cs:[WipeDest], di
-    mov word ptr cs:[WipeFlagA], 0
-    mov word ptr cs:[WipeFlagB], 0
-    mov word ptr cs:[WipeWord5909], 0
+    mov cs:[StretchRowBytes], ax
+    mov cs:[StretchSource], si
+    mov cs:[StretchDest], di
+    mov word ptr cs:[StretchFlagA], 0
+    mov word ptr cs:[StretchFlagB], 0
+    mov word ptr cs:[StretchWord5909], 0
     mov es, cs:[ScreenSegment]
 loc_0593F:
     push cx
@@ -1232,11 +1233,11 @@ AdapterDrawHandlers label word
     dw offset loc_0497A, offset loc_02D2D, offset loc_0375B
 ; Step of the unused loc_0590B; AX = 1 (NZ) when a key or the primary button stops it.
 SquashAndStretchUntilInput:
-    mov cx, cs:[WipeWidth]
+    mov cx, cs:[StretchImageRows]
     sub cx, 2
 loc_05968:
     push cx
-    mov cs:[WipeStep], cx
+    mov cs:[StretchShownRows], cx
     mov bx, cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
@@ -1253,14 +1254,14 @@ loc_05968:
     pop cx
     dec cx
     loop loc_05968
-    xor word ptr cs:[WipeFlagA], 1
-    xor word ptr cs:[WipeFlagB], 1
-    mov cx, cs:[WipeWidth]
+    xor word ptr cs:[StretchFlagA], 1
+    xor word ptr cs:[StretchFlagB], 1
+    mov cx, cs:[StretchImageRows]
     sub cx, 2
-    add word ptr cs:[WipeStep], 2
+    add word ptr cs:[StretchShownRows], 2
 loc_059B6:
     push cx
-    add word ptr cs:[WipeStep], 2
+    add word ptr cs:[StretchShownRows], 2
     mov bx, cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
@@ -1473,28 +1474,28 @@ StretchInTheEndImage:
     xor si, si
     mov ds, word ptr cs:[TheEndSegment]
 
-; DS:SI = image (width word, height word, data), DI = screen offset: draws it through
-; AdapterDrawHandlers once per retrace growing WipeStep (rows shown) each time. Returns
+; DS:SI = image (rows word, bytes-per-row word, data), DI = screen offset: draws it through
+; AdapterDrawHandlers once per retrace growing StretchShownRows (rows shown) each time. Returns
 ; DS = MainDataSegment.
 StretchInImage:
     lodsw
-    mov word ptr cs:[WipeWidth], ax
+    mov word ptr cs:[StretchImageRows], ax
     lodsw
-    mov word ptr cs:[WipeHeight], ax
-    mov word ptr cs:[WipeSource], si
-    mov word ptr cs:[WipeDest], di
-    mov word ptr cs:[WipeFlagA], 0
-    mov word ptr cs:[WipeFlagB], 0
-    mov word ptr cs:[WipeStep], 6
+    mov word ptr cs:[StretchRowBytes], ax
+    mov word ptr cs:[StretchSource], si
+    mov word ptr cs:[StretchDest], di
+    mov word ptr cs:[StretchFlagA], 0
+    mov word ptr cs:[StretchFlagB], 0
+    mov word ptr cs:[StretchShownRows], 6
     mov es, word ptr cs:[ScreenSegment]
 loc_05C74:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
     call WaitVerticalRetrace
-    add word ptr cs:[WipeStep], 2
-    mov ax, word ptr cs:[WipeStep]
-    cmp ax, word ptr cs:[WipeWidth]
+    add word ptr cs:[StretchShownRows], 2
+    mov ax, word ptr cs:[StretchShownRows]
+    cmp ax, word ptr cs:[StretchImageRows]
     jne loc_05C74
     mov ds, word ptr cs:[MainDataSegment]
     ret
