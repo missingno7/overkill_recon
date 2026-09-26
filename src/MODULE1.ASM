@@ -277,6 +277,9 @@ public PollInputBits
 public PrintMessageBP
 public PrintTextChar
 public ReadIndexedByteAttribute
+public RecordWorkspaceOffsetCga
+public RecordWorkspaceOffsetEga
+public RecordWorkspaceOffsetTandy
 public RestartAtCheckpoint
 public RestoreKeyboardVector09
 public RestoreTimerVector08
@@ -298,7 +301,6 @@ public loc_007EF
 public loc_00B3E
 public loc_00D42
 public loc_00E9C
-public loc_02580
 public loc_025E9
 public loc_02737
 public loc_027D9
@@ -311,7 +313,6 @@ public loc_02AF9
 public loc_02B84
 public loc_02D2D
 public loc_02E2D
-public loc_030D2
 public loc_03142
 public loc_033AF
 public loc_034AD
@@ -323,7 +324,6 @@ public loc_03657
 public loc_036A2
 public loc_0375B
 public loc_03824
-public loc_041F5
 public loc_04264
 public loc_0446C
 public loc_0450C
@@ -372,6 +372,7 @@ extrn PanelSegment:word
 extrn PerFileFlagsEnabled:byte
 extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
+extrn RecordWorkspaceOffset:near
 extrn RequestModuleMusic:near
 extrn ScreenSegment:word
 extrn ScrollBandBytes:word
@@ -402,7 +403,6 @@ extrn WipeStep:word
 extrn WipeWidth:word
 extrn WorkspaceSegment:word
 extrn loc_0532D:near
-extrn loc_05A36:near
 extrn loc_05BAC:near
 extrn loc_05BEE:near
 extrn loc_05CB7:near
@@ -1983,7 +1983,7 @@ loc_01031:
 ; EGA masked sprite blitters, one per pixel phase (REC_PIXEL_PHASE 0..7), reached
 ; through Sprite32Blitters, FlashSprite32Blitters, Sprite16Blitters, FlashSprite16Blitters
 ; and Sprite8Blitters. DS:SI = sprite frame (per row: mask, then planes 0..3; a mask
-; bit of 1 is transparent), ES:DI = WorkspaceSegment offset (REC_SCREEN_OFS), CX = rows.
+; bit of 1 is transparent), ES:DI = WorkspaceSegment offset (REC_WORK_OFS), CX = rows.
 ; Phases 1..4 shift right and phases 5..7 shift left into the preceding byte; the
 ; Flash variants draw the opaque pixels in colour 15. DS is reset to MainDataSegment.
 DrawSprite32Shift0Ega:
@@ -4220,7 +4220,7 @@ loc_02557:
     pop cx
     loop loc_02557
     ret
-loc_02580:
+RecordWorkspaceOffsetEga:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
     jae loc_025B2
@@ -4682,7 +4682,7 @@ loc_02991:
     je loc_02999
     call loc_029A9
 loc_02999:
-    mov di, ss:[bp + REC_SCREEN_OFS_LOWER]
+    mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
     cmp di, -1
@@ -4804,26 +4804,26 @@ loc_029EB:
     add di, bx
     ret
 loc_02A4F:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     je loc_02A69
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     call loc_02A8D
 loc_02A69:
     add word ptr ss:[bp + REC_Y], 10h
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 10h
     cmp ax, 0FFFFh
     jne loc_02A7D
     ret
 loc_02A7D:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     add di, 140h
@@ -4853,14 +4853,14 @@ loc_02A9D:
     mov ds, cs:[MainDataSegment]
     ret
 loc_02AB9:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_02AC5
     ret
 loc_02AC5:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]
@@ -4884,14 +4884,14 @@ loc_02AE1:
     mov ds, cs:[MainDataSegment]
     ret
 loc_02AF9:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_02B05
     ret
 loc_02B05:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]
@@ -5597,7 +5597,7 @@ loc_030C3:
     pop cx
     loop loc_030C3
     ret
-loc_030D2:
+RecordWorkspaceOffsetTandy:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
     jb loc_030DE
@@ -6034,7 +6034,7 @@ loc_034AD:
     je loc_034B5
     call loc_034C5
 loc_034B5:
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS_LOWER]
+    mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     add si, 0140h
     cmp di, -1
@@ -6174,26 +6174,26 @@ loc_03548:
     add di, bx
     ret
 loc_0356C:
-    call loc_05A36
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     je loc_03586
     add ax, word ptr ds:[ScrollWindowOffset]
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     call loc_035AA
 loc_03586:
     add word ptr ss:[bp + REC_Y], 010h
-    call loc_05A36
-    mov word ptr ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    call RecordWorkspaceOffset
+    mov word ptr ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 010h
     cmp ax, 0FFFFh
     jne loc_0359A
     ret
 loc_0359A:
     add ax, word ptr ds:[ScrollWindowOffset]
-    mov word ptr ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    mov word ptr ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     add di, 0140h
@@ -6216,14 +6216,14 @@ loc_035BA:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 loc_035CC:
-    call loc_05A36
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_035D8
     ret
 loc_035D8:
     add ax, word ptr ds:[ScrollWindowOffset]
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     mov es, word ptr cs:[MainDataSegment]
@@ -6312,14 +6312,14 @@ loc_035D8:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 loc_03657:
-    call loc_05A36
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_03663
     ret
 loc_03663:
     add ax, word ptr ds:[ScrollWindowOffset]
-    mov word ptr ss:[bp + REC_SCREEN_OFS], ax
+    mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     mov es, word ptr cs:[MainDataSegment]
@@ -7649,7 +7649,7 @@ loc_041E7:
     pop cx
     loop loc_041E7
     ret
-loc_041F5:
+RecordWorkspaceOffsetCga:
     mov bx, word ptr ss:[bp + REC_Y]
     cmp bx, 0E0h
     jb loc_04201
@@ -8161,7 +8161,7 @@ loc_04684:
     je loc_0468C
     call loc_0469C
 loc_0468C:
-    mov di, ss:[bp + REC_SCREEN_OFS_LOWER]
+    mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
     cmp di, -1
@@ -8279,26 +8279,26 @@ loc_04717:
     add di, 31h
     ret
 loc_04740:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     je loc_0475A
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     call loc_0477E
 loc_0475A:
     add word ptr ss:[bp + REC_Y], 10h
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS_LOWER], ax
     sub word ptr ss:[bp + REC_Y], 10h
     cmp ax, 0FFFFh
     jne loc_0476E
     ret
 loc_0476E:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
+    mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     add di, 140h
@@ -8404,14 +8404,14 @@ loc_0477E:
     mov ds, cs:[MainDataSegment]
     ret
 loc_0480E:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_0481A
     ret
 loc_0481A:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]
@@ -8483,14 +8483,14 @@ loc_0481A:
     mov ds, cs:[MainDataSegment]
     ret
 loc_04896:
-    call loc_05A36
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    call RecordWorkspaceOffset
+    mov ss:[bp + REC_WORK_OFS], ax
     cmp ax, 0FFFFh
     jne loc_048A2
     ret
 loc_048A2:
     add ax, ds:[ScrollWindowOffset]
-    mov ss:[bp + REC_SCREEN_OFS], ax
+    mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]

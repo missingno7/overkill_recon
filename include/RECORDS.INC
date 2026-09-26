@@ -21,11 +21,12 @@ REC_DIRECTION equ 06h
 REC_SPRITE equ 08h
 ; Drawn in the first pass when 0, in the second when 1.
 REC_DRAW_PASS equ 0Ah
-; Screen address of the record (-1 = not visible), and of its lower half for size 2.
-REC_SCREEN_OFS equ 0Ch
+; WorkspaceSegment offset of the record as drawn (-1 = not drawn), and of its lower
+; half for size 2 (see RecordWorkspaceOffset).
+REC_WORK_OFS equ 0Ch
 ; Per-record background save buffer.
 REC_SAVE_BUFFER equ 0Eh
-REC_SCREEN_OFS_LOWER equ 10h
+REC_WORK_OFS_LOWER equ 10h
 ; X & 7: selects the shifted blit variant.
 REC_PIXEL_PHASE equ 12h
 ; 0 = 8x8, 1 = 16 rows, 2 = two 16-row halves.

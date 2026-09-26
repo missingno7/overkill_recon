@@ -237,6 +237,7 @@ public Level4MapCell
 public Level5MapCell
 public LoadHiscoreFile
 public PlayerShotsHitRecord
+public RecordWorkspaceOffset
 public SetDeltaToward
 public ShutdownGame
 public SidePodsAvailable
@@ -325,7 +326,6 @@ public loc_054C0
 public loc_05559
 public loc_057E6
 public loc_05800
-public loc_05A36
 public loc_05A7E
 public loc_05A92
 public loc_05AC8
@@ -492,6 +492,9 @@ extrn PanelSegment:word
 extrn PollInputBits:near
 extrn PrintMessageBP:near
 extrn PrintTextChar:near
+extrn RecordWorkspaceOffsetCga:near
+extrn RecordWorkspaceOffsetEga:near
+extrn RecordWorkspaceOffsetTandy:near
 extrn ReleaseEmsCache:near
 extrn RemoveRecordAtBX:near
 extrn RequestModuleMusic:near
@@ -518,7 +521,6 @@ extrn TryTerrainStep:near
 extrn VideoAdapter:word
 extrn WaitVerticalRetrace:near
 extrn WorkspaceSegment:word
-extrn loc_02580:near
 extrn loc_025E9:near
 extrn loc_02737:near
 extrn loc_027D9:near
@@ -531,7 +533,6 @@ extrn loc_02AF9:near
 extrn loc_02B84:near
 extrn loc_02D2D:near
 extrn loc_02E2D:near
-extrn loc_030D2:near
 extrn loc_03142:near
 extrn loc_033AF:near
 extrn loc_034AD:near
@@ -543,7 +544,6 @@ extrn loc_03657:near
 extrn loc_036A2:near
 extrn loc_0375B:near
 extrn loc_03824:near
-extrn loc_041F5:near
 extrn loc_04264:near
 extrn loc_0446C:near
 extrn loc_0450C:near
@@ -1306,12 +1306,15 @@ DrawOffsetFromWideRow:
     jmp word ptr cs:[bx + DrawOffsetFromWideRowCases]
 DrawOffsetFromWideRowCases label word
     dw DrawOffsetFromWideRowCga, DrawOffsetFromWideRowEga, TandyOffsetFromWideRow    ; per VideoAdapter: CGA, EGA, Tandy
-loc_05A36:
+; BP = record: AX = its WorkspaceSegment offset (FFFFh when off the playfield) and
+; REC_PIXEL_PHASE for the blitters. Also ticks the gameplay REC_FLASH_TIMER down: the
+; renderer owns that countdown.
+RecordWorkspaceOffset:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_05A36Cases]
-loc_05A36Cases label word
-    dw loc_041F5, loc_02580, loc_030D2    ; per VideoAdapter: CGA, EGA, Tandy
+    jmp word ptr cs:[bx + RecordWorkspaceOffsetCases]
+RecordWorkspaceOffsetCases label word
+    dw RecordWorkspaceOffsetCga, RecordWorkspaceOffsetEga, RecordWorkspaceOffsetTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
 ; Per-adapter copy of a packed image into the 104-byte-wide workspace.
 BlitPackedStride104:
@@ -1346,7 +1349,7 @@ loc_05A7ECases label word
 
 loc_05A92:
     mov es, word ptr cs:[WorkspaceSegment]
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
+    mov di, word ptr ss:[bp + REC_WORK_OFS]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     add bx, word ptr cs:[VideoAdapter]
@@ -4271,14 +4274,14 @@ loc_075BB:
     mov si, word ptr cs:[bx]
     mov word ptr cs:[Sprite32HalfSource], si
     mov word ptr cs:[Sprite32HalfSegment], cx
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
+    mov di, word ptr ss:[bp + REC_WORK_OFS]
     cmp di, -1
     je loc_075DB
     push bp
     call loc_075F5
     pop bp
 loc_075DB:
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS_LOWER]
+    mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
     cmp di, -1
     jne loc_075E4
     ret
@@ -4332,7 +4335,7 @@ SkipBlit:
     mov ds, cs:[MainDataSegment]
     ret
 loc_0768E:
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
+    mov di, word ptr ss:[bp + REC_WORK_OFS]
     cmp di, -1
     jne loc_07697
     ret
@@ -4384,7 +4387,7 @@ FlashSprite16Blitters label word
     dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 
 loc_07746:
-    mov di, word ptr ss:[bp + REC_SCREEN_OFS]
+    mov di, word ptr ss:[bp + REC_WORK_OFS]
     cmp di, -1
     jne loc_0774F
     ret
