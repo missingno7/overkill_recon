@@ -69,6 +69,9 @@ public AttributePatchPointers
 public AutoMoveExtraRecord
 public AutopilotWaypointA
 public AutopilotWaypointB
+public BeamList
+public BeamListEnd
+public BeamListTerminator
 public BlankMessage
 public BlockBytes
 public BonusIntroItems
@@ -323,6 +326,7 @@ public ModuleSoundRequest
 public MoveModeA47C
 public MsgDeallocError
 public MsgNotEnoughMemory
+public MuzzleOffsets
 public NextLevelRequest
 public NonAsciiCodeword
 public OPageList
@@ -335,6 +339,7 @@ public OffsetXGroupB
 public OffsetXWork
 public OkMenuPageList
 public OldNonAsciiCodeword
+public OptionShotDirection
 public PageIndex
 public PageListPtr
 public Password
@@ -405,6 +410,10 @@ public SfxRequest
 public SfxTickPhase
 public SfxVoiceA
 public SfxVoiceB
+public ShotsAtFireBeam
+public ShotsAtFireCompanion
+public ShotsAtFireMain
+public ShotsAtFireSide
 public ShotsLiveCompanion
 public ShotsLiveMain
 public ShotsLiveSide
@@ -480,6 +489,7 @@ public Type44Path
 public Type45Path
 public Type4APath
 public Type51Path
+public Type53SpawnTable
 public Type86Frames
 public Type86FramesDir6
 public Type88Frames
@@ -1505,13 +1515,24 @@ OffsetXGroupA dw 00000h
 OffsetXGroupB dw 00000h
 ClampXLowSeen db 00h
 ClampXHighSeen db 00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,06h,00h,0Ch,00h,00h,00h,0Ch,00h
-    db 00h,00h,0Ch,00h,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
-    db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,00h,00h,00h,00h,020h,00h
-    db 018h,00h,010h,00h,020h,00h,098h,00h,013h,00h,040h,00h,028h,00h,016h,00h
-    db 040h,00h,088h,00h,019h,00h
+; ShotsLive* copied when the fire button is taken (HandleFireButton); the burst
+; weapons fire only when their snapshot count is 0, one burst at a time.
+ShotsAtFireMain dw 0
+ShotsAtFireBeam dw 0
+ShotsAtFireSide dw 0
+ShotsAtFireCompanion dw 0
+; Muzzle (dY, dX) from the player position per PrimaryRecord REC_SPRITE 0..2.
+MuzzleOffsets dw 6, 0Ch,  0, 0Ch,  0, 0Ch
+; Records of the beam (type 9 shots), head first; FFFFh-filled when the beam starts.
+BeamList dw 26 dup (0FFFFh)
+; Never written: BeamListEnd reaching it means the list is full.
+BeamListTerminator dw 0FFFFh
+; Next free BeamList entry.
+BeamListEnd dw 0
+; Direction of the next option fork shot, FFFFh = outward by the option's X.
+OptionShotDirection dw 0
+; (Y, X, sprite) of the four type 53h records spawned at MapScrollPos 0EA0h.
+Type53SpawnTable dw 20h, 18h, 10h,  20h, 98h, 13h,  40h, 28h, 16h,  40h, 88h, 19h
 ; Map row being spawned by SpawnFromMapRow: cells left, cursor into the level map
 ; (LevelMapSegment), and the pixel X of the current cell.
 MapRowCellsLeft dw 00000h

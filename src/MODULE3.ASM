@@ -12,6 +12,9 @@ extrn AllCheatsFlag:byte
 extrn AutoMoveExtraRecord:word
 extrn AutopilotWaypointA:word
 extrn AutopilotWaypointB:word
+extrn BeamList:word
+extrn BeamListEnd:word
+extrn BeamListTerminator:word
 extrn BonusIntroItems:byte
 extrn BonusKeysEnabled:byte
 extrn BossPartOffsets:word
@@ -156,6 +159,7 @@ extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
 extrn MoveModeA47C:word
 extrn MsgDeallocError:byte
+extrn MuzzleOffsets:word
 extrn NextLevelRequest:word
 extrn NonAsciiCodeword:byte
 extrn OffsetTableA368:word
@@ -167,6 +171,7 @@ extrn OffsetXGroupB:word
 extrn OffsetXWork:word
 extrn OldNonAsciiCodeword:byte
 extrn OpenResourceFile:far
+extrn OptionShotDirection:word
 extrn PageIndex:word
 extrn PageListPtr:word
 extrn Password:byte
@@ -223,6 +228,10 @@ extrn SfxRequest:byte
 extrn SfxTickPhase:byte
 extrn SfxVoiceA:byte
 extrn SfxVoiceB:byte
+extrn ShotsAtFireBeam:word
+extrn ShotsAtFireCompanion:word
+extrn ShotsAtFireMain:word
+extrn ShotsAtFireSide:word
 extrn ShotsLiveCompanion:word
 extrn ShotsLiveMain:word
 extrn ShotsLiveSide:word
@@ -265,6 +274,7 @@ extrn TitleLogoPiecePtr:word
 extrn TitleLogoPieces:byte
 extrn TitleRevealRects:byte
 extrn Type21Path:word
+extrn Type53SpawnTable:word
 extrn Type86Frames:word
 extrn Type86FramesDir6:word
 extrn Type88Frames:word
@@ -354,6 +364,7 @@ public loc_10044
 public loc_1009C
 public loc_10108
 extrn AimAtPlayer:near
+extrn AllocPoolBRecordEvicting:near
 extrn AllocateBuffers:near
 extrn BlitPackedStride104:near
 extrn BlitPackedStride160:near
@@ -509,7 +520,6 @@ extrn loc_061DC:near
 extrn loc_062AA:near
 extrn loc_07420:near
 extrn loc_074FE:near
-extrn loc_07547:near
 extrn loc_07596:near
 extrn loc_07746:near
 extrn loc_077C5:near
@@ -1112,7 +1122,7 @@ loc_09B47:
 loc_09B55:
     mov word ptr ds:[ScrollDeltaY], 0
     mov bp, offset PrimaryRecord
-    call loc_0A212
+    call UpdateBeam
     cmp word ptr ds:[EnergyTanks], -1
     je loc_09AFF
     cmp word ptr ds:[Fuel], 0
@@ -1140,7 +1150,7 @@ loc_09B97:
     call loc_08546
 loc_09BA9:
     call loc_0A66F
-    call loc_0A067
+    call HandleFireButton
     cmp byte ptr ds:[BonusKeysEnabled], 0
     je loc_09BC0
     cmp byte ptr ds:[KeyDownTable + SCAN_3], KEY_STATE_DOWN
@@ -1669,13 +1679,17 @@ loc_0A048:
     mov word ptr ds:[bx + REC_X], ax
 loc_0A05F:
     ret
-loc_0A060:
+ClearFireLatch:
     mov word ptr ds:[FireLatch], 0
     ret
 
-loc_0A067:
+; BP = PrimaryRecord. Fires when the primary button is newly pressed, held with rapid
+; fire, or every 16 frames while held. Early in the level (MapScrollPos <= B6h, not the
+; demo) only the main shot fires; otherwise the ShotsLive* snapshot is taken and
+; missile, side shots, option shots and the main weapon fire in turn.
+HandleFireButton:
     test byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
-    je loc_0A060
+    je ClearFireLatch
     cmp word ptr ds:[FireLatch], 0
     je loc_0A084
     cmp byte ptr ds:[RapidFireEnabled], 1
@@ -1691,54 +1705,58 @@ loc_0A084:
     jne loc_0A0A6
     cmp word ptr ds:[WeaponMode], 2
     jne loc_0A0A3
-    jmp near ptr loc_0A1C8
+    jmp near ptr FireForkShot
 loc_0A0A3:
-    jmp near ptr loc_0A19F
+    jmp near ptr FireSingleShot
 loc_0A0A6:
     mov ax, word ptr ds:[ShotsLiveMain]
-    mov word ptr ds:[0A3A0h], ax
+    mov word ptr ds:[ShotsAtFireMain], ax
     mov ax, word ptr ds:[ShotsLiveType9]
-    mov word ptr ds:[0A3A2h], ax
+    mov word ptr ds:[ShotsAtFireBeam], ax
     mov ax, word ptr ds:[ShotsLiveSide]
-    mov word ptr ds:[0A3A4h], ax
+    mov word ptr ds:[ShotsAtFireSide], ax
     mov ax, word ptr ds:[ShotsLiveCompanion]
-    mov word ptr ds:[0A3A6h], ax
+    mov word ptr ds:[ShotsAtFireCompanion], ax
     cmp word ptr ds:[DemoActive], 1
     jne loc_0A0D8
     cmp word ptr ds:[DemoStep], 8
     jne loc_0A0CE
-    jmp short loc_0A114
+    jmp short FireCompanionBurst
 loc_0A0CE:
     cmp word ptr ds:[DemoStep], 0Fh
     jbe loc_0A0D8
-    jmp near ptr loc_0A515
+    jmp near ptr FireMissile
 loc_0A0D8:
-    call loc_0A515
-    call loc_0A584
-    call loc_0A3FF
-    call loc_0A3CA
-    call loc_0A0E8
+    call FireMissile
+    call FirePlayerSideShots
+    call FireTrailingOptionShots
+    call FireFixedOptionShots
+    call FireMainWeapon
     ret
 
-loc_0A0E8:
+; Starts the beam in WeaponMode 5, fires the companion burst, then the WeaponMode
+; pattern.
+FireMainWeapon:
     cmp word ptr ds:[WeaponMode], 5
     jne loc_0A0F2
-    call loc_0A2A0
+    call StartBeam
 loc_0A0F2:
     cmp word ptr ds:[CompanionRecord], -1
     je loc_0A0FC
-    call loc_0A114
+    call FireCompanionBurst
 loc_0A0FC:
     mov bx, word ptr ds:[WeaponMode]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0A0FCCases]
     even
 loc_0A0FCCases label word
-    dw offset loc_0A19F, offset loc_0A18A, offset loc_0A1C8, offset loc_0A337
-    dw offset loc_0A2F6, offset CountXReturn
+    dw offset FireSingleShot, offset FireHeavyShot, offset FireForkShot, offset FireTwinRising3
+    dw offset FireTwinRising16, offset CountXReturn
 
-loc_0A114:
-    cmp word ptr ds:[0A3A6h], 0
+; Three type 0Ch shots from CompanionRecord (up, up-left, up-right), one burst at a
+; time.
+FireCompanionBurst:
+    cmp word ptr ds:[ShotsAtFireCompanion], 0
     je loc_0A11C
     ret
 loc_0A11C:
@@ -1747,151 +1765,162 @@ loc_0A11C:
     mov byte ptr ds:[SfxRequest], 018h
 loc_0A128:
     inc word ptr ds:[ShotsLiveCompanion]
-    call loc_0A175
+    call AllocCompanionShot
     sub ax, 6
-    mov word ptr ds:[bx + 2], ax
-    mov ax, word ptr ds:[si + 4]
+    mov word ptr ds:[bx + REC_Y], ax
+    mov ax, word ptr ds:[si + REC_X]
     add ax, 4
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
     inc word ptr ds:[ShotsLiveCompanion]
-    call loc_0A175
+    call AllocCompanionShot
     sub ax, 2
-    mov word ptr ds:[bx + 2], ax
-    mov ax, word ptr ds:[si + 4]
+    mov word ptr ds:[bx + REC_Y], ax
+    mov ax, word ptr ds:[si + REC_X]
     sub ax, 4
-    mov word ptr ds:[bx + 4], ax
-    mov word ptr ds:[bx + 6], 7
+    mov word ptr ds:[bx + REC_X], ax
+    mov word ptr ds:[bx + REC_DIRECTION], 7
     inc word ptr ds:[ShotsLiveCompanion]
-    call loc_0A175
+    call AllocCompanionShot
     sub ax, 2
-    mov word ptr ds:[bx + 2], ax
-    mov ax, word ptr ds:[si + 4]
+    mov word ptr ds:[bx + REC_Y], ax
+    mov ax, word ptr ds:[si + REC_X]
     add ax, 0Ch
-    mov word ptr ds:[bx + 4], ax
-    mov word ptr ds:[bx + 6], 1
+    mov word ptr ds:[bx + REC_X], ax
+    mov word ptr ds:[bx + REC_DIRECTION], 1
     ret
 
-loc_0A175:
-    call loc_0A4EA
-    mov word ptr ds:[bx + 018h], 0Ch
-    mov word ptr ds:[bx + 01Ch], 7
+; AllocPlayerShot as type 0Ch with REC_FIELD_1C 7; returns SI = CompanionRecord, AX =
+; its Y.
+AllocCompanionShot:
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_TYPE], 0Ch
+    mov word ptr ds:[bx + REC_FIELD_1C], 7
     mov si, word ptr ds:[CompanionRecord]
-    mov ax, word ptr ds:[si + 2]
+    mov ax, word ptr ds:[si + REC_Y]
     ret
-loc_0A18A:
-    call loc_0A1AB
-    mov word ptr ds:[bx + 8], 33h
+; WeaponMode 1: the single shot with sprite 33h, which does an extra hit point of
+; damage.
+FireHeavyShot:
+    call SpawnShotAtMuzzle
+    mov word ptr ds:[bx + REC_SPRITE], 33h
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A19E
     mov byte ptr ds:[SfxRequest], 14h
 loc_0A19E:
     ret
-loc_0A19F:
+; WeaponMode 0: one type 2 shot straight up from the muzzle.
+FireSingleShot:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_0A1AB
+    je SpawnShotAtMuzzle
     mov byte ptr ds:[SfxRequest], 013h
-loc_0A1AB:
-    call loc_0A4EA
+SpawnShotAtMuzzle:
+    call AllocPlayerShot
 
-loc_0A1AE:
+; BX = shot: position = player + MuzzleOffsets[player REC_SPRITE].
+PlaceShotAtMuzzle:
     mov si, word ptr ss:[bp + REC_SPRITE]
     shl si, 1
     shl si, 1
-    add si, 0A3A8h
+    add si, offset MuzzleOffsets
     lodsw
     add ax, word ptr ss:[bp + REC_Y]
-    mov word ptr ds:[bx + 2], ax
+    mov word ptr ds:[bx + REC_Y], ax
     lodsw
     add ax, word ptr ss:[bp + REC_X]
-    mov word ptr ds:[bx + 4], ax
+    mov word ptr ds:[bx + REC_X], ax
     ret
-loc_0A1C8:
+; WeaponMode 2: one shot up and one steered by the horizontal input (up-left, up-right
+; or up).
+FireForkShot:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A1D4
     mov byte ptr ds:[SfxRequest], 015h
 loc_0A1D4:
-    call loc_0A4EA
-    mov word ptr ds:[bx + 8], 018h
-    call loc_0A1AE
-    call loc_0A4EA
-    call loc_0A1AE
-    mov word ptr ds:[bx + 6], 7
-    mov word ptr ds:[bx + 8], 01Fh
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_SPRITE], 018h
+    call PlaceShotAtMuzzle
+    call AllocPlayerShot
+    call PlaceShotAtMuzzle
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_SPRITE], 01Fh
     test byte ptr ds:[InputBits], IN_XMINUS
     jne loc_0A211
-    mov word ptr ds:[bx + 6], 1
-    mov word ptr ds:[bx + 8], 019h
+    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_SPRITE], 019h
     test byte ptr ds:[InputBits], IN_XPLUS
     jne loc_0A211
-    mov word ptr ds:[bx + 6], 0
-    mov word ptr ds:[bx + 8], 018h
+    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_SPRITE], 018h
 loc_0A211:
     ret
 
-loc_0A212:
+; Grows the beam (BeamList) by a link every other frame while it has room, raises the
+; head 4 px and lines the other links up beside it.
+UpdateBeam:
     cmp word ptr ds:[ShotsLiveType9], 0
     jne loc_0A21A
     ret
 loc_0A21A:
     cmp word ptr ds:[CountGate2324], 1
     jne loc_0A258
-    cmp word ptr ds:[0A3EAh], 0A3E8h
+    cmp word ptr ds:[BeamListEnd], offset BeamListTerminator
     jne loc_0A22A
     ret
 loc_0A22A:
-    mov bx, word ptr ds:[0A3B4h]
+    mov bx, word ptr ds:[BeamList]
     cmp bx, -1
     jne loc_0A234
     ret
 loc_0A234:
     cmp word ptr ds:[bx + REC_X], 0
     je loc_0A255
-    call loc_0A2D6
-    mov bx, word ptr ds:[0A3B4h]
-    sub word ptr ds:[bx + 4], 8
-    mov bx, word ptr ds:[0A3EAh]
+    call SpawnBeamLink
+    mov bx, word ptr ds:[BeamList]
+    sub word ptr ds:[bx + REC_X], 8
+    mov bx, word ptr ds:[BeamListEnd]
     sub bx, 4
     mov bx, word ptr ds:[bx]
-    cmp word ptr ds:[bx + 4], 0C8h
+    cmp word ptr ds:[bx + REC_X], 0C8h
     je loc_0A258
 loc_0A255:
-    call loc_0A2D6
+    call SpawnBeamLink
 loc_0A258:
-    mov si, 0A3B4h
+    mov si, offset BeamList
     lodsw
     cmp ax, 0FFFFh
     jne loc_0A262
     ret
 loc_0A262:
     mov bx, ax
-    sub word ptr ds:[bx + 2], 4
-    mov cx, word ptr ds:[bx + 4]
+    sub word ptr ds:[bx + REC_Y], 4
+    mov cx, word ptr ds:[bx + REC_X]
     add cx, 8
-    mov di, word ptr ds:[bx + 2]
+    mov di, word ptr ds:[bx + REC_Y]
 loc_0A271:
     lodsw
     cmp ax, 0FFFFh
     je loc_0A289
     mov bx, ax
-    mov word ptr ds:[bx + 4], cx
+    mov word ptr ds:[bx + REC_X], cx
     add cx, 8
-    mov word ptr ds:[bx + 2], di
-    mov word ptr ds:[bx + 8], 06Bh
+    mov word ptr ds:[bx + REC_Y], di
+    mov word ptr ds:[bx + REC_SPRITE], 06Bh
     jmp short loc_0A271
 loc_0A289:
     sub si, 4
     mov bx, word ptr ds:[si]
-    mov word ptr ds:[bx + 8], 06Ch
+    mov word ptr ds:[bx + REC_SPRITE], 06Ch
     ret
 
-loc_0A294:
-    mov di, word ptr ds:[0A3EAh]
+AppendBeamLink:
+    mov di, word ptr ds:[BeamListEnd]
     mov word ptr ds:[di], bx
-    add word ptr ds:[0A3EAh], 2
+    add word ptr ds:[BeamListEnd], 2
     ret
 
-loc_0A2A0:
-    cmp word ptr ds:[0A3A2h], 0
+; WeaponMode 5: resets BeamList and spawns its first two links (one beam at a time).
+StartBeam:
+    cmp word ptr ds:[ShotsAtFireBeam], 0
     je loc_0A2A8
     ret
 loc_0A2A8:
@@ -1900,27 +1929,28 @@ loc_0A2A8:
     mov byte ptr ds:[SfxRequest], 011h
 loc_0A2B4:
     mov es, word ptr cs:[MainDataSegment]
-    mov word ptr ds:[0A3EAh], 0A3B4h
-    mov di, 0A3B4h
+    mov word ptr ds:[BeamListEnd], offset BeamList
+    mov di, offset BeamList
     mov ax, 0FFFFh
     mov cx, 01Ah
     rep stosw
-    call loc_0A2D6
-    mov word ptr ds:[bx + 8], 06Ah
-    sub word ptr ds:[bx + 4], 8
+    call SpawnBeamLink
+    mov word ptr ds:[bx + REC_SPRITE], 06Ah
+    sub word ptr ds:[bx + REC_X], 8
 
-loc_0A2D6:
+SpawnBeamLink:
     inc word ptr ds:[ShotsLiveType9]
-    call loc_0A4EA
-    call loc_0A294
-    mov word ptr ds:[bx + 018h], 9
-    call loc_0A1AE
-    and word ptr ds:[bx + 4], 0FFF8h
-    add word ptr ds:[bx + 4], 8
-    mov word ptr ds:[bx + 8], 06Ch
+    call AllocPlayerShot
+    call AppendBeamLink
+    mov word ptr ds:[bx + REC_TYPE], 9
+    call PlaceShotAtMuzzle
+    and word ptr ds:[bx + REC_X], 0FFF8h
+    add word ptr ds:[bx + REC_X], 8
+    mov word ptr ds:[bx + REC_SPRITE], 06Ch
     ret
-loc_0A2F6:
-    cmp word ptr ds:[0A3A0h], 0
+; WeaponMode 4: two type 8 shots, one burst at a time.
+FireTwinRising16:
+    cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A2FE
     ret
 loc_0A2FE:
@@ -1929,19 +1959,20 @@ loc_0A2FE:
     mov byte ptr ds:[SfxRequest], 17h
 loc_0A30A:
     inc word ptr ds:[ShotsLiveMain]
-    call loc_0A4EA
-    mov word ptr ds:[bx + 18h], 8
-    mov word ptr ds:[bx + 8], 35h
-    call loc_0A1AE
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_TYPE], 8
+    mov word ptr ds:[bx + REC_SPRITE], 35h
+    call PlaceShotAtMuzzle
     inc word ptr ds:[ShotsLiveMain]
-    call loc_0A4EA
-    mov word ptr ds:[bx + 18h], 8
-    mov word ptr ds:[bx + 8], 35h
-    call loc_0A1AE
-    add word ptr ds:[bx + 2], 8
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_TYPE], 8
+    mov word ptr ds:[bx + REC_SPRITE], 35h
+    call PlaceShotAtMuzzle
+    add word ptr ds:[bx + REC_Y], 8
     ret
-loc_0A337:
-    cmp word ptr ds:[0A3A0h], 0
+; WeaponMode 3: two type 7 shots, one burst at a time.
+FireTwinRising3:
+    cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A33F
     ret
 loc_0A33F:
@@ -1950,19 +1981,21 @@ loc_0A33F:
     mov byte ptr ds:[SfxRequest], 16h
 loc_0A34B:
     inc word ptr ds:[ShotsLiveMain]
-    call loc_0A4EA
-    mov word ptr ds:[bx + 18h], 7
-    mov word ptr ds:[bx + 8], 37h
-    call loc_0A1AE
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_TYPE], 7
+    mov word ptr ds:[bx + REC_SPRITE], 37h
+    call PlaceShotAtMuzzle
     inc word ptr ds:[ShotsLiveMain]
-    call loc_0A4EA
-    mov word ptr ds:[bx + 18h], 7
-    mov word ptr ds:[bx + 8], 37h
-    call loc_0A1AE
-    add word ptr ds:[bx + 2], 8
+    call AllocPlayerShot
+    mov word ptr ds:[bx + REC_TYPE], 7
+    mov word ptr ds:[bx + REC_SPRITE], 37h
+    call PlaceShotAtMuzzle
+    add word ptr ds:[bx + REC_Y], 8
     ret
 
-loc_0A378:
+; SI = option record (FFFFh = none): its type 6 and type 5 side shots when side shots
+; are enabled.
+FireOptionSideShots:
     cmp si, -1
     jne loc_0A37E
     ret
@@ -1971,57 +2004,62 @@ loc_0A37E:
     jne loc_0A386
     ret
 loc_0A386:
-    cmp word ptr ds:[0A3A4h], 0
+    cmp word ptr ds:[ShotsAtFireSide], 0
     je loc_0A38E
     ret
 loc_0A38E:
-    call loc_0A396
-    mov word ptr ds:[bx + 018h], 6
+    call SpawnSideShotFromSI
+    mov word ptr ds:[bx + REC_TYPE], 6
 
-loc_0A396:
+SpawnSideShotFromSI:
     inc word ptr ds:[ShotsLiveSide]
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A3A6
     mov byte ptr ds:[SfxRequest], 012h
 loc_0A3A6:
-    call loc_0A4EA
-    mov ax, word ptr ds:[si + 4]
+    call AllocPlayerShot
+    mov ax, word ptr ds:[si + REC_X]
     add ax, 4
-    mov word ptr ds:[bx + 4], ax
-    mov ax, word ptr ds:[si + 2]
+    mov word ptr ds:[bx + REC_X], ax
+    mov ax, word ptr ds:[si + REC_Y]
     add ax, 4
-    mov word ptr ds:[bx + 2], ax
-    and word ptr ds:[bx + 4], 0FFFCh
-    mov word ptr ds:[bx + 8], 8
-    mov word ptr ds:[bx + 018h], 5
+    mov word ptr ds:[bx + REC_Y], ax
+    and word ptr ds:[bx + REC_X], 0FFFCh
+    mov word ptr ds:[bx + REC_SPRITE], 8
+    mov word ptr ds:[bx + REC_TYPE], 5
     ret
 
-loc_0A3CA:
-    mov word ptr ds:[0A3ECh], 7
+; The WeaponMode pattern from the fixed option pods (PlusSlotA966/A96A fork up-left,
+; MinusSlotA968/A96C up-right).
+FireFixedOptionShots:
+    mov word ptr ds:[OptionShotDirection], 7
     mov si, word ptr ds:[PlusSlotA966]
-    call loc_0A41A
-    mov word ptr ds:[0A3ECh], 1
+    call FireOptionWeapon
+    mov word ptr ds:[OptionShotDirection], 1
     mov si, word ptr ds:[MinusSlotA968]
-    call loc_0A41A
-    mov word ptr ds:[0A3ECh], 7
+    call FireOptionWeapon
+    mov word ptr ds:[OptionShotDirection], 7
     mov si, word ptr ds:[PlusSlotA96A]
-    call loc_0A41A
-    mov word ptr ds:[0A3ECh], 1
+    call FireOptionWeapon
+    mov word ptr ds:[OptionShotDirection], 1
     mov si, word ptr ds:[MinusSlotA96C]
-    call loc_0A41A
+    call FireOptionWeapon
     ret
 
-loc_0A3FF:
-    mov word ptr ds:[0A3ECh], 0FFFFh
+; The WeaponMode pattern and side shots from the two trailing options
+; (HistoryRecordSlot15/31).
+FireTrailingOptionShots:
+    mov word ptr ds:[OptionShotDirection], 0FFFFh
     mov si, word ptr ds:[HistoryRecordSlot15]
-    call loc_0A41A
-    call loc_0A378
+    call FireOptionWeapon
+    call FireOptionSideShots
     mov si, word ptr ds:[HistoryRecordSlot31]
-    call loc_0A41A
-    call loc_0A378
+    call FireOptionWeapon
+    call FireOptionSideShots
     ret
 
-loc_0A41A:
+; SI = option record (FFFFh = none): its WeaponMode pattern (no beam).
+FireOptionWeapon:
     cmp si, -1
     jne loc_0A420
     ret
@@ -2031,84 +2069,89 @@ loc_0A420:
     jmp word ptr cs:[bx + loc_0A420Cases]
     even
 loc_0A420Cases label word
-    dw offset loc_0A4D7, offset loc_0A490, offset loc_0A499, offset loc_0A464
-    dw offset loc_0A438, offset CountXReturn
-loc_0A438:
-    cmp word ptr ds:[0A3A0h], 0
+    dw offset SpawnShotAtOption, offset OptionHeavyShot, offset OptionForkShot, offset OptionTwinRising3
+    dw offset OptionTwinRising16, offset CountXReturn
+OptionTwinRising16:
+    cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A440
     ret
 loc_0A440:
     add word ptr ds:[ShotsLiveMain], 2
-    call loc_0A4D7
-    mov word ptr ds:[bx + 18h], 8
-    mov word ptr ds:[bx + 8], 35h
-    call loc_0A4D7
-    mov word ptr ds:[bx + 18h], 8
-    mov word ptr ds:[bx + 8], 35h
-    add word ptr ds:[bx + 2], 8
+    call SpawnShotAtOption
+    mov word ptr ds:[bx + REC_TYPE], 8
+    mov word ptr ds:[bx + REC_SPRITE], 35h
+    call SpawnShotAtOption
+    mov word ptr ds:[bx + REC_TYPE], 8
+    mov word ptr ds:[bx + REC_SPRITE], 35h
+    add word ptr ds:[bx + REC_Y], 8
     ret
-loc_0A464:
-    cmp word ptr ds:[0A3A0h], 0
+OptionTwinRising3:
+    cmp word ptr ds:[ShotsAtFireMain], 0
     je loc_0A46C
     ret
 loc_0A46C:
     add word ptr ds:[ShotsLiveMain], 2
-    call loc_0A4D7
-    mov word ptr ds:[bx + 18h], 7
-    mov word ptr ds:[bx + 8], 37h
-    call loc_0A4D7
-    mov word ptr ds:[bx + 18h], 7
-    mov word ptr ds:[bx + 8], 37h
-    add word ptr ds:[bx + 2], 8
+    call SpawnShotAtOption
+    mov word ptr ds:[bx + REC_TYPE], 7
+    mov word ptr ds:[bx + REC_SPRITE], 37h
+    call SpawnShotAtOption
+    mov word ptr ds:[bx + REC_TYPE], 7
+    mov word ptr ds:[bx + REC_SPRITE], 37h
+    add word ptr ds:[bx + REC_Y], 8
     ret
-loc_0A490:
-    call loc_0A4D7
-    mov word ptr ds:[bx + 8], 33h
+OptionHeavyShot:
+    call SpawnShotAtOption
+    mov word ptr ds:[bx + REC_SPRITE], 33h
     ret
-loc_0A499:
-    call loc_0A4EA
-    mov ax, ds:[si + 2]
-    mov ds:[bx + 2], ax
-    mov ax, ds:[si + 4]
+OptionForkShot:
+    call AllocPlayerShot
+    mov ax, ds:[si + REC_Y]
+    mov ds:[bx + REC_Y], ax
+    mov ax, ds:[si + REC_X]
     add ax, 4
-    mov ds:[bx + 4], ax
-    mov ax, ds:[0A3ECh]
-    mov ds:[bx + 6], ax
+    mov ds:[bx + REC_X], ax
+    mov ax, ds:[OptionShotDirection]
+    mov ds:[bx + REC_DIRECTION], ax
     cmp ax, 0FFFFh
     jne loc_0A4C6
-    mov word ptr ds:[bx + 6], 7
-    cmp word ptr ds:[si + 4], 58h
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    cmp word ptr ds:[si + REC_X], 58h
     jna loc_0A4C6
-    mov word ptr ds:[bx + 6], 1
+    mov word ptr ds:[bx + REC_DIRECTION], 1
 loc_0A4C6:
-    cmp word ptr ds:[bx + 6], 1
-    mov word ptr ds:[bx + 8], 19h
+    cmp word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_SPRITE], 19h
     je loc_0A4D6
-    mov word ptr ds:[bx + 8], 1Fh
+    mov word ptr ds:[bx + REC_SPRITE], 1Fh
 loc_0A4D6:
     ret
-loc_0A4D7:
-    call loc_0A4EA
-    mov ax, ds:[si + 2]
-    mov ds:[bx + 2], ax
-    mov ax, ds:[si + 4]
+SpawnShotAtOption:
+    call AllocPlayerShot
+    mov ax, ds:[si + REC_Y]
+    mov ds:[bx + REC_Y], ax
+    mov ax, ds:[si + REC_X]
     add ax, 4
-    mov ds:[bx + 4], ax
+    mov ds:[bx + REC_X], ax
     ret
 
-loc_0A4EA:
-    call loc_07547
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 01Eh], 1
-    mov word ptr ds:[bx + 6], 0
-    mov word ptr ds:[bx + 8], 032h
-    mov word ptr ds:[bx + 014h], 0
-    mov word ptr ds:[bx + 016h], 2
-    mov word ptr ds:[bx + 018h], 2
-    mov word ptr ds:[bx + 01Ch], 0FFFFh
+; BX = a pool B record set up as a player shot: type 2, sprite 32h, heading up,
+; REC_FIELD_1C FFFFh (lives until out of bounds).
+AllocPlayerShot:
+    call AllocPoolBRecordEvicting
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_SIDE_FLAG], 1
+    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_SPRITE], 032h
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 0
+    mov word ptr ds:[bx + REC_KIND], KIND_TYPED
+    mov word ptr ds:[bx + REC_TYPE], 2
+    mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
     ret
 
-loc_0A515:
+; Fires a homing missile (type 0Ah) at FindMissileTarget's record when missiles remain
+; and none is live. Without a target the allocated record is left inactive.
+; REC_DIRECTION and REC_SPRITE are not set.
+FireMissile:
     cmp word ptr ds:[MissileAmmo], 0
     jne loc_0A51D
     ret
@@ -2117,7 +2160,7 @@ loc_0A51D:
     jne loc_0A525
     ret
 loc_0A525:
-    call loc_07547
+    call AllocPoolBRecordEvicting
     call CopyRecordPositionPlus10
     push bp
     mov bp, bx
@@ -2129,13 +2172,13 @@ loc_0A525:
     jne loc_0A53C
     ret
 loc_0A53C:
-    mov word ptr ds:[bx + 030h], ax
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 01Eh], 1
-    mov word ptr ds:[bx + 014h], 0
-    mov word ptr ds:[bx + 016h], 2
-    mov word ptr ds:[bx + 018h], 0Ah
-    mov word ptr ds:[bx + 01Ch], 1
+    mov word ptr ds:[bx + REC_TARGET], ax
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_SIDE_FLAG], 1
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 0
+    mov word ptr ds:[bx + REC_KIND], KIND_TYPED
+    mov word ptr ds:[bx + REC_TYPE], 0Ah
+    mov word ptr ds:[bx + REC_FIELD_1C], 1
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A568
     mov byte ptr ds:[SfxRequest], 011h
@@ -2154,12 +2197,14 @@ CopyRecordPositionPlus10:
     mov word ptr ds:[bx + REC_Y], ax
     ret
 
-loc_0A584:
+; Types 5 and 6 side shots from the player when side shots are enabled, one burst at a
+; time.
+FirePlayerSideShots:
     cmp word ptr ds:[SideShotsEnabled], 0
     jne loc_0A58C
     ret
 loc_0A58C:
-    cmp word ptr ds:[0A3A4h], 0
+    cmp word ptr ds:[ShotsAtFireSide], 0
     je loc_0A594
     ret
 loc_0A594:
@@ -2168,17 +2213,17 @@ loc_0A594:
     je loc_0A5A4
     mov byte ptr ds:[SfxRequest], 012h
 loc_0A5A4:
-    call loc_0A4EA
+    call AllocPlayerShot
     call CopyRecordPositionPlus10
     and word ptr ds:[bx + REC_X], 0FFFCh
-    mov word ptr ds:[bx + 8], 8
-    mov word ptr ds:[bx + 018h], 5
+    mov word ptr ds:[bx + REC_SPRITE], 8
+    mov word ptr ds:[bx + REC_TYPE], 5
     inc word ptr ds:[ShotsLiveSide]
-    call loc_0A4EA
+    call AllocPlayerShot
     call CopyRecordPositionPlus10
     and word ptr ds:[bx + REC_X], 0FFFCh
-    mov word ptr ds:[bx + 8], 8
-    mov word ptr ds:[bx + 018h], 6
+    mov word ptr ds:[bx + REC_SPRITE], 8
+    mov word ptr ds:[bx + REC_TYPE], 6
     ret
 
 ; DS:A47C==0: apply DecRecordYUnlessAtMin twice via CALL into next instruction then fallthrough re-entry. Otherwise
@@ -2338,7 +2383,7 @@ loc_0A6A8:
     jne loc_0A6FD
     mov word ptr ds:[MoveModeA47C], 1
     call loc_062AA
-    mov si, 0A3EEh
+    mov si, offset Type53SpawnTable
     mov cx, 4
 loc_0A6C8:
     push cx
@@ -4734,7 +4779,7 @@ loc_0BD7A:
     ret
 loc_0BD82:
     mov cx, 01Ah
-    mov si, 0A3B4h
+    mov si, offset BeamList
 loc_0BD88:
     lodsw
     cmp ax, 0FFFFh
@@ -5455,7 +5500,7 @@ loc_0C41E:
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_COMPANION
     mov es, word ptr cs:[MainDataSegment]
-    mov di, 0A3B4h
+    mov di, offset BeamList
     mov ax, 0FFFFh
     mov cx, 01Ah
     rep stosw
@@ -6853,7 +6898,7 @@ loc_0D04D:
     mov ds, word ptr cs:[PanelSegment]
     call BlitPackedToScreen
     pop ds
-    call loc_0A212
+    call UpdateBeam
     cmp word ptr ds:[DemoStep], 8
     jb loc_0D0CA
     cmp word ptr ds:[DemoStepTimer], 014h
@@ -6875,7 +6920,7 @@ loc_0D0B9:
 loc_0D0BE:
     mov bp, offset PrimaryRecord
     mov word ptr ds:[FireLatch], 0
-    call loc_0A067
+    call HandleFireButton
 loc_0D0CA:
     cmp word ptr ds:[DemoStep], 0
     jne loc_0D0D4

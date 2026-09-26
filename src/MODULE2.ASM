@@ -196,6 +196,7 @@ MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AdapterDrawHandlers
 public AimAtPlayer
+public AllocPoolBRecordEvicting
 public BlitPackedStride104
 public BlitPackedStride160
 public BlitPackedToScreen
@@ -335,7 +336,6 @@ public loc_061DC
 public loc_062AA
 public loc_07420
 public loc_074FE
-public loc_07547
 public loc_07596
 public loc_07746
 public loc_077C5
@@ -4204,7 +4204,9 @@ loc_07542:
     mov word ptr ds:[PoolACursor], bx
     ret
 
-loc_07547:
+; FindFreeRecordPoolB; when the pool is full, frees the first pool B record that is not
+; a beam link, missile or pod (else the first one). Always returns BX = record.
+AllocPoolBRecordEvicting:
     call FindFreeRecordPoolB
     cmp bx, -1
     je loc_07550
