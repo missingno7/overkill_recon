@@ -39,3 +39,14 @@ GAME_PORT_A_BUTTON1 equ 010h
 GAME_PORT_A_BUTTON2 equ 020h
 GAME_PORT_B_BUTTON1 equ 040h
 GAME_PORT_B_BUTTON2 equ 080h
+
+; Screen memory of the three 320x200 modes (VideoBiosModeTable).
+; CGA mode 4 at B800h, 2 bpp: even scan lines from 0, odd ones from CGA_BANK_BYTES.
+CGA_SCREEN_ROW_BYTES equ 50h
+CGA_BANK_BYTES equ 2000h
+; Tandy/PCjr mode 9 at B800h, 4 bpp: scan line n in bank n mod 4.
+TANDY_SCREEN_ROW_BYTES equ 0A0h
+TANDY_BANK_BYTES equ 2000h
+; EGA mode 0Dh at A000h, one bit per pixel per plane; page 1 at +EGA_PAGE_BYTES (A200h).
+EGA_SCREEN_ROW_BYTES equ 28h
+EGA_PAGE_BYTES equ 2000h

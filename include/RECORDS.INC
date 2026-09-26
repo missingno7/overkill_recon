@@ -123,3 +123,5 @@ REC_BLOCKED_CLIMBS equ REC_FIELD_36
 ; last member dies; REC_SLOT_INDEX links a record to its entry.
 GROUP_LIVE equ 0
 GROUP_DROP_KIND equ 1
+; Lower-half offset in a 32x32 record's save buffer.
+SAVE_HALF_BYTES equ POOL_A_SAVE_BYTES / 2

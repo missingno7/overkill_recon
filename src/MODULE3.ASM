@@ -702,7 +702,7 @@ StartupAfterOverrides:
     call LoadCommonGraphics
     mov word ptr cs:[LoadNamePtr], offset File_WINDOW_BIC
     mov ax, word ptr cs:[WorkspaceSegment]
-    add ax, 07D0h
+    add ax, WIDE_PAGE_BYTES / 16
     inc ax
     mov word ptr cs:[LoadDestSegment], ax
     mov word ptr cs:[LoadImageSlot], offset PlaqueImageOffset
@@ -6655,7 +6655,7 @@ RevealCellLoop:
     call DrawOffsetFromWideRow
     mov word ptr ds:[RevealCellOffset], di
     mov si, di
-    add si, 07D00h
+    add si, WIDE_PAGE_BYTES
     xor dl, dl
     mov es, word ptr cs:[WorkspaceSegment]
     mov bx, word ptr cs:[VideoAdapter]
@@ -6675,8 +6675,8 @@ MergeRevealCellCga:
     mov dl, 1
     mov word ptr es:[di], ax
 @@nextRow:
-    add di, 050h
-    add si, 050h
+    add di, CGA_WIDE_ROW_BYTES
+    add si, CGA_WIDE_ROW_BYTES
     loop @@compareRow
     jmp short RevealCellMerged
 
@@ -6695,8 +6695,8 @@ MergeRevealCellTandy:
     mov dl, 1
     mov word ptr es:[di + 2], ax
 @@nextRow:
-    add di, 0A0h
-    add si, 0A0h
+    add di, TANDY_WIDE_ROW_BYTES
+    add si, TANDY_WIDE_ROW_BYTES
     loop @@compareRow
     jmp short RevealCellMerged
 
@@ -6709,8 +6709,8 @@ MergeRevealCellEga:
     mov dl, 1
     mov byte ptr es:[di], al
 @@nextRow:
-    add di, 028h
-    add si, 028h
+    add di, EGA_WIDE_PLANE_ROW_BYTES
+    add si, EGA_WIDE_PLANE_ROW_BYTES
     loop @@compareRow
 RevealCellMerged:
     or dl, dl
@@ -6764,11 +6764,11 @@ ShowRevealCellCga:
 @@copyRow:
     mov ax, word ptr ds:[si]
     mov word ptr es:[di], ax
-    add si, 050h
-    add di, 02000h
-    test di, 04000h
+    add si, CGA_WIDE_ROW_BYTES
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@nextRow
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@nextRow:
     loop @@copyRow
     jmp short RevealCellShown
@@ -6780,11 +6780,11 @@ ShowRevealCellTandy:
     mov word ptr es:[di], ax
     mov ax, word ptr ds:[si + 2]
     mov word ptr es:[di + 2], ax
-    add si, 0A0h
-    add di, 02000h
-    test di, 08000h
+    add si, TANDY_WIDE_ROW_BYTES
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@nextRow
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@nextRow:
     loop @@copyRow
     jmp short RevealCellShown
@@ -6802,18 +6802,18 @@ ShowRevealCellEga:
     mov byte ptr es:[di], al
     mov al, 2
     out dx, al
-    mov al, byte ptr ds:[si + 028h]
+    mov al, byte ptr ds:[si + EGA_WIDE_PLANE_ROW_BYTES]
     mov byte ptr es:[di], al
     mov al, 4
     out dx, al
-    mov al, byte ptr ds:[si + 050h]
+    mov al, byte ptr ds:[si + 2 * EGA_WIDE_PLANE_ROW_BYTES]
     mov byte ptr es:[di], al
     mov al, 8
     out dx, al
-    mov al, byte ptr ds:[si + 078h]
+    mov al, byte ptr ds:[si + 3 * EGA_WIDE_PLANE_ROW_BYTES]
     mov byte ptr es:[di], al
-    add di, 028h
-    add si, 0A0h
+    add di, EGA_SCREEN_ROW_BYTES
+    add si, EGA_WIDE_ROW_BYTES
     loop @@copyRow
 RevealCellShown:
     mov ds, word ptr cs:[MainDataSegment]
@@ -6877,7 +6877,7 @@ StageTitleLogoPieces:
     lodsb
     push si
     call DrawOffsetFromWideRow
-    add di, 07D00h
+    add di, WIDE_PAGE_BYTES
     pop si
     lodsb
     mov word ptr ds:[TitleLogoPiecePtr], si
@@ -6939,8 +6939,8 @@ DrawTitleBackdrop:
     push es
     pop ds
     xor si, si
-    mov di, 07D00h
-    mov cx, 07D00h
+    mov di, WIDE_PAGE_BYTES
+    mov cx, WIDE_PAGE_BYTES
     rep movsb
     mov ds, word ptr cs:[MainDataSegment]
     ret

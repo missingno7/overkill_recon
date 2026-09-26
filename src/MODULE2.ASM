@@ -1118,46 +1118,46 @@ CaptureScreenRowCases label word
     dw CaptureScreenRowCga, CaptureScreenRowEga, CaptureScreenRowTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
 CaptureScreenRowCga:
-    mov cx, 050h
+    mov cx, CGA_SCREEN_ROW_BYTES
     rep movsb
-    sub si, 050h
-    add si, 02000h
-    test si, 04000h
+    sub si, CGA_SCREEN_ROW_BYTES
+    add si, CGA_BANK_BYTES
+    test si, 2 * CGA_BANK_BYTES
     je @@cgaRowDone
-    add si, 0C050h
+    add si, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@cgaRowDone:
     jmp short CaptureRowDone
 
 CaptureScreenRowEga:
     mov ax, 4
     out dx, ax
-    mov cx, 028h
+    mov cx, EGA_SCREEN_ROW_BYTES
     rep movsb
-    sub si, 028h
+    sub si, EGA_SCREEN_ROW_BYTES
     inc ah
     out dx, ax
-    mov cx, 028h
+    mov cx, EGA_SCREEN_ROW_BYTES
     rep movsb
-    sub si, 028h
+    sub si, EGA_SCREEN_ROW_BYTES
     inc ah
     out dx, ax
-    mov cx, 028h
+    mov cx, EGA_SCREEN_ROW_BYTES
     rep movsb
-    sub si, 028h
+    sub si, EGA_SCREEN_ROW_BYTES
     inc ah
     out dx, ax
-    mov cx, 028h
+    mov cx, EGA_SCREEN_ROW_BYTES
     rep movsb
     jmp short CaptureRowDone
 
 CaptureScreenRowTandy:
-    mov cx, 050h
+    mov cx, TANDY_SCREEN_ROW_BYTES / 2
     rep movsw
-    sub si, 0A0h
-    add si, 02000h
-    test si, 08000h
+    sub si, TANDY_SCREEN_ROW_BYTES
+    add si, TANDY_BANK_BYTES
+    test si, 4 * TANDY_BANK_BYTES
     je CaptureRowDone
-    add si, 080A0h
+    add si, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 CaptureRowDone:
     pop cx
     loop CaptureRow
@@ -1397,7 +1397,7 @@ SaveRecordBackgroundCases label word
     dw offset SaveBackground32Tandy
 ; Graphics decoder (LoadGraphicsFile): one 4-plane row (4 * 28h bytes), per-pixel
 ; plane bytes, the image header (rows, bytes per plane row) and progress state.
-DecodeRowBuffer db 0A0h dup (0)
+DecodeRowBuffer db 4 * DECODE_PLANE_BYTES dup (0)
 DecodePixelBytes db 8 dup (0)
 DecodePlaneRowBytes dw 0
 DecodeRows dw 0
@@ -1470,7 +1470,7 @@ StretchInWindowImage:
     xor di, di
     xor si, si
     mov ax, word ptr cs:[WorkspaceSegment]
-    add ax, 07D0h
+    add ax, WIDE_PAGE_BYTES / 16
     inc ax
     mov ds, ax
     jmp short StretchInImage
@@ -1535,11 +1535,11 @@ CopyEgaPage0ToPage1:
     mov dx, 03CEh
     out dx, ax
     xor si, si
-    mov di, 02000h
+    mov di, EGA_PAGE_BYTES
     mov es, word ptr cs:[ScreenSegment]
     push es
     pop ds
-    mov cx, 01F40h
+    mov cx, 200 * EGA_SCREEN_ROW_BYTES
     rep movsb
     mov ax, 5
     mov dx, 03CEh
@@ -4559,16 +4559,16 @@ DrawFuelGaugeOnPage:
     je @@egaFullBar
     mov word ptr es:[di], 0FFCEh
     mov word ptr es:[di + 2], 0C4EEh
-    test di, 06000h
+    test di, 3 * TANDY_BANK_BYTES
     jne @@tandyFullRow2
-    add di, 07F60h
+    add di, 4 * TANDY_BANK_BYTES - TANDY_SCREEN_ROW_BYTES
 @@tandyFullRow2:
-    sub di, 02000h
-    test di, 06000h
+    sub di, TANDY_BANK_BYTES
+    test di, 3 * TANDY_BANK_BYTES
     jne @@tandyFullRow3
-    add di, 07F60h
+    add di, 4 * TANDY_BANK_BYTES - TANDY_SCREEN_ROW_BYTES
 @@tandyFullRow3:
-    sub di, 02000h
+    sub di, TANDY_BANK_BYTES
     jmp short @@nextFuelBar
 @@egaFullBar:
     mov dx, 03C4h
@@ -4587,20 +4587,20 @@ DrawFuelGaugeOnPage:
     mov al, 8
     out dx, al
     mov byte ptr es:[di], 0FEh
-    sub di, 050h
+    sub di, 2 * EGA_SCREEN_ROW_BYTES
     jmp short @@nextFuelBar
 @@cgaFullBar:
     mov word ptr es:[di], 0A02Fh
-    mov ax, 02000h
+    mov ax, CGA_BANK_BYTES
     test di, ax
     je @@cgaFullRow2
-    mov ax, 0E050h
+    mov ax, CGA_SCREEN_ROW_BYTES - CGA_BANK_BYTES
 @@cgaFullRow2:
     sub di, ax
-    mov ax, 02000h
+    mov ax, CGA_BANK_BYTES
     test di, ax
     je @@cgaFullRow3
-    mov ax, 0E050h
+    mov ax, CGA_SCREEN_ROW_BYTES - CGA_BANK_BYTES
 @@cgaFullRow3:
     sub di, ax
 @@nextFuelBar:
@@ -4624,16 +4624,16 @@ DrawFuelGaugeOnPage:
     je @@egaEmptyBar
     mov word ptr es:[di], 0
     mov word ptr es:[di + 2], 0
-    test di, 06000h
+    test di, 3 * TANDY_BANK_BYTES
     jne @@tandyEmptyRow2
-    add di, 07F60h
+    add di, 4 * TANDY_BANK_BYTES - TANDY_SCREEN_ROW_BYTES
 @@tandyEmptyRow2:
-    sub di, 02000h
-    test di, 06000h
+    sub di, TANDY_BANK_BYTES
+    test di, 3 * TANDY_BANK_BYTES
     jne @@tandyEmptyRow3
-    add di, 07F60h
+    add di, 4 * TANDY_BANK_BYTES - TANDY_SCREEN_ROW_BYTES
 @@tandyEmptyRow3:
-    sub di, 02000h
+    sub di, TANDY_BANK_BYTES
     jmp short @@nextEmptyBar
 @@egaEmptyBar:
     mov dx, 03C4h
@@ -4643,21 +4643,21 @@ DrawFuelGaugeOnPage:
     mov al, 0Fh
     out dx, al
     mov byte ptr es:[di], 0
-    sub di, 028h
-    sub di, 028h
+    sub di, EGA_SCREEN_ROW_BYTES
+    sub di, EGA_SCREEN_ROW_BYTES
     jmp short @@nextEmptyBar
 @@cgaEmptyBar:
     mov word ptr es:[di], 0
-    mov ax, 02000h
+    mov ax, CGA_BANK_BYTES
     test di, ax
     je @@cgaEmptyRow2
-    mov ax, 0E050h
+    mov ax, CGA_SCREEN_ROW_BYTES - CGA_BANK_BYTES
 @@cgaEmptyRow2:
     sub di, ax
-    mov ax, 02000h
+    mov ax, CGA_BANK_BYTES
     test di, ax
     je @@cgaEmptyRow3
-    mov ax, 0E050h
+    mov ax, CGA_SCREEN_ROW_BYTES - CGA_BANK_BYTES
 @@cgaEmptyRow3:
     sub di, ax
 @@nextEmptyBar:

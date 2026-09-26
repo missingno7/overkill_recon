@@ -63,3 +63,16 @@ TEXT_MOVE_TO equ 11h
 ; each (CopyWorkspaceToScreenEga writes them through map masks 1, 2, 4, 8).
 EGA_PLANE_ROW_BYTES equ 1Ah
 EGA_WORKSPACE_ROW_BYTES equ 4 * EGA_PLANE_ROW_BYTES
+; Playfield workspace rows (PlayfieldRowBytes): 208 pixels.
+CGA_WORKSPACE_ROW_BYTES equ 34h
+TANDY_WORKSPACE_ROW_BYTES equ 68h
+; Wide (320-pixel) workspace rows (WideRowBytes): CGA and Tandy use the screen line
+; format; EGA keeps four plane rows per pixel row.
+CGA_WIDE_ROW_BYTES equ CGA_SCREEN_ROW_BYTES
+TANDY_WIDE_ROW_BYTES equ TANDY_SCREEN_ROW_BYTES
+EGA_WIDE_PLANE_ROW_BYTES equ EGA_SCREEN_ROW_BYTES
+EGA_WIDE_ROW_BYTES equ 4 * EGA_WIDE_PLANE_ROW_BYTES
+; 200 wide rows at the EGA/Tandy width; every adapter uses it as a page size.
+WIDE_PAGE_BYTES equ 200 * 0A0h
+; One plane of DecodeRowBuffer: up to 320 pixels.
+DECODE_PLANE_BYTES equ 28h

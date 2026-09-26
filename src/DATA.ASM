@@ -651,19 +651,19 @@ CgaGeometry dw 20h, 80h, 200h, 1104h, 0DC4h, 1454h, 4Ah, 66h
     dw 22Ah, 34Ch, 52Ch, 25Ch, 484h, 634h, 5A4h, 10Eh
     dw 324h, 14h, 94h, 0A4h, 108h, 4Ah, 20h, 2Eh
     dw 2Ch, 3A0h, 3CCh, 3BAh, 3A0h, 0BBEh, 40h
-    dw 34h, 50h, 0B800h
+    dw CGA_WORKSPACE_ROW_BYTES, CGA_WIDE_ROW_BYTES, 0B800h
 EgaGeometry dw 28h, 0A0h, 280h, 2204h, 1B84h, 28A4h, 90h, 0C8h
     dw 24h, 84h, 3C4h, 484h, 1B4h, 0ED4h, 1744h, 1FCCh
     dw 450h, 694h, 0A54h, 4B4h, 904h, 0C64h, 0B44h, 218h
     dw 644h, 24h, 124h, 144h, 20Ch, 90h, 3Ch, 58h
     dw 54h, 73Ch, 794h, 770h, 73Ch, 1778h, 80h
-    dw 68h, 0A0h, 0A000h
+    dw EGA_WORKSPACE_ROW_BYTES, EGA_WIDE_ROW_BYTES, 0A000h
 TandyGeometry dw 40h, 100h, 400h, 2204h, 1B84h, 28A4h, 90h, 0C8h
     dw 24h, 84h, 3C4h, 484h, 1B4h, 0ED4h, 1744h, 1FCCh
     dw 450h, 694h, 0A54h, 4B4h, 904h, 0C64h, 0B44h, 218h
     dw 644h, 24h, 124h, 144h, 20Ch, 90h, 3Ch, 58h
     dw 54h, 73Ch, 794h, 770h, 73Ch, 1778h, 80h
-    dw 68h, 0A0h, 0B800h
+    dw TANDY_WORKSPACE_ROW_BYTES, TANDY_WIDE_ROW_BYTES, 0B800h
 ; Indexed by VideoAdapter.
 AdapterGeometry dw offset CgaGeometry, offset EgaGeometry, offset TandyGeometry
 ; Asset file names. Each is preceded by a word LoadGraphicsFile reads at name - 2 as the

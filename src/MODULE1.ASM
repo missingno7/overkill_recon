@@ -1912,23 +1912,23 @@ ScreenRowStepCases label word
 
 ; DI += one CGA scan line (two interleaved 8K banks).
 NextScreenRowCga:
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@stepped
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@stepped:
     jmp short ScreenRowStepped
 
 NextScreenRowEga:
-    add di, 028h
+    add di, EGA_SCREEN_ROW_BYTES
     jmp short ScreenRowStepped
 
 ; DI += one Tandy scan line (four interleaved 8K banks).
 NextScreenRowTandy:
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je ScreenRowStepped
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 ScreenRowStepped:
     xchg ax, di
     loop BuildScreenRowLoop
@@ -4198,7 +4198,7 @@ BlitPackedToScreenEga:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 028h
+    add di, EGA_SCREEN_ROW_BYTES
     pop cx
     loop @@nextRow
     mov al, 0Fh
@@ -4216,19 +4216,19 @@ BlitPackedStride104Ega:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 01Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 01Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 01Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 01Ah
+    add di, EGA_PLANE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -4244,19 +4244,19 @@ BlitPackedStride160Ega:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 028h
+    add di, EGA_WIDE_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 028h
+    add di, EGA_WIDE_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 028h
+    add di, EGA_WIDE_PLANE_ROW_BYTES
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 028h
+    add di, EGA_WIDE_PLANE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -4358,13 +4358,13 @@ PrintGraphicsCharEga:
     out dx, al
     xor al, al
     mov byte ptr es:[di], al
-    mov byte ptr es:[di + 028h], al
-    mov byte ptr es:[di + 050h], al
-    mov byte ptr es:[di + 078h], al
-    mov byte ptr es:[di + 0A0h], al
-    mov byte ptr es:[di + 0C8h], al
-    mov byte ptr es:[di + 0F0h], al
-    mov byte ptr es:[di + 0118h], al
+    mov byte ptr es:[di + 1 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 2 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 3 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 4 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 5 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 6 * EGA_SCREEN_ROW_BYTES], al
+    mov byte ptr es:[di + 7 * EGA_SCREEN_ROW_BYTES], al
     mov al, byte ptr ds:[TextColor]
     out dx, al
     mov word ptr ds:[FontPlaneRegs], 4
@@ -4386,19 +4386,19 @@ PrintGraphicsCharEga:
     lodsb
     or byte ptr es:[di], al
     lodsb
-    or byte ptr es:[di + 028h], al
+    or byte ptr es:[di + 1 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 050h], al
+    or byte ptr es:[di + 2 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 078h], al
+    or byte ptr es:[di + 3 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 0A0h], al
+    or byte ptr es:[di + 4 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 0C8h], al
+    or byte ptr es:[di + 5 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 0F0h], al
+    or byte ptr es:[di + 6 * EGA_SCREEN_ROW_BYTES], al
     lodsb
-    or byte ptr es:[di + 0118h], al
+    or byte ptr es:[di + 7 * EGA_SCREEN_ROW_BYTES], al
     sub si, 8
     jmp short @@planeDone
 @@clearPlaneBits:
@@ -4407,25 +4407,25 @@ PrintGraphicsCharEga:
     and byte ptr es:[di], al
     lodsb
     not al
-    and byte ptr es:[di + 028h], al
+    and byte ptr es:[di + 1 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 050h], al
+    and byte ptr es:[di + 2 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 078h], al
+    and byte ptr es:[di + 3 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 0A0h], al
+    and byte ptr es:[di + 4 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 0C8h], al
+    and byte ptr es:[di + 5 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 0F0h], al
+    and byte ptr es:[di + 6 * EGA_SCREEN_ROW_BYTES], al
     lodsb
     not al
-    and byte ptr es:[di + 0118h], al
+    and byte ptr es:[di + 7 * EGA_SCREEN_ROW_BYTES], al
     sub si, 8
 @@planeDone:
     loop @@nextPlaneFar
@@ -4436,16 +4436,16 @@ PrintGraphicsCharEga:
     mov al, 0Fh
     out dx, al
     add byte ptr ds:[TextColumn], 1
-    cmp byte ptr ds:[TextColumn], 028h
+    cmp byte ptr ds:[TextColumn], EGA_SCREEN_ROW_BYTES
     jb @@done
 @@newLine:
     mov byte ptr ds:[TextColumn], 0
-    add word ptr ds:[TextRowOffset], 0140h
+    add word ptr ds:[TextRowOffset], 8 * EGA_SCREEN_ROW_BYTES
 @@done:
     ret
 @@setPosition:
     mov al, byte ptr ss:[bp + 1]
-    mov cx, 0140h
+    mov cx, 8 * EGA_SCREEN_ROW_BYTES
     xor ah, ah
     mul cx
     mov word ptr ds:[TextRowOffset], ax
@@ -4470,7 +4470,7 @@ ClearEgaPages:
     out dx, al
     xor di, di
     mov ax, di
-    mov cx, 01F40h
+    mov cx, 200 * EGA_SCREEN_ROW_BYTES
     rep stosw
     ret
 
@@ -4480,8 +4480,8 @@ CopyWorkspaceToScreenEga:
     mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 0Dh
-    mov di, 0A0h
+    mov bx, EGA_PLANE_ROW_BYTES / 2
+    mov di, 4 * EGA_SCREEN_ROW_BYTES
     mov dx, 03C4h
     mov al, 2
     out dx, al
@@ -4492,22 +4492,22 @@ CopyWorkspaceToScreenEga:
     out dx, al
     mov cx, bx
     rep movsw
-    sub di, 01Ah
+    sub di, EGA_PLANE_ROW_BYTES
     shl al, 1
     out dx, al
     mov cx, bx
     rep movsw
-    sub di, 01Ah
+    sub di, EGA_PLANE_ROW_BYTES
     shl al, 1
     out dx, al
     mov cx, bx
     rep movsw
-    sub di, 01Ah
+    sub di, EGA_PLANE_ROW_BYTES
     shl al, 1
     out dx, al
     mov cx, bx
     rep movsw
-    add di, 0Eh
+    add di, EGA_SCREEN_ROW_BYTES - EGA_PLANE_ROW_BYTES
     dec bp
     jne @@nextRow
     mov al, 0Fh
@@ -4536,10 +4536,10 @@ ClearEgaPage104x200:
     xor di, di
     mov bp, 0C8h
 @@nextRow:
-    mov cx, 0Dh
+    mov cx, EGA_PLANE_ROW_BYTES / 2
     xor ax, ax
     rep stosw
-    add di, 0Eh
+    add di, EGA_SCREEN_ROW_BYTES - EGA_PLANE_ROW_BYTES
     dec bp
     jne @@nextRow
     ret
@@ -4575,7 +4575,7 @@ DecodeGraphicsImagesEga:
     inc di
     loop @@copyPlaneByte
     sub di, word ptr cs:[DecodePlaneRowBytes]
-    add di, 028h
+    add di, DECODE_PLANE_BYTES
     dec bp
     jne @@nextPlane
     mov di, offset DecodeRowBuffer
@@ -4583,9 +4583,9 @@ DecodeGraphicsImagesEga:
 @@nextColumn:
     push cx
     mov al, byte ptr cs:[di]
-    mov ah, byte ptr cs:[di + 028h]
-    mov dl, byte ptr cs:[di + 050h]
-    mov dh, byte ptr cs:[di + 078h]
+    mov ah, byte ptr cs:[di + 1 * DECODE_PLANE_BYTES]
+    mov dl, byte ptr cs:[di + 2 * DECODE_PLANE_BYTES]
+    mov dh, byte ptr cs:[di + 3 * DECODE_PLANE_BYTES]
     mov cx, 8
 @@nextPixel:
     rol dh, 1
@@ -4638,11 +4638,11 @@ DecodeGraphicsImagesEga:
     mov al, byte ptr cs:[DecodePlaneBits + 0]
     mov byte ptr cs:[di], al
     mov al, byte ptr cs:[DecodePlaneBits + 1]
-    mov byte ptr cs:[di + 028h], al
+    mov byte ptr cs:[di + 1 * DECODE_PLANE_BYTES], al
     mov al, byte ptr cs:[DecodePlaneBits + 2]
-    mov byte ptr cs:[di + 050h], al
+    mov byte ptr cs:[di + 2 * DECODE_PLANE_BYTES], al
     mov al, byte ptr cs:[DecodePlaneBits + 3]
-    mov byte ptr cs:[di + 078h], al
+    mov byte ptr cs:[di + 3 * DECODE_PLANE_BYTES], al
     inc di
     pop cx
     loop @@nextColumnFar
@@ -4653,13 +4653,13 @@ DecodeGraphicsImagesEga:
     mov di, offset DecodeRowBuffer
     mov cx, word ptr cs:[DecodePlaneRowBytes]
     call StoreDecodedPlaneRow
-    mov di, offset DecodeRowBuffer + 28h
+    mov di, offset DecodeRowBuffer + 1 * DECODE_PLANE_BYTES
     mov cx, word ptr cs:[DecodePlaneRowBytes]
     call StoreDecodedPlaneRow
-    mov di, offset DecodeRowBuffer + 50h
+    mov di, offset DecodeRowBuffer + 2 * DECODE_PLANE_BYTES
     mov cx, word ptr cs:[DecodePlaneRowBytes]
     call StoreDecodedPlaneRow
-    mov di, offset DecodeRowBuffer + 78h
+    mov di, offset DecodeRowBuffer + 3 * DECODE_PLANE_BYTES
     mov cx, word ptr cs:[DecodePlaneRowBytes]
     call StoreDecodedPlaneRow
     mov di, word ptr cs:[DecodeDest]
@@ -4730,13 +4730,13 @@ RestoreBackground32Ega:
 @@lowerHalf:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
-    add si, 140h
+    add si, SAVE_HALF_BYTES
     cmp di, -1
     jne RestoreEgaBackgroundHalf
     ret
 ; DS:SI = save buffer, ES:DI = workspace: 16 rows of a 32x32 sprite's background.
 RestoreEgaBackgroundHalf:
-    mov bx, 15h
+    mov bx, EGA_PLANE_ROW_BYTES - 5
     mov cx, 10h
 @@nextRow:
     movsw
@@ -4762,7 +4762,7 @@ RestoreBackground16Ega:
     jne @@restore
     ret
 @@restore:
-    mov bx, 17h
+    mov bx, EGA_PLANE_ROW_BYTES - 3
     mov cx, 10h
 @@nextRow:
     movsw
@@ -4784,7 +4784,7 @@ RestoreBackground8Ega:
     jne @@restore
     ret
 @@restore:
-    mov bx, 18h
+    mov bx, EGA_PLANE_ROW_BYTES - 2
     movsw
     add di, bx
     movsw
@@ -4873,12 +4873,12 @@ SaveBackground32Ega:
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
-    add di, 140h
+    add di, SAVE_HALF_BYTES
 ; SI = workspace offset, DI = save buffer: 16 rows of a 32x32 sprite's background.
 SaveEgaBackgroundHalf:
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
-    mov bx, 15h
+    mov bx, EGA_PLANE_ROW_BYTES - 5
     mov cx, 10h
 @@nextRow:
     movsb
@@ -4913,7 +4913,7 @@ SaveBackground16Ega:
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
-    mov bx, 17h
+    mov bx, EGA_PLANE_ROW_BYTES - 3
     mov cx, 10h
 @@nextRow:
     movsw
@@ -4944,7 +4944,7 @@ SaveBackground8Ega:
     mov di, ss:[bp + REC_SAVE_BUFFER]
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
-    mov bx, 18h
+    mov bx, EGA_PLANE_ROW_BYTES - 2
     movsw
     add si, bx
     movsw
@@ -5220,14 +5220,14 @@ DrawStretchedImageEga:
     mov al, 0Fh
     out dx, al
 @@skipPadRow:
-    add di, 028h
+    add di, EGA_SCREEN_ROW_BYTES
     loop @@skipPadRow
 @@clearPadRow:
     xor al, al
     mov cx, bp
     rep stosb
     sub di, bp
-    add di, 028h
+    add di, EGA_SCREEN_ROW_BYTES
 @@startRows:
     pop cx
 @@nextSourceRow:
@@ -5285,7 +5285,7 @@ DrawStretchedImageEga:
     add si, bp
 @@rowCopied:
     sub di, bp
-    add di, 028h
+    add di, EGA_SCREEN_ROW_BYTES
     cmp word ptr cs:[StretchFlagA], 0
     je @@nextRow
     sub si, bp
@@ -5319,22 +5319,22 @@ CopyFullWorkspaceToScreenEga:
 @@nextRow:
     mov al, 1
     out dx, al
-    mov cx, 014h
+    mov cx, EGA_SCREEN_ROW_BYTES / 2
     rep movsw
-    sub di, 028h
+    sub di, EGA_SCREEN_ROW_BYTES
     mov al, 2
     out dx, al
-    mov cx, 014h
+    mov cx, EGA_SCREEN_ROW_BYTES / 2
     rep movsw
-    sub di, 028h
+    sub di, EGA_SCREEN_ROW_BYTES
     mov al, 4
     out dx, al
-    mov cx, 014h
+    mov cx, EGA_SCREEN_ROW_BYTES / 2
     rep movsw
-    sub di, 028h
+    sub di, EGA_SCREEN_ROW_BYTES
     mov al, 8
     out dx, al
-    mov cx, 014h
+    mov cx, EGA_SCREEN_ROW_BYTES / 2
     rep movsw
     dec bp
     jne @@nextRow
@@ -5345,7 +5345,7 @@ CopyFullWorkspaceToScreenEga:
 ; Tandy masked sprite blitters (a single phase: drawn at whole-byte positions), same
 ; contract as the EGA ones.
 DrawSprite32Tandy:
-    mov bx, 058h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 16
     lodsw
     and ax, word ptr es:[di]
     or ax, word ptr ds:[si]
@@ -5391,7 +5391,7 @@ DrawSprite32Tandy:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 FlashSprite32Tandy:
-    mov bx, 058h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 16
     mov ax, word ptr ds:[si]
     not ax
     or word ptr es:[di], ax
@@ -5437,7 +5437,7 @@ FlashSprite32Tandy:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 FlashSprite16Tandy:
-    mov bx, 060h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 8
     mov ax, word ptr ds:[si]
     not ax
     or word ptr es:[di], ax
@@ -5463,7 +5463,7 @@ FlashSprite16Tandy:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 DrawSprite16Tandy:
-    mov bx, 060h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 8
     lodsw
     and ax, word ptr es:[di]
     or ax, word ptr ds:[si]
@@ -5489,7 +5489,7 @@ DrawSprite16Tandy:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 DrawSprite8Tandy:
-    mov bx, 064h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 4
     lodsw
     and ax, word ptr es:[di]
     or ax, word ptr ds:[si]
@@ -5598,10 +5598,10 @@ CopyPackedRowsToTandyBanks:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@bankAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@bankAdvanced:
     pop cx
     loop @@nextRow
@@ -5622,7 +5622,7 @@ CopyPackedRowsStride104:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 068h
+    add di, TANDY_WORKSPACE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -5641,7 +5641,7 @@ CopyPackedRowsStride160:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 0A0h
+    add di, TANDY_WIDE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -5758,10 +5758,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row1
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row1:
     lodsb
     xor ah, ah
@@ -5777,10 +5777,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row2
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row2:
     lodsb
     xor ah, ah
@@ -5796,10 +5796,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row3
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row3:
     lodsb
     xor ah, ah
@@ -5815,10 +5815,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row4
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row4:
     lodsb
     xor ah, ah
@@ -5834,10 +5834,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row5
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row5:
     lodsb
     xor ah, ah
@@ -5853,10 +5853,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row6
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row6:
     lodsb
     xor ah, ah
@@ -5872,10 +5872,10 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@row7
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@row7:
     lodsb
     xor ah, ah
@@ -5891,21 +5891,21 @@ PrintGraphicsCharTandy:
     mov cx, ax
     and cx, dx
     mov word ptr es:[di + 2], cx
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@advanceColumn
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@advanceColumn:
     add byte ptr ds:[TextColumn], 4
-    cmp byte ptr ds:[TextColumn], 0A0h
+    cmp byte ptr ds:[TextColumn], TANDY_SCREEN_ROW_BYTES
     jb @@done
     mov byte ptr ds:[TextColumn], 0
-    add word ptr ds:[TextRowOffset], 0140h
+    add word ptr ds:[TextRowOffset], 2 * TANDY_SCREEN_ROW_BYTES
 @@done:
     ret
 @@setPosition:
     mov al, byte ptr ss:[bp + 1]
-    mov cx, 0140h
+    mov cx, 2 * TANDY_SCREEN_ROW_BYTES
     xor ah, ah
     mul cx
     mov word ptr ds:[TextRowOffset], ax
@@ -5937,17 +5937,17 @@ CopyWorkspace104x192ToTandy:
     mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 034h
-    mov di, 0A0h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES / 2
+    mov di, TANDY_SCREEN_ROW_BYTES
     mov bp, 0C0h
 @@nextRow:
     mov cx, bx
     rep movsw
-    sub di, 068h
-    add di, 02000h
-    test di, 08000h
+    sub di, TANDY_WORKSPACE_ROW_BYTES
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@bankAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@bankAdvanced:
     dec bp
     jne @@nextRow
@@ -5960,14 +5960,14 @@ ClearTandy104x200:
     xor di, di
     mov bp, 0C8h
 @@nextRow:
-    mov cx, 034h
+    mov cx, TANDY_WORKSPACE_ROW_BYTES / 2
     xor ax, ax
     rep stosw
-    sub di, 068h
-    add di, 02000h
-    test di, 08000h
+    sub di, TANDY_WORKSPACE_ROW_BYTES
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@bankAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@bankAdvanced:
     dec bp
     jne @@nextRow
@@ -6089,12 +6089,12 @@ RestoreBackground32Tandy:
 @@lowerHalf:
     mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
-    add si, 0140h
+    add si, SAVE_HALF_BYTES
     cmp di, -1
     jne RestoreTandyBackgroundHalf
     ret
 RestoreTandyBackgroundHalf:
-    mov bx, 058h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 16
     mov cx, 010h
 @@nextRow:
     movsw
@@ -6113,7 +6113,7 @@ RestoreBackground16Tandy:
     jne @@restore
     ret
 @@restore:
-    mov bx, 060h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
@@ -6200,7 +6200,7 @@ RestoreBackground8Tandy:
     jne @@restore
     ret
 @@restore:
-    mov bx, 064h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
     add di, bx
@@ -6249,11 +6249,11 @@ SaveBackground32Tandy:
     mov word ptr ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
-    add di, 0140h
+    add di, SAVE_HALF_BYTES
 SaveTandyBackgroundHalf:
     mov es, word ptr cs:[MainDataSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 058h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 16
     mov cx, 010h
 @@nextRow:
     movsw
@@ -6281,7 +6281,7 @@ SaveBackground16Tandy:
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     mov es, word ptr cs:[MainDataSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 060h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
@@ -6377,7 +6377,7 @@ SaveBackground8Tandy:
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     mov es, word ptr cs:[MainDataSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 064h
+    mov bx, TANDY_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
     add si, bx
@@ -6429,83 +6429,83 @@ DrawMapRowBlocksTandy:
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
     movsw
     movsw
     movsw
     movsw
-    add di, 060h
-    sub di, 0678h
+    add di, TANDY_WORKSPACE_ROW_BYTES - 8
+    sub di, 16 * TANDY_WORKSPACE_ROW_BYTES - 8
     pop bx
     add bx, 1
     pop cx
@@ -6543,10 +6543,10 @@ DrawStretchedImageTandy:
     dec cx
     jcxz @@clearPadRow
 @@skipPadRow:
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@padRowAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@padRowAdvanced:
     loop @@skipPadRow
 @@clearPadRow:
@@ -6554,10 +6554,10 @@ DrawStretchedImageTandy:
     mov cx, bp
     rep stosb
     sub di, bp
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@startRows
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@startRows:
     pop cx
 @@nextSourceRow:
@@ -6584,10 +6584,10 @@ DrawStretchedImageTandy:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 02000h
-    test di, 08000h
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@rowAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@rowAdvanced:
     cmp word ptr cs:[StretchFlagA], 0
     je @@nextRow
@@ -6605,13 +6605,13 @@ DrawStretchedImageTandy:
 CopyFullWorkspaceToScreenTandy:
     mov ds, word ptr cs:[WorkspaceSegment]
 @@nextRow:
-    mov cx, 050h
+    mov cx, TANDY_WIDE_ROW_BYTES / 2
     rep movsw
-    sub di, 0A0h
-    add di, 02000h
-    test di, 08000h
+    sub di, TANDY_SCREEN_ROW_BYTES
+    add di, TANDY_BANK_BYTES
+    test di, 4 * TANDY_BANK_BYTES
     je @@bankAdvanced
-    add di, 080A0h
+    add di, TANDY_SCREEN_ROW_BYTES - 4 * TANDY_BANK_BYTES
 @@bankAdvanced:
     dec bp
     jne @@nextRow
@@ -6640,7 +6640,7 @@ DrawSprite32Shift0Cga:
     or ax, ds:[si]
     add si, 2
     stosw
-    add di, 2Ch
+    add di, CGA_WORKSPACE_ROW_BYTES - 8
     loop DrawSprite32Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6665,7 +6665,7 @@ FlashSprite32Shift0Cga:
     or es:[di], ax
     add si, 2
     add di, 2
-    add di, 2Ch
+    add di, CGA_WORKSPACE_ROW_BYTES - 8
     loop FlashSprite32Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6680,7 +6680,7 @@ DrawSprite16Shift0Cga:
     or ax, ds:[si]
     add si, 2
     stosw
-    add di, 30h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     loop DrawSprite16Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6695,7 +6695,7 @@ FlashSprite16Shift0Cga:
     or es:[di], ax
     add si, 2
     add di, 2
-    add di, 30h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     loop FlashSprite16Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6705,7 +6705,7 @@ DrawSprite8Shift0Cga:
     or ax, ds:[si]
     add si, 2
     stosw
-    add di, 32h
+    add di, CGA_WORKSPACE_ROW_BYTES - 2
     loop DrawSprite8Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6715,7 +6715,7 @@ UnusedFlashSprite8Shift0Cga:
     or es:[di], ax
     add si, 2
     add di, 2
-    add di, 32h
+    add di, CGA_WORKSPACE_ROW_BYTES - 2
     loop UnusedFlashSprite8Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
@@ -6783,7 +6783,7 @@ DrawSprite32Shift1Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr DrawSprite32Shift1Cga
@@ -6890,7 +6890,7 @@ DrawSprite32Shift2Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr DrawSprite32Shift2Cga
@@ -7035,7 +7035,7 @@ DrawSprite32Shift3Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr DrawSprite32Shift3Cga
@@ -7077,7 +7077,7 @@ FlashSprite32Shift1Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne FlashSprite32Shift1Cga
     mov ds, cs:[MainDataSegment]
@@ -7135,7 +7135,7 @@ FlashSprite32Shift2Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr FlashSprite32Shift2Cga
@@ -7213,7 +7213,7 @@ FlashSprite32Shift3Cga:
     mov al, cs:[SpriteShiftSpill]
     or es:[di + 8], al
     add si, 10h
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr FlashSprite32Shift3Cga
@@ -7256,7 +7256,7 @@ DrawSprite16Shift1Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne DrawSprite16Shift1Cga
     mov ds, cs:[MainDataSegment]
@@ -7319,7 +7319,7 @@ DrawSprite16Shift2Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr DrawSprite16Shift2Cga
@@ -7406,7 +7406,7 @@ DrawSprite16Shift3Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     je @@done
     jmp near ptr DrawSprite16Shift3Cga
@@ -7434,7 +7434,7 @@ FlashSprite16Shift1Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne FlashSprite16Shift1Cga
     mov ds, cs:[MainDataSegment]
@@ -7470,7 +7470,7 @@ FlashSprite16Shift2Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne FlashSprite16Shift2Cga
     mov ds, cs:[MainDataSegment]
@@ -7516,7 +7516,7 @@ FlashSprite16Shift3Cga:
     or es:[di + 2], ax
     or es:[di + 4], dl
     add si, 8
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne FlashSprite16Shift3Cga
     mov ds, cs:[MainDataSegment]
@@ -7544,7 +7544,7 @@ DrawSprite8Shift1Cga:
     rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne DrawSprite8Shift1Cga
     mov ds, cs:[MainDataSegment]
@@ -7586,7 +7586,7 @@ DrawSprite8Shift2Cga:
     rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne DrawSprite8Shift2Cga
     mov ds, cs:[MainDataSegment]
@@ -7642,7 +7642,7 @@ DrawSprite8Shift3Cga:
     rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    add di, 34h
+    add di, CGA_WORKSPACE_ROW_BYTES
     dec bp
     jne DrawSprite8Shift3Cga
     mov ds, cs:[MainDataSegment]
@@ -7660,10 +7660,10 @@ BlitPackedToScreenCga:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@bankAdvanced
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@bankAdvanced:
     pop cx
     loop @@nextRow
@@ -7681,7 +7681,7 @@ BlitPackedStride104Cga:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 034h
+    add di, CGA_WORKSPACE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -7698,7 +7698,7 @@ BlitPackedStride160Cga:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 050h
+    add di, CGA_WIDE_ROW_BYTES
     pop cx
     loop @@nextRow
     ret
@@ -7811,10 +7811,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow1
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow1:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7831,10 +7831,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow2
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow2:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7851,10 +7851,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow3
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow3:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7871,10 +7871,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow4
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow4:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7891,10 +7891,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow5
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow5:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7911,10 +7911,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow6
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow6:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7931,10 +7931,10 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@glyphRow7
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@glyphRow7:
     mov al, byte ptr ds:[si]
     shr al, 1
@@ -7951,22 +7951,22 @@ PrintGraphicsCharCga:
     mov ah, al
     and ah, byte ptr ds:[TextColor]
     mov byte ptr es:[di + 1], ah
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@advanceColumn
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@advanceColumn:
     add byte ptr ds:[TextColumn], 2
-    cmp byte ptr ds:[TextColumn], 050h
+    cmp byte ptr ds:[TextColumn], CGA_SCREEN_ROW_BYTES
     jb @@done
 @@newLine:
     mov byte ptr ds:[TextColumn], 0
-    add word ptr ds:[TextRowOffset], 0140h
+    add word ptr ds:[TextRowOffset], 4 * CGA_SCREEN_ROW_BYTES
 @@done:
     ret
 @@setPosition:
     mov al, byte ptr ss:[bp + 1]
-    mov cx, 0140h
+    mov cx, 4 * CGA_SCREEN_ROW_BYTES
     xor ah, ah
     mul cx
     mov word ptr ds:[TextRowOffset], ax
@@ -7998,17 +7998,17 @@ CopyWorkspaceToScreenCga:
     mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
-    mov bx, 01Ah
-    mov di, 0A0h
+    mov bx, CGA_WORKSPACE_ROW_BYTES / 2
+    mov di, 2 * CGA_SCREEN_ROW_BYTES
     mov bp, 0C0h
 @@copyRow:
     mov cx, bx
     rep movsw
-    sub di, 034h
-    add di, 02000h
-    test di, 04000h
+    sub di, CGA_WORKSPACE_ROW_BYTES
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@nextRow
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@nextRow:
     dec bp
     jne @@copyRow
@@ -8023,14 +8023,14 @@ ClearScreen104x200Cga:
     xor di, di
     mov bp, 0C8h
 @@clearRow:
-    mov cx, 01Ah
+    mov cx, CGA_WORKSPACE_ROW_BYTES / 2
     xor ax, ax
     rep stosw
-    sub di, 034h
-    add di, 02000h
-    test di, 04000h
+    sub di, CGA_WORKSPACE_ROW_BYTES
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@nextRow
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@nextRow:
     dec bp
     jne @@clearRow
@@ -8227,7 +8227,7 @@ RestoreBackground32Cga:
 @@restoreLowerHalf:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
-    add si, 140h
+    add si, SAVE_HALF_BYTES
     cmp di, -1
     jne RestoreCgaBackgroundHalf
     ret
@@ -8239,7 +8239,7 @@ RestoreCgaBackgroundHalf:
     movsw
     movsw
     movsb
-    add di, 2Bh
+    add di, CGA_WORKSPACE_ROW_BYTES - 9
     loop @@copyRow
     ret
 RestoreBackground16Cga:
@@ -8250,67 +8250,67 @@ RestoreBackground16Cga:
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add di, 2Fh
+    add di, CGA_WORKSPACE_ROW_BYTES - 5
     ret
 RestoreBackground8Cga:
     cmp di, -1
@@ -8319,28 +8319,28 @@ RestoreBackground8Cga:
 @@restore:
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add di, 31h
+    add di, CGA_WORKSPACE_ROW_BYTES - 3
     ret
 SaveBackground32Cga:
     call RecordWorkspaceOffset
@@ -8365,7 +8365,7 @@ SaveBackground32Cga:
     mov ss:[bp + REC_WORK_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
-    add di, 140h
+    add di, SAVE_HALF_BYTES
 SaveCgaBackgroundHalf:
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
@@ -8374,97 +8374,97 @@ SaveCgaBackgroundHalf:
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     movsw
     movsw
     movsw
     movsw
     movsb
-    add si, 2Bh
+    add si, CGA_WORKSPACE_ROW_BYTES - 9
     mov ds, cs:[MainDataSegment]
     ret
 SaveBackground16Cga:
@@ -8483,67 +8483,67 @@ SaveBackground16Cga:
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     movsw
     movsw
     movsb
-    add si, 2Fh
+    add si, CGA_WORKSPACE_ROW_BYTES - 5
     mov ds, cs:[MainDataSegment]
     ret
 SaveBackground8Cga:
@@ -8561,28 +8561,28 @@ SaveBackground8Cga:
     mov ds, cs:[WorkspaceSegment]
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     movsw
     movsb
-    add si, 31h
+    add si, CGA_WORKSPACE_ROW_BYTES - 3
     mov ds, cs:[MainDataSegment]
     ret
 
@@ -8608,53 +8608,53 @@ DrawMapRowBlocksCga:
     mov es, word ptr cs:[WorkspaceSegment]
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
     movsw
     movsw
-    add di, 030h
-    sub di, 033Ch
+    add di, CGA_WORKSPACE_ROW_BYTES - 4
+    sub di, 16 * CGA_WORKSPACE_ROW_BYTES - 4
     pop bx
     add bx, 1
     pop cx
@@ -8688,10 +8688,10 @@ DrawStretchedImageCga:
     dec cx
     jcxz @@clearLeadRow
 @@skipMarginRow:
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@nextMarginRow
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@nextMarginRow:
     loop @@skipMarginRow
 @@clearLeadRow:
@@ -8699,10 +8699,10 @@ DrawStretchedImageCga:
     mov cx, bp
     rep stosb
     sub di, bp
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@marginDone
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@marginDone:
     pop cx
 @@nextSourceRow:
@@ -8729,10 +8729,10 @@ DrawStretchedImageCga:
     mov cx, bp
     rep movsb
     sub di, bp
-    add di, 02000h
-    test di, 04000h
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@checkReverse
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@checkReverse:
     cmp word ptr cs:[StretchFlagA], 0
     je @@nextRow
@@ -8750,13 +8750,13 @@ DrawStretchedImageCga:
 CopyFullWorkspaceToScreenCga:
     mov ds, word ptr cs:[WorkspaceSegment]
 @@copyRow:
-    mov cx, 028h
+    mov cx, CGA_WIDE_ROW_BYTES / 2
     rep movsw
-    sub di, 050h
-    add di, 02000h
-    test di, 04000h
+    sub di, CGA_SCREEN_ROW_BYTES
+    add di, CGA_BANK_BYTES
+    test di, 2 * CGA_BANK_BYTES
     je @@nextRow
-    add di, 0C050h
+    add di, CGA_SCREEN_ROW_BYTES - 2 * CGA_BANK_BYTES
 @@nextRow:
     dec bp
     jne @@copyRow
@@ -9083,10 +9083,10 @@ DrawStarGroup:
     jne DrawStarNext
     jmp bp
 PlotStarFourPlanes:
-    mov es:[bx + 4Eh], al
+    mov es:[bx + 3 * EGA_PLANE_ROW_BYTES], al
 PlotStarThreePlanes:
-    mov es:[bx + 34h], al
-    mov es:[bx + 1Ah], al
+    mov es:[bx + 2 * EGA_PLANE_ROW_BYTES], al
+    mov es:[bx + EGA_PLANE_ROW_BYTES], al
 PlotStar:
     mov byte ptr es:[bx], al
     mov word ptr ds:[di], bx
@@ -9663,7 +9663,7 @@ ShowEgaDrawPage:
     xor bx, bx
     cmp word ptr cs:[EgaPageToggle], 0
     je @@waitRetraceEnd
-    mov bx, 02000h
+    mov bx, EGA_PAGE_BYTES
 @@waitRetraceEnd:
     mov dx, CRT_STATUS_PORT
     in al, dx
