@@ -108,6 +108,8 @@ extrn OffsetXWork:word
 extrn OpenResourceFile:far
 extrn PageIndex:word
 extrn PageListPtr:word
+extrn PaymentFileName:byte
+extrn PaymentHelpRow:word
 extrn PlusSlotA966:word
 extrn PlusSlotA96A:word
 extrn PoolA:byte
@@ -197,7 +199,10 @@ public VideoAdapter
 public WaitVerticalRetracePulse
 public WideRowBytes
 public WorkspaceSegment
+public loc_09D91
 public loc_09EE4
+public loc_09F1A
+public loc_09F5F
 public loc_0A781
 public loc_0AEE4
 public loc_0AF22
@@ -1234,10 +1239,19 @@ loc_09D84:
     je loc_09D7E
     inc word ptr ds:[0A95Ch]
     jmp short loc_09D84
-; UNKNOWN: not yet classified as code or data
-    db 83h,3Eh,6Eh,0A9h,0FFh,74h,01h,0C3h,0E8h,62h,0D7h,89h,1Eh,6Eh,0A9h,0C7h
-    db 07h,01h,00h,0C7h,47h,14h,01h,00h,0C7h,47h,16h,01h,00h,0C7h,47h,08h
-    db 0Fh,00h,0C7h,47h,20h,14h,00h,0C3h
+loc_09D91:
+    cmp word ptr ds:[0A96Eh], -1
+    je loc_09D99
+    ret
+loc_09D99:
+    call loc_074FE
+    mov ds:[0A96Eh], bx
+    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + 14h], 1
+    mov word ptr ds:[bx + 16h], 1
+    mov word ptr ds:[bx + 8], 0Fh
+    mov word ptr ds:[bx + 20h], 14h
+    ret
 
 loc_09DB9:
     cmp word ptr ds:[0A97Ah], 058h
@@ -7173,7 +7187,7 @@ ShowPaymentText:
     je loc_0D687
     mov word ptr cs:[TextScreenSegment], 0B000h
 loc_0D687:
-    mov dx, 0C2FEh
+    mov dx, offset PaymentFileName
     mov ds:[FileNamePtr], dx
     xor al, al
     mov ah, 3Dh
@@ -7312,7 +7326,7 @@ loc_0D7B4:
     push ds
     push si
     mov ds, cs:[MainDataSegment]
-    mov si, 0C30Ah
+    mov si, offset PaymentHelpRow
     mov cx, 50h
     rep movsw
     pop si

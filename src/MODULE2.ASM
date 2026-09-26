@@ -34,6 +34,8 @@ extrn GroupDropKinds:byte
 extrn HiscoreBlock:byte
 extrn HiscoreFileName:byte
 extrn HiscorePageList:word
+extrn HistoryRecordSlot15:word
+extrn HistoryRecordSlot31:word
 extrn IPageList:word
 extrn InputBits:byte
 extrn InputDeviceMode:word
@@ -51,10 +53,14 @@ extrn LevelSkipEnabled:byte
 extrn LivesLeft:word
 extrn LoadSettingsFromHiscoreBlock:far
 extrn MapScrollPos:word
+extrn MinusSlotA968:word
+extrn MinusSlotA96C:word
 extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
 extrn OPageList:word
 extrn OkMenuPageList:word
+extrn PlusSlotA966:word
+extrn PlusSlotA96A:word
 extrn PoolA:byte
 extrn PoolACursor:word
 extrn PoolAEnd:byte
@@ -65,9 +71,11 @@ extrn PoolBEnd:byte
 extrn PrimaryRecord:byte
 extrn RapidFireEnabled:byte
 extrn RedefPageList:word
+extrn SavedUpgradeSlot:word
 extrn ScoreBcd:byte
 extrn ScrollDeltaY:word
 extrn SegBossActive:word
+extrn SelectedUpgradeSlot:word
 extrn SfxActive:byte
 extrn SfxEnabled:byte
 extrn SfxRequest:byte
@@ -79,6 +87,14 @@ extrn Sprite32Bytes:word
 extrn StackTop:word
 extrn SweepPath:word
 extrn SweepPathLeadIn:word
+extrn UpgradeHitX:word
+extrn UpgradeHitY:word
+extrn UpgradeSlot0:word
+extrn UpgradeSlot1:word
+extrn UpgradeSlot2:word
+extrn UpgradeSlot3:word
+extrn UpgradeSlotPtrs:word
+extrn UpgradeTries:word
 extrn WhatOilShortageFlag:byte
 extrn XorCodeHiscoreBlock:far
 extrn loc_1009C:far
@@ -214,6 +230,33 @@ public loc_081F4
 public loc_08209
 public loc_08331
 public loc_0837A
+public loc_083D7
+public loc_083DE
+public loc_083E4
+public loc_083EA
+public loc_083F0
+public loc_083F6
+public loc_083FC
+public loc_08402
+public loc_0840A
+public loc_08412
+public loc_0841A
+public loc_08422
+public loc_0842A
+public loc_08437
+public loc_0843D
+public loc_08445
+public loc_0844E
+public loc_08456
+public loc_08463
+public loc_08468
+public loc_0849D
+public loc_084A2
+public loc_084C3
+public loc_084C9
+public loc_084D6
+public loc_084F0
+public loc_084FD
 public loc_08517
 public loc_08546
 public loc_0859E
@@ -378,7 +421,10 @@ extrn loc_0511F:near
 extrn loc_05145:near
 extrn loc_0518C:near
 extrn loc_0519A:near
+extrn loc_09D91:near
 extrn loc_09EE4:near
+extrn loc_09F1A:near
+extrn loc_09F5F:near
 extrn loc_0A781:near
 extrn loc_0AEE4:near
 extrn loc_0AF22:near
@@ -5331,14 +5377,14 @@ loc_0831F:
 loc_0832E:
     jmp near ptr loc_0BC45
 loc_08331:
-    mov si, word ptr ds:[095F2h]
+    mov si, word ptr ds:[UpgradeHitY]
     add si, 010h
     cmp word ptr ss:[bp + 2], si
     jg loc_0835B
     sub si, 020h
     cmp word ptr ss:[bp + 2], si
     jl loc_0835B
-    mov si, word ptr ds:[095F4h]
+    mov si, word ptr ds:[UpgradeHitX]
     add si, 010h
     cmp word ptr ss:[bp + 4], si
     jg loc_0835B
@@ -5364,18 +5410,18 @@ loc_0836F:
     jmp near ptr loc_0BC45
 
 loc_0837A:
-    cmp word ptr ds:[095FAh], -1
+    cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_08382
     ret
 loc_08382:
-    mov bp, word ptr ds:[095FAh]
+    mov bp, word ptr ds:[SelectedUpgradeSlot]
     shl bp, 1
-    add bp, 095FCh
+    add bp, offset UpgradeSlotPtrs
     mov bp, word ptr ss:[bp]
-    mov si, word ptr ss:[bp + 6]
-    mov word ptr ds:[095F8h], 0
+    mov si, word ptr ss:[bp + UPGRADE_SLOT_LIST]
+    mov word ptr ds:[UpgradeTries], 0
 loc_08398:
-    mov bx, word ptr ss:[bp + 8]
+    mov bx, word ptr ss:[bp + UPGRADE_SLOT_INDEX]
     shl bx, 1
     mov ax, bx
     shl bx, 1
@@ -5387,45 +5433,161 @@ loc_08398:
     call ax
     pop bp
     jne loc_083CA
-    inc word ptr ss:[bp + 8]
-    inc word ptr ds:[095F8h]
-    cmp word ptr ds:[095F8h], 0Ah
+    inc word ptr ss:[bp + UPGRADE_SLOT_INDEX]
+    inc word ptr ds:[UpgradeTries]
+    cmp word ptr ds:[UpgradeTries], 0Ah
     jb loc_08398
-    mov word ptr ss:[bp + 8], 0
-    mov word ptr ss:[bp], 024h
+    mov word ptr ss:[bp + UPGRADE_SLOT_INDEX], 0
+    mov word ptr ss:[bp + UPGRADE_SLOT_ICON], 024h
     ret
 loc_083CA:
     mov ax, word ptr ds:[bx + si]
-    mov word ptr ss:[bp], ax
+    mov word ptr ss:[bp + UPGRADE_SLOT_ICON], ax
     ret
 loc_083D0:
-    mov word ptr ss:[bp + 8], 0
+    mov word ptr ss:[bp + UPGRADE_SLOT_INDEX], 0
     jmp short loc_08398
-; UNKNOWN: not yet classified as code or data
-    db 033h,0C0h,0C3h,033h,0C0h,040h,0C3h,083h,03Eh,058h,0A9h,00h,0C3h,083h,03Eh,058h
-    db 0A9h,01h,0C3h,083h,03Eh,058h,0A9h,02h,0C3h,083h,03Eh,058h,0A9h,03h,0C3h,083h
-    db 03Eh,058h,0A9h,04h,0C3h,083h,03Eh,058h,0A9h,05h,0C3h,0C7h,06h,058h,0A9h,00h
-    db 00h,0EBh,026h,0C7h,06h,058h,0A9h,01h,00h,0EBh,01Eh,0C7h,06h,058h,0A9h,02h
-    db 00h,0EBh,016h,0C7h,06h,058h,0A9h,03h,00h,0EBh,0Eh,0C7h,06h,058h,0A9h,04h
-    db 00h,0EBh,06h,0C7h,06h,058h,0A9h,05h,00h,0C7h,06h,0FAh,095h,0FFh,0FFh,0C3h
-    db 083h,03Eh,05Eh,0A9h,01h,0C3h,0C7h,06h,05Eh,0A9h,01h,00h,0EBh,0EBh,083h,03Eh
-    db 060h,0A9h,00h,074h,08Eh,0EBh,089h,0C7h,06h,060h,0A9h,04h,00h,0EBh,0DAh,083h
-    db 03Eh,06Eh,0A9h,0FFh,075h,03h,0E9h,07Ah,0FFh,0E9h,074h,0FFh,0E8h,02Bh,019h,0EBh
-    db 0C8h,083h,03Eh,066h,0A9h,0FFh,075h,03h,0E9h,068h,0FFh,083h,03Eh,068h,0A9h,0FFh
-    db 075h,03h,0E9h,05Eh,0FFh,083h,03Eh,084h,023h,00h,075h,03h,0E9h,051h,0FFh,083h
-    db 03Eh,06Ah,0A9h,0FFh,075h,03h,0E9h,04Ah,0FFh,083h,03Eh,06Ch,0A9h,0FFh,075h,03h
-    db 0E9h,040h,0FFh,0E9h,03Ah,0FFh,0E8h,0BFh,01Ah,0EBh,08Eh,083h,03Eh,084h,023h,02h
-    db 074h,03h,0E9h,02Bh,0FFh,083h,03Eh,062h,0A9h,0FFh,075h,03h,0E9h,024h,0FFh,083h
-    db 03Eh,064h,0A9h,0FFh,075h,03h,0E9h,01Ah,0FFh,0E9h,014h,0FFh,0E8h,054h,01Ah,0E9h
-    db 067h,0FFh,083h,03Eh,084h,023h,00h,075h,03h,0E9h,07h,0FFh,0E9h,01h,0FFh,0C6h
-    db 06h,0FEh,0BEh,00h,080h,03Eh,0C0h,098h,00h,074h,05h,0C6h,06h,0FFh,0BEh,06h
-    db 0C7h,06h,084h,023h,01h,00h,0E9h,040h,0FFh,083h,03Eh,084h,023h,02h,074h,03h
-    db 0E9h,0E0h,0FEh,0E9h,0DAh,0FEh,0C6h,06h,0FEh,0BEh,00h,080h,03Eh,0C0h,098h,00h
-    db 074h,05h,0C6h,06h,0FFh,0BEh,06h,0C7h,06h,084h,023h,02h,00h,0E9h,019h,0FFh
+loc_083D7:
+    xor ax, ax
+    ret
+loc_083DA:
+    xor ax, ax
+    inc ax
+    ret
+loc_083DE:
+    cmp word ptr ds:[0A958h], 0
+    ret
+loc_083E4:
+    cmp word ptr ds:[0A958h], 1
+    ret
+loc_083EA:
+    cmp word ptr ds:[0A958h], 2
+    ret
+loc_083F0:
+    cmp word ptr ds:[0A958h], 3
+    ret
+loc_083F6:
+    cmp word ptr ds:[0A958h], 4
+    ret
+loc_083FC:
+    cmp word ptr ds:[0A958h], 5
+    ret
+loc_08402:
+    mov word ptr ds:[0A958h], 0
+    jmp short loc_08430
+loc_0840A:
+    mov word ptr ds:[0A958h], 1
+    jmp short loc_08430
+loc_08412:
+    mov word ptr ds:[0A958h], 2
+    jmp short loc_08430
+loc_0841A:
+    mov word ptr ds:[0A958h], 3
+    jmp short loc_08430
+loc_08422:
+    mov word ptr ds:[0A958h], 4
+    jmp short loc_08430
+loc_0842A:
+    mov word ptr ds:[0A958h], 5
+loc_08430:
+    mov word ptr ds:[SelectedUpgradeSlot], 0FFFFh
+    ret
+loc_08437:
+    cmp word ptr ds:[0A95Eh], 1
+    ret
+loc_0843D:
+    mov word ptr ds:[0A95Eh], 1
+    jmp short loc_08430
+loc_08445:
+    cmp word ptr ds:[0A960h], 0
+    je loc_083DA
+    jmp short loc_083D7
+loc_0844E:
+    mov word ptr ds:[0A960h], 4
+    jmp short loc_08430
+loc_08456:
+    cmp word ptr ds:[0A96Eh], -1
+    jne loc_08460
+    jmp near ptr loc_083DA
+loc_08460:
+    jmp near ptr loc_083D7
+loc_08463:
+    call loc_09D91
+    jmp short loc_08430
+loc_08468:
+    cmp word ptr ds:[PlusSlotA966], -1
+    jne loc_08472
+    jmp near ptr loc_083DA
+loc_08472:
+    cmp word ptr ds:[MinusSlotA968], -1
+    jne loc_0847C
+    jmp near ptr loc_083DA
+loc_0847C:
+    cmp word ptr ds:[2384h], 0
+    jne loc_08486
+    jmp near ptr loc_083D7
+loc_08486:
+    cmp word ptr ds:[PlusSlotA96A], -1
+    jne loc_08490
+    jmp near ptr loc_083DA
+loc_08490:
+    cmp word ptr ds:[MinusSlotA96C], -1
+    jne loc_0849A
+    jmp near ptr loc_083DA
+loc_0849A:
+    jmp near ptr loc_083D7
+loc_0849D:
+    call loc_09F5F
+    jmp short loc_08430
+loc_084A2:
+    cmp word ptr ds:[2384h], 2
+    je loc_084AC
+    jmp near ptr loc_083D7
+loc_084AC:
+    cmp word ptr ds:[HistoryRecordSlot15], -1
+    jne loc_084B6
+    jmp near ptr loc_083DA
+loc_084B6:
+    cmp word ptr ds:[HistoryRecordSlot31], -1
+    jne loc_084C0
+    jmp near ptr loc_083DA
+loc_084C0:
+    jmp near ptr loc_083D7
+loc_084C3:
+    call loc_09F1A
+    jmp near ptr loc_08430
+loc_084C9:
+    cmp word ptr ds:[2384h], 0
+    jne loc_084D3
+    jmp near ptr loc_083DA
+loc_084D3:
+    jmp near ptr loc_083D7
+loc_084D6:
+    mov byte ptr ds:[SfxActive], 0
+    cmp byte ptr ds:[SfxEnabled], 0
+    je loc_084E7
+    mov byte ptr ds:[SfxRequest], 6
+loc_084E7:
+    mov word ptr ds:[2384h], 1
+    jmp near ptr loc_08430
+loc_084F0:
+    cmp word ptr ds:[2384h], 2
+    je loc_084FA
+    jmp near ptr loc_083DA
+loc_084FA:
+    jmp near ptr loc_083D7
+loc_084FD:
+    mov byte ptr ds:[SfxActive], 0
+    cmp byte ptr ds:[SfxEnabled], 0
+    je loc_0850E
+    mov byte ptr ds:[SfxRequest], 6
+loc_0850E:
+    mov word ptr ds:[2384h], 2
+    jmp near ptr loc_08430
 
 loc_08517:
-    mov word ptr ds:[095FAh], 0FFFFh
-    mov bp, 09682h
+    mov word ptr ds:[SelectedUpgradeSlot], 0FFFFh
+    mov bp, offset UpgradeSlot0
     mov ah, 087h
     call loc_0852B
     call loc_0852B
@@ -5435,41 +5597,41 @@ loc_0852B:
     mov al, 01Ch
     push ax
     call DrawOffsetFromScreenRow
-    mov word ptr ss:[bp], 024h
-    mov word ptr ss:[bp + 2], di
-    mov word ptr ss:[bp + 8], 0
-    add bp, 0Ah
+    mov word ptr ss:[bp + UPGRADE_SLOT_ICON], 024h
+    mov word ptr ss:[bp + UPGRADE_SLOT_SCREEN], di
+    mov word ptr ss:[bp + UPGRADE_SLOT_INDEX], 0
+    add bp, UPGRADE_SLOT_BYTES
     pop ax
     add ah, 010h
     ret
 
 loc_08546:
-    cmp word ptr ds:[095FAh], -1
+    cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_0854E
     ret
 loc_0854E:
     push bx
     push bp
-    mov bp, word ptr ds:[095FAh]
+    mov bp, word ptr ds:[SelectedUpgradeSlot]
     shl bp, 1
-    add bp, 095FCh
+    add bp, offset UpgradeSlotPtrs
     mov bp, word ptr ss:[bp]
-    mov si, word ptr ss:[bp + 6]
-    mov bx, word ptr ss:[bp + 8]
+    mov si, word ptr ss:[bp + UPGRADE_SLOT_LIST]
+    mov bx, word ptr ss:[bp + UPGRADE_SLOT_INDEX]
     shl bx, 1
     mov ax, bx
     shl bx, 1
     add bx, ax
-    push word ptr ds:[095FAh]
+    push word ptr ds:[SelectedUpgradeSlot]
     call word ptr ds:[bx + si + 4]
-    mov ax, word ptr ds:[095FAh]
-    mov word ptr ds:[095F6h], ax
-    pop word ptr ds:[095FAh]
+    mov ax, word ptr ds:[SelectedUpgradeSlot]
+    mov word ptr ds:[SavedUpgradeSlot], ax
+    pop word ptr ds:[SelectedUpgradeSlot]
     call loc_0837A
-    mov ax, word ptr ds:[095F6h]
-    mov word ptr ds:[095FAh], ax
+    mov ax, word ptr ds:[SavedUpgradeSlot]
+    mov word ptr ds:[SelectedUpgradeSlot], ax
     call loc_0859E
-    cmp word ptr ds:[095FAh], -1
+    cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_0859B
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0859B
@@ -5492,24 +5654,24 @@ loc_085B3:
     ret
 
 loc_085B5:
-    mov bp, 09682h
+    mov bp, offset UpgradeSlot0
     xor di, di
     call loc_085D5
-    mov bp, 0968Ch
+    mov bp, offset UpgradeSlot1
     mov di, 1
     call loc_085D5
-    mov bp, 09696h
+    mov bp, offset UpgradeSlot2
     mov di, 2
     call loc_085D5
-    mov bp, 096A0h
+    mov bp, offset UpgradeSlot3
     mov di, 3
 
 loc_085D5:
-    cmp word ptr ds:[095FAh], -1
+    cmp word ptr ds:[SelectedUpgradeSlot], -1
     je loc_085ED
-    mov si, word ptr ds:[095FAh]
+    mov si, word ptr ds:[SelectedUpgradeSlot]
     shl si, 1
-    add si, 095FCh
+    add si, offset UpgradeSlotPtrs
     cmp bp, word ptr ds:[si]
     mov ax, 1
     je loc_085EF
@@ -5518,7 +5680,7 @@ loc_085ED:
 loc_085EF:
     cmp word ptr ds:[0BDACh], 1
     jne loc_08602
-    cmp di, word ptr ds:[095FAh]
+    cmp di, word ptr ds:[SelectedUpgradeSlot]
     jne loc_08602
     push word ptr ds:[0BE16h]
     jmp short loc_08605

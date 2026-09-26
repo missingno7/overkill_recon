@@ -14,6 +14,7 @@ TEXTROW macro attr, text
     endm
 endm
 locals
+extrn CountXReturn:far
 extrn SfxCmdRest:far
 extrn SfxCmdSlide:far
 extrn SfxCmdStepDown:far
@@ -26,6 +27,33 @@ extrn loc_07BCB:far
 extrn loc_07C3F:far
 extrn loc_07CA2:far
 extrn loc_07DC8:far
+extrn loc_083D7:far
+extrn loc_083DE:far
+extrn loc_083E4:far
+extrn loc_083EA:far
+extrn loc_083F0:far
+extrn loc_083F6:far
+extrn loc_083FC:far
+extrn loc_08402:far
+extrn loc_0840A:far
+extrn loc_08412:far
+extrn loc_0841A:far
+extrn loc_08422:far
+extrn loc_0842A:far
+extrn loc_08437:far
+extrn loc_0843D:far
+extrn loc_08445:far
+extrn loc_0844E:far
+extrn loc_08456:far
+extrn loc_08463:far
+extrn loc_08468:far
+extrn loc_0849D:far
+extrn loc_084A2:far
+extrn loc_084C3:far
+extrn loc_084C9:far
+extrn loc_084D6:far
+extrn loc_084F0:far
+extrn loc_084FD:far
 DATA segment para public 'CODE'
 assume cs:DATA,ds:nothing,ss:nothing,es:nothing
 public AdapterGeometry
@@ -199,6 +227,8 @@ public OffsetXWork
 public OkMenuPageList
 public PageIndex
 public PageListPtr
+public PaymentFileName
+public PaymentHelpRow
 public PendingSpriteFile
 public PlaqueFiles
 public PlayfieldRowOffsets
@@ -221,6 +251,7 @@ public RecordRowOffsets
 public RedefPageList
 public ResidentFiles
 public SavedSettings
+public SavedUpgradeSlot
 public ScoreBcd
 public ScreenRowOffsets
 public ScrollDeltaY
@@ -232,6 +263,7 @@ public SegBossPart79
 public SegBossPathCursor
 public SegBossX
 public SegBossY
+public SelectedUpgradeSlot
 public SequenceFrameCount
 public SfxActive
 public SfxCommandTable
@@ -271,6 +303,14 @@ public Type86Frames
 public Type86FramesDir6
 public Type88Frames
 public Type88FramesDir6
+public UpgradeHitX
+public UpgradeHitY
+public UpgradeSlot0
+public UpgradeSlot1
+public UpgradeSlot2
+public UpgradeSlot3
+public UpgradeSlotPtrs
+public UpgradeTries
 public VideoBiosModeTable
 public WalkerFacingStep
 public WhatOilShortageFlag
@@ -991,18 +1031,49 @@ PoolBCursor dw 02B5Ch
 LevelMapCellHandlers dw offset loc_07BCB, offset loc_07977, offset loc_07B06, offset loc_07C3F, offset loc_07CA2, offset loc_07DC8
 ; UNKNOWN: not yet classified as code or data
     db 01h,00h,00h,00h,01h,00h
-    db 02h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,082h,096h,08Ch,096h
-    db 096h,096h,0A0h,096h,024h,00h,0D7h,083h,0AFh,044h,00h,00h,0DEh,083h,02h,084h
-    db 01h,00h,0E4h,083h,0Ah,084h,02h,00h,0EAh,083h,012h,084h,03h,00h,0F0h,083h
-    db 01Ah,084h,04h,00h,0F6h,083h,022h,084h,05h,00h,0FCh,083h,02Ah,084h,0FFh,0FFh
-    db 0FFh,0FFh,0AFh,044h,024h,00h,0D7h,083h,0AFh,044h,06h,00h,037h,084h,03Dh,084h
-    db 07h,00h,045h,084h,04Eh,084h,0FFh,0FFh,0FFh,0FFh,0AFh,044h,024h,00h,0D7h,083h
-    db 0AFh,044h,09h,00h,056h,084h,063h,084h,0Ah,00h,068h,084h,09Dh,084h,0Bh,00h
-    db 0A2h,084h,0C3h,084h,0FFh,0FFh,0FFh,0FFh,0AFh,044h,024h,00h,0D7h,083h,0AFh,044h
-    db 0Dh,00h,0C9h,084h,0D6h,084h,0Eh,00h,0F0h,084h,0FDh,084h,0FFh,0FFh,0FFh,0FFh
-    db 0AFh,044h,00h,00h,00h,00h,0Fh,00h,04h,096h,00h,00h,00h,00h,00h,00h
-    db 011h,00h,034h,096h,00h,00h,00h,00h,00h,00h,013h,00h,04Ch,096h,00h,00h
-    db 00h,00h,00h,00h,015h,00h,06Ah,096h,00h,00h,00h,00h,01h,02h,03h,04h
+    db 02h,00h
+; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
+; secondary button applies the selected slot's current entry (loc_08546).
+; Hit box centre (Y, X) tested by loc_08331.
+UpgradeHitY dw 0
+UpgradeHitX dw 0
+; Scratch copy of SelectedUpgradeSlot, and entries tried by loc_0837A.
+SavedUpgradeSlot dw 0
+UpgradeTries dw 0
+; 0..3, or FFFFh for none.
+SelectedUpgradeSlot dw 0
+UpgradeSlotPtrs dw offset UpgradeSlot0, offset UpgradeSlot1, offset UpgradeSlot2, offset UpgradeSlot3
+; Entries {icon, condition routine (ZF = 0: usable), apply routine}, ending with
+; icon FFFFh (the index then restarts at 0).
+UpgradeList0 dw 24h, offset loc_083D7, offset CountXReturn
+    dw 0h, offset loc_083DE, offset loc_08402
+    dw 1h, offset loc_083E4, offset loc_0840A
+    dw 2h, offset loc_083EA, offset loc_08412
+    dw 3h, offset loc_083F0, offset loc_0841A
+    dw 4h, offset loc_083F6, offset loc_08422
+    dw 5h, offset loc_083FC, offset loc_0842A
+    dw 0FFFFh, 0FFFFh, offset CountXReturn
+UpgradeList1 dw 24h, offset loc_083D7, offset CountXReturn
+    dw 6h, offset loc_08437, offset loc_0843D
+    dw 7h, offset loc_08445, offset loc_0844E
+    dw 0FFFFh, 0FFFFh, offset CountXReturn
+UpgradeList2 dw 24h, offset loc_083D7, offset CountXReturn
+    dw 9h, offset loc_08456, offset loc_08463
+    dw 0Ah, offset loc_08468, offset loc_0849D
+    dw 0Bh, offset loc_084A2, offset loc_084C3
+    dw 0FFFFh, 0FFFFh, offset CountXReturn
+UpgradeList3 dw 24h, offset loc_083D7, offset CountXReturn
+    dw 0Dh, offset loc_084C9, offset loc_084D6
+    dw 0Eh, offset loc_084F0, offset loc_084FD
+    dw 0FFFFh, 0FFFFh, offset CountXReturn
+; Slots: current icon, screen offset, panel image, entry list, entry index
+; (UPGRADE_SLOT_* fields).
+UpgradeSlot0 dw 0, 0, 0Fh, offset UpgradeList0, 0
+UpgradeSlot1 dw 0, 0, 11h, offset UpgradeList1, 0
+UpgradeSlot2 dw 0, 0, 13h, offset UpgradeList2, 0
+UpgradeSlot3 dw 0, 0, 15h, offset UpgradeList3, 0
+; UNKNOWN: not yet classified as code or data
+    db 00h,00h,01h,02h,03h,04h
     db 05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,05h,04h,03h,02h,01h
     db 00h,00h,00h,00h,01h,00h,01h,00h,02h,00h,02h,00h,01h,00h,01h,00h
     db 00h,00h,00h,00h,01h,00h,02h,00h,01h,00h,047h,01h,0BEh,00h,0BEh,00h
@@ -1804,18 +1875,11 @@ SfxStream57 db SFX_DURATION_BIAS + 3, 24, SFX_REST, 29, SFX_REST, 31, SFX_REST, 
     db SFX_END
 SfxStream58 db SFX_DURATION_BIAS + 32, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_REST, SFX_END
 ; UNKNOWN: not yet classified as code or data
-    db 00h,070h,061h
-    db 079h,06Dh,065h,06Eh,074h,02Eh,065h,06Eh,063h,00h,049h,030h,06Eh,030h,066h,030h
-    db 06Fh,030h,072h,030h,06Dh,030h,061h,030h,074h,030h,069h,030h,06Fh,030h,06Eh,030h
-    db 03Ah,030h,020h,030h,020h,030h,020h,030h,020h,030h,020h,030h,020h,030h,028h,030h
-    db 04Bh,030h,065h,030h,079h,030h,073h,030h,03Ah,030h,02Dh,030h,020h,030h,043h,030h
-    db 075h,030h,072h,030h,073h,030h,06Fh,030h,072h,030h,020h,030h,055h,030h,070h,030h
-    db 020h,030h,026h,030h,020h,030h,044h,030h,06Fh,030h,077h,030h,06Eh,030h,020h,030h
-    db 02Fh,030h,020h,030h,050h,030h,061h,030h,067h,030h,065h,030h,020h,030h,055h,030h
-    db 070h,030h,020h,030h,026h,030h,020h,030h,044h,030h,06Fh,030h,077h,030h,06Eh,030h
-    db 020h,030h,02Fh,030h,020h,030h,048h,030h,06Fh,030h,06Dh,030h,065h,030h,020h,030h
-    db 02Fh,030h,020h,030h,045h,030h,06Eh,030h,064h,030h,020h,030h,02Fh,030h,020h,030h
-    db 045h,030h,053h,030h,043h,030h,029h,030h,020h,030h
+    db 00h
+PaymentFileName db 'payment.enc',0
+; Help line of ShowPaymentText (text attribute 30h).
+PaymentHelpRow label word
+    TEXTROW 30h, <Information:      (Keys:- Cursor Up & Down / Page Up & Down / Home / End / ESC) >
 ; Byte attributes: filled and patched by InitializeByteAttributes, read by
 ; ReadIndexedByteAttribute.
 ByteAttributeTable db 00h,00h,00h,00h,00h,00h
