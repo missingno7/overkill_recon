@@ -351,6 +351,8 @@ public PingPongFrames8
 public PlaqueBytes
 public PlaqueFiles
 public PlayerHitOffsets
+public PlayerHitX
+public PlayerHitY
 public PlayfieldRowOffsets
 public PodShotDirection
 public PoolA
@@ -515,8 +517,6 @@ public Type88Frames
 public Type88FramesDir6
 public Type93KilledLatch
 public Type93KilledPulse
-public UpgradeHitX
-public UpgradeHitY
 public UpgradeSlot0
 public UpgradeSlot1
 public UpgradeSlot2
@@ -1293,9 +1293,9 @@ LevelMapCellHandlers dw offset Level0MapCell, offset Level1MapCell, offset Level
 TurretPhaseTable dw 1, 0, 1, 2
 ; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
 ; secondary button applies the selected slot's current entry (ApplySelectedUpgrade).
-; Hit box centre (Y, X) tested by loc_08331.
-UpgradeHitY dw 0
-UpgradeHitX dw 0
+; The player's hit point (Y, X) for SmallRecordHitsPlayer (PlayerHitOffsets applied).
+PlayerHitY dw 0
+PlayerHitX dw 0
 ; Scratch copy of SelectedUpgradeSlot, and entries tried by AdvanceToAvailableUpgrade.
 SavedUpgradeSlot dw 0
 UpgradeTries dw 0

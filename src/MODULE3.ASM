@@ -176,6 +176,8 @@ extrn PaymentHelpRow:word
 extrn PingPongFrames4:word
 extrn PingPongFrames8:word
 extrn PlayerHitOffsets:word
+extrn PlayerHitX:word
+extrn PlayerHitY:word
 extrn PodShotDirection:word
 extrn PoolA:byte
 extrn PoolAEnd:byte
@@ -295,8 +297,6 @@ extrn Type88Frames:word
 extrn Type88FramesDir6:word
 extrn Type93KilledLatch:byte
 extrn Type93KilledPulse:byte
-extrn UpgradeHitX:word
-extrn UpgradeHitY:word
 extrn VideoBiosModeTable:byte
 extrn WalkerFacingStep:word
 extrn WeaponMode:word
@@ -447,6 +447,7 @@ extrn PollInputBits:near
 extrn PrintMessageBP:near
 extrn ProbeShipTerrainCollision:near
 extrn ReadIndexedByteAttribute:near
+extrn RecordNearPlayerHitPoint:near
 extrn RedrawStatusPanel:near
 extrn RequestLifeStartMusic:near
 extrn ResetEgaPages:near
@@ -542,7 +543,6 @@ extrn WaitTimerTick:near
 extrn WaitVerticalRetrace:near
 extrn loc_05059:near
 extrn loc_05D0B:near
-extrn loc_08331:near
 extrn loc_0878C:near
 extrn loc_08D83:near
 ; Segment of the level map (LEVnMAP.BIC, loaded into SlotBuffer).
@@ -2771,11 +2771,11 @@ SmallRecordHitsPlayer:
     add si, offset PlayerHitOffsets
     lodsw
     add ax, word ptr ds:[PrimaryRecord + REC_Y]
-    mov word ptr ds:[UpgradeHitY], ax
+    mov word ptr ds:[PlayerHitY], ax
     lodsw
     add ax, word ptr ds:[PrimaryRecord + REC_X]
-    mov word ptr ds:[UpgradeHitX], ax
-    jmp near ptr loc_08331
+    mov word ptr ds:[PlayerHitX], ax
+    jmp near ptr RecordNearPlayerHitPoint
 ; BP = size class 2 record: CF when the player's box overlaps it.
 LargeRecordHitsPlayer:
     mov ax, word ptr ss:[bp + REC_Y]

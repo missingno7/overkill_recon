@@ -116,6 +116,8 @@ extrn OPageList:word
 extrn OkMenuPageList:word
 extrn PingPongFrames4:word
 extrn PingPongFrames8:word
+extrn PlayerHitX:word
+extrn PlayerHitY:word
 extrn PoolA:byte
 extrn PoolACursor:word
 extrn PoolAEnd:byte
@@ -184,8 +186,6 @@ extrn Type45Path:word
 extrn Type4APath:word
 extrn Type51Path:word
 extrn Type93KilledPulse:byte
-extrn UpgradeHitX:word
-extrn UpgradeHitY:word
 extrn UpgradeSlot0:word
 extrn UpgradeSlot1:word
 extrn UpgradeSlot2:word
@@ -270,6 +270,7 @@ public Level5MapCell
 public LoadHiscoreFile
 public MissilesAvailable
 public PlayerShotsHitRecord
+public RecordNearPlayerHitPoint
 public RecordWorkspaceOffset
 public RequestLifeStartMusic
 public ResetPageAndClearScreen
@@ -377,7 +378,6 @@ public Type93SweepDescendClimb
 public UpdateRefuelTimersAndScore
 public UpgradeNeverAvailable
 public loc_05D0B
-public loc_08331
 public loc_0878C
 public loc_08D83
 extrn AddFrontPod:near
@@ -5782,15 +5782,16 @@ loc_0831F:
     mov byte ptr ds:[SfxRequest], 1Eh
 loc_0832E:
     jmp near ptr ScrollRecordThenFinish
-loc_08331:
-    mov si, word ptr ds:[UpgradeHitY]
+; CF when BP lies within 10h of PlayerHitY/X on both axes.
+RecordNearPlayerHitPoint:
+    mov si, word ptr ds:[PlayerHitY]
     add si, 010h
     cmp word ptr ss:[bp + REC_Y], si
     jg loc_0835B
     sub si, 020h
     cmp word ptr ss:[bp + REC_Y], si
     jl loc_0835B
-    mov si, word ptr ds:[UpgradeHitX]
+    mov si, word ptr ds:[PlayerHitX]
     add si, 010h
     cmp word ptr ss:[bp + REC_X], si
     jg loc_0835B
