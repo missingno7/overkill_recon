@@ -776,7 +776,7 @@ StartLife:
     call ResetInvaderFormation
     mov word ptr ds:[SegBossActive], 0
     call RequestLifeStartMusic
-    cmp word ptr ds:[MapScrollPos], 09Ch
+    cmp word ptr ds:[MapScrollPos], MAP_START_POS
     jne GameFrame
     call RunTimedSequenceUntilPrimary
 ; One game frame, paced by the timer (WaitTimerTick): update and draw, act on the
@@ -1161,7 +1161,7 @@ loc_09B8D:
     je loc_09B97
     call DecRecordXTwice
 loc_09B97:
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     jbe loc_09BA9
     test byte ptr ds:[InputBits], IN_BUTTON_SECONDARY
     je loc_09BA9
@@ -1182,7 +1182,7 @@ loc_09BCA:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_09BDF
     call DamagePlayerOnTerrainContact
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     jbe loc_09BDF
     call AdjustRecordXFromCounts
 loc_09BDF:
@@ -1197,7 +1197,7 @@ StoreApplyHistoryAndConditionalPlacement:
 ; When placement is skipped, the previous ClampXLowSeen/ClampXHighSeen survive.
     cmp word ptr ds:[DemoActive], 0
     jne loc_09BF7
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     jbe loc_09BFA
 loc_09BF7:
     call PlaceSidePods
@@ -1705,7 +1705,7 @@ HandleFireButton:
     ret
 loc_0A084:
     mov word ptr ds:[FireLatch], 1
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0A0A6
     cmp word ptr ds:[DemoActive], 0
     jne loc_0A0A6
@@ -2291,7 +2291,7 @@ loc_0A612:
 ; RECORD_X_MAX with IN_XPLUS) widens SidePodSpreadLeft by one up to 8; otherwise it
 ; relaxes back towards 0. UpdatePlacementXGroupA does the mirror for the left edge first.
 UpdatePlacementXOffsetsAtRecordEdges:
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0A61F
     ret
 loc_0A61F:
@@ -2358,7 +2358,7 @@ loc_0A679:
     push es
     push ds
     mov si, offset DacColor6Default
-    cmp word ptr ds:[MapScrollPos], 0E52h
+    cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
     jne loc_0A6A8
     call SetDacColor6
 loc_0A6A8:
@@ -2371,7 +2371,7 @@ loc_0A6A8:
     pop cx
     pop bx
     pop ax
-    cmp word ptr ds:[MapScrollPos], 0EA0h
+    cmp word ptr ds:[MapScrollPos], MAP_END_POS
     jne loc_0A6FD
     mov word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     call SmartBombAll
@@ -2417,7 +2417,7 @@ loc_0A714:
     jne loc_0A72F
     cmp word ptr ds:[LastTileStepBackward], 0
     je loc_0A72F
-    add word ptr ds:[MapScrollPos], 0Dh
+    add word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     dec word ptr ds:[LevelScriptClock]
 loc_0A72F:
     mov ax, word ptr cs:[ScrollBandBytes]
@@ -2439,13 +2439,13 @@ WrapScrollWindowForward:
 ; Draws the incoming map row, MapScrollPos + 0Dh, LevelScriptClock - 1.
 EnterNextMapRowForward:
     call DrawMapRowIntoScrollBand
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0A765
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0A765
     mov byte ptr ds:[SfxRequest], 7
 loc_0A765:
-    add word ptr ds:[MapScrollPos], 0Dh
+    add word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     dec word ptr ds:[LevelScriptClock]
     mov al, 5
     cmp word ptr ds:[LevelScriptClock], 4
@@ -2471,7 +2471,7 @@ loc_0A79E:
     jne loc_0A7B9
     cmp word ptr ds:[LastTileStepBackward], 1
     je loc_0A7B9
-    sub word ptr ds:[MapScrollPos], 0Dh
+    sub word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     inc word ptr ds:[LevelScriptClock]
 loc_0A7B9:
     mov ax, word ptr cs:[ScrollWrapOffset]
@@ -2487,7 +2487,7 @@ loc_0A7C6:
 ; Draws the incoming map row, MapScrollPos - 0Dh, LevelScriptClock + 1.
 EnterPreviousMapRowBackward:
     call DrawMapRowIntoScrollBand
-    sub word ptr ds:[MapScrollPos], 0Dh
+    sub word ptr ds:[MapScrollPos], MAP_ROW_BYTES
     inc word ptr ds:[LevelScriptClock]
     mov word ptr ds:[LastTileStepBackward], 1
     ret
@@ -2524,7 +2524,7 @@ DrawIncomingMapRow:
     jmp near ptr DrawMapRowBlocks
 loc_0A82D:
     mov word ptr ds:[MapRowCursor], bx
-    cmp word ptr ds:[MapScrollPos], 0E52h
+    cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
     ja loc_0A83F
     call SpawnFromMapRow
     call RunLevelScriptEvents
@@ -2582,7 +2582,7 @@ loc_0A894:
     je loc_0A8C1
     cmp word ptr ds:[DemoActive], 1
     je loc_0A8B8
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0A8B8
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0A8C1
@@ -2603,7 +2603,7 @@ loc_0A8C7:
     je loc_0A8F4
     cmp word ptr ds:[DemoActive], 1
     je loc_0A8EB
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0A8EB
     cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0A8F4
@@ -3090,7 +3090,7 @@ loc_0ACF9:
 UpdatePod:
     cmp word ptr ds:[DemoActive], 1
     je loc_0AD14
-    cmp word ptr ds:[MapScrollPos], 0B6h
+    cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja loc_0AD14
     ret
 loc_0AD14:
@@ -3771,7 +3771,7 @@ loc_0B32C:
     mov ax, ss:[bp + REC_DIRECTION]
     add ax, 115h
     mov ss:[bp + REC_SPRITE], ax
-    cmp word ptr ds:[MapScrollPos], 0E52h
+    cmp word ptr ds:[MapScrollPos], MAP_LAST_SPAWN_POS
     je loc_0B340
     jmp near ptr FinishRecordUpdate
 loc_0B340:
@@ -6907,7 +6907,7 @@ loc_0CF9C:
     mov word ptr ds:[ShotsLiveSide], 0
     mov word ptr ds:[ShotsLiveFrontPod], 0
     mov word ptr ds:[MissilesLive], 0
-    mov word ptr ds:[MapScrollPos], 09Ch
+    mov word ptr ds:[MapScrollPos], MAP_START_POS
     call InitPositionHistory
 ; Clear the shared byte-attribute table before calling the setup path at 007EF.
 ; Forward fill requires DF=0; this is state initialization, not static table contents.

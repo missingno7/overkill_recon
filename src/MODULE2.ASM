@@ -1835,10 +1835,10 @@ AddScoreBcd:
 ; LevelMusicTable[LevelIndex].
 RequestLifeStartMusic:
     mov al, 4
-    cmp word ptr ds:[MapScrollPos], 09Ch
+    cmp word ptr ds:[MapScrollPos], MAP_START_POS
     je loc_05F5E
     mov al, 5
-    cmp word ptr ds:[MapScrollPos], 0EA0h
+    cmp word ptr ds:[MapScrollPos], MAP_END_POS
     je loc_05F5E
     mov bx, offset LevelMusicTable
     mov al, byte ptr ds:[LevelIndex]
@@ -1859,7 +1859,7 @@ TickFrameTimers:
     mov bx, offset LevelMusicTable
     mov al, byte ptr ds:[LevelIndex]
     xlat
-    cmp word ptr ds:[MapScrollPos], 0750h
+    cmp word ptr ds:[MapScrollPos], MAP_MUSIC_CHANGE_POS
     jb loc_05F86
     mov al, 6
 loc_05F86:
@@ -1973,7 +1973,7 @@ ScrollMapToLevelStart:
     mov word ptr ds:[ScrollSubRow], 0
     mov word ptr ds:[ScrollingBackward], 0
     mov word ptr ds:[LevelScriptClock], 0
-    mov word ptr ds:[MapScrollPos], 0EA0h
+    mov word ptr ds:[MapScrollPos], MAP_END_POS
 loc_060CB:
     mov cx, 010h
 loc_060CE:
@@ -1981,7 +1981,7 @@ loc_060CE:
     call ScrollBackwardOneLine
     pop cx
     loop loc_060CE
-    cmp word ptr ds:[MapScrollPos], 09Ch
+    cmp word ptr ds:[MapScrollPos], MAP_START_POS
     jne loc_060CB
     sub word ptr ds:[LevelScriptClock], 3
     ret

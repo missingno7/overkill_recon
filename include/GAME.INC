@@ -25,3 +25,19 @@ LEVEL_END_TO_WAYPOINT_B equ 2
 LEVEL_END_REFILL equ 3
 ; Raises NextLevelRequest.
 LEVEL_END_DONE equ 4
+; Level map: 13 cells per row; MapScrollPos is a row start (row * MAP_ROW_BYTES).
+MAP_ROW_BYTES equ 0Dh
+; Where a level (or a life) starts scrolling; life-start music 4 plays here.
+MAP_START_POS equ 12 * MAP_ROW_BYTES
+; Up to here only the main shot fires and pods stay idle (outside the demo).
+MAP_INTRO_END_POS equ 14 * MAP_ROW_BYTES
+; From here the level music changes to 6.
+MAP_MUSIC_CHANGE_POS equ 144 * MAP_ROW_BYTES
+; Last row that spawns map objects and runs the level script.
+MAP_LAST_SPAWN_POS equ 282 * MAP_ROW_BYTES
+; First of the LevelEndMapRows (drawn with ShipSegment blocks).
+MAP_END_ROWS_POS equ 283 * MAP_ROW_BYTES
+; Scroll position set before scrolling back to a checkpoint.
+MAP_RESTART_POS equ 287 * MAP_ROW_BYTES
+; Reaching it starts the level end (LevelEndPhase).
+MAP_END_POS equ 288 * MAP_ROW_BYTES

@@ -1597,7 +1597,7 @@ AttributePatchesDone:
     mov cx, 01Ah
     mov al, 1
     rep stosb
-    mov di, 0E5Fh
+    mov di, MAP_END_ROWS_POS
     mov si, offset LevelEndMapRows
     mov cx, 041h
     rep movsb
@@ -4990,7 +4990,7 @@ DrawMapRowBlocksEga:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
-    cmp word ptr ds:[MapScrollPos], 0E5Fh
+    cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_02B99
     mov ax, word ptr cs:[ShipSegment]
 loc_02B99:
@@ -6382,7 +6382,7 @@ DrawMapRowBlocksTandy:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
-    cmp word ptr ds:[MapScrollPos], 0E5Fh
+    cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_036B7
     mov ax, word ptr cs:[ShipSegment]
 loc_036B7:
@@ -8559,7 +8559,7 @@ DrawMapRowBlocksCga:
     mov bx, dx
     mov cx, 0Dh
     mov ax, word ptr cs:[LevelBlocksSegment]
-    cmp word ptr ds:[MapScrollPos], 0E5Fh
+    cmp word ptr ds:[MapScrollPos], MAP_END_ROWS_POS
     jb loc_048FB
     mov ax, word ptr cs:[ShipSegment]
 loc_048FB:
@@ -9120,7 +9120,7 @@ loc_04DD8:
     mov word ptr ds:[MapScrollPos], di
     push di
     call ResetMapBeforeView
-    mov word ptr ds:[MapScrollPos], 0E93h
+    mov word ptr ds:[MapScrollPos], MAP_RESTART_POS
     pop di
     pop si
     call ScrollToCheckpoint
