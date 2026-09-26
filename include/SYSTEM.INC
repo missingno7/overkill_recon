@@ -59,3 +59,7 @@ CACHE_EMS_PAGES equ 8
 ; column (next two bytes).
 TEXT_SET_COLOR equ 10h
 TEXT_MOVE_TO equ 11h
+; EGA workspace rows are plane-interleaved: planes 0..3 of a 208-pixel row, 1Ah bytes
+; each (CopyWorkspaceToScreenEga writes them through map masks 1, 2, 4, 8).
+EGA_PLANE_ROW_BYTES equ 1Ah
+EGA_WORKSPACE_ROW_BYTES equ 4 * EGA_PLANE_ROW_BYTES

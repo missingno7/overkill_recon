@@ -187,8 +187,73 @@ public DrawOffsetFromScreenRowCga
 public DrawOffsetFromScreenRowEga
 public DrawOffsetFromWideRowCga
 public DrawOffsetFromWideRowEga
+public DrawSprite16Shift0Cga
+public DrawSprite16Shift0Ega
+public DrawSprite16Shift1Cga
+public DrawSprite16Shift1Ega
+public DrawSprite16Shift2Cga
+public DrawSprite16Shift2Ega
+public DrawSprite16Shift3Cga
+public DrawSprite16Shift3Ega
+public DrawSprite16Shift4Ega
+public DrawSprite16Shift5Ega
+public DrawSprite16Shift6Ega
+public DrawSprite16Shift7Ega
+public DrawSprite16Tandy
+public DrawSprite32Shift0Cga
+public DrawSprite32Shift0Ega
+public DrawSprite32Shift1Cga
+public DrawSprite32Shift1Ega
+public DrawSprite32Shift2Cga
+public DrawSprite32Shift2Ega
+public DrawSprite32Shift3Cga
+public DrawSprite32Shift3Ega
+public DrawSprite32Shift4Ega
+public DrawSprite32Shift5Ega
+public DrawSprite32Shift6Ega
+public DrawSprite32Shift7Ega
+public DrawSprite32Tandy
+public DrawSprite8Shift0Cga
+public DrawSprite8Shift0Ega
+public DrawSprite8Shift1Cga
+public DrawSprite8Shift1Ega
+public DrawSprite8Shift2Cga
+public DrawSprite8Shift2Ega
+public DrawSprite8Shift3Cga
+public DrawSprite8Shift3Ega
+public DrawSprite8Shift4Ega
+public DrawSprite8Shift5Ega
+public DrawSprite8Shift6Ega
+public DrawSprite8Shift7Ega
+public DrawSprite8Tandy
 public DrawStars
 public EraseStars
+public FlashSprite16Shift0Cga
+public FlashSprite16Shift0Ega
+public FlashSprite16Shift1Cga
+public FlashSprite16Shift1Ega
+public FlashSprite16Shift2Cga
+public FlashSprite16Shift2Ega
+public FlashSprite16Shift3Cga
+public FlashSprite16Shift3Ega
+public FlashSprite16Shift4Ega
+public FlashSprite16Shift5Ega
+public FlashSprite16Shift6Ega
+public FlashSprite16Shift7Ega
+public FlashSprite16Tandy
+public FlashSprite32Shift0Cga
+public FlashSprite32Shift0Ega
+public FlashSprite32Shift1Cga
+public FlashSprite32Shift1Ega
+public FlashSprite32Shift2Cga
+public FlashSprite32Shift2Ega
+public FlashSprite32Shift3Cga
+public FlashSprite32Shift3Ega
+public FlashSprite32Shift4Ega
+public FlashSprite32Shift5Ega
+public FlashSprite32Shift6Ega
+public FlashSprite32Shift7Ega
+public FlashSprite32Tandy
 public FlushBiosKeyboardBuffer
 public InitStars
 public InstallKeyboardVector09
@@ -233,46 +298,6 @@ public loc_007EF
 public loc_00B3E
 public loc_00D42
 public loc_00E9C
-public loc_0103C
-public loc_010B7
-public loc_010ED
-public loc_011B8
-public loc_012B6
-public loc_013E7
-public loc_0154B
-public loc_0167C
-public loc_0177A
-public loc_01845
-public loc_01899
-public loc_018F7
-public loc_0195F
-public loc_019D1
-public loc_01A39
-public loc_01A97
-public loc_01AEB
-public loc_01B2E
-public loc_01B4F
-public loc_01BC6
-public loc_01C61
-public loc_01D1B
-public loc_01DF4
-public loc_01EAE
-public loc_01F49
-public loc_01FC0
-public loc_01FFB
-public loc_0203C
-public loc_02083
-public loc_020D0
-public loc_02117
-public loc_02158
-public loc_02193
-public loc_021D6
-public loc_02223
-public loc_02285
-public loc_022FC
-public loc_0238D
-public loc_02410
-public loc_0247E
 public loc_02580
 public loc_025E9
 public loc_02737
@@ -286,11 +311,6 @@ public loc_02AF9
 public loc_02B84
 public loc_02D2D
 public loc_02E2D
-public loc_02E6E
-public loc_02ECB
-public loc_02F40
-public loc_02F81
-public loc_02FB6
 public loc_030D2
 public loc_03142
 public loc_033AF
@@ -303,26 +323,6 @@ public loc_03657
 public loc_036A2
 public loc_0375B
 public loc_03824
-public loc_03849
-public loc_0387C
-public loc_038B7
-public loc_038D6
-public loc_038F9
-public loc_03926
-public loc_039DF
-public loc_03AEE
-public loc_03C53
-public loc_03CBC
-public loc_03D52
-public loc_03E12
-public loc_03E70
-public loc_03EFB
-public loc_03FB0
-public loc_03FEB
-public loc_0403A
-public loc_0409D
-public loc_040D7
-public loc_0412B
 public loc_041F5
 public loc_04264
 public loc_0446C
@@ -1980,7 +1980,13 @@ loc_01031:
     inc dh
     jne loc_00FEE
     ret
-loc_0103C:
+; EGA masked sprite blitters, one per pixel phase (REC_PIXEL_PHASE 0..7), reached
+; through Sprite32Blitters, FlashSprite32Blitters, Sprite16Blitters, FlashSprite16Blitters
+; and Sprite8Blitters. DS:SI = sprite frame (per row: mask, then planes 0..3; a mask
+; bit of 1 is transparent), ES:DI = WorkspaceSegment offset (REC_SCREEN_OFS), CX = rows.
+; Phases 1..4 shift right and phases 5..7 shift left into the preceding byte; the
+; Flash variants draw the opaque pixels in colour 15. DS is reset to MainDataSegment.
+DrawSprite32Shift0Ega:
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 4]
@@ -1989,7 +1995,7 @@ loc_0103C:
     and ax, ds:[si + 2]
     or ax, ds:[si + 6]
     mov es:[di + 2], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 8]
@@ -1998,7 +2004,7 @@ loc_0103C:
     and ax, ds:[si + 2]
     or ax, ds:[si + 0Ah]
     mov es:[di + 2], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 0Ch]
@@ -2007,7 +2013,7 @@ loc_0103C:
     and ax, ds:[si + 2]
     or ax, ds:[si + 0Eh]
     mov es:[di + 2], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 10h]
@@ -2016,30 +2022,30 @@ loc_0103C:
     and ax, ds:[si + 2]
     or ax, ds:[si + 12h]
     mov es:[di + 2], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     add si, 14h
-    loop loc_0103C
+    loop DrawSprite32Shift0Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_010B7:
+FlashSprite32Shift0Ega:
     mov ax, ds:[si]
     not ax
     or es:[di], ax
-    or es:[di + 1Ah], ax
-    or es:[di + 34h], ax
-    or es:[di + 4Eh], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     mov ax, ds:[si + 2]
     not ax
     or es:[di + 2], ax
-    or es:[di + 1Ch], ax
-    or es:[di + 36h], ax
-    or es:[di + 50h], ax
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_010B7
+    loop FlashSprite32Shift0Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_010ED:
+DrawSprite32Shift1Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2052,15 +2058,15 @@ loc_010ED:
     and es:[di], ax
     and es:[di + 2], bx
     and es:[di + 4], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], bx
-    and es:[di + 1Eh], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], bx
-    and es:[di + 38h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], bx
-    and es:[di + 52h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2080,9 +2086,9 @@ loc_010ED:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2091,9 +2097,9 @@ loc_010ED:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2102,19 +2108,19 @@ loc_010ED:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_011AF
     jmp short loc_011B2
 loc_011AF:
-    jmp near ptr loc_010ED
+    jmp near ptr DrawSprite32Shift1Ega
 loc_011B2:
     mov ds, cs:[MainDataSegment]
     ret
-loc_011B8:
+DrawSprite32Shift2Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2133,15 +2139,15 @@ loc_011B8:
     and es:[di], ax
     and es:[di + 2], bx
     and es:[di + 4], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], bx
-    and es:[di + 1Eh], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], bx
-    and es:[di + 38h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], bx
-    and es:[di + 52h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2171,9 +2177,9 @@ loc_011B8:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2187,9 +2193,9 @@ loc_011B8:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2203,19 +2209,19 @@ loc_011B8:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_012AD
     jmp short loc_012B0
 loc_012AD:
-    jmp near ptr loc_011B8
+    jmp near ptr DrawSprite32Shift2Ega
 loc_012B0:
     mov ds, cs:[MainDataSegment]
     ret
-loc_012B6:
+DrawSprite32Shift3Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2240,15 +2246,15 @@ loc_012B6:
     and es:[di], ax
     and es:[di + 2], bx
     and es:[di + 4], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], bx
-    and es:[di + 1Eh], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], bx
-    and es:[di + 38h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], bx
-    and es:[di + 52h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2288,9 +2294,9 @@ loc_012B6:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2309,9 +2315,9 @@ loc_012B6:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2330,19 +2336,19 @@ loc_012B6:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_013DE
     jmp short loc_013E1
 loc_013DE:
-    jmp near ptr loc_012B6
+    jmp near ptr DrawSprite32Shift3Ega
 loc_013E1:
     mov ds, cs:[MainDataSegment]
     ret
-loc_013E7:
+DrawSprite32Shift4Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2373,15 +2379,15 @@ loc_013E7:
     and es:[di], ax
     and es:[di + 2], bx
     and es:[di + 4], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], bx
-    and es:[di + 1Eh], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], bx
-    and es:[di + 38h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], bx
-    and es:[di + 52h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2431,9 +2437,9 @@ loc_013E7:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2457,9 +2463,9 @@ loc_013E7:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2483,19 +2489,19 @@ loc_013E7:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_01542
     jmp short loc_01545
 loc_01542:
-    jmp near ptr loc_013E7
+    jmp near ptr DrawSprite32Shift4Ega
 loc_01545:
     mov ds, cs:[MainDataSegment]
     ret
-loc_0154B:
+DrawSprite32Shift5Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -2520,15 +2526,15 @@ loc_0154B:
     and es:[di], dl
     and es:[di + 1], ax
     and es:[di + 3], bx
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 1Dh], bx
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 37h], bx
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
-    and es:[di + 51h], bx
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2568,9 +2574,9 @@ loc_0154B:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2589,9 +2595,9 @@ loc_0154B:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2610,19 +2616,19 @@ loc_0154B:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_01673
     jmp short loc_01676
 loc_01673:
-    jmp near ptr loc_0154B
+    jmp near ptr DrawSprite32Shift5Ega
 loc_01676:
     mov ds, cs:[MainDataSegment]
     ret
-loc_0167C:
+DrawSprite32Shift6Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -2641,15 +2647,15 @@ loc_0167C:
     and es:[di], dl
     and es:[di + 1], ax
     and es:[di + 3], bx
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 1Dh], bx
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 37h], bx
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
-    and es:[di + 51h], bx
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2679,9 +2685,9 @@ loc_0167C:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2695,9 +2701,9 @@ loc_0167C:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2711,19 +2717,19 @@ loc_0167C:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_01771
     jmp short loc_01774
 loc_01771:
-    jmp near ptr loc_0167C
+    jmp near ptr DrawSprite32Shift6Ega
 loc_01774:
     mov ds, cs:[MainDataSegment]
     ret
-loc_0177A:
+DrawSprite32Shift7Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -2736,15 +2742,15 @@ loc_0177A:
     and es:[di], dl
     and es:[di + 1], ax
     and es:[di + 3], bx
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 1Dh], bx
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 37h], bx
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
-    and es:[di + 51h], bx
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 4]
     mov bx, ds:[si + 6]
     xor dl, dl
@@ -2764,9 +2770,9 @@ loc_0177A:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 0Ch]
     mov bx, ds:[si + 0Eh]
     xor dl, dl
@@ -2775,9 +2781,9 @@ loc_0177A:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
     mov ax, ds:[si + 10h]
     mov bx, ds:[si + 12h]
     xor dl, dl
@@ -2786,19 +2792,19 @@ loc_0177A:
     rcl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
     loop loc_0183C
     jmp short loc_0183F
 loc_0183C:
-    jmp near ptr loc_0177A
+    jmp near ptr DrawSprite32Shift7Ega
 loc_0183F:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01845:
+FlashSprite32Shift1Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2813,55 +2819,21 @@ loc_01845:
     or es:[di], ax
     or es:[di + 2], bx
     or es:[di + 4], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01845
+    loop FlashSprite32Shift1Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01899:
-    mov ax, ds:[si]
-    mov bx, ds:[si + 2]
-    mov dl, 0FFh
-    not ax
-    not bx
-    not dl
-    shr al, 1
-    rcr ah, 1
-    rcr bl, 1
-    rcr bh, 1
-    rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr bl, 1
-    rcr bh, 1
-    rcr dl, 1
-    or es:[di], ax
-    or es:[di + 2], bx
-    or es:[di + 4], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
-    add si, 14h
-    loop loc_01899
-    mov ds, cs:[MainDataSegment]
-    ret
-loc_018F7:
+FlashSprite32Shift2Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2878,29 +2850,24 @@ loc_018F7:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr bl, 1
-    rcr bh, 1
-    rcr dl, 1
     or es:[di], ax
     or es:[di + 2], bx
     or es:[di + 4], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_018F7
+    loop FlashSprite32Shift2Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_0195F:
+FlashSprite32Shift3Ega:
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
     mov dl, 0FFh
@@ -2922,6 +2889,45 @@ loc_0195F:
     rcr bl, 1
     rcr bh, 1
     rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], bx
+    or es:[di + 4], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
+    add si, 14h
+    loop FlashSprite32Shift3Ega
+    mov ds, cs:[MainDataSegment]
+    ret
+FlashSprite32Shift4Ega:
+    mov ax, ds:[si]
+    mov bx, ds:[si + 2]
+    mov dl, 0FFh
+    not ax
+    not bx
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr bl, 1
+    rcr bh, 1
+    rcr dl, 1
     shr al, 1
     rcr ah, 1
     rcr bl, 1
@@ -2930,21 +2936,21 @@ loc_0195F:
     or es:[di], ax
     or es:[di + 2], bx
     or es:[di + 4], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], bx
-    or es:[di + 1Eh], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], bx
-    or es:[di + 38h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], bx
-    or es:[di + 52h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 4], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 4], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_0195F
+    loop FlashSprite32Shift4Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_019D1:
+FlashSprite32Shift5Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -2969,21 +2975,21 @@ loc_019D1:
     or es:[di], dl
     or es:[di + 1], ax
     or es:[di + 3], bx
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_019D1
+    loop FlashSprite32Shift5Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01A39:
+FlashSprite32Shift6Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -3003,21 +3009,21 @@ loc_01A39:
     or es:[di], dl
     or es:[di + 1], ax
     or es:[di + 3], bx
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01A39
+    loop FlashSprite32Shift6Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01A97:
+FlashSprite32Shift7Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     mov bx, ds:[si + 2]
@@ -3032,58 +3038,58 @@ loc_01A97:
     or es:[di], dl
     or es:[di + 1], ax
     or es:[di + 3], bx
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 1Dh], bx
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 37h], bx
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    or es:[di + 51h], bx
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 3], bx
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 3], bx
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 14h
-    loop loc_01A97
+    loop FlashSprite32Shift7Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01AEB:
+DrawSprite16Shift0Ega:
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 2]
     mov es:[di], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 4]
     mov es:[di], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 6]
     mov es:[di], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov ax, es:[di]
     and ax, ds:[si]
     or ax, ds:[si + 8]
     mov es:[di], ax
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     add si, 0Ah
-    loop loc_01AEB
+    loop DrawSprite16Shift0Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01B2E:
+FlashSprite16Shift0Ega:
     mov ax, ds:[si]
     not ax
     or es:[di], ax
-    or es:[di + 1Ah], ax
-    or es:[di + 34h], ax
-    or es:[di + 4Eh], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     add si, 0Ah
-    add di, 68h
-    loop loc_01B2E
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop FlashSprite16Shift0Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01B4F:
+DrawSprite16Shift1Ega:
     lodsw
     mov dl, 0FFh
     stc
@@ -3092,12 +3098,12 @@ loc_01B4F:
     rcr dl, 1
     and es:[di], ax
     and es:[di + 2], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3110,27 +3116,27 @@ loc_01B4F:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
-    loop loc_01B4F
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop DrawSprite16Shift1Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01BC6:
+DrawSprite16Shift2Ega:
     lodsw
     mov dl, 0FFh
     stc
@@ -3143,12 +3149,12 @@ loc_01BC6:
     rcr dl, 1
     and es:[di], ax
     and es:[di + 2], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3167,8 +3173,8 @@ loc_01BC6:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3177,8 +3183,8 @@ loc_01BC6:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3187,17 +3193,17 @@ loc_01BC6:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_01C58
     jmp short loc_01C5B
 loc_01C58:
-    jmp near ptr loc_01BC6
+    jmp near ptr DrawSprite16Shift2Ega
 loc_01C5B:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01C61:
+DrawSprite16Shift3Ega:
     lodsw
     mov dl, 0FFh
     stc
@@ -3214,12 +3220,12 @@ loc_01C61:
     rcr dl, 1
     and es:[di], ax
     and es:[di + 2], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3244,8 +3250,8 @@ loc_01C61:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3257,8 +3263,8 @@ loc_01C61:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3270,17 +3276,17 @@ loc_01C61:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_01D12
     jmp short loc_01D15
 loc_01D12:
-    jmp near ptr loc_01C61
+    jmp near ptr DrawSprite16Shift3Ega
 loc_01D15:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01D1B:
+DrawSprite16Shift4Ega:
     lodsw
     mov dl, 0FFh
     stc
@@ -3301,12 +3307,12 @@ loc_01D1B:
     rcr dl, 1
     and es:[di], ax
     and es:[di + 2], dl
-    and es:[di + 1Ah], ax
-    and es:[di + 1Ch], dl
-    and es:[di + 34h], ax
-    and es:[di + 36h], dl
-    and es:[di + 4Eh], ax
-    and es:[di + 50h], dl
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3337,8 +3343,8 @@ loc_01D1B:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3353,8 +3359,8 @@ loc_01D1B:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
     lodsw
     xor dl, dl
     shr al, 1
@@ -3369,17 +3375,17 @@ loc_01D1B:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_01DEB
     jmp short loc_01DEE
 loc_01DEB:
-    jmp near ptr loc_01D1B
+    jmp near ptr DrawSprite16Shift4Ega
 loc_01DEE:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01DF4:
+DrawSprite16Shift5Ega:
     mov dl, 0FFh
     lodsw
     stc
@@ -3396,12 +3402,12 @@ loc_01DF4:
     rcl dl, 1
     and es:[di], dl
     and es:[di + 1], ax
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3426,8 +3432,8 @@ loc_01DF4:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3439,8 +3445,8 @@ loc_01DF4:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3452,17 +3458,17 @@ loc_01DF4:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_01EA5
     jmp short loc_01EA8
 loc_01EA5:
-    jmp near ptr loc_01DF4
+    jmp near ptr DrawSprite16Shift5Ega
 loc_01EA8:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01EAE:
+DrawSprite16Shift6Ega:
     mov dl, 0FFh
     lodsw
     stc
@@ -3475,12 +3481,12 @@ loc_01EAE:
     rcl dl, 1
     and es:[di], dl
     and es:[di + 1], ax
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3499,8 +3505,8 @@ loc_01EAE:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3509,8 +3515,8 @@ loc_01EAE:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3519,17 +3525,17 @@ loc_01EAE:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_01F40
     jmp short loc_01F43
 loc_01F40:
-    jmp near ptr loc_01EAE
+    jmp near ptr DrawSprite16Shift6Ega
 loc_01F43:
     mov ds, cs:[MainDataSegment]
     ret
-loc_01F49:
+DrawSprite16Shift7Ega:
     mov dl, 0FFh
     lodsw
     stc
@@ -3538,12 +3544,12 @@ loc_01F49:
     rcl dl, 1
     and es:[di], dl
     and es:[di + 1], ax
-    and es:[di + 1Ah], dl
-    and es:[di + 1Bh], ax
-    and es:[di + 34h], dl
-    and es:[di + 35h], ax
-    and es:[di + 4Eh], dl
-    and es:[di + 4Fh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], dl
+    and es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
@@ -3556,27 +3562,27 @@ loc_01F49:
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
     lodsw
     xor dl, dl
     shl ah, 1
     rcl al, 1
     rcl dl, 1
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
-    loop loc_01F49
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop DrawSprite16Shift7Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01FC0:
+FlashSprite16Shift1Ega:
     mov ax, ds:[si]
     mov dl, 0FFh
     not ax
@@ -3586,42 +3592,18 @@ loc_01FC0:
     rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_01FC0
+    loop FlashSprite16Shift1Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_01FFB:
-    mov ax, ds:[si]
-    mov dl, 0FFh
-    not ax
-    not dl
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    or es:[di], ax
-    or es:[di + 2], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
-    add si, 0Ah
-    loop loc_01FFB
-    mov ds, cs:[MainDataSegment]
-    ret
-loc_0203C:
+FlashSprite16Shift2Ega:
     mov ax, ds:[si]
     mov dl, 0FFh
     not ax
@@ -3632,23 +3614,20 @@ loc_0203C:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_0203C
+    loop FlashSprite16Shift2Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02083:
+FlashSprite16Shift3Ega:
     mov ax, ds:[si]
     mov dl, 0FFh
     not ax
@@ -3662,23 +3641,50 @@ loc_02083:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
+    add si, 0Ah
+    loop FlashSprite16Shift3Ega
+    mov ds, cs:[MainDataSegment]
+    ret
+FlashSprite16Shift4Ega:
+    mov ax, ds:[si]
+    mov dl, 0FFh
+    not ax
+    not dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
     shr al, 1
     rcr ah, 1
     rcr dl, 1
     or es:[di], ax
     or es:[di + 2], dl
-    or es:[di + 1Ah], ax
-    or es:[di + 1Ch], dl
-    or es:[di + 34h], ax
-    or es:[di + 36h], dl
-    or es:[di + 4Eh], ax
-    or es:[di + 50h], dl
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    or es:[di + EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 2], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 2], dl
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_02083
+    loop FlashSprite16Shift4Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_020D0:
+FlashSprite16Shift5Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     not dl
@@ -3694,18 +3700,18 @@ loc_020D0:
     rcl dl, 1
     or es:[di], dl
     or es:[di + 1], ax
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_020D0
+    loop FlashSprite16Shift5Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02117:
+FlashSprite16Shift6Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     not dl
@@ -3718,18 +3724,18 @@ loc_02117:
     rcl dl, 1
     or es:[di], dl
     or es:[di + 1], ax
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_02117
+    loop FlashSprite16Shift6Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02158:
+FlashSprite16Shift7Ega:
     mov dl, 0FFh
     mov ax, ds:[si]
     not dl
@@ -3739,52 +3745,52 @@ loc_02158:
     rcl dl, 1
     or es:[di], dl
     or es:[di + 1], ax
-    or es:[di + 1Ah], dl
-    or es:[di + 1Bh], ax
-    or es:[di + 34h], dl
-    or es:[di + 35h], ax
-    or es:[di + 4Eh], dl
-    or es:[di + 4Fh], ax
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], dl
+    or es:[di + EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES + 1], ax
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], dl
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES + 1], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 0Ah
-    loop loc_02158
+    loop FlashSprite16Shift7Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02193:
+DrawSprite8Shift0Ega:
     mov al, es:[di]
     and al, ds:[si]
     or al, ds:[si + 1]
     mov es:[di], al
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov al, es:[di]
     and al, ds:[si]
     or al, ds:[si + 2]
     mov es:[di], al
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov al, es:[di]
     and al, ds:[si]
     or al, ds:[si + 3]
     mov es:[di], al
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     mov al, es:[di]
     and al, ds:[si]
     or al, ds:[si + 4]
     mov es:[di], al
-    add di, 1Ah
+    add di, EGA_PLANE_ROW_BYTES
     add si, 5
-    loop loc_02193
+    loop DrawSprite8Shift0Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_021D6:
+DrawSprite8Shift1Ega:
     lodsb
     mov ah, 0FFh
     stc
     rcr al, 1
     rcr ah, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
@@ -3794,22 +3800,22 @@ loc_021D6:
     xor ah, ah
     shr al, 1
     rcr ah, 1
-    or es:[di + 1Ah], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
     rcr ah, 1
-    or es:[di + 34h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
     rcr ah, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
-    loop loc_021D6
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop DrawSprite8Shift1Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02223:
+DrawSprite8Shift2Ega:
     lodsb
     mov ah, 0FFh
     stc
@@ -3819,61 +3825,11 @@ loc_02223:
     rcr al, 1
     rcr ah, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
-    shr al, 1
-    rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di], ax
-    lodsb
-    xor ah, ah
-    shr al, 1
-    rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 1Ah], ax
-    lodsb
-    xor ah, ah
-    shr al, 1
-    rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 34h], ax
-    lodsb
-    xor ah, ah
-    shr al, 1
-    rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
-    loop loc_02223
-    mov ds, cs:[MainDataSegment]
-    ret
-loc_02285:
-    lodsb
-    mov ah, 0FFh
-    stc
-    rcr al, 1
-    rcr ah, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
-    lodsb
-    xor ah, ah
-    shr al, 1
-    rcr ah, 1
     shr al, 1
     rcr ah, 1
     shr al, 1
@@ -3885,32 +3841,26 @@ loc_02285:
     rcr ah, 1
     shr al, 1
     rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 1Ah], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
     rcr ah, 1
     shr al, 1
     rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 34h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
     rcr ah, 1
     shr al, 1
     rcr ah, 1
-    shr al, 1
-    rcr ah, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
-    loop loc_02285
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop DrawSprite8Shift2Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_022FC:
+DrawSprite8Shift3Ega:
     lodsb
     mov ah, 0FFh
     stc
@@ -3922,17 +3872,12 @@ loc_022FC:
     stc
     rcr al, 1
     rcr ah, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
-    shr al, 1
-    rcr ah, 1
     shr al, 1
     rcr ah, 1
     shr al, 1
@@ -3948,9 +3893,48 @@ loc_022FC:
     rcr ah, 1
     shr al, 1
     rcr ah, 1
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsb
+    xor ah, ah
     shr al, 1
     rcr ah, 1
-    or es:[di + 1Ah], ax
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
+    loop DrawSprite8Shift3Ega
+    mov ds, cs:[MainDataSegment]
+    ret
+DrawSprite8Shift4Ega:
+    lodsb
+    mov ah, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    and es:[di], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     lodsb
     xor ah, ah
     shr al, 1
@@ -3961,7 +3945,7 @@ loc_022FC:
     rcr ah, 1
     shr al, 1
     rcr ah, 1
-    or es:[di + 34h], ax
+    or es:[di], ax
     lodsb
     xor ah, ah
     shr al, 1
@@ -3972,16 +3956,38 @@ loc_022FC:
     rcr ah, 1
     shr al, 1
     rcr ah, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    lodsb
+    xor ah, ah
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    shr al, 1
+    rcr ah, 1
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     loop loc_02384
     jmp short loc_02387
 loc_02384:
-    jmp near ptr loc_022FC
+    jmp near ptr DrawSprite8Shift4Ega
 loc_02387:
     mov ds, cs:[MainDataSegment]
     ret
-loc_0238D:
+DrawSprite8Shift5Ega:
     mov ah, ds:[si]
     mov al, 0FFh
     stc
@@ -3994,9 +4000,9 @@ loc_0238D:
     rcl ah, 1
     rcl al, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 1]
     xor al, al
     shl ah, 1
@@ -4014,7 +4020,7 @@ loc_0238D:
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 1Ah], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 3]
     xor al, al
     shl ah, 1
@@ -4023,7 +4029,7 @@ loc_0238D:
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 34h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 4]
     xor al, al
     shl ah, 1
@@ -4032,13 +4038,13 @@ loc_0238D:
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 5
-    loop loc_0238D
+    loop DrawSprite8Shift5Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_02410:
+DrawSprite8Shift6Ega:
     mov ah, ds:[si]
     mov al, 0FFh
     stc
@@ -4048,9 +4054,9 @@ loc_02410:
     rcl ah, 1
     rcl al, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 1]
     xor al, al
     shl ah, 1
@@ -4064,36 +4070,36 @@ loc_02410:
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 1Ah], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 3]
     xor al, al
     shl ah, 1
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 34h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 4]
     xor al, al
     shl ah, 1
     rcl al, 1
     shl ah, 1
     rcl al, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 5
-    loop loc_02410
+    loop DrawSprite8Shift6Ega
     mov ds, cs:[MainDataSegment]
     ret
-loc_0247E:
+DrawSprite8Shift7Ega:
     mov ah, ds:[si]
     mov al, 0FFh
     stc
     rcl ah, 1
     rcl al, 1
     and es:[di], ax
-    and es:[di + 1Ah], ax
-    and es:[di + 34h], ax
-    and es:[di + 4Eh], ax
+    and es:[di + EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
+    and es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 1]
     xor al, al
     shl ah, 1
@@ -4103,20 +4109,20 @@ loc_0247E:
     xor al, al
     shl ah, 1
     rcl al, 1
-    or es:[di + 1Ah], ax
+    or es:[di + EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 3]
     xor al, al
     shl ah, 1
     rcl al, 1
-    or es:[di + 34h], ax
+    or es:[di + 2 * EGA_PLANE_ROW_BYTES], ax
     mov ah, ds:[si + 4]
     xor al, al
     shl ah, 1
     rcl al, 1
-    or es:[di + 4Eh], ax
-    add di, 68h
+    or es:[di + 3 * EGA_PLANE_ROW_BYTES], ax
+    add di, EGA_WORKSPACE_ROW_BYTES
     add si, 5
-    loop loc_0247E
+    loop DrawSprite8Shift7Ega
     mov ds, cs:[MainDataSegment]
     ret
 
@@ -5288,7 +5294,9 @@ loc_02E39:
     out dx, al
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_02E6E:
+; Tandy masked sprite blitters (one phase: 4-bit pixels are byte aligned at even X),
+; same contract as the EGA ones.
+DrawSprite32Tandy:
     mov bx, 058h
     lodsw
     and ax, word ptr es:[di]
@@ -5331,10 +5339,10 @@ loc_02E6E:
     add si, 2
     stosw
     add di, bx
-    loop loc_02E6E
+    loop DrawSprite32Tandy
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_02ECB:
+FlashSprite32Tandy:
     mov bx, 058h
     mov ax, word ptr ds:[si]
     not ax
@@ -5377,10 +5385,10 @@ loc_02ECB:
     add si, 4
     add di, 2
     add di, bx
-    loop loc_02ECB
+    loop FlashSprite32Tandy
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_02F40:
+FlashSprite16Tandy:
     mov bx, 060h
     mov ax, word ptr ds:[si]
     not ax
@@ -5403,10 +5411,10 @@ loc_02F40:
     add si, 4
     add di, 2
     add di, bx
-    loop loc_02F40
+    loop FlashSprite16Tandy
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_02F81:
+DrawSprite16Tandy:
     mov bx, 060h
     lodsw
     and ax, word ptr es:[di]
@@ -5429,10 +5437,10 @@ loc_02F81:
     add si, 2
     stosw
     add di, bx
-    loop loc_02F81
+    loop DrawSprite16Tandy
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_02FB6:
+DrawSprite8Tandy:
     mov bx, 064h
     lodsw
     and ax, word ptr es:[di]
@@ -6556,7 +6564,9 @@ loc_03840:
     jne loc_03829
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_03849:
+; CGA masked sprite blitters, one per pixel phase (REC_PIXEL_PHASE 0..3), same
+; contract as the EGA ones.
+DrawSprite32Shift0Cga:
     lodsw
     and ax, es:[di]
     or ax, ds:[si]
@@ -6578,10 +6588,10 @@ loc_03849:
     add si, 2
     stosw
     add di, 2Ch
-    loop loc_03849
+    loop DrawSprite32Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_0387C:
+FlashSprite32Shift0Cga:
     lodsw
     not ax
     or es:[di], ax
@@ -6603,10 +6613,10 @@ loc_0387C:
     add si, 2
     add di, 2
     add di, 2Ch
-    loop loc_0387C
+    loop FlashSprite32Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_038B7:
+DrawSprite16Shift0Cga:
     lodsw
     and ax, es:[di]
     or ax, ds:[si]
@@ -6618,10 +6628,10 @@ loc_038B7:
     add si, 2
     stosw
     add di, 30h
-    loop loc_038B7
+    loop DrawSprite16Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_038D6:
+FlashSprite16Shift0Cga:
     lodsw
     not ax
     or es:[di], ax
@@ -6633,17 +6643,17 @@ loc_038D6:
     add si, 2
     add di, 2
     add di, 30h
-    loop loc_038D6
+    loop FlashSprite16Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_038F9:
+DrawSprite8Shift0Cga:
     lodsw
     and ax, es:[di]
     or ax, ds:[si]
     add si, 2
     stosw
     add di, 32h
-    loop loc_038F9
+    loop DrawSprite8Shift0Cga
     mov ds, cs:[MainDataSegment]
     ret
 loc_0390E:
@@ -6656,9 +6666,9 @@ loc_0390E:
     loop loc_0390E
     mov ds, cs:[MainDataSegment]
     ret
-; Ninth byte of an eight-byte mask row shifted right in registers by loc_03926.
+; Ninth byte of an eight-byte mask row shifted right in registers by DrawSprite32Shift1Cga.
 SpriteShiftSpill db 00h
-loc_03926:
+DrawSprite32Shift1Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
@@ -6723,11 +6733,11 @@ loc_03926:
     add di, 34h
     dec bp
     je loc_039D9
-    jmp near ptr loc_03926
+    jmp near ptr DrawSprite32Shift1Cga
 loc_039D9:
     mov ds, cs:[MainDataSegment]
     ret
-loc_039DF:
+DrawSprite32Shift2Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
@@ -6830,11 +6840,11 @@ loc_039DF:
     add di, 34h
     dec bp
     je loc_03AE8
-    jmp near ptr loc_039DF
+    jmp near ptr DrawSprite32Shift2Cga
 loc_03AE8:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03AEE:
+DrawSprite32Shift3Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov cx, ds:[si + 8]
@@ -6975,11 +6985,11 @@ loc_03AEE:
     add di, 34h
     dec bp
     je loc_03C4D
-    jmp near ptr loc_03AEE
+    jmp near ptr DrawSprite32Shift3Cga
 loc_03C4D:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03C53:
+FlashSprite32Shift1Cga:
     mov bx, ds:[si]
     not bx
     mov ax, ds:[si + 4]
@@ -7016,10 +7026,10 @@ loc_03C53:
     add si, 10h
     add di, 34h
     dec bp
-    jne loc_03C53
+    jne FlashSprite32Shift1Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_03CBC:
+FlashSprite32Shift2Cga:
     mov bx, ds:[si]
     not bx
     mov ax, ds:[si + 4]
@@ -7075,11 +7085,11 @@ loc_03CBC:
     add di, 34h
     dec bp
     je loc_03D4C
-    jmp near ptr loc_03CBC
+    jmp near ptr FlashSprite32Shift2Cga
 loc_03D4C:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03D52:
+FlashSprite32Shift3Cga:
     mov bx, ds:[si]
     not bx
     mov ax, ds:[si + 4]
@@ -7153,11 +7163,11 @@ loc_03D52:
     add di, 34h
     dec bp
     je loc_03E0C
-    jmp near ptr loc_03D52
+    jmp near ptr FlashSprite32Shift3Cga
 loc_03E0C:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03E12:
+DrawSprite16Shift1Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov dl, 0FFh
@@ -7195,10 +7205,10 @@ loc_03E12:
     add si, 8
     add di, 34h
     dec bp
-    jne loc_03E12
+    jne DrawSprite16Shift1Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_03E70:
+DrawSprite16Shift2Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov dl, 0FFh
@@ -7259,11 +7269,11 @@ loc_03E70:
     add di, 34h
     dec bp
     je loc_03EF5
-    jmp near ptr loc_03E70
+    jmp near ptr DrawSprite16Shift2Cga
 loc_03EF5:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03EFB:
+DrawSprite16Shift3Cga:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
     mov dl, 0FFh
@@ -7346,11 +7356,11 @@ loc_03EFB:
     add di, 34h
     dec bp
     je loc_03FAA
-    jmp near ptr loc_03EFB
+    jmp near ptr DrawSprite16Shift3Cga
 loc_03FAA:
     mov ds, cs:[MainDataSegment]
     ret
-loc_03FB0:
+FlashSprite16Shift1Cga:
     mov bx, ds:[si]
     not bx
     mov ax, ds:[si + 4]
@@ -7373,46 +7383,10 @@ loc_03FB0:
     add si, 8
     add di, 34h
     dec bp
-    jne loc_03FB0
+    jne FlashSprite16Shift1Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_03FEB:
-    mov bx, ds:[si]
-    not bx
-    mov ax, ds:[si + 4]
-    not ax
-    mov dl, 0FFh
-    not dl
-    shr bl, 1
-    rcr bh, 1
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr bl, 1
-    rcr bh, 1
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr bl, 1
-    rcr bh, 1
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr bl, 1
-    rcr bh, 1
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    or es:[di], bx
-    or es:[di + 2], ax
-    or es:[di + 4], dl
-    add si, 8
-    add di, 34h
-    dec bp
-    jne loc_03FEB
-    mov ds, cs:[MainDataSegment]
-    ret
-loc_0403A:
+FlashSprite16Shift2Cga:
     mov bx, ds:[si]
     not bx
     mov ax, ds:[si + 4]
@@ -7439,6 +7413,42 @@ loc_0403A:
     rcr al, 1
     rcr ah, 1
     rcr dl, 1
+    or es:[di], bx
+    or es:[di + 2], ax
+    or es:[di + 4], dl
+    add si, 8
+    add di, 34h
+    dec bp
+    jne FlashSprite16Shift2Cga
+    mov ds, cs:[MainDataSegment]
+    ret
+FlashSprite16Shift3Cga:
+    mov bx, ds:[si]
+    not bx
+    mov ax, ds:[si + 4]
+    not ax
+    mov dl, 0FFh
+    not dl
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr bl, 1
+    rcr bh, 1
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
     shr bl, 1
     rcr bh, 1
     rcr al, 1
@@ -7455,10 +7465,10 @@ loc_0403A:
     add si, 8
     add di, 34h
     dec bp
-    jne loc_0403A
+    jne FlashSprite16Shift3Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_0409D:
+DrawSprite8Shift1Cga:
     lodsw
     mov dl, 0FFh
     stc
@@ -7483,62 +7493,12 @@ loc_0409D:
     or es:[di + 2], dl
     add di, 34h
     dec bp
-    jne loc_0409D
+    jne DrawSprite8Shift1Cga
     mov ds, cs:[MainDataSegment]
     ret
-loc_040D7:
+DrawSprite8Shift2Cga:
     lodsw
     mov dl, 0FFh
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    and es:[di], ax
-    and es:[di + 2], dl
-    lodsw
-    xor dl, dl
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    shr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    or es:[di], ax
-    or es:[di + 2], dl
-    add di, 34h
-    dec bp
-    jne loc_040D7
-    mov ds, cs:[MainDataSegment]
-    ret
-loc_0412B:
-    lodsw
-    mov dl, 0FFh
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
-    stc
-    rcr al, 1
-    rcr ah, 1
-    rcr dl, 1
     stc
     rcr al, 1
     rcr ah, 1
@@ -7571,6 +7531,56 @@ loc_0412B:
     shr al, 1
     rcr ah, 1
     rcr dl, 1
+    or es:[di], ax
+    or es:[di + 2], dl
+    add di, 34h
+    dec bp
+    jne DrawSprite8Shift2Cga
+    mov ds, cs:[MainDataSegment]
+    ret
+DrawSprite8Shift3Cga:
+    lodsw
+    mov dl, 0FFh
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    stc
+    rcr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    and es:[di], ax
+    and es:[di + 2], dl
+    lodsw
+    xor dl, dl
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
+    shr al, 1
+    rcr ah, 1
+    rcr dl, 1
     shr al, 1
     rcr ah, 1
     rcr dl, 1
@@ -7581,7 +7591,7 @@ loc_0412B:
     or es:[di + 2], dl
     add di, 34h
     dec bp
-    jne loc_0412B
+    jne DrawSprite8Shift3Cga
     mov ds, cs:[MainDataSegment]
     ret
 

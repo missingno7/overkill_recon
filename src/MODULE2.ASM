@@ -409,7 +409,72 @@ extrn DrawOffsetFromScreenRowCga:near
 extrn DrawOffsetFromScreenRowEga:near
 extrn DrawOffsetFromWideRowCga:near
 extrn DrawOffsetFromWideRowEga:near
+extrn DrawSprite16Shift0Cga:near
+extrn DrawSprite16Shift0Ega:near
+extrn DrawSprite16Shift1Cga:near
+extrn DrawSprite16Shift1Ega:near
+extrn DrawSprite16Shift2Cga:near
+extrn DrawSprite16Shift2Ega:near
+extrn DrawSprite16Shift3Cga:near
+extrn DrawSprite16Shift3Ega:near
+extrn DrawSprite16Shift4Ega:near
+extrn DrawSprite16Shift5Ega:near
+extrn DrawSprite16Shift6Ega:near
+extrn DrawSprite16Shift7Ega:near
+extrn DrawSprite16Tandy:near
+extrn DrawSprite32Shift0Cga:near
+extrn DrawSprite32Shift0Ega:near
+extrn DrawSprite32Shift1Cga:near
+extrn DrawSprite32Shift1Ega:near
+extrn DrawSprite32Shift2Cga:near
+extrn DrawSprite32Shift2Ega:near
+extrn DrawSprite32Shift3Cga:near
+extrn DrawSprite32Shift3Ega:near
+extrn DrawSprite32Shift4Ega:near
+extrn DrawSprite32Shift5Ega:near
+extrn DrawSprite32Shift6Ega:near
+extrn DrawSprite32Shift7Ega:near
+extrn DrawSprite32Tandy:near
+extrn DrawSprite8Shift0Cga:near
+extrn DrawSprite8Shift0Ega:near
+extrn DrawSprite8Shift1Cga:near
+extrn DrawSprite8Shift1Ega:near
+extrn DrawSprite8Shift2Cga:near
+extrn DrawSprite8Shift2Ega:near
+extrn DrawSprite8Shift3Cga:near
+extrn DrawSprite8Shift3Ega:near
+extrn DrawSprite8Shift4Ega:near
+extrn DrawSprite8Shift5Ega:near
+extrn DrawSprite8Shift6Ega:near
+extrn DrawSprite8Shift7Ega:near
+extrn DrawSprite8Tandy:near
 extrn FinishRecordUpdate:near
+extrn FlashSprite16Shift0Cga:near
+extrn FlashSprite16Shift0Ega:near
+extrn FlashSprite16Shift1Cga:near
+extrn FlashSprite16Shift1Ega:near
+extrn FlashSprite16Shift2Cga:near
+extrn FlashSprite16Shift2Ega:near
+extrn FlashSprite16Shift3Cga:near
+extrn FlashSprite16Shift3Ega:near
+extrn FlashSprite16Shift4Ega:near
+extrn FlashSprite16Shift5Ega:near
+extrn FlashSprite16Shift6Ega:near
+extrn FlashSprite16Shift7Ega:near
+extrn FlashSprite16Tandy:near
+extrn FlashSprite32Shift0Cga:near
+extrn FlashSprite32Shift0Ega:near
+extrn FlashSprite32Shift1Cga:near
+extrn FlashSprite32Shift1Ega:near
+extrn FlashSprite32Shift2Cga:near
+extrn FlashSprite32Shift2Ega:near
+extrn FlashSprite32Shift3Cga:near
+extrn FlashSprite32Shift3Ega:near
+extrn FlashSprite32Shift4Ega:near
+extrn FlashSprite32Shift5Ega:near
+extrn FlashSprite32Shift6Ega:near
+extrn FlashSprite32Shift7Ega:near
+extrn FlashSprite32Tandy:near
 extrn HorizontalTerrainPatrol:near
 extrn InstallKeyboardVector09:near
 extrn LevelMapSegment:word
@@ -453,46 +518,6 @@ extrn TryTerrainStep:near
 extrn VideoAdapter:word
 extrn WaitVerticalRetrace:near
 extrn WorkspaceSegment:word
-extrn loc_0103C:near
-extrn loc_010B7:near
-extrn loc_010ED:near
-extrn loc_011B8:near
-extrn loc_012B6:near
-extrn loc_013E7:near
-extrn loc_0154B:near
-extrn loc_0167C:near
-extrn loc_0177A:near
-extrn loc_01845:near
-extrn loc_01899:near
-extrn loc_018F7:near
-extrn loc_0195F:near
-extrn loc_019D1:near
-extrn loc_01A39:near
-extrn loc_01A97:near
-extrn loc_01AEB:near
-extrn loc_01B2E:near
-extrn loc_01B4F:near
-extrn loc_01BC6:near
-extrn loc_01C61:near
-extrn loc_01D1B:near
-extrn loc_01DF4:near
-extrn loc_01EAE:near
-extrn loc_01F49:near
-extrn loc_01FC0:near
-extrn loc_01FFB:near
-extrn loc_0203C:near
-extrn loc_02083:near
-extrn loc_020D0:near
-extrn loc_02117:near
-extrn loc_02158:near
-extrn loc_02193:near
-extrn loc_021D6:near
-extrn loc_02223:near
-extrn loc_02285:near
-extrn loc_022FC:near
-extrn loc_0238D:near
-extrn loc_02410:near
-extrn loc_0247E:near
 extrn loc_02580:near
 extrn loc_025E9:near
 extrn loc_02737:near
@@ -506,11 +531,6 @@ extrn loc_02AF9:near
 extrn loc_02B84:near
 extrn loc_02D2D:near
 extrn loc_02E2D:near
-extrn loc_02E6E:near
-extrn loc_02ECB:near
-extrn loc_02F40:near
-extrn loc_02F81:near
-extrn loc_02FB6:near
 extrn loc_030D2:near
 extrn loc_03142:near
 extrn loc_033AF:near
@@ -523,26 +543,6 @@ extrn loc_03657:near
 extrn loc_036A2:near
 extrn loc_0375B:near
 extrn loc_03824:near
-extrn loc_03849:near
-extrn loc_0387C:near
-extrn loc_038B7:near
-extrn loc_038D6:near
-extrn loc_038F9:near
-extrn loc_03926:near
-extrn loc_039DF:near
-extrn loc_03AEE:near
-extrn loc_03C53:near
-extrn loc_03CBC:near
-extrn loc_03D52:near
-extrn loc_03E12:near
-extrn loc_03E70:near
-extrn loc_03EFB:near
-extrn loc_03FB0:near
-extrn loc_03FEB:near
-extrn loc_0403A:near
-extrn loc_0409D:near
-extrn loc_040D7:near
-extrn loc_0412B:near
 extrn loc_041F5:near
 extrn loc_04264:near
 extrn loc_0446C:near
@@ -4312,17 +4312,23 @@ loc_07615:
 Sprite32HalfSource dw 0
 Sprite32HalfSegment dw 0
 ; 32x32 sprite blitters (one 16-row half per call) indexed by VideoAdapter*8 +
-; REC_PIXEL_PHASE (CGA uses 4 phases, EGA 8, Tandy 1); unused slots hold loc_07688.
+; REC_PIXEL_PHASE (CGA uses 4 phases, EGA 8, Tandy 1); unused slots hold SkipBlit.
 ; FlashSprite32Blitters is used while REC_FLASH_TIMER is nonzero.
 Sprite32Blitters label word
-    dw offset loc_03849, offset loc_03926, offset loc_039DF, offset loc_03AEE, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_0103C, offset loc_010ED, offset loc_011B8, offset loc_012B6, offset loc_013E7, offset loc_0154B, offset loc_0167C, offset loc_0177A
-    dw offset loc_02E6E, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
+    dw offset DrawSprite32Shift0Cga, offset DrawSprite32Shift1Cga, offset DrawSprite32Shift2Cga, offset DrawSprite32Shift3Cga
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset DrawSprite32Shift0Ega, offset DrawSprite32Shift1Ega, offset DrawSprite32Shift2Ega, offset DrawSprite32Shift3Ega
+    dw offset DrawSprite32Shift4Ega, offset DrawSprite32Shift5Ega, offset DrawSprite32Shift6Ega, offset DrawSprite32Shift7Ega
+    dw offset DrawSprite32Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 FlashSprite32Blitters label word
-    dw offset loc_0387C, offset loc_03C53, offset loc_03CBC, offset loc_03D52, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_010B7, offset loc_01845, offset loc_01899, offset loc_018F7, offset loc_0195F, offset loc_019D1, offset loc_01A39, offset loc_01A97
-    dw offset loc_02ECB, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-loc_07688:
+    dw offset FlashSprite32Shift0Cga, offset FlashSprite32Shift1Cga, offset FlashSprite32Shift2Cga, offset FlashSprite32Shift3Cga
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset FlashSprite32Shift0Ega, offset FlashSprite32Shift1Ega, offset FlashSprite32Shift2Ega, offset FlashSprite32Shift3Ega
+    dw offset FlashSprite32Shift4Ega, offset FlashSprite32Shift5Ega, offset FlashSprite32Shift6Ega, offset FlashSprite32Shift7Ega
+    dw offset FlashSprite32Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+SkipBlit:
     mov ds, cs:[MainDataSegment]
     ret
 loc_0768E:
@@ -4363,13 +4369,19 @@ loc_076D7:
 ; 16x16 sprite blitters, as Sprite32Blitters (VideoAdapter*8 + REC_PIXEL_PHASE);
 ; FlashSprite16Blitters while REC_FLASH_TIMER is nonzero.
 Sprite16Blitters label word
-    dw offset loc_038B7, offset loc_03E12, offset loc_03E70, offset loc_03EFB, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_01AEB, offset loc_01B4F, offset loc_01BC6, offset loc_01C61, offset loc_01D1B, offset loc_01DF4, offset loc_01EAE, offset loc_01F49
-    dw offset loc_02F81, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
+    dw offset DrawSprite16Shift0Cga, offset DrawSprite16Shift1Cga, offset DrawSprite16Shift2Cga, offset DrawSprite16Shift3Cga
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset DrawSprite16Shift0Ega, offset DrawSprite16Shift1Ega, offset DrawSprite16Shift2Ega, offset DrawSprite16Shift3Ega
+    dw offset DrawSprite16Shift4Ega, offset DrawSprite16Shift5Ega, offset DrawSprite16Shift6Ega, offset DrawSprite16Shift7Ega
+    dw offset DrawSprite16Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 FlashSprite16Blitters label word
-    dw offset loc_038D6, offset loc_03FB0, offset loc_03FEB, offset loc_0403A, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_01B2E, offset loc_01FC0, offset loc_01FFB, offset loc_0203C, offset loc_02083, offset loc_020D0, offset loc_02117, offset loc_02158
-    dw offset loc_02F40, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
+    dw offset FlashSprite16Shift0Cga, offset FlashSprite16Shift1Cga, offset FlashSprite16Shift2Cga, offset FlashSprite16Shift3Cga
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset FlashSprite16Shift0Ega, offset FlashSprite16Shift1Ega, offset FlashSprite16Shift2Ega, offset FlashSprite16Shift3Ega
+    dw offset FlashSprite16Shift4Ega, offset FlashSprite16Shift5Ega, offset FlashSprite16Shift6Ega, offset FlashSprite16Shift7Ega
+    dw offset FlashSprite16Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 
 loc_07746:
     mov di, word ptr ss:[bp + REC_SCREEN_OFS]
@@ -4396,12 +4408,12 @@ loc_0774F:
 ; NOP filler: word-aligns the table. 8x8 blitters, indexed as Sprite32Blitters.
     db 090h
 Sprite8Blitters label word
-    dw offset loc_038F9, offset loc_0409D, offset loc_040D7, offset loc_0412B
-    dw offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_02193, offset loc_021D6, offset loc_02223, offset loc_02285
-    dw offset loc_022FC, offset loc_0238D, offset loc_02410, offset loc_0247E
-    dw offset loc_02FB6, offset loc_07688, offset loc_07688, offset loc_07688
-    dw offset loc_07688, offset loc_07688, offset loc_07688, offset loc_07688
+    dw offset DrawSprite8Shift0Cga, offset DrawSprite8Shift1Cga, offset DrawSprite8Shift2Cga, offset DrawSprite8Shift3Cga
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset DrawSprite8Shift0Ega, offset DrawSprite8Shift1Ega, offset DrawSprite8Shift2Ega, offset DrawSprite8Shift3Ega
+    dw offset DrawSprite8Shift4Ega, offset DrawSprite8Shift5Ega, offset DrawSprite8Shift6Ega, offset DrawSprite8Shift7Ega
+    dw offset DrawSprite8Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
+    dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 loc_077B2:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_077BE
