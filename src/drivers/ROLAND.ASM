@@ -100,6 +100,7 @@ loc_00108:
     mov al, byte ptr ds:[di + 011h]
     mov byte ptr ds:[di + 1], al
     ret
+StreamCmd81:
     mov ah, 080h
     call loc_0040B
     mov byte ptr ds:[di], 0FFh
@@ -111,13 +112,14 @@ loc_0011C:
     jg loc_00158
     shl al, 1
     xor ah, ah
-    mov si, 01F5h
+    mov si, offset StreamCommandHandlers
     add si, ax
     jmp word ptr ds:[si]
 loc_0012F:
     sub al, 0DFh
     mov byte ptr ds:[di + 011h], al
     jmp short loc_000D7
+StreamCmd91:
     mov al, byte ptr ds:[bx]
     inc bx
     mov byte ptr ds:[di + 6], al
@@ -182,6 +184,7 @@ loc_001AD:
     mov al, byte ptr ds:[di + 014h]
     add byte ptr ds:[di + 5], al
     jmp near ptr loc_0035E
+StreamCmd90:
     mov al, byte ptr ds:[di + 7]
     or al, 0C0h
     call loc_003F8
@@ -197,24 +200,122 @@ loc_001AD:
     mov byte ptr ds:[di + 0Eh], al
     call loc_003F8
     jmp near ptr loc_000D7
-; UNKNOWN: not yet classified as code or data
-    db 0B0h,07h,0E8h,0Fh,02h,08Ah,07h,043h,088h,045h,0Eh,0E8h,06h,02h,0E9h,0E2h
-    db 0FEh,02Ah,02h,012h,01h,08h,01h,058h,01h,044h,02h,04Dh,02h,05Bh,02h,062h
-    db 02h,0E4h,01h,070h,02h,081h,02h,091h,02h,09Ch,02h,0A5h,02h,0E1h,02h,069h
-    db 02h,0BEh,01h,036h,01h,08Bh,01Fh,08Bh,0Fh,043h,043h,089h,05Dh,0Ah,089h,04Dh
-    db 0Ch,08Bh,0D9h,0E9h,0ADh,0FEh,0A0h,08h,00h,0A2h,060h,00h,08Bh,05Dh,0Ah,08Bh
-    db 0Fh,043h,043h,0E3h,0E0h,089h,05Dh,0Ah,089h,04Dh,0Ch,08Bh,0D9h,0E9h,093h,0FEh
-    db 08Ah,07h,043h,088h,045h,012h,0E9h,08Ah,0FEh,0B4h,080h,0E8h,0B9h,01h,032h,0C0h
-    db 088h,045h,010h,088h,045h,01Eh,0C3h,0C6h,045h,013h,01h,0E9h,075h,0FEh,0C6h,045h
-    db 013h,0FFh,0E9h,06Eh,0FEh,0C6h,045h,013h,00h,0E9h,067h,0FEh,08Bh,07h,089h,045h
-    db 014h,043h,043h,08Bh,07h,089h,045h,016h,043h,043h,0E9h,056h,0FEh,08Bh,07h,089h
-    db 045h,018h,043h,043h,08Ah,07h,088h,045h,01Ah,043h,0E9h,046h,0FEh,032h,0C0h,088h
-    db 045h,01Ah,088h,045h,018h,0E9h,03Bh,0FEh,08Ah,07h,043h,088h,045h,01Dh,0E9h,032h
-    db 0FEh,08Ah,065h,07h,08Ah,0C4h,04h,0B0h,0E8h,049h,01h,0B0h,064h,0E8h,044h,01h
-    db 032h,0C0h,0E8h,03Fh,01h,08Ah,0C4h,08Ah,0C4h,04h,0B0h,0E8h,036h,01h,0B0h,065h
-    db 0E8h,031h,01h,032h,0C0h,0E8h,02Ch,01h,08Ah,0C4h,04h,0B0h,0E8h,025h,01h,0B0h
-    db 06h,0E8h,020h,01h,08Ah,07h,0E8h,01Bh,01h,043h,0E9h,0F6h,0FDh,08Bh,01Fh,0A0h
-    db 08h,00h,0A2h,060h,00h,0E9h,0EBh,0FDh
+StreamCmd88:
+    mov al, 7
+    call loc_003F8
+    mov al, ds:[bx]
+    inc bx
+    mov ds:[di + 0Eh], al
+    call loc_003F8
+    jmp near ptr loc_000D7
+StreamCommandHandlers label word
+    dw offset StreamCmd80, offset StreamCmd81, offset loc_00108, offset loc_00158
+    dw offset StreamCmd84, offset StreamCmd85, offset StreamCmd86, offset StreamCmd87
+    dw offset StreamCmd88, offset StreamCmd89, offset StreamCmd8A, offset StreamCmd8B
+    dw offset StreamCmd8C, offset StreamCmd8D, offset StreamCmd8E, offset StreamCmd8F
+    dw offset StreamCmd90, offset StreamCmd91
+loc_00219:
+    mov bx, ds:[bx]
+    mov cx, ds:[bx]
+    inc bx
+    inc bx
+    mov ds:[di + 0Ah], bx
+    mov ds:[di + 0Ch], cx
+    mov bx, cx
+    jmp near ptr loc_000D7
+StreamCmd80:
+    mov al, ds:[8h]
+    mov ds:[60h], al
+    mov bx, ds:[di + 0Ah]
+    mov cx, ds:[bx]
+    inc bx
+    inc bx
+    jcxz loc_00219
+    mov ds:[di + 0Ah], bx
+    mov ds:[di + 0Ch], cx
+    mov bx, cx
+    jmp near ptr loc_000D7
+StreamCmd84:
+    mov al, ds:[bx]
+    inc bx
+    mov ds:[di + 12h], al
+    jmp near ptr loc_000D7
+StreamCmd85:
+    mov ah, 80h
+    call loc_0040B
+    xor al, al
+    mov ds:[di + 10h], al
+    mov ds:[di + 1Eh], al
+    ret
+StreamCmd86:
+    mov byte ptr ds:[di + 13h], 1
+    jmp near ptr loc_000D7
+StreamCmd87:
+    mov byte ptr ds:[di + 13h], 0FFh
+    jmp near ptr loc_000D7
+StreamCmd8F:
+    mov byte ptr ds:[di + 13h], 0
+    jmp near ptr loc_000D7
+StreamCmd89:
+    mov ax, ds:[bx]
+    mov ds:[di + 14h], ax
+    inc bx
+    inc bx
+    mov ax, ds:[bx]
+    mov ds:[di + 16h], ax
+    inc bx
+    inc bx
+    jmp near ptr loc_000D7
+StreamCmd8A:
+    mov ax, ds:[bx]
+    mov ds:[di + 18h], ax
+    inc bx
+    inc bx
+    mov al, ds:[bx]
+    mov ds:[di + 1Ah], al
+    inc bx
+    jmp near ptr loc_000D7
+StreamCmd8B:
+    xor al, al
+    mov ds:[di + 1Ah], al
+    mov ds:[di + 18h], al
+    jmp near ptr loc_000D7
+StreamCmd8C:
+    mov al, ds:[bx]
+    inc bx
+    mov ds:[di + 1Dh], al
+    jmp near ptr loc_000D7
+StreamCmd8D:
+    mov ah, ds:[di + 7]
+    mov al, ah
+    add al, 0B0h
+    call loc_003F8
+    mov al, 64h
+    call loc_003F8
+    xor al, al
+    call loc_003F8
+    mov al, ah
+    mov al, ah
+    add al, 0B0h
+    call loc_003F8
+    mov al, 65h
+    call loc_003F8
+    xor al, al
+    call loc_003F8
+    mov al, ah
+    add al, 0B0h
+    call loc_003F8
+    mov al, 6
+    call loc_003F8
+    mov al, ds:[bx]
+    call loc_003F8
+    inc bx
+    jmp near ptr loc_000D7
+StreamCmd8E:
+    mov bx, ds:[bx]
+    mov al, ds:[8h]
+    mov ds:[60h], al
+    jmp near ptr loc_000D7
 loc_002EC:
     xor ah, ah
     cmp ah, byte ptr ds:[9]
