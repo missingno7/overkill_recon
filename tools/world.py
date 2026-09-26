@@ -136,5 +136,7 @@ class World:
         self.word('LevelIndex', rng.randrange(K.LEVEL_COUNT)).word('DifficultySetting', rng.randrange(3))
         self.byte('SfxEnabled', rng.randrange(2)).word('ScrollDeltaY', rng.choice((0, 0, 1, 2)))
         self.word('EncounterLiveCount', rng.randrange(8)).word('MissilesLive', rng.randrange(3))
+        # The level map is not loaded in tests: rows past MAP_END_POS read whatever follows.
+        self.word('MapScrollPos', rng.randrange(K.MAP_START_POS, K.MAP_END_POS + 1))
         self.player()
         return self

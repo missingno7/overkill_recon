@@ -22,7 +22,7 @@ from world import World, Record, FIELDS, POOLS, RECORD, EQU, edge_word
 from emu import LOAD
 from build import main_sources
 from unicorn import UC_HOOK_CODE
-import bisect, importlib, json, random, re, sys, time, zlib
+import bisect, gzip, importlib, json, random, re, sys, time, zlib
 
 _seen = {}
 for _n, _v in FIELDS.items(): _seen.setdefault(_v, _n)    # base names come before role aliases
@@ -37,9 +37,10 @@ class Target:
     oracle (e.g. an unchecked jump table index): the game never stores other values, so
     the mutator stays inside them."""
     def __init__(self, name, entry, seed, region=None, preserve=('BP', 'SP', 'DS', 'SS'), outputs=(),
-                 flags=(), types=(), globals=(), watch=(), domains=None):
+                 flags=(), types=(), globals=(), watch=(), domains=None, pin_bp=False, seeds=8):
         self.name, self.entry, self.seed, self.region = name, entry, seed, region
         self.domains = dict(domains or {})   # value sets, or functions of the Pair
+        self.pin_bp, self.seeds = pin_bp, seeds   # pin_bp: the entry record never moves (e.g. BP = PrimaryRecord)
         self.preserve, self.outputs, self.flags = preserve, outputs, flags
         self.types, self.globals, self.watch = tuple(types), tuple(globals), tuple(watch)
 
@@ -216,11 +217,12 @@ class Fuzzer:
                 old = old[0] | (old[1] << 8 if len(old) > 1 else 0)
                 v = rng.choice(self.domains[name]) if name in self.domains else edge_word(rng, old)
                 writes[o] = bytes((v & 0xFF, v >> 8))
-            elif records and 'BP' in regs:               # the entry record moves to another slot
+            elif records and 'BP' in regs and not self.t.pin_bp:   # the entry record moves to another slot
                 at = rng.choice(records); regs['BP'] = at
         return writes, regs
 
-    def fuzz(self, iterations, seeds=8):
+    def fuzz(self, iterations, seeds=None):
+        seeds = self.t.seeds if seeds is None else seeds
         t0 = time.time()
         for i in range(seeds):
             w, r = self.seed()
@@ -279,16 +281,16 @@ def minimize(corpus):
     return keep
 
 def save_corpus(fz):
-    path = ROOT/'tests/corpus'/f'{fz.t.name}.json'; path.parent.mkdir(parents=True, exist_ok=True)
+    path = ROOT/'tests/corpus'/f'{fz.t.name}.json.gz'; path.parent.mkdir(parents=True, exist_ok=True)
     rows = [dict(regs=r, writes={f'{o:04X}': d.hex() for o, d in sorted(w.items())}) for w, r, _, _ in minimize(fz.corpus)]
-    path.write_bytes((json.dumps(rows, indent=0, sort_keys=True) + '\n').encode())
+    path.write_bytes(gzip.compress((json.dumps(rows, indent=0, sort_keys=True) + '\n').encode(), mtime=0))
     return path
 
 def corpus_cases(target):
-    """Replay a saved corpus (tests/corpus/<target>.json) as ordinary differential cases."""
-    path = ROOT/'tests/corpus'/f'{target.name}.json'
+    """Replay a saved corpus (tests/corpus/<target>.json.gz) as ordinary differential cases."""
+    path = ROOT/'tests/corpus'/f'{target.name}.json.gz'
     if not path.exists(): return
-    for i, row in enumerate(json.loads(path.read_text())):
+    for i, row in enumerate(json.loads(gzip.decompress(path.read_bytes()))):
         writes = sorted((int(o, 16), bytes.fromhex(d)) for o, d in row['writes'].items())
         yield Case(target.entry, row['regs'], writes, target.preserve, target.outputs, target.flags, name=f'{target.name} corpus {i}')
 
