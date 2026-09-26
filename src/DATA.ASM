@@ -467,6 +467,11 @@ public SwayReversals
 public SweepPath
 public SweepPathLeadIn
 public TargetSearchCursor
+public TerrainBlocked
+public TerrainProbeX
+public TerrainProbeY
+public TerrainStartX
+public TerrainStartY
 public TextColor
 public TextColumn
 public TextInGraphics
@@ -1541,7 +1546,13 @@ MapCellX dw 00000h
     db 00h,01h,02h,03h
     db 04h,03h,02h,01h,019h,00h,08h,00h,016h,00h,08h,00h,018h,00h,08h,00h
     db 0FBh,0FFh,08h,00h,0F3h,0FFh,08h,00h,0F2h,0FFh,08h,00h,00h,00h,00h,00h
-    db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+; TryTerrainStep scratch: 1 when the step was blocked; the start position (written,
+; no reader found); the probe position moved by the step and checked by loc_0BDD0.
+TerrainBlocked dw 00000h
+TerrainStartY dw 00000h
+TerrainStartX dw 00000h
+TerrainProbeX dw 00000h
+TerrainProbeY dw 00000h
 ; Round-robin cursor over pool A used by the target search at B15A.
 TargetSearchCursor dw 023B4h
 ; (Y, X) paths of types 11h and 10h (REC_FIELD_36, followed as type 12h).

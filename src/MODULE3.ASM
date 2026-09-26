@@ -268,6 +268,11 @@ extrn SteerTargetY:word
 extrn SwayDirX:word
 extrn SwayDropY:word
 extrn TargetSearchCursor:word
+extrn TerrainBlocked:word
+extrn TerrainProbeX:word
+extrn TerrainProbeY:word
+extrn TerrainStartX:word
+extrn TerrainStartY:word
 extrn TextInGraphics:word
 extrn TimerTickPhase:byte
 extrn TitleLogoPiecePtr:word
@@ -3388,15 +3393,15 @@ loc_0AFD1:
 loc_0AFD4:
     dec word ptr ss:[bp + REC_X]
     ret
-; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and DS:A430 = 1) when blocked.
+; Moves BP 1 px in REC_DIRECTION unless the map blocks it; NZ (and TerrainBlocked = 1) when blocked.
 TryTerrainStep:
-    mov word ptr ds:[0A430h], 0
+    mov word ptr ds:[TerrainBlocked], 0
     mov ax, word ptr ss:[bp + REC_Y]
-    mov word ptr ds:[0A432h], ax
-    mov word ptr ds:[0A438h], ax
+    mov word ptr ds:[TerrainStartY], ax
+    mov word ptr ds:[TerrainProbeY], ax
     mov ax, word ptr ss:[bp + REC_X]
-    mov word ptr ds:[0A434h], ax
-    mov word ptr ds:[0A436h], ax
+    mov word ptr ds:[TerrainStartX], ax
+    mov word ptr ds:[TerrainProbeX], ax
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
     sub word ptr ss:[bp + REC_Y], 010h
@@ -3404,7 +3409,7 @@ TryTerrainStep:
     add word ptr ss:[bp + REC_Y], 010h
     mov ax, word ptr ds:[ScrollDeltaY]
     sub word ptr ss:[bp + REC_Y], ax
-    cmp word ptr ds:[0A430h], 0
+    cmp word ptr ds:[TerrainBlocked], 0
     ret
 ; Sibling grid consumer explicitly rejects BX=FFFF; grid-helper flags are dead.
 loc_0B00D:
@@ -3420,7 +3425,7 @@ loc_0B00DCases label word
     dw offset loc_0B07D, offset loc_0B0C9, offset loc_0B0CC, offset loc_0B039
     dw offset loc_0B03C, offset loc_0B10C, offset loc_0B10F, offset loc_0B07A
 loc_0B032:
-    mov word ptr ds:[0A430h], 1
+    mov word ptr ds:[TerrainBlocked], 1
     ret
 loc_0B039:
     call loc_0B0CC
@@ -3436,13 +3441,13 @@ loc_0B03C:
     jne loc_0B032
 loc_0B053:
     inc word ptr ss:[bp + REC_Y]
-    inc word ptr ds:[0A438h]
+    inc word ptr ds:[TerrainProbeY]
     push bx
     call loc_0BDD0
     pop bx
     jae loc_0B06A
     dec word ptr ss:[bp + REC_Y]
-    dec word ptr ds:[0A438h]
+    dec word ptr ds:[TerrainProbeY]
     jmp short loc_0B032
 loc_0B06A:
     inc word ptr ds:[GridYSum]
@@ -3468,13 +3473,13 @@ loc_0B07D:
     jne loc_0B032
 loc_0B09C:
     dec word ptr ss:[bp + REC_Y]
-    dec word ptr ds:[0A438h]
+    dec word ptr ds:[TerrainProbeY]
     push bx
     call loc_0BDD0
     pop bx
     jae loc_0B0B4
     inc word ptr ss:[bp + REC_Y]
-    inc word ptr ds:[0A438h]
+    inc word ptr ds:[TerrainProbeY]
     jmp near ptr loc_0B032
 loc_0B0B4:
     dec word ptr ds:[GridYSum]
@@ -3502,13 +3507,13 @@ loc_0B0D7:
     jmp near ptr loc_0B032
 loc_0B0EA:
     inc word ptr ss:[bp + REC_X]
-    inc word ptr ds:[0A436h]
+    inc word ptr ds:[TerrainProbeX]
     push bx
     call loc_0BDD0
     pop bx
     jae loc_0B102
     dec word ptr ss:[bp + REC_X]
-    dec word ptr ds:[0A436h]
+    dec word ptr ds:[TerrainProbeX]
     jmp near ptr loc_0B032
 loc_0B102:
     test word ptr ss:[bp + REC_X], 0Fh
@@ -3536,13 +3541,13 @@ loc_0B121:
     jmp near ptr loc_0B032
 loc_0B134:
     dec word ptr ss:[bp + REC_X]
-    dec word ptr ds:[0A436h]
+    dec word ptr ds:[TerrainProbeX]
     push bx
     call loc_0BDD0
     pop bx
     jae loc_0B14C
     inc word ptr ss:[bp + REC_X]
-    inc word ptr ds:[0A436h]
+    inc word ptr ds:[TerrainProbeX]
     jmp near ptr loc_0B032
 loc_0B14C:
     mov ax, word ptr ss:[bp + REC_X]
@@ -4592,11 +4597,11 @@ loc_0BBCA:
     sub word ptr ds:[bx + REC_Y], 8
     jmp short ScrollRecordThenFinish
 loc_0BBE1:
-    mov word ptr ds:[0A430h], 1
-    cmp word ptr ds:[0A430h], 1
+    mov word ptr ds:[TerrainBlocked], 1
+    cmp word ptr ds:[TerrainBlocked], 1
     ret
 loc_0BBED:
-    mov word ptr ds:[0A430h], 0
+    mov word ptr ds:[TerrainBlocked], 0
     mov word ptr ss:[bp + REC_DIRECTION], 0
     push word ptr ss:[bp + REC_Y]
     mov ax, ds:[ScrollDeltaY]
@@ -4613,7 +4618,7 @@ loc_0BBED:
     call ReadIndexedByteAttribute
     je loc_0BBE1
     call TryTerrainStep
-    cmp word ptr ds:[0A430h], 1
+    cmp word ptr ds:[TerrainBlocked], 1
     ret
 loc_0BC2B:
     mov word ptr ss:[bp + REC_DIRECTION], 4
@@ -4622,7 +4627,7 @@ loc_0BC2B:
     call ReadIndexedByteAttribute
     je loc_0BBE1
     call TryTerrainStep
-    cmp word ptr ds:[0A430h], 1
+    cmp word ptr ds:[TerrainBlocked], 1
     ret
 ; BP = record: move it with the playfield scroll (REC_Y += ScrollDeltaY), then
 ; FinishRecordUpdate. The common tail of most REC_TYPE handlers.
@@ -4820,8 +4825,8 @@ loc_0BDD0:
     je loc_0BE3A
     mov cx, POOL_A_COUNT
     mov bx, offset PoolA
-    mov ax, word ptr ds:[0A436h]
-    mov di, word ptr ds:[0A438h]
+    mov ax, word ptr ds:[TerrainProbeX]
+    mov di, word ptr ds:[TerrainProbeY]
 loc_0BDE3:
     cmp word ptr ds:[bx + REC_STATUS], 0
     je loc_0BE35
