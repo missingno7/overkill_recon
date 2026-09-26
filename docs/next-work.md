@@ -18,12 +18,6 @@ layout argument appears (as the linker padding at far 10162 did).
   loc_ labels; `[bx + N]` record fields where BX provenance is not a null check.
 - Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
 
-## Data still to name
-
-- Level script event state at DS:2070/209A..20A0; the second copy of the script cursor
-  pointers at DS:20CA; DS:2306/2304/2308/230A (steering target and arrival flag used
-  by loc_05DB2).
-
 ## Open questions worth settling statically
 
 - 9A06 mode dispatch: its table has five slots (code follows at 9A16); that DS:A47C
@@ -31,7 +25,6 @@ layout argument appears (as the linker padding at far 10162 did).
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
-- CS:9594 holds B800h; its reader has not been reviewed.
 - Record fields +1C and +36 are type-dependent; REC_KIND values 0, 2, 6 are unexplained.
 
 ## Next reconstruction targets
@@ -44,5 +37,4 @@ layout argument appears (as the linker padding at far 10162 did).
   (BC45, AD04, EFAE, 44AF, AAC2, AB10) and the destroy/free path BFC7/BD0D/BD17.
 - About 330 `[bx + N]` record accesses whose BX provenance is inherited.
 - Collision loops 62F6..741F (pool B unrolled) and AC8B/BDD0.
-- AllocateBuffers: identify the remaining CS segment words (95A6..95B8, 959A, 959C).
 - Replace remaining `loc_XXXXX` labels with control-flow names region by region.

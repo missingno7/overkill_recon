@@ -124,6 +124,7 @@ extrn PoolB:byte
 extrn PoolBCursor:word
 extrn PoolBEnd:byte
 extrn PrimaryRecord:byte
+extrn QuitAnswer:byte
 extrn RapidFireEnabled:byte
 extrn RecordTickCounter:word
 extrn RedefPageList:word
@@ -134,6 +135,7 @@ extrn ScoreBcd:byte
 extrn ScoreMessagePrefix:byte
 extrn ScrollDeltaY:word
 extrn ScrollSubRow:word
+extrn ScrollWindowOffset:word
 extrn ScrollingBackward:word
 extrn SegBossActive:word
 extrn SelectedUpgradeSlot:word
@@ -761,7 +763,7 @@ loc_054AF:
     int 021h
     mov word ptr ds:[LastKeyExtended], 1
 loc_054B7:
-    mov byte ptr ds:[022B4h], al
+    mov byte ptr ds:[QuitAnswer], al
     push ax
     call InstallKeyboardVector09
     pop ax
@@ -1863,7 +1865,7 @@ loc_0601A:
     and word ptr ds:[SlowCount8], 7
     inc word ptr ds:[EncounterTicks]
 loc_06030:
-    xor word ptr ds:[02324h], 1
+    xor word ptr ds:[CountGate2324], 1
     inc word ptr ds:[FrameCount4]
     and word ptr ds:[FrameCount4], 3
     inc word ptr ds:[FrameCount8]
@@ -1912,7 +1914,7 @@ loc_060A2:
 
 loc_060AC:
     mov ax, word ptr cs:[ScrollStartOffset]
-    mov word ptr ds:[0234Ch], ax
+    mov word ptr ds:[ScrollWindowOffset], ax
     mov word ptr ds:[ScrollSubRow], 0
     mov word ptr ds:[ScrollingBackward], 0
     mov word ptr ds:[LevelScriptClock], 0
@@ -5739,7 +5741,7 @@ loc_08472:
     jne loc_0847C
     jmp near ptr loc_083DA
 loc_0847C:
-    cmp word ptr ds:[2384h], 0
+    cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_08486
     jmp near ptr loc_083D7
 loc_08486:
@@ -5756,7 +5758,7 @@ loc_0849D:
     call loc_09F5F
     jmp short loc_08430
 loc_084A2:
-    cmp word ptr ds:[2384h], 2
+    cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_084AC
     jmp near ptr loc_083D7
 loc_084AC:
@@ -5773,7 +5775,7 @@ loc_084C3:
     call loc_09F1A
     jmp near ptr loc_08430
 loc_084C9:
-    cmp word ptr ds:[2384h], 0
+    cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_084D3
     jmp near ptr loc_083DA
 loc_084D3:
@@ -5784,10 +5786,10 @@ loc_084D6:
     je loc_084E7
     mov byte ptr ds:[SfxRequest], 6
 loc_084E7:
-    mov word ptr ds:[2384h], 1
+    mov word ptr ds:[PrimaryRecord + REC_SPRITE], 1
     jmp near ptr loc_08430
 loc_084F0:
-    cmp word ptr ds:[2384h], 2
+    cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_084FA
     jmp near ptr loc_083DA
 loc_084FA:
@@ -5798,7 +5800,7 @@ loc_084FD:
     je loc_0850E
     mov byte ptr ds:[SfxRequest], 6
 loc_0850E:
-    mov word ptr ds:[2384h], 2
+    mov word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     jmp near ptr loc_08430
 
 loc_08517:
@@ -6105,7 +6107,7 @@ loc_08802:
     je loc_0880E
     mov byte ptr ds:[SfxRequest], 0Bh
 loc_0880E:
-    mov ax, ds:[2380h]
+    mov ax, word ptr ds:[PrimaryRecord + REC_X]
     add ax, 8
     and ax, 0FFFEh
     mov ss:[bp + REC_SAVED_X], ax
@@ -6113,7 +6115,7 @@ loc_0880E:
     ret
 TypeHandler2F:
     mov word ptr ss:[bp + REC_SPRITE], 43h
-    mov word ptr ds:[2308h], 2
+    mov word ptr ds:[SteerSpeed], 2
     call loc_0B729
     pushf
     mov ax, ds:[StackTop]
@@ -6132,7 +6134,7 @@ loc_08849:
 TypeHandler30:
     cmp word ptr ds:[LevelIndex], 5
     jne loc_08870
-    mov ax, ds:[2380h]
+    mov ax, word ptr ds:[PrimaryRecord + REC_X]
     sub ax, ss:[bp + REC_X]
     jns loc_08862
     neg ax
@@ -6829,7 +6831,7 @@ loc_0F9B2:
 loc_0F9CD:
     mov cx, 1
     mov ax, ss:[bp + REC_X]
-    cmp ax, ds:[2380h]
+    cmp ax, word ptr ds:[PrimaryRecord + REC_X]
     jb loc_0F9E1
     pushf
     neg cx
@@ -7253,7 +7255,7 @@ loc_0FE89:
     ret
 loc_0FE8A:
     mov word ptr ss:[bp + REC_SPRITE], 162h
-    mov word ptr ds:[2308h], 1
+    mov word ptr ds:[SteerSpeed], 1
     mov ax, 0B729h
     call far ptr FarCallMainNearViaAX
     je loc_0FEA4
@@ -7317,12 +7319,12 @@ loc_0FF2C:
     mov ax, ss:[bp + REC_SAVED_X]
     and ax, 0FFFEh
     and word ptr ss:[bp + REC_X], -2
-    mov ds:[2304h], ax
+    mov ds:[SteerTargetX], ax
     mov ax, ss:[bp + REC_SAVED_Y]
     and ax, 0FFFEh
     and word ptr ss:[bp + REC_Y], -2
-    mov ds:[2306h], ax
-    mov word ptr ds:[2308h], 1
+    mov ds:[SteerTargetY], ax
+    mov word ptr ds:[SteerSpeed], 1
     mov ax, 5DB2h
     call far ptr FarCallMainNearViaAX
     mov word ptr ss:[bp + REC_SPRITE], 160h

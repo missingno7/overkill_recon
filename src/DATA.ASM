@@ -377,6 +377,7 @@ public ScoreMessagePrefix
 public ScreenRowOffsets
 public ScrollDeltaY
 public ScrollSubRow
+public ScrollWindowOffset
 public ScrollingBackward
 public SegBossActive
 public SegBossAnchor

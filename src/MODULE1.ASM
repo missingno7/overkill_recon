@@ -117,6 +117,7 @@ extrn SavedSettings:byte
 extrn ScoreBcd:byte
 extrn ScreenRowOffsets:word
 extrn ScrollSubRow:word
+extrn ScrollWindowOffset:word
 extrn SfxEnabled:byte
 extrn ShowPageList:far
 extrn SoundModuleLoaded:byte
@@ -4424,7 +4425,7 @@ loc_02737:
     ret
 
 CopyWorkspaceToScreenEga:
-    mov si, word ptr ds:[0234Ch]
+    mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, 0Dh
@@ -4798,7 +4799,7 @@ loc_02A4F:
     mov ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
     je loc_02A69
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -4812,7 +4813,7 @@ loc_02A69:
     jne loc_02A7D
     ret
 loc_02A7D:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -4849,7 +4850,7 @@ loc_02AB9:
     jne loc_02AC5
     ret
 loc_02AC5:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -4880,7 +4881,7 @@ loc_02AF9:
     jne loc_02B05
     ret
 loc_02B05:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -5873,7 +5874,7 @@ ClearTandy32K:
 ; into the left 104 bytes of Tandy rows 4..195. Leaves DS = state segment, whatever
 ; DS was on entry.
 CopyWorkspace104x192ToTandy:
-    mov si, word ptr ds:[0234Ch]
+    mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, 034h
@@ -6166,7 +6167,7 @@ loc_0356C:
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
     je loc_03586
-    add ax, word ptr ds:[0234Ch]
+    add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
@@ -6180,7 +6181,7 @@ loc_03586:
     jne loc_0359A
     ret
 loc_0359A:
-    add ax, word ptr ds:[0234Ch]
+    add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_SCREEN_OFS_LOWER], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
@@ -6210,7 +6211,7 @@ loc_035CC:
     jne loc_035D8
     ret
 loc_035D8:
-    add ax, word ptr ds:[0234Ch]
+    add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
@@ -6306,7 +6307,7 @@ loc_03657:
     jne loc_03663
     ret
 loc_03663:
-    add ax, word ptr ds:[0234Ch]
+    add ax, word ptr ds:[ScrollWindowOffset]
     mov word ptr ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
@@ -7925,7 +7926,7 @@ loc_0446C:
     ret
 
 CopyWorkspaceToScreenCga:
-    mov si, word ptr ds:[0234Ch]
+    mov si, word ptr ds:[ScrollWindowOffset]
     mov es, word ptr cs:[ScreenSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, 01Ah
@@ -8269,7 +8270,7 @@ loc_04740:
     mov ss:[bp + REC_SCREEN_OFS], ax
     cmp ax, 0FFFFh
     je loc_0475A
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -8283,7 +8284,7 @@ loc_0475A:
     jne loc_0476E
     ret
 loc_0476E:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS_LOWER], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -8396,7 +8397,7 @@ loc_0480E:
     jne loc_0481A
     ret
 loc_0481A:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -8475,7 +8476,7 @@ loc_04896:
     jne loc_048A2
     ret
 loc_048A2:
-    add ax, ds:[234Ch]
+    add ax, ds:[ScrollWindowOffset]
     mov ss:[bp + REC_SCREEN_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
@@ -8976,7 +8977,7 @@ loc_04D15:
     shl bx, 1
     add bx, 09A08h
     mov bx, word ptr ds:[bx]
-    add bx, word ptr ds:[0234Ch]
+    add bx, word ptr ds:[ScrollWindowOffset]
     lodsw
     add bx, ax
     lodsw
