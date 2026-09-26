@@ -12,6 +12,7 @@ extrn AdapterGeometry:word
 extrn AttributePatchPointers:word
 extrn BlankMessage:byte
 extrn BlockBytes:word
+extrn BlueBitsImageBytes:word
 extrn BossKeyScreen:word
 extrn ByteAttributeTable:byte
 extrn ByteToNibbleMasks:byte
@@ -50,7 +51,6 @@ extrn FontPlaneRegs:word
 extrn FormationDrawPass:word
 extrn FormationSizeClass:word
 extrn FormationType:word
-extrn GeometryWords:word
 extrn GridYSum:word
 extrn GroupDropKind:word
 extrn GroupDropKinds:byte
@@ -107,7 +107,10 @@ extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
 extrn MsgNotEnoughMemory:byte
 extrn OpenResourceFile:far
+extrn PanelImageBytes:word
+extrn PanelImageBytes2:word
 extrn PendingSpriteFile:word
+extrn PlaqueBytes:word
 extrn PlaqueFiles:word
 extrn PlayfieldRowOffsets:word
 extrn RandomWordCursor:word
@@ -1391,57 +1394,57 @@ loc_009A5:
     jmp near ptr ShowOutOfMemoryAndExit
 loc_009C5:
     mov word ptr cs:[TheEndSegment], ax
-    mov bx, word ptr ds:[GeometryWords + 004h]
+    mov bx, word ptr ds:[PanelImageBytes ]
     mov ax, 010h
-    mul word ptr ds:[GeometryWords + 006h]
+    mul word ptr ds:[PanelImageBytes + 002h]
     add bx, ax
     mov ax, 8
-    mul word ptr ds:[GeometryWords + 008h]
+    mul word ptr ds:[PanelImageBytes + 004h]
     add bx, ax
     mov ax, 7
-    mul word ptr ds:[GeometryWords + 00Ah]
+    mul word ptr ds:[PanelImageBytes + 006h]
     add bx, ax
     mov ax, 6
-    mul word ptr ds:[GeometryWords + 00Ch]
+    mul word ptr ds:[PanelImageBytes + 008h]
     add bx, ax
     mov ax, 4
-    mul word ptr ds:[GeometryWords + 00Eh]
+    mul word ptr ds:[PanelImageBytes + 00Ah]
     add bx, ax
     mov ax, 4
-    mul word ptr ds:[GeometryWords + 010h]
+    mul word ptr ds:[PanelImageBytes + 00Ch]
     add bx, ax
     mov ax, 012h
-    mul word ptr ds:[GeometryWords + 012h]
+    mul word ptr ds:[PanelImageBytes + 00Eh]
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 02Eh]
+    mov ax, word ptr ds:[PanelImageBytes2 ]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 030h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 002h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 032h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 004h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 034h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 006h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 036h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 008h]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 038h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 00Ah]
     shl ax, 1
     add bx, ax
-    mov ax, word ptr ds:[GeometryWords + 03Ah]
+    mov ax, word ptr ds:[PanelImageBytes2 + 00Ch]
     shl ax, 1
     add bx, ax
-    add bx, word ptr ds:[GeometryWords + 03Ch]
-    add bx, word ptr ds:[GeometryWords + 03Eh]
-    mov ax, word ptr ds:[GeometryWords + 040h]
+    add bx, word ptr ds:[PanelImageBytes2 + 00Eh]
+    add bx, word ptr ds:[PanelImageBytes2 + 010h]
+    mov ax, word ptr ds:[PanelImageBytes2 + 012h]
     shl ax, 1
     add bx, ax
     shl ax, 1
     add bx, ax
-    add bx, word ptr ds:[GeometryWords + 042h]
+    add bx, word ptr ds:[PanelImageBytes2 + 014h]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1454,7 +1457,7 @@ loc_009C5:
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00A6B:
     mov word ptr cs:[PanelSegment], ax
-    mov bx, word ptr ds:[GeometryWords + 044h]
+    mov bx, word ptr ds:[PlaqueBytes]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1467,25 +1470,25 @@ loc_00A6B:
     jmp near ptr ShowOutOfMemoryAndExit
 loc_00A8A:
     mov word ptr cs:[PlaqueSegment], ax
-    mov bx, word ptr ds:[GeometryWords + 014h]
-    add bx, word ptr ds:[GeometryWords + 016h]
-    add bx, word ptr ds:[GeometryWords + 018h]
-    add bx, word ptr ds:[GeometryWords + 01Ah]
-    add bx, word ptr ds:[GeometryWords + 01Ch]
-    add bx, word ptr ds:[GeometryWords + 01Eh]
-    add bx, word ptr ds:[GeometryWords + 020h]
-    add bx, word ptr ds:[GeometryWords + 022h]
-    add bx, word ptr ds:[GeometryWords + 024h]
-    add bx, word ptr ds:[GeometryWords + 026h]
-    add bx, word ptr ds:[GeometryWords + 026h]
-    add bx, word ptr ds:[GeometryWords + 026h]
-    add bx, word ptr ds:[GeometryWords + 028h]
-    add bx, word ptr ds:[GeometryWords + 028h]
-    add bx, word ptr ds:[GeometryWords + 028h]
-    add bx, word ptr ds:[GeometryWords + 02Ah]
-    add bx, word ptr ds:[GeometryWords + 02Ah]
-    add bx, word ptr ds:[GeometryWords + 02Ah]
-    add bx, word ptr ds:[GeometryWords + 02Ch]
+    mov bx, word ptr ds:[BlueBitsImageBytes ]
+    add bx, word ptr ds:[BlueBitsImageBytes + 002h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 004h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 006h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 008h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 00Ah]
+    add bx, word ptr ds:[BlueBitsImageBytes + 00Ch]
+    add bx, word ptr ds:[BlueBitsImageBytes + 00Eh]
+    add bx, word ptr ds:[BlueBitsImageBytes + 010h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 012h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 012h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 012h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 014h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 014h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 014h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 016h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 016h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 016h]
+    add bx, word ptr ds:[BlueBitsImageBytes + 018h]
     shr bx, 1
     shr bx, 1
     shr bx, 1
@@ -1686,7 +1689,7 @@ loc_00D42:
     mov es, word ptr cs:[PanelSegment]
     xor di, di
     mov ax, 0Fh
-    mul word ptr ds:[GeometryWords + 006h]
+    mul word ptr ds:[PanelImageBytes + 002h]
     mov cx, ax
     mov si, offset CgaPanelPatch
     rep movsb

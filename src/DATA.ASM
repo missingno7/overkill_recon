@@ -74,6 +74,7 @@ public BeamListEnd
 public BeamListTerminator
 public BlankMessage
 public BlockBytes
+public BlueBitsImageBytes
 public BonusIntroItems
 public BonusKeysEnabled
 public BossKeyScreen
@@ -206,7 +207,6 @@ public FrontPodRecord
 public Fuel
 public FuelGaugeOffset
 public GameOverRequest
-public GeometryWords
 public GridYSum
 public GroupDropKind
 public GroupDropKinds
@@ -337,6 +337,8 @@ public OkMenuPageList
 public OldNonAsciiCodeword
 public PageIndex
 public PageListPtr
+public PanelImageBytes
+public PanelImageBytes2
 public Password
 public PathType66
 public PathType67
@@ -345,6 +347,7 @@ public PaymentHelpRow
 public PendingSpriteFile
 public PingPongFrames4
 public PingPongFrames8
+public PlaqueBytes
 public PlaqueFiles
 public PlayfieldRowOffsets
 public PodShotDirection
@@ -618,15 +621,23 @@ MsgNotEnoughMemory db 'Not enough memory$'
     even
 ; Active adapter geometry: copied from AdapterGeometry[VideoAdapter] at startup.
 ; Frame sizes in bytes of masked 8x8, 16x16 and 32x32 sprites and of unmasked 16x16
-; level blocks. GeometryWords holds further per-adapter buffer and image sizes that
-; AllocateBuffers sums per bank (THEND, PANEL, BLUEBITS, plaque ...); not yet named.
+; level blocks, and the image sizes AllocateBuffers sums into each bank.
 Sprite8Bytes dw 0
 Sprite16Bytes dw 0
 Sprite32Bytes dw 0
-GeometryWords dw 0
+; No reader found.
+GeometryUnread dw 0
 ; Size in bytes of the THEND.BIC bank.
 TheEndBytes dw 0
-    dw 33 dup (0)
+; PANEL.ENC bank: image sizes of 19 groups; AllocateBuffers multiplies each by the
+; group's image count (1, 16, 8, 7, 6, 4, 4, 18, then 2 x 7, 1, 1, 6, 1: 87 images,
+; the entries of PanelImageOffsets).
+PanelImageBytes dw 8 dup (0)
+; BLUEBITS.BIC bank: image sizes of 13 groups (counts 1 x 9, 3, 3, 3, 1: 19 images).
+BlueBitsImageBytes dw 13 dup (0)
+PanelImageBytes2 dw 11 dup (0)
+; Size in bytes of the level plaque bank.
+PlaqueBytes dw 0
 BlockBytes dw 0
 ; Per-adapter geometry (CGA, EGA, Tandy): 39 words copied to the active block at
 ; Sprite8Bytes (DS:1024), then PlayfieldRowBytes, WideRowBytes and ScreenSegment.
@@ -964,7 +975,7 @@ FontPlaneRegs dw 0
     db 00h,00h,00h,0F6h,0DEh,00h,00h,00h    ; '~'
     db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh    ; 'DEL'
 ; CGA only: copied over the start of PanelSegment after PANEL.ENC loads
-; (15 * GeometryWords+6 bytes).
+; (15 * PanelImageBytes+2 bytes).
 CgaPanelPatch label byte
     db 07h,00h,05h,00h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h,55h
     db 01h,01h,01h,11h,01h,15h,55h,55h,55h,55h,11h,11h,11h,01h,11h,15h

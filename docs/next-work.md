@@ -13,7 +13,7 @@ layout argument appears (as the linker padding at far 10162 did).
 
 ## Semantics still open
 
-- GeometryWords: name the per-adapter buffer and image sizes AllocateBuffers uses.
+- PanelImageBytes/BlueBitsImageBytes groups: tie each size group to its images.
 - REC_TYPE handlers are named TypeNN<Behaviour>; roles of 09h (externally moved shot)
   and 26h (wall probe) are uncertain, and their inner loc_ labels remain.
 - Effects of WhatOilShortageFlag and AllCheatsFlag beyond what their readers show.
