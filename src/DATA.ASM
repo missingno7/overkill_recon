@@ -1424,7 +1424,8 @@ CheatEveryDayIDie dw offset CheatEveryDayIDie + 2
     db SCAN_I, SCAN_E, 0
     even
 ; Looping (Y, X) path of the level-4 type 21h leader (Type21LeaderPathBody, cursor in CS at
-; Type21PathCursor): a child spawns at each waypoint; FFFFh restarts it.
+; Type21PathCursor): each arrival sets the leader's HP to 2 and spawns a 3-HP type 64h;
+; FFFFh restarts it.
 Type21Path dw 10h, 10h,  40h, 40h,  10h, 40h,  20h, 20h,  0h, 0h
     dw 50h, 30h,  10h, 70h,  30h, 90h,  40h, 90h,  20h, 0B0h
     dw 0h, 70h,  20h, 50h,  40h, 0A0h,  50h, 0C0h,  20h, 90h
@@ -1608,12 +1609,17 @@ SteerPath10 dw 50h, 10h,  90h, 58h,  10h, 58h,  0h, 40h
 ; End-of-level sequence phase, LEVEL_END_* (0..4).
 LevelEndPhase dw 00000h
 ; Encounter state. Waypoints and spawn points below are (Y, X) words; Y gets +20h
-; when loaded (target Y at DS:2306 or REC_SAVED_Y), X is used as is.
-; Live leader and child records of the current encounter.
+; when loaded (target Y at SteerTargetY or REC_SAVED_Y), X is used as is.
+; Live counted encounter records (unsigned). StartLeaderScript sets it to 1 (leader or
+; director), children increment it, ReleaseEncounterMember decrements it by REC_TYPE,
+; a segmented-boss kill zeroes it. Nonzero holds the map scroll.
 EncounterLiveCount dw 0
-; Counts down (from 64h) once no encounter record is left.
+; 64h at StartLeaderScript; while it or EncounterLiveCount is nonzero the scroll holds.
+; Counts down only when the live count is 0; at 0 TickFrameTimers restores the level music.
 EncounterEndDelay dw 0
-; Current entry of the leader's script (Type13FormationLeaderBody advances it by 4 or 8).
+; Current entry of the leader's script (advanced by 4 or 8 on arrival). Set to its End
+; label when the leader dies or leaves; children 14h/93h/80h wait for that equality.
+; Type 21h leaves LevelIndex + 1 in it (never read).
 LeaderScriptCursor dw 0
 ; Leader scripts, one per leader REC_TYPE, each ending with a LEADER_END_Y waypoint
 ; (never reached; the leader flies off). Type 13h and 1Fh scripts are waypoints; the
@@ -1641,7 +1647,8 @@ LeaderScript15 dw 20h, 0C0h,  0h, 0B0h,  20h, 0B0h,  40h, 0A0h
     dw 40h, 10h,  20h, 10h
 LeaderScript15End dw LEADER_END_Y, 0h
 ; Path of the type 16h/17h children (REC_PATH): lead-in, then a loop through
-; SweepPath (0FFFFh, next address).
+; SweepPath (0FFFFh, next address). The lead-in has no terminator: it runs straight into
+; SweepPath, which must stay adjacent.
 SweepPathLeadIn dw 20h, 0C0h,  0B0h, 0C0h,  0B0h, 0h,  0h, 0h
 SweepPath dw 0h, 0B0h,  10h, 0B0h,  10h, 10h,  20h, 10h
     dw 20h, 0B0h,  30h, 0B0h,  30h, 10h,  40h, 10h
@@ -1689,7 +1696,9 @@ LeaderScript1C dw 0h, 0C0h,  30h, 8h,  10h, 0C0h,  20h, 10h
 LeaderScript1CEnd dw LEADER_END_Y, 0h
 LeaderScript1F dw 50h, 0C0h,  50h, 0h,  0h, 0h,  0h, 0C0h
 LeaderScript1FEnd dw LEADER_END_Y, 0h
-; Next group of five FormationSlots (wraps at FormationSlotsEnd).
+; Next FormationSlots entry. The 1Fh leader takes five per waypoint (no wrap check; its
+; four waypoints use exactly 20); type 20h children then take one at a time, wrapping at
+; FormationSlotsEnd. Reset by StartLeaderScript and when a leader dies.
 FormationSlotCursor dw offset FormationSlots
 ; Four groups of five (Y, X) slots for the type 20h children.
 FormationSlots dw 40h, 90h,  40h, 80h,  30h, 80h,  30h, 90h,  20h, 70h
@@ -1704,7 +1713,9 @@ FallerColumnsEnd label word
 ; Scratch origin of the eight-shard burst (SpawnEightWayBurst).
 BurstOriginX dw 0
 BurstOriginY dw 0
-; The level-0 multi-part boss: anchor position and part records (types 76h..79h).
+; The level-0 multi-part boss: anchor position and part records (types 76h..79h). The
+; director becomes SegBossCore (78h, the gun); only SegBossAnchor (76h) is steered, the
+; other parts copy SegBossX/Y + BossPartOffsets. Killing any part explodes all four.
 SegBossX dw 0
 SegBossY dw 0
 SegBossAnchor dw 0
@@ -1722,7 +1733,8 @@ InvaderNextDropStep dw 0
 ; Frames since the last invader spawn (stops at FFFFh).
 FramesSinceInvaderSpawn dw 0
 InvaderSlotCursor dw 0
-; Three rows of eight invader start positions (Y, X).
+; Three rows of eight invader slots (Y, X) for REC_SAVED (Y + 20h); invaders spawn at the
+; director and steer in.
 InvaderFormation dw 50h, 0A8h,  50h, 90h,  50h, 78h,  50h, 60h
     dw 50h, 48h,  50h, 30h,  50h, 18h,  50h, 0h
     dw 38h, 0h,  38h, 18h,  38h, 30h,  38h, 48h
@@ -1768,6 +1780,9 @@ ShotsLiveMain dw 0h
 ShotsLiveType9 dw 0h
 ShotsLiveFrontPod dw 0h
 ShotsLiveSide dw 0h
+; Rows to the level end: 11Dh - MapScrollPos / MAP_ROW_BYTES (111h at MAP_START_POS);
+; -1 per row forward, +1 back. Scripts compare it before the decrement; reaching 4
+; requests MUSIC_LEVEL_END one row before the director spawns.
 LevelScriptClock dw 00000h
 ; Fuel 0..58h, drained every 80h frames (40h at DifficultySetting 2); empty ends the
 ; whole game (GameOverRequest). 0 at life start, then refilled by TickRefuel.
@@ -2331,9 +2346,10 @@ LevelScriptCursorPtrs dw offset LevelScriptCursors + 0, offset LevelScriptCursor
 LevelScriptCursors dw offset LevelScript0, offset LevelScript1, offset LevelScript2, offset LevelScript3, offset LevelScript4, offset LevelScript5
 ; Per LevelIndex: restart checkpoints used after a life is lost (RestartAtCheckpoint).
 LevelCheckpointPtrs dw offset LevelCheckpoints0, offset LevelCheckpoints1, offset LevelCheckpoints2, offset LevelCheckpoints3, offset LevelCheckpoints4, offset LevelCheckpoints5
-; Four {map position, LevelScriptClock, script cursor, next map position} entries
-; per level (the last without the next position): the first entry whose next
-; position lies beyond the scroll position DS:2350 is used.
+; Four {MapScrollPos, LevelScriptClock, script cursor, next MapScrollPos} entries per
+; level, the last without its 4th word. RestartAtCheckpoint takes the first of entries
+; 0..2 with MapScrollPos < next (unsigned), else entry 3 (that read runs one word into
+; the following table, result ignored). Clock = 11Dh - position / MAP_ROW_BYTES.
 LevelCheckpoints0 dw 9Ch, 111h, offset LevelScript0, 3CFh
     dw 3CFh, 0D2h, offset LevelScript0 + 8, 750h
     dw 750h, 8Dh, offset LevelScript0 + 32, 0A90h
@@ -2393,10 +2409,10 @@ GroupDropKinds db 3,1,0,0,0,2,0,4,1,0,1,0,0,0,1,4
 ; Unreferenced byte after GroupDropKinds.
 UnusedByteC85A db 0h
     even
-; Level scripts: events (trigger, [0FFFFh,] formation, x, y) ending with trigger
-; 0FFFFh. An event fires when its trigger equals the scroll countdown at DS:A978; the
-; optional 0FFFFh clears the flag at DS:20A2 for that event. The formation's members
-; spawn at x, y plus their own offsets.
+; Level scripts: events {trigger, [0FFFFh,] formation, x, y} words; trigger 0FFFFh ends.
+; Trigger = LevelScriptClock value (non-increasing); trigger & 3Fh indexes GroupDropKinds.
+; The optional 0FFFFh only clears EventMarkerFlag (never read). x, y = REC_X/REC_Y of the
+; formation origin (no +20h). First event: the level's leader; trigger 4: the director.
 LevelScript0 dw 110h, offset Formation40, 192, -16
     dw 0BDh, offset Formation20, 176, -16
     dw 0BDh, offset Formation19, 16, -16
@@ -2541,8 +2557,8 @@ LevelScript5 dw 110h, offset Formation44, 0, -16
     dw 21h, 0FFFFh, offset Formation02, 16, -16
     dw 4h, offset Formation33, 112, 0
     dw 0FFFFh
-; Formations: REC_SIZE_CLASS, REC_DRAW_PASS, REC_TYPE, member count, then member
-; (x, y) offsets.
+; Formations: {REC_SIZE_CLASS, REC_DRAW_PASS, REC_TYPE, count} words, then count
+; {dx, dy} pairs (x first, unlike the (Y, X) waypoint tables) added to the event x, y.
 Formation00 dw 1, 1, 4Fh, 9
     dw 0, 0,  0, -16,  0, -32,  16, 0,  16, -16,  16, -32
     dw 32, 0,  32, -16,  32, -32
@@ -2692,7 +2708,8 @@ PathType67 dw 0h, 0B0h,  30h, 80h,  30h, 60h,  40h, 60h
 DescentTargetX dw 0
 ; (Y, X) offsets of the four 32-pixel boss parts (types 76h..79h) from SegBossY/X.
 BossPartOffsets dw 0h, 0h,  0h, 20h,  20h, 0h,  20h, 20h
-; Path of the boss anchor (SegBossPathCursor); FFFFh restarts it.
+; Path of the boss anchor {Y, X} (Y + 20h, speed 2); on arrival the next waypoint is
+; steered the same frame; FFFFh restarts. Part Y is clamped to >= 0 (signed), X is not.
 BossPath dw 0h, 0h,  80h, 0h,  50h, 40h,  30h, 30h
     dw 10h, 70h,  40h, 90h,  0h, 90h,  80h, 90h
     dw 40h, 90h,  0h, 50h,  20h, 30h,  40h, 0h

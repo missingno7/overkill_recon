@@ -8733,8 +8733,10 @@ CopyFullWorkspaceToScreenCga:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-; Spawns the formation of each level script event whose trigger equals LevelScriptClock.
-; Preserves DI.
+; As each map row enters scrolling forward (MapScrollPos <= MAP_LAST_SPAWN_POS): spawns every
+; consecutive event whose trigger equals LevelScriptClock (equality only; order matters).
+; The cursor advances before spawning, so a full pool A loses the rest of the formation.
+; Scrolling back never runs events. Preserves DI.
 RunLevelScriptEvents:
     push di
 ProcessLevelScript:

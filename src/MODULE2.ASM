@@ -1847,7 +1847,8 @@ RequestLifeStartMusic:
     jmp near ptr RequestModuleMusic
 
 
-; Per frame: restores the level music once an encounter has ended, updates the sway and
+; Per frame: when EncounterEndDelay expires, requests LevelMusicTable[LevelIndex], or
+; MUSIC_LATE_LEVEL from MAP_MUSIC_CHANGE_POS on (unsigned); updates the sway and
 ; frame counters, then TickFuelDrain.
 TickFrameTimers:
     cmp word ptr ds:[EncounterLiveCount], 0
@@ -6874,7 +6875,7 @@ Type7BDropThenAim:
     call far ptr Type7BDropThenAimBody
     jmp near ptr ScrollRecordThenFinish
 ; Types 13h/15h/1Ch/1Fh/7Dh/7Eh: steers along LeaderScriptCursor and drops followers at
-; each point (13h: 14h, 15h: 16h/17h, 1Ch: 1Dh/1Eh, 1Fh: five 20h; 7Dh/7Eh: 7Fh/81h).
+; each point (13h: 14h, 15h: 16h/17h, 1Ch: 1Dh/1Eh, 1Fh: five 20h; 7Dh: 81h; 7Eh: 7Fh).
 Type13FormationLeader:
     call far ptr Type13FormationLeaderBody
     jmp near ptr FinishRecordUpdate

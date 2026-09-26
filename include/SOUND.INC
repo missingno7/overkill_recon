@@ -45,7 +45,8 @@ MODULE_BYTE_0A equ 0Ah
 MUSIC_TITLE equ 2
 ; At the level start (MAP_START_POS).
 MUSIC_LEVEL_START equ 4
-; Near the level end (LevelScriptClock 4) and when a life restarts at MAP_END_POS.
+; Requested at LevelScriptClock 4, one row before the encounter director (the boss)
+; spawns, and when a life restarts at MAP_END_POS.
 MUSIC_LEVEL_END equ 5
-; Level music from MAP_MUSIC_CHANGE_POS on.
+; Restored after an encounter that ends at or beyond MAP_MUSIC_CHANGE_POS.
 MUSIC_LATE_LEVEL equ 6

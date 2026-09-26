@@ -3752,11 +3752,11 @@ PatrolSpriteShootDown32:
     call SpawnShotDown
 @@patrol:
     jmp near ptr HorizontalTerrainPatrol
-; Starts the waypoint path at DS:A45C as type 12h.
+; Starts the waypoint path SteerPath10 as type 12h.
 Type10StartPathFollowerA:
     mov word ptr ss:[bp + REC_PATH], offset SteerPath10
     jmp short StartPathFollow
-; Starts the waypoint path at DS:A43C as type 12h.
+; Starts the waypoint path SteerPath11 as type 12h.
 Type11StartPathFollowerB:
     mov word ptr ss:[bp + REC_PATH], offset SteerPath11
 ; Turns BP into a type 12h waypoint follower of the path at REC_PATH.
@@ -4000,12 +4000,16 @@ EncounterSegBossLevel:
     mov word ptr ds:[bx + REC_X], 20h
     mov ds:[SegBossPart79], bx
     jmp near ptr FinishRecordUpdate
+; Unchecked: SegBossActive stays 1 and the part pointers are stale (0 before any boss), so
+; SteerSegBossAlongPath and the part-kill explosions touch stale records.
 @@bossPartsFailed:
     mov word ptr ds:[EncounterLiveCount], 0
     call SmartBombAll
     jmp near ptr FinishRecordUpdate
-; Per level encounter driver: spawns type 23h fallers, then becomes boss type 22h (level
-; 0: segmented boss 78h; level 3: invaders).
+; Encounter director (Formation33 at trigger 4; indestructible except on level 4). Level 4:
+; Type21LeaderPath. Levels 1/2/5: a 23h faller on each FrameCount8 = 7 until EncounterTicks
+; C8h, at F0h boss 22h (HP 0Ah * (LevelIndex + 1)). Level 3: fallers, then one invader per
+; update. Level 0: the segmented boss once CountLiveEnemies == 1 (itself; equality).
 Type21EncounterDirector:
     cmp word ptr ds:[LevelIndex], 4
     jne @@checkLevel3

@@ -31,7 +31,8 @@ MAP_ROW_BYTES equ 0Dh
 MAP_START_POS equ 12 * MAP_ROW_BYTES
 ; Up to here only the main shot fires and pods stay idle (outside the demo).
 MAP_INTRO_END_POS equ 14 * MAP_ROW_BYTES
-; From here the level music changes to 6.
+; An encounter ending at or beyond this position restores MUSIC_LATE_LEVEL instead of
+; the level tune (TickFrameTimers); nothing changes on merely crossing it.
 MAP_MUSIC_CHANGE_POS equ 144 * MAP_ROW_BYTES
 ; Last row that spawns map objects and runs the level script.
 MAP_LAST_SPAWN_POS equ 282 * MAP_ROW_BYTES
