@@ -1,11 +1,11 @@
 ; Modern shared movement/history vocabulary, not historical module ownership.
 ; DS state offsets require the game data segment; REC_X/Y require the reviewed
-; coordinate-bearing record context. Field +8 is an unchecked index only at 9FEA.
+; coordinate-bearing record context. Field +8 is an unchecked index only at PlaceRecordFromOffsetPair.
 ; RECORD_Y_MIN/MAX are equality sentinels, NOT saturating bounds.
 ; PLACEMENT_X_SIGNED_MAX is distinct from the unsigned movement X limit.
-; CLAMP_X_* are exact-1 sentinels; 9FAF clears them, its 9FEA tail only sets.
+; CLAMP_X_* are exact-1 sentinels; PlaceFourRecordsFromOffsetTables clears them, its PlaceRecordFromOffsetPair tail only sets.
 ; X_ADJUST_PATH_TAKEN records an attempted path, even at an unchanged X bound.
-; Evidence: metadata/position-history.json and metadata/record-movement.json.
+; Input bits (InputBits, IN_*) moved to INPUT.INC.
 OFFSET_PAIR_INDEX_08 equ 08h
 OFFSET_TABLE_A368 equ 0A368h
 OFFSET_TABLE_A374 equ 0A374h
@@ -25,18 +25,9 @@ HISTORY_PAIR_COUNT equ 030h
 HISTORY_READ_CURSOR_15 equ 0A33Ch
 HISTORY_READ_CURSOR_31 equ 0A33Eh
 HISTORY_WRITE_CURSOR equ 0A33Ah
-MAIN_DATA_SEGMENT equ 09596h
-PRIMARY_RECORD equ 0237Ch
-REC_X equ 04h
-REC_Y equ 02h
 CLAMP_X_LOW_SEEN equ 0A39Eh
 CLAMP_X_HIGH_SEEN equ 0A39Fh
 COUNT_GATE_2324 equ 02324h
-INPUT_BITS equ 098BEh
-IN_XMINUS equ 02h
-IN_XPLUS equ 01h
-IN_YMINUS equ 08h
-IN_YPLUS equ 04h
 MINUS_SLOT_A968 equ 0A968h
 MINUS_SLOT_A96C equ 0A96Ch
 MOVE_MODE_A47C equ 0A47Ch
@@ -49,13 +40,13 @@ RECORD_X_MAX equ 0B0h
 RECORD_Y_MAX equ 0C0h
 RECORD_Y_MIN equ 020h
 PLACEMENT_X_SIGNED_MAX equ 0C0h
-INPUT_MOVEMENT_MASK equ 00Fh
 
-; Shared grid-attribute state: fill/patch at 0B8E, reset at CFDB, readers 4BA5/505B.
+; Shared grid-attribute state: fill/patch at InitializeByteAttributes, reset at CFDB, readers 4BA5/ReadIndexedByteAttribute.
 ; Modern names; no historical include or resource identity is claimed.
 BYTE_ATTRIBUTE_TABLE equ 0C3AAh
 BYTE_ATTRIBUTE_COUNT equ 0100h
 ATTRIBUTE_SOURCE_SEGMENT equ 09592h
 ATTRIBUTE_PATCH_POINTERS equ 0C4AAh
-ATTRIBUTE_PATCH_SELECTOR equ 02356h
 ATTRIBUTE_PATCH_END equ 0FFh
+; ComputeRecordGridOffset stores its wrapped Y sum here.
+GRID_Y_SUM equ 0215Ah

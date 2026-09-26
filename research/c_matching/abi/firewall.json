@@ -1,4 +1,0 @@
-{
- "copy_position":{"source":"ss:bp","destination":"ds:bx","result":"ax_last_stored"},
- "dec_x":{"record":"ss:bp","flags":"cmp_then_optional_dec","registers":"preserve"}
-}

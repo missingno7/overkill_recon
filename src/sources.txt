@@ -1,0 +1,15 @@
+# Sources in image order. Files that share a segment name are combined by the
+# linker in this order; each frame segment starts on a paragraph.
+R00.ASM
+R01.ASM
+R02.ASM
+R03.ASM
+R04.ASM
+R05.ASM
+R06.ASM
+R07.ASM
+FAR0F7F.ASM
+SLOT1022.ASM
+SEG1534.ASM
+SEG153A.ASM
+DATA.ASM

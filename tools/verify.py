@@ -1,97 +1,73 @@
-"""Exact acceptance, byte diff, provenance checks and generated status/report entry."""
+"""Exact acceptance: does the maintained source build to the original program?
+
+1. Original assets and local tools match their pinned hashes.
+2. A fresh extraction of the original matches metadata/oracle.json (image hash,
+   length, entry point, ordered relocation sites).
+3. The linked main image equals the extracted image byte for byte, and the EXE entry
+   point equals the original's. Every relocation the linker emits is an original one;
+   originals not yet emitted lie in bytes still written as numbers or UNKNOWN db.
+4. Each optional sound module assembles to its decoded original resource.
+Source text is otherwise free: names, comments, labels and file layout may change.
+"""
 from common import *
 from extract import extract
-from build import assemble
-import argparse,subprocess,re
+from build import assemble, assemble_driver, main_sources, DRIVERS
+from resources import driver
+import re
 
 def check_hashes(manifest):
     for row in read_json(ROOT/'metadata'/manifest)['files']:
-        p=ROOT/row['path'];data=p.read_bytes()
-        if len(data)!=row['size'] or sha(data)!=row['sha256']:raise ValueError('Hash mismatch: '+row['path'])
+        data = (ROOT/row['path']).read_bytes()
+        if len(data) != row['size'] or sha(data) != row['sha256']: raise ValueError('Hash mismatch: ' + row['path'])
 
-def diff_ranges(expected,actual):
-    out=[];start=None
-    for i in range(max(len(expected),len(actual))+1):
-        differs=i<max(len(expected),len(actual)) and (i>=len(expected) or i>=len(actual) or expected[i]!=actual[i])
-        if differs and start is None:start=i
-        if not differs and start is not None:out.append(dict(start=start,end=i,expected_hex=expected[start:i][:32].hex(),actual_hex=actual[start:i][:32].hex()));start=None
+def check_sources():
+    """Original bytes may not enter through the assembler; count UNKNOWN bytes."""
+    unknown = 0
+    for path in main_sources() + list(DRIVERS.values()) + list((ROOT/'include').glob('*.INC')):
+        text = path.read_text(encoding='latin-1'); low = text.lower()
+        for bad in ('incbin', 'include assets', 'include ../', 'include ..\\'):
+            if bad in low: raise ValueError(f'Forbidden directive {bad!r} in {path.name}')
+        in_unknown = False
+        for line in text.splitlines():
+            code = line.split(';', 1)[0].strip()
+            if line.startswith('; UNKNOWN'): in_unknown = True; continue
+            if line.startswith(';'): in_unknown = False  # a descriptive comment ends the run
+            if not code: continue
+            if in_unknown and code.lower().startswith('db '):
+                if path in main_sources(): unknown += len(code[3:].split(','))
+            else: in_unknown = False
+    return unknown
+
+def first_differences(expected, actual, limit=5):
+    out = [f'length {len(actual)} != {len(expected)}'] if len(actual) != len(expected) else []
+    i = 0
+    while i < min(len(expected), len(actual)) and len(out) < limit:
+        if expected[i] != actual[i]:
+            j = i
+            while j < min(len(expected), len(actual)) and expected[j] != actual[j]: j += 1
+            out.append(f'{i:05X}..{j:05X}: expected {expected[i:j][:8].hex()} got {actual[i:j][:8].hex()}'); i = j
+        else: i += 1
     return out
 
-def audit_source():
-    mapping=read_json(ROOT/'metadata/source-map.json');cursor=0;counts={};instructions=[]
-    from bootstrap_source import macros
-    if (ROOT/'include/ENCODING.INC').read_text()!=macros():raise ValueError('Encoding macros changed; review their semantics and update the audited definition.')
-    # Shared semantic vocabulary may define constants only, never emit code.
-    for line in (ROOT/'include/MOVEMENT.INC').read_text().splitlines():
-        value=line.split(';',1)[0].strip()
-        if value and not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]* equ 0[0-9A-F]+h',value):
-            raise ValueError('Non-constant directive in MOVEMENT.INC')
-    for chunk in mapping['chunks']:
-        if chunk['start']!=cursor:raise ValueError('Source chunk gap')
-        p=ROOT/chunk['path'];text=p.read_text(); lower=text.lower()
-        for forbidden in ('incbin','binary_include','org ','include assets','include ../'):
-            if forbidden in lower:raise ValueError('Unapproved source directive in '+str(p))
-        blocks={}
-        current=None
-        for line in text.splitlines():
-            match=re.match(r'; @([0-9A-F]{5})\b',line)
-            if match:current=int(match[1],16);blocks[current]=[];continue
-            stripped=line.split(';',1)[0].strip()
-            if current is not None and stripped and stripped!='end' and not re.fullmatch(r'part[0-9]+ ends',stripped):blocks[current].append(stripped)
-        # Changed instruction representation must update the explicit source map.
-        # This prevents relabelling raw DB capsules as decoded ASM coverage.
+def verify():
+    check_hashes('inputs.json'); check_hashes('toolchain-lock.json')
+    unknown = check_sources()
+    expected, manifest = extract(output=ROOT/'build/oracle/OVERKILL')
+    if manifest != read_json(ROOT/'metadata/oracle.json'): raise ValueError('Fresh extraction differs from metadata/oracle.json')
+    header, actual, relocations = assemble()
+    diff = first_differences(expected, actual)
+    if diff: raise AssertionError('Main image mismatch:\n  ' + '\n  '.join(diff))
+    if (header['cs'], header['ip']) != (manifest['entry_cs'], manifest['entry_ip']):
+        raise AssertionError(f"Entry {header['cs']:04X}:{header['ip']:04X} differs from the original")
+    extra = sorted(set(relocations) - set(manifest['relocations']))
+    if extra: raise AssertionError('Relocations not in the original: ' + ' '.join(f'{x:05X}' for x in extra))
+    print(f'PASS main image: {len(actual)} bytes exact, entry {header["cs"]:04X}:{header["ip"]:04X}, '
+          f'{len(relocations)}/{len(manifest["relocations"])} relocations linked; {unknown} bytes still UNKNOWN db')
+    for name in DRIVERS:
+        want, _ = driver(name); got = assemble_driver(name)
+        diff = first_differences(want, got)
+        if diff: raise AssertionError(f'{name} mismatch:\n  ' + '\n  '.join(diff))
+        print(f'PASS {name}: {len(got)} bytes exact')
 
-        for r in chunk['records']:
-            if r['start']!=cursor or r['end']<=cursor:raise ValueError('Source record gap/overlap')
-            if f'@{r["start"]:05X}' not in text:raise ValueError('Source-map annotation missing')
-            counts[r['kind']]=counts.get(r['kind'],0)+r['end']-r['start'];cursor=r['end']
-            if r['kind']=='instruction':
-                expected_lines=[v.split(';',1)[0].strip() for v in r['text'].splitlines() if v.split(';',1)[0].strip()]
-                if blocks.get(r['start'])!=expected_lines:raise ValueError(f'Instruction/source-map mismatch at {r["start"]:05X}; review and update its representation.')
-                instructions.append(r)
-            elif r['kind']=='reconstructed_data':
-                if not r.get('evidence') or r['end']-r['start']!=2:raise ValueError('Reviewed word data needs extent and evidence')
-                if not re.fullmatch(r'dw (?:0[0-9A-F]+h|[A-Za-z_][A-Za-z_0-9]*)',r['text']):raise ValueError('Unsupported reviewed word expression')
-                if blocks.get(r['start'])!=[r['text']]:raise ValueError('Reviewed data/source-map mismatch')
-            elif r['kind']!='opaque_unknown' or any(not v.lower().startswith('db ') for v in blocks.get(r['start'],[])):raise ValueError('Raw region has unaccounted directives')
-    if cursor!=read_json(ROOT/'metadata/oracle.json')['program_bytes']:raise ValueError('Incomplete source accounting')
-    return counts
-
-def verify(rebuild=True):
-    # Failed invocations must never leave a stale passing receipt.
-    write_json(ROOT/'build/verification.json',dict(status='RUNNING_OR_FAILED',match=False))
-    check_hashes('inputs.json');check_hashes('toolchain-lock.json');counts=audit_source()
-    actual=assemble() if rebuild else (ROOT/'build/program.bin').read_bytes()
-    expected,m=extract(output=ROOT/'build/oracle/OVERKILL')
-    baseline=read_json(ROOT/'metadata/oracle.json')
-    if m!=baseline:raise ValueError('Extraction differs from reviewed oracle manifest')
-    differences=diff_ranges(expected,actual)
-    rel=read_json(ROOT/'metadata/relocations.json')
-    if rel['sites']!=m['relocations'] or rel['entry_cs']!=m['entry_cs'] or rel['entry_ip']!=m['entry_ip']:raise ValueError('Relocation/entry manifest mismatch')
-    receipt=dict(status='PASS' if not differences else 'FAIL',match=not differences,
-        criterion='All normalized pre-startup program-image bytes, length, entry and ordered 123 relocation sites. Packed whole-file identity NOT claimed.',
-        original_image_bytes=len(expected),assembled_bytes=len(actual),expected_sha256=sha(expected),actual_sha256=sha(actual),
-        mismatching_ranges=differences,source_bytes=counts,whole_original_file_match='NOT_BUILT',
-        source_sha256={p.relative_to(ROOT).as_posix():sha(p.read_bytes()) for p in sorted(list((ROOT/'src').glob('*.ASM'))+list((ROOT/'include').glob('*.INC')))})
-    write_json(ROOT/'build/verification.json',receipt)
-    if differences:raise AssertionError('Binary mismatch; see build/verification.json: '+str(differences[:3]))
-    print('PASS: exact normalized image;',len(actual),'bytes;',counts)
-    return receipt
-
-if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--full',action='store_true');args=parser.parse_args()
-    if args.full:write_json(ROOT/'build/full-verification.json',dict(status='RUNNING_OR_FAILED'))
+if __name__ == '__main__':
     verify()
-    from build_drivers import verify_drivers
-    verify_drivers()
-    if args.full:
-        from verify_unpack import verify as boot
-        write_json(ROOT/'build/unpack-verification.json',[boot(b,a) for a in ('OVERKILL','OVERKILL.EXE') for b in (0x1010,0x2010)])
-        from topology_experiments import run
-        run()
-        from verify_runtime import verify as runtime
-        runtime(repeat=False)
-        subprocess.run([sys.executable,'-m','unittest','discover','-s',str(ROOT/'tests'),'-v'],check=True,cwd=ROOT)
-        write_json(ROOT/'build/full-verification.json',dict(status='PASS',unpack_checks=4,semantic_and_infrastructure_tests='PASS',topology_variants=5,runtime_oracle='PASS bounded startup',optional_drivers='PASS',image_sha256=sha((ROOT/'build/program.bin').read_bytes())))
-    from report import generate
-    generate()

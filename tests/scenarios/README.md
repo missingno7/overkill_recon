@@ -1,1 +1,0 @@
-The reach-gameplay.json script is the current bounded optional probe. Runtime execution stops at first 0000:97B2 entry regardless of script length. Other scripts document earlier collected experiments; their later events are historical evidence, not an instruction to explore game states. Prefer static analysis and isolated routine tests.

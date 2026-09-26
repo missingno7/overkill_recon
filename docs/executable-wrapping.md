@@ -50,13 +50,13 @@ rejected by the independent oracle comparison during development.
 
 EXEPACK relocations are read from the offset explicitly encoded by `MOV SI,0132`
 in this stub. Sixteen 64-KiB groups contain counts followed by word offsets. All
-123 sites and their order in this packed stream are retained in
-`metadata/relocations.json`. This order is not automatically the original linker's
+123 sites and their order in this packed stream are pinned in
+`metadata/oracle.json`. This order is not automatically the original linker's
 pre-packing relocation emission order. The reconstructed image stores **unrelocated**
 segment words; adding the load segment at each listed site yields the loaded image.
 
-The launcher's four stages are independently extracted too; see
-`metadata/launcher-extraction.json`. Its final image is 165152 bytes with entry
+The launcher's four stages can be extracted too (see git history for the former
+launcher extraction). Its final image is 165152 bytes with entry
 `0000:0002` and 16 relocations. Launcher ASM reconstruction is still outstanding.
 
 ## Independent verification, not a copied runtime snapshot
@@ -98,7 +98,7 @@ is not, by itself, proof that the target contains code.
 At 0682 the game saves DOS INT08, programs PIT ports 43/40 with control 36 and divisor
 4000, and installs CS:06E5. This is documented from its actual instructions, not from
 legacy hook names. Other DOS/BIOS interrupts, port accesses, CS writes and possible
-code modifications are inventoried in `metadata/xrefs.json`. Dynamic destinations,
+code modifications remain to be reviewed in the source. Dynamic destinations,
 keyboard hooks, optional audio drivers and complete runtime-written code variants
 are still open work. The initial image oracle does not claim to account for all
 later executable bytes loaded or generated during gameplay.
@@ -109,14 +109,15 @@ were independently derived from the copied originals and tested against their co
 
 ## Runtime materialization evidence (2026-09-24)
 
-The additional oracle is described in [runtime-materialization.md](runtime-materialization.md).
+The runtime-materialization tooling that produced this evidence was retired; it
+remains in git history.
 Oracle A and its ordered relocation criterion are unchanged. Executing the packed
 original proves that the 217-byte probe window at 1010:5E42..5F1A inclusive occurs in EXEPACK before
 95C9, not after it. The actual writer instruction is 32FF:0099; 009B is its successor.
 
 After A, original startup decodes ADLIB.ENC or ROLAND.ENC into relative segment
-1022. The independently decoded SHADOW directory and ENC resources are in
-metadata/resource-directory.json and tools/resources.py. No original/legacy
+1022. The independently decoded SHADOW directory and ENC resources are decoded by
+tools/resources.py. No original/legacy
 snapshot is an input. Runtime 9690 is a bounded candidate frontier; physical
 hardware equivalence, global stability and exact earliest-instruction minimality
 remain unproven. Both initial and materialized identities are retained.
