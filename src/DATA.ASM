@@ -149,6 +149,7 @@ public EncounterEndDelay
 public EncounterLiveCount
 public EncounterTicks
 public EnergyCells
+public EnergyCellsEnd
 public EnergyPoints
 public EnergyTanks
 public EventMarkerFlag
@@ -464,6 +465,8 @@ public StarMasksTandy
 public Stars
 public StateData
 public SteerArrived
+public SteerPath10
+public SteerPath11
 public SteerSpeed
 public SteerTargetX
 public SteerTargetY
@@ -1240,10 +1243,10 @@ Word235A dw 0h
 ; Printed before the level number (loc_060E3), and the digit per LevelIndex.
 LevelNumberPrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Fh, 20h, 0h
 LevelDigitChars db '612345'
-; HUD energy cells (0..4 each), rebuilt from EnergyPoints (loc_061DC).
-EnergyCells db 4, 0, 4, 0, 4, 0
-; UNKNOWN: not yet classified as code or data
-    db 04h,00h,04h,00h,04h,00h
+; Six HUD energy cell images (words 0..4), rebuilt from EnergyPoints by loc_061DC:
+; all start at 4 and each point takes one off the first nonzero cell.
+EnergyCells dw 4, 4, 4, 4, 4, 4
+EnergyCellsEnd label word
 ; Compared with EnergyTanks (loc_061FC); never written.
 HudTankCompare dw 8000h
 ; Pending item drop (loc_07420): position and kind.

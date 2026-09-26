@@ -32,7 +32,8 @@ extrn DropY:word
 extrn EncounterEndDelay:word
 extrn EncounterLiveCount:word
 extrn EncounterTicks:word
-extrn EnergyCells:byte
+extrn EnergyCells:word
+extrn EnergyCellsEnd:word
 extrn EnergyPoints:word
 extrn EnergyTanks:word
 extrn ExitOrderScreen:word
@@ -2058,7 +2059,7 @@ loc_061CA:
     ret
 loc_061D2:
     add di, 2
-    cmp di, 02374h
+    cmp di, offset EnergyCellsEnd
     jne loc_061CA
     ret
 
@@ -2083,15 +2084,15 @@ loc_061FC:
     mov ds, word ptr cs:[PanelSegment]
     mov si, word ptr ss:[EnergyCells]
     call loc_06296
-    mov si, word ptr ss:[0236Ah]
+    mov si, word ptr ss:[EnergyCells + 2]
     call loc_06296
-    mov si, word ptr ss:[0236Ch]
+    mov si, word ptr ss:[EnergyCells + 4]
     call loc_06296
-    mov si, word ptr ss:[0236Eh]
+    mov si, word ptr ss:[EnergyCells + 6]
     call loc_06296
-    mov si, word ptr ss:[02370h]
+    mov si, word ptr ss:[EnergyCells + 8]
     call loc_06296
-    mov si, word ptr ss:[02372h]
+    mov si, word ptr ss:[EnergyCells + 0Ah]
     call loc_06296
     mov ds, word ptr cs:[MainDataSegment]
     mov ax, word ptr ds:[EnergyTanks]

@@ -265,6 +265,8 @@ extrn StarLayerTick3:word
 extrn Stars:word
 extrn StateData:byte
 extrn SteerArrived:word
+extrn SteerPath10:word
+extrn SteerPath11:word
 extrn SteerSpeed:word
 extrn SteerTargetX:word
 extrn SteerTargetY:word
@@ -3684,11 +3686,11 @@ loc_0B2B9:
     jmp near ptr HorizontalTerrainPatrol
 ; Starts the waypoint path at DS:A45C as type 12h.
 Type10StartPathFollowerA:
-    mov word ptr ss:[bp + REC_FIELD_36], 0A45Ch
+    mov word ptr ss:[bp + REC_FIELD_36], offset SteerPath10
     jmp short StartPathFollow
 ; Starts the waypoint path at DS:A43C as type 12h.
 Type11StartPathFollowerB:
-    mov word ptr ss:[bp + REC_FIELD_36], 0A43Ch
+    mov word ptr ss:[bp + REC_FIELD_36], offset SteerPath11
 ; Turns BP into a type 12h waypoint follower of the path at REC_FIELD_36.
 StartPathFollow:
     mov word ptr ss:[bp + REC_TYPE], 12h
