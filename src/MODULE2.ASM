@@ -1475,8 +1475,8 @@ StretchInTheEndImage:
     mov ds, word ptr cs:[TheEndSegment]
 
 ; DS:SI = image (rows word, bytes-per-row word, data), DI = screen offset: draws it through
-; AdapterDrawHandlers once per retrace growing StretchShownRows (rows shown) each time. Returns
-; DS = MainDataSegment.
+; AdapterDrawHandlers once per retrace, growing StretchShownRows by 2 each time.
+; Returns DS = MainDataSegment.
 StretchInImage:
     lodsw
     mov word ptr cs:[StretchImageRows], ax
