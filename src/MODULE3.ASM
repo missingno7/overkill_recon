@@ -304,6 +304,7 @@ extrn BlitPackedToScreen:near
 extrn BlueBitsImageOffsets:word
 extrn BuildByteToNibbleMaskTable:near
 extrn BuildRowTables:near
+extrn CgaColorMap:byte
 extrn ClearByteCS066B:near
 extrn ClearScreen104x200:near
 extrn ComputeRecordGridOffset:near
@@ -6999,9 +7000,9 @@ RunChooseScreen:
     mov word ptr cs:[LoadDestSegment], ax
     mov word ptr cs:[LoadDestOffset], 08000h
     mov word ptr cs:[LoadImageSlot], offset ScreenImageOffset
-    mov byte ptr cs:[045EDh], 0
+    mov byte ptr cs:[CgaColorMap + 7], 0
     call LoadGraphicsRecordImages
-    mov byte ptr cs:[045EDh], 1
+    mov byte ptr cs:[CgaColorMap + 7], 1
     mov word ptr cs:[LoadNamePtr], offset File_CHOOSE_ENC
     mov ax, word ptr cs:[WorkspaceSegment]
     mov word ptr cs:[LoadDestSegment], ax

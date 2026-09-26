@@ -146,6 +146,7 @@ public BlueBitsImageOffsets
 public BuildByteToNibbleMaskTable
 public BuildRowTables
 public CalibrateJoystickWithAbort
+public CgaColorMap
 public ClearByteCS066B
 public ClearKeyDownTable
 public ClearScreen104x200Cga
@@ -1603,8 +1604,10 @@ LoadGraphicsMasked:
     mov word ptr cs:[LoadMakeMask], 1
     mov word ptr cs:[LoadRecordImages], 0
     jmp short LoadGraphicsFile
-; UNKNOWN: not yet classified as code or data
-    db 02Eh,0C7h,06h,0D6h,0Bh,01h,00h,02Eh,0C7h,06h,0D8h,0Bh,01h,00h
+; No caller found in this image.
+LoadGraphicsMaskedRecordImages:
+    mov word ptr cs:[LoadMakeMask], 1
+    mov word ptr cs:[LoadRecordImages], 1
 LoadGraphicsFile:
     call loc_0526A
     mov ax, word ptr cs:[WorkspaceSegment]
@@ -6625,9 +6628,18 @@ loc_038F9:
     loop loc_038F9
     mov ds, cs:[MainDataSegment]
     ret
+loc_0390E:
+    lodsw
+    not ax
+    or es:[di], ax
+    add si, 2
+    add di, 2
+    add di, 32h
+    loop loc_0390E
+    mov ds, cs:[MainDataSegment]
+    ret
 ; UNKNOWN: not yet classified as code or data
-    db 0ADh,0F7h,0D0h,26h,09h,05h,83h,0C6h,02h,83h,0C7h,02h,83h,0C7h,32h,0E2h
-    db 0EFh,2Eh,8Eh,1Eh,96h,95h,0C3h,00h
+    db 00h
 loc_03926:
     mov bx, ds:[si]
     mov ax, ds:[si + 4]
@@ -8017,7 +8029,7 @@ loc_04537:
     call loc_045CB
     mov al, byte ptr cs:[DecodePixelBytes + 7]
     call loc_045CB
-    mov ax, word ptr cs:[045E4h]
+    mov ax, word ptr cs:[CgaPixelWord]
     stosw
 loc_045A9:
     mov al, byte ptr cs:[DecodePixelBytes + 0]
@@ -8028,7 +8040,7 @@ loc_045A9:
     call loc_045CB
     mov al, byte ptr cs:[DecodePixelBytes + 3]
     call loc_045CB
-    mov ax, word ptr cs:[045E4h]
+    mov ax, word ptr cs:[CgaPixelWord]
     stosw
     ret
 
@@ -8039,13 +8051,16 @@ loc_045CE:
     rol al, 1
     rol al, 1
     rol al, 1
-    rcl word ptr cs:[045E4h],1
+    rcl word ptr cs:[CgaPixelWord],1
     rol al, 1
-    rcl word ptr cs:[045E4h],1
+    rcl word ptr cs:[CgaPixelWord],1
     ret
-; UNKNOWN: not yet classified as code or data
-    db 090h,00h,00h,00h,00h,00h,01h,01h,01h,02h,02h,02h,01h,02h,01h,01h
-    db 01h,02h,02h,01h,03h
+    even
+; Scratch AX of loc_045F6, and the CGA pixel word built two bits at a time.
+CgaSavedAX dw 0
+CgaPixelWord dw 0
+; 16-colour index to CGA colour 0..3 (RunChooseScreen switches entry 7 between 0 and 1).
+CgaColorMap db 0, 1, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 2, 1, 3
 
 loc_045F6:
     ror dh, 1
@@ -8092,12 +8107,11 @@ loc_0463B:
 loc_04654:
     mov ax, bx
 loc_04656:
-    mov word ptr cs:[045E2h], ax
+    mov word ptr cs:[CgaSavedAX], ax
     mov al, cl
     and al, 0Fh
-    mov bx, 045E6h
-    db 02Eh ; decoded segment override
-    xlat
+    mov bx, offset CgaColorMap
+    xlat byte ptr cs:[bx]
     mov ah, al
     mov al, cl
     shr al, 1
@@ -8105,15 +8119,14 @@ loc_04656:
     shr al, 1
     shr al, 1
     and al, 0Fh
-    db 02Eh ; decoded segment override
-    xlat
+    xlat byte ptr cs:[bx]
     shl al, 1
     shl al, 1
     shl al, 1
     shl al, 1
     or al, ah
     mov cl, al
-    mov ax, word ptr cs:[045E2h]
+    mov ax, word ptr cs:[CgaSavedAX]
     ret
 loc_04684:
     cmp di, -1
@@ -9253,7 +9266,9 @@ loc_04F57:
     je loc_04F60
     ret
 loc_04F60:
-    call loc_04F8C
+    call CgaIntensityOn
+; BIOS palette 0, colour burst on (mode register bit 2 clear), palette-select bit 5 clear.
+CgaSelectPalette0:
     mov ah, 0Bh
     mov bh, 1
     mov bl, 0
@@ -9272,7 +9287,9 @@ loc_04F60:
     out dx, al
     mov byte ptr es:[066h], al
 
-loc_04F8C:
+; CGA colour-select register (3D9h, mirrored in BIOS 0040:0066): set or clear bit 4
+; (intensity).
+CgaIntensityOn:
     mov ax, 040h
     mov es, ax
     mov al, byte ptr es:[066h]
@@ -9281,17 +9298,30 @@ loc_04F8C:
     mov dx, 03D9h
     out dx, al
     ret
-; UNKNOWN: not yet classified as code or data
-    db 02Eh,083h,03Eh,0BCh,095h,00h,074h,01h,0C3h,0E8h,03h,00h,0E8h,0B4h,0FFh,0B8h
-    db 040h,00h,08Eh,0C0h,026h,0A0h,066h,00h,024h,0EFh,026h,0A2h,066h,00h,0BAh,0D9h
-    db 03h,0EEh,0C3h
+; CGA only: intensity off, palette 0, intensity off. No caller found in this image.
+CgaResetPalette:
+    cmp word ptr cs:[VideoAdapter], 0
+    je loc_04FA9
+    ret
+loc_04FA9:
+    call CgaIntensityOff
+    call CgaSelectPalette0
+CgaIntensityOff:
+    mov ax, 40h
+    mov es, ax
+    mov al, es:[66h]
+    and al, 0EFh
+    mov es:[66h], al
+    mov dx, 3D9h
+    out dx, al
+    ret
 
 loc_04FC3:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_04FCC
     ret
 loc_04FCC:
-    call loc_04F8C
+    call CgaIntensityOn
     mov ah, 0Bh
     mov bh, 1
     mov bl, 1
