@@ -8014,6 +8014,7 @@ CopyWorkspaceToScreenCga:
     jne @@copyRow
 RestoreMainDataSegment:
     mov ds, word ptr cs:[MainDataSegment]
+; Bare ret: the no-op entry of many dispatch tables.
 CountXReturn:
     ret
 
@@ -9113,6 +9114,7 @@ EraseStars:
     loop @@eraseNext
 @@done:
     ret
+; BX = next word of the fixed 16-word CreditRandomWords cycle (see RandomWordCursor).
 NextRandomWord:
     add word ptr ds:[RandomWordCursor], 2
     cmp word ptr ds:[RandomWordCursor], offset CreditRandomWords + 31
@@ -9498,6 +9500,7 @@ ProbeShipTerrainCollision:
     pop cx
     pop word ptr ss:[bp + REC_X]
     pop word ptr ss:[bp + REC_Y]
+; Shared exit: CF set.
 ReturnCarrySet:
     stc
     ret

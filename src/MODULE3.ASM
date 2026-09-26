@@ -1104,7 +1104,8 @@ Steer:
     mov word ptr ds:[bx + REC_X], 58h
     mov ds:[AutoMoveExtraRecord], bx
     jmp near ptr RunLevelEndSequence
-; SI = (Y, X) waypoint: sets InputBits to move the player toward it (0 when there).
+; SI = (Y, X) waypoint: sets InputBits toward it (unsigned compares). An equal axis adds no
+; bit, so InputBits stays as the caller cleared it (RunLevelEndSequence).
 SteerInputToWaypoint:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_Y], ax
@@ -2784,6 +2785,7 @@ UpdateRecordByKind:
 KindHandlers label word
     dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
     dw offset RunTypeHandler, offset UpdatePickup, offset UpdateExhaust
+; Shared exit: CF clear (no hit).
 ReturnNoHit:
     clc
     ret
@@ -3346,6 +3348,8 @@ Type02TimedStraightShot:
 ; Return into ShotHitPlayerCheck after the move.
     mov ax, offset ShotHitPlayerCheck
     push ax
+; MoveInDirectionN: BP moves N px along REC_DIRECTION (0 up, clockwise to 7); diagonals
+; move N px on both axes. The direction is not range-checked; clobbers BX.
 MoveInDirection8:
     mov bx, word ptr ss:[bp + REC_DIRECTION]
     shl bx, 1
@@ -3781,6 +3785,8 @@ StartPathFollow:
     mov word ptr ss:[bp + REC_TYPE], 12h
 ; Steers (speed 1, 2 on level 0 and in the demo) through the (Y, X) waypoints at
 ; REC_PATH; no end-of-path check and no scroll.
+; Waypoint Y gets +20h. On arrival REC_PATH advances and the next waypoint is steered in
+; the same call, so the record moves every frame; LEADER_END_Y is never reached.
 Type12WaypointPathFollower:
     mov si, ss:[bp + REC_PATH]
     lodsw
@@ -3870,7 +3876,7 @@ Type12WaypointPathFollower:
     add ax, 0ECh
     mov ss:[bp + REC_SPRITE], ax
     jmp near ptr FinishRecordUpdate
-; BP = record: REC_SPRITE = 71h + (SwayDirX + 1) 2.
+; BP: REC_SPRITE = 72h when SwayDirX = +1, else 71h (also for 0). Clobbers AX.
 SetSwaySprite:
     mov ax, ds:[SwayDirX]
     inc ax
@@ -3946,7 +3952,7 @@ SpawnEightWayBurst:
 ; AX = number of live KIND_ENEMY records in pool A.
 CountLiveEnemies:
     push bp
-    mov cx, 23h
+    mov cx, POOL_A_COUNT
     xor ax, ax
 @@checkRecord:
     push cx
@@ -4201,7 +4207,8 @@ Type2CAimedDrifter:
     call StepAlongDelta
     mov word ptr ds:[ChaseStepPixels], 3
     jmp near ptr FinishRecordUpdate
-; Steers BP toward REC_SAVED_X/Y; NZ on arrival.
+; Steers BP toward REC_SAVED_X/Y at the caller's SteerSpeed (overwrites SteerTarget*).
+; NZ = SteerArrived: already there at entry, no step this call.
 SteerToSaved:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
     mov word ptr ds:[SteerTargetX], ax
@@ -4324,6 +4331,8 @@ Type20SlotHopper:
     je @@nextSlot
 @@done:
     jmp near ptr FinishRecordUpdate
+; Shared tail: SteerToSaved at speed 2, then REC_DIRECTION = DIR_DOWN, then
+; FinishRecordUpdate.
 SteerToSavedTail:
     mov word ptr ds:[SteerSpeed], 2
     call SteerToSaved
@@ -4760,7 +4769,7 @@ FinishRecordUpdate:
 @@done:
     ret
 
-; Clamp REC_X to 0..0C0h (signed).
+; Clamp REC_X to 0..PLAYFIELD_MAX_X (signed).
 ClampRecordX:
     cmp word ptr ss:[bp + REC_X], PLAYFIELD_MAX_X
     jg @@clampRight

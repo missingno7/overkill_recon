@@ -1645,8 +1645,10 @@ ShutdownGame:
     mov ax, 04C00h
     int 021h
 
-; BP = record: point REC_DIRECTION at (SteerTargetX, SteerTargetY) and step that way by
-; SteerSpeed; exactly on target: direction kept, SteerArrived = 1, no step.
+; BP = record: aims REC_DIRECTION at (SteerTargetX, SteerTargetY) (X compared unsigned,
+; Y signed) and steps 1/2/4/8 px by SteerSpeed (caller-set, unchecked 0..3). Arrival is
+; exact equality only: the arriving step leaves SteerArrived 0; the next call finds it
+; there: SteerArrived 1, no move. Callers align X/Y to the step grid. Clobbers AX, BX.
 SteerTowardTarget:
     mov word ptr ds:[AimQuadrantBits], 0
     mov word ptr ds:[SteerArrived], 0
@@ -1688,7 +1690,8 @@ StepBySteerSpeed label word
 @@arrived:
     mov word ptr ds:[SteerArrived], 1
     ret
-; BX = target record: sets BP's REC_DELTA toward it.
+; BX = target: BP's REC_DELTA = BP's X/Y - (target X/Y + 4 if its REC_SIZE_CLASS is 1,
+; else + 0Ch); BP's own size is ignored. Clobbers AX, CX, DX.
 SetDeltaToward:
     mov dx, 4
     cmp word ptr ds:[bx + REC_SIZE_CLASS], 1
@@ -1706,7 +1709,10 @@ SetDeltaToward:
     sub ax, cx
     mov ss:[bp + REC_DELTA_Y], ax
     ret
-; Bresenham step of ChaseStepPixels (3, or 2) along BP's REC_DELTA.
+; BP: one step along REC_DELTA (= self - target: moves against its signs; not consumed, so
+; the heading holds until re-aimed). Major axis always; minor when REC_STEP_ERROR += minor
+; exceeds major (unsigned), then -= major; |dX| = |dY| steps diagonally. A zero delta moves
+; up-left (never "arrived"). ChaseStepPixels 3 = 3 px, else 2.
 StepAlongDelta:
     mov word ptr ds:[ChaseNegX], 0
     mov word ptr ds:[ChaseNegY], 0
@@ -1810,6 +1816,7 @@ PrintBcdDigit:
     jmp near ptr PrintTextChar
 
 ; BX = 4-digit packed BCD points, added to ScoreBcd. Preserves AX, DX and BP.
+; BX kept; the 8-digit score wraps silently past 99999999 (carry lost).
 AddScoreBcd:
     push bp
     push ax
@@ -6931,7 +6938,7 @@ Type21LeaderPath:
     jmp near ptr FinishRecordUpdate
 
 ; Far-call trampoline: lets far code call the main-frame near routine at offset AX.
-; All registers and flags pass through both ways.
+; All other registers and flags pass through both ways.
 FarCallMainNearViaAX:
     call ax
     retf

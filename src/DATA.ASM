@@ -1193,7 +1193,8 @@ ExitWithError db 00h
 FileNotFoundMsgHead db 7h, 'I could not find the file ', 27h, '$'
 FileNotFoundMsgTail db 27h, ' anywhere, sorry.', 0Dh, 0Ah, 0Dh, 0Ah, '$'
 ; SteerTowardTarget: target position, step size index (0..3: 1, 2, 4 or 8 pixels,
-; see StepBySteerSpeed) and 1 once the record is exactly on the target.
+; see StepBySteerSpeed) and 1 only when a call found the record already on the target
+; (no step that call).
 SteerTargetX dw 00000h
 SteerTargetY dw 00000h
 SteerSpeed dw 00000h
@@ -1229,7 +1230,9 @@ SlowCount3 dw 0h
 ; +1 per pool-A slot visited by UpdateAllRecords (35 per frame, free slots too), reset
 ; to 0 there once >= 5DCh; some handlers also step it and read it as a timer.
 RecordTickCounter dw 0h
-; Sway oscillator stepped every 8 frames (StartLeaderScript initialises it).
+; SwayDirX +1/-1 (0 until StartLeaderScript) flips every 16 frames (SwayPhase 0..2, stepped
+; at FrameCount8 = 7). When SwayReversals & 0Fh is 0, TickFrameTimers sets SwayDropY 8;
+; UpdateAllRecords zeroes it after pool A.
 SwayDirX dw 0h
 SwayPhase dw 0h
 SwayDropY dw 0h
@@ -1349,7 +1352,7 @@ UpgradeSlot2 dw 0, 0, 13h, offset UpgradeList2, 0
 UpgradeSlot3 dw 0, 0, 15h, offset UpgradeList3, 0
 ; Frame offsets over REC_DIRECTION 0..17h for type 28h (rise, hold, fall).
 Type28FrameRamp db 0, 0, 1, 2, 3, 4, 12 dup (5), 4, 3, 2, 1, 0, 0
-; Ping-pong frame offsets, indexed by counters (DS:232E >> 3, and 0..3 counters).
+; Ping-pong frame offsets, indexed by counters (FrameCount64 >> 3, and 0..3 counters).
 PingPongFrames8 dw 0, 1, 1, 2, 2, 1, 1, 0
 PingPongFrames4 dw 0, 1, 2, 1
 ; Sprite base of type 34h per LevelIndex (entry 7 has no confirmed use).
@@ -1539,7 +1542,8 @@ GameOverRequest dw 00000h
 NextLevelRequest dw 00000h
 LifeLostRequest dw 00000h
 ; REC_DIRECTION by AimQuadrantBits: 0 up, 2 right, 4 down, 6 left, odd values the
-; diagonals between them; FFh when aligned (no move).
+; diagonals between them; FFh when aligned (no move; SteerTowardTarget only: StepAlongDelta
+; never produces index 0).
 DirectionFromQuadrant db 0FFh,02h,06h,02h,04h,03h,05h,04h
     db 00h,01h,07h,00h,00h,02h,06h,02h
 ; Autopilot waypoints (Y, X) for LevelEndPhase modes 1 and 2 (SteerInputToWaypoint).
@@ -1603,8 +1607,8 @@ TerrainStartY dw 00000h
 TerrainStartX dw 00000h
 TerrainProbeX dw 00000h
 TerrainProbeY dw 00000h
-; Round-robin cursor over pool A used by the target search at B15A.
-TargetSearchCursor dw 023B4h
+; Round-robin cursor over pool A used by FindMissileTarget.
+TargetSearchCursor dw offset PoolA
 ; (Y, X) paths of types 11h and 10h (REC_PATH, followed as type 12h).
 SteerPath11 dw 50h, 0B0h,  90h, 68h,  10h, 68h,  0h, 80h
     dw 40h, 90h,  0A0h, 68h,  0B0h, 0B0h,  LEADER_END_Y, 0B0h

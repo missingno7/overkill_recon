@@ -85,7 +85,9 @@ REC_FLASH_TIMER equ 24h
 REC_ITEM_INDEX equ 26h
 ; Index 0..15 of the record's GroupTable entry, FFFFh = not in a group.
 REC_SLOT_INDEX equ 28h
-; Step deltas toward the primary and the Bresenham-style error term.
+; Aim vector self - target (SetDeltaToward/AimAtPlayer) and its step error. The error is
+; zeroed only by ResetRecordsForLife/ResetPoolAAndUpgrades: a new record inherits its
+; slot's old error.
 REC_DELTA_Y equ 2Ah
 REC_DELTA_X equ 2Ch
 REC_STEP_ERROR equ 2Eh
