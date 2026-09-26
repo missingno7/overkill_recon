@@ -16,8 +16,9 @@ number zero. The MZ size, not EOF, defines the load module.
 | OVERKILL | 518204 | 50555 | 467649 | 0C22:000E |
 | OVERKILL.EXE | 42829 | 42827 | 2 | 0A3F:000E |
 
-The two launcher trailing bytes are preserved and hashed, but their meaning is
-UNKNOWN. Do not silently discard them. The large game suffix is a data container,
+The launcher's two trailing bytes are the checksum word ChecksumFileOrAbort verifies
+(sum from 1234h, per byte AX += b then AH += AL, over all preceding bytes); the last
+word of OVERKILL is the same checksum over that file. Both are preserved and hashed. The large game suffix is a data container,
 not a second MZ image and not proved to be linker-managed executable overlays.
 tools/resources.py decodes its resource directory and the optional sound modules
 (ADLIB.ENC, ROLAND.ENC), which src/drivers/ reconstructs exactly. The supplied documentation describes the game and
