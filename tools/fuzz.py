@@ -135,6 +135,7 @@ class Fuzzer:
             f.add((name_, bucket(b), bucket(x), b == x))
         new = f - self.features
         self.features |= f
+        self.last_features = f
         return bool(new)
 
     def read_word(self, writes, off):
@@ -223,17 +224,17 @@ class Fuzzer:
         t0 = time.time()
         for i in range(seeds):
             w, r = self.seed()
-            self.run(w, r, f'{self.t.name} seed {i}'); self.corpus.append((w, r, list(self.cmps)))
+            self.run(w, r, f'{self.t.name} seed {i}'); self.corpus.append((w, r, list(self.cmps), self.last_features))
         for i in range(iterations):
             base = self.rng.choice(self.corpus)
-            w, r = self.mutate(*base)
+            w, r = self.mutate(*base[:3])
             try:
                 keep = self.run(w, r, f'{self.t.name} fuzz {i}')
             except OracleFault:
                 continue    # the oracle itself crashes or hangs here: an unreachable state
             except AssertionError:
                 self.dump(w, r); raise
-            if keep: self.corpus.append((w, r, list(self.cmps)))
+            if keep: self.corpus.append((w, r, list(self.cmps), self.last_features))
         return dict(target=self.t.name, cases=self.cases, corpus=len(self.corpus), features=len(self.features),
                     seconds=round(time.time() - t0, 1))
 
@@ -269,9 +270,17 @@ def region_instructions(machine, labels):
         out += [i.address for i in md.disasm(bytes(machine.u.mem_read(begin, end - begin)), begin)]
     return sorted(out)
 
+def minimize(corpus):
+    """Greedy set cover: the fewest entries that together keep every feature."""
+    left, keep = set().union(*(e[3] for e in corpus)), []
+    while left:
+        best = max(corpus, key=lambda e: len(e[3] & left))
+        keep.append(best); left -= best[3]
+    return keep
+
 def save_corpus(fz):
     path = ROOT/'tests/corpus'/f'{fz.t.name}.json'; path.parent.mkdir(parents=True, exist_ok=True)
-    rows = [dict(regs=r, writes={f'{o:04X}': d.hex() for o, d in sorted(w.items())}) for w, r, _ in fz.corpus]
+    rows = [dict(regs=r, writes={f'{o:04X}': d.hex() for o, d in sorted(w.items())}) for w, r, _, _ in minimize(fz.corpus)]
     path.write_bytes((json.dumps(rows, indent=0, sort_keys=True) + '\n').encode())
     return path
 
