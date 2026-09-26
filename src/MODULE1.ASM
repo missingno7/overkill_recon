@@ -64,13 +64,13 @@ extrn InputBits:byte
 extrn InputDeviceMode:word
 extrn JoyButtonSelect:word
 extrn JoyCalAbortSp:word
-extrn JoyCalByte98BF:byte
 extrn JoyCalCenterX:word
 extrn JoyCalCenterY:word
 extrn JoyCalHighX:word
 extrn JoyCalHighY:word
 extrn JoyCalLowX:word
 extrn JoyCalLowY:word
+extrn JoyCalUnusedByte:byte
 extrn JoyCalibratingFlag:word
 extrn JoyXHighThreshold:word
 extrn JoyXLowThreshold:word
@@ -191,7 +191,6 @@ public CopyPackedRowsToTandyBanks
 public CopyWorkspace104x192ToTandy
 public CopyWorkspaceToScreenCga
 public CopyWorkspaceToScreenEga
-public CountXReturn
 public DecodeGraphicsImagesCga
 public DecodeGraphicsImagesEga
 public DecodeGraphicsImagesTandy
@@ -324,6 +323,7 @@ public RestoreBackground8Tandy
 public RestoreKeyboardVector09
 public RestoreTimerVector08
 public ReturnCarrySet
+public ReturnNear
 public RunLevelScriptEvents
 public SaveBackground16Cga
 public SaveBackground16Ega
@@ -352,8 +352,6 @@ extrn ApplyLevelPalette:near
 extrn BlockOffsets:word
 extrn BlueBitsSegment:word
 extrn CopyEgaPage0ToPage1:near
-extrn DecodeByte5BA0:byte
-extrn DecodeByte5BA1:byte
 extrn DecodeDest:word
 extrn DecodeFileFlags:word
 extrn DecodeGraphicsImages:near
@@ -368,6 +366,8 @@ extrn DrawHud:near
 extrn DrawOffsetFromScreenRow:near
 extrn DrawPanelGraphic:near
 extrn DrawUpgradeSlots:near
+extrn EgaMaskBits:byte
+extrn EgaPixelColor:byte
 extrn FindFreeRecordPoolA:near
 extrn InsertHighScore:near
 extrn LevelBlocksSegment:word
@@ -422,19 +422,19 @@ TransparentColor db 05h
 ; caller, discarding every nested frame, and input falls back to key table A.
 AbortJoystickCalibration:
     mov sp, word ptr ds:[JoyCalAbortSp]
-    mov byte ptr ds:[JoyCalByte98BF], 0
+    mov byte ptr ds:[JoyCalUnusedByte], 0
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_KEYS_A
     ret
 
 ; Switch input to the joystick and calibrate it; Esc aborts via AbortJoystickCalibration.
-; JoyCalibratingFlag and JoyCalByte98BF are only ever written.
+; JoyCalibratingFlag and JoyCalUnusedByte are only ever written.
 CalibrateJoystickWithAbort:
     mov word ptr ds:[JoyCalAbortSp], sp
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_JOYSTICK
     mov word ptr ds:[JoyCalibratingFlag], 1
     call CalibrateJoystickThresholds
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_JOYSTICK
-    mov byte ptr ds:[JoyCalByte98BF], 0
+    mov byte ptr ds:[JoyCalUnusedByte], 0
     ret
 
 ; Take three stick samples, each after the primary button is released and pressed again,
@@ -443,7 +443,7 @@ CalibrateJoystickWithAbort:
 ; graphics 4Eh and 4Fh are drawn after the first and second sample (presumably prompts).
 CalibrateJoystickThresholds:
     mov word ptr ds:[JoyButtonSelect], JOY_BUTTONS_PORT_A
-    mov byte ptr ds:[JoyCalByte98BF], 0
+    mov byte ptr ds:[JoyCalUnusedByte], 0
     mov ax, offset CalibPageList
     call far ptr ShowPageList
     call WaitJoystickPrimaryRelease
@@ -692,13 +692,13 @@ PollJoystickInputBits:
 @@done:
     ret
 ; LoadPackedFile state (CS-resident; the loader runs with DS=CS).
-PackedDestSegment dw 0 ; PackedDestSegment
-PackedDestOffset dw 0 ; PackedDestOffset
-PackedNamePtr dw 0 ; PackedNamePtr
-PackedFileHandle dw 0 ; PackedFileHandle
-PackedUnwindSp dw 0 ; PackedUnwindSp
-PackedOutputBytes dw 0 ; PackedOutputBytes
-PackedOpenFailed dw 0 ; PackedOpenFailed
+PackedDestSegment dw 0
+PackedDestOffset dw 0
+PackedNamePtr dw 0
+PackedFileHandle dw 0
+PackedUnwindSp dw 0
+PackedOutputBytes dw 0
+PackedOpenFailed dw 0
 
 
 ; Open the packed file PackedNamePtr (through the resource container) and decode it
@@ -4688,7 +4688,7 @@ StoreDecodedPlaneRow:
 ; EGA decoder: DS:SI = plane-0 byte of 8 pixels: stores a mask byte at ES:DI with a bit
 ; set for each TransparentColor pixel.
 BuildEgaTransparencyMask:
-    mov byte ptr cs:[DecodeByte5BA0], 0
+    mov byte ptr cs:[EgaMaskBits], 0
     mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
@@ -4700,26 +4700,26 @@ BuildEgaTransparencyMask:
 @@nextPixel:
     push cx
     rcl dh, 1
-    rcl byte ptr cs:[DecodeByte5BA1],1
+    rcl byte ptr cs:[EgaPixelColor],1
     rcl dl, 1
-    rcl byte ptr cs:[DecodeByte5BA1],1
+    rcl byte ptr cs:[EgaPixelColor],1
     rcl ah, 1
-    rcl byte ptr cs:[DecodeByte5BA1],1
+    rcl byte ptr cs:[EgaPixelColor],1
     rcl al, 1
-    rcl byte ptr cs:[DecodeByte5BA1],1
-    and byte ptr cs:[DecodeByte5BA1], 0Fh
+    rcl byte ptr cs:[EgaPixelColor],1
+    and byte ptr cs:[EgaPixelColor], 0Fh
     mov cl, byte ptr cs:[TransparentColor]
-    cmp byte ptr cs:[DecodeByte5BA1], cl
+    cmp byte ptr cs:[EgaPixelColor], cl
     jne @@opaque
     stc
     jmp short @@shiftMaskBit
 @@opaque:
     clc
 @@shiftMaskBit:
-    rcl byte ptr cs:[DecodeByte5BA0],1
+    rcl byte ptr cs:[EgaMaskBits],1
     pop cx
     loop @@nextPixel
-    mov al, byte ptr cs:[DecodeByte5BA0]
+    mov al, byte ptr cs:[EgaMaskBits]
     stosb
     inc si
     ret
@@ -8014,8 +8014,8 @@ CopyWorkspaceToScreenCga:
     jne @@copyRow
 RestoreMainDataSegment:
     mov ds, word ptr cs:[MainDataSegment]
-; Bare ret: the no-op entry of many dispatch tables.
-CountXReturn:
+; Shared bare RET: the no-op entry of many dispatch tables.
+ReturnNear:
     ret
 
 ClearScreen104x200Cga:
@@ -9377,7 +9377,8 @@ CgaSelectBrightPalette0:
     ret
 @@isCga:
     call CgaIntensityOn
-; BIOS palette 0, colour burst on (mode register bit 2 clear), palette-select bit 5 clear.
+; BIOS palette 0, colour burst on, palette-select bit 5 clear; falls into CgaIntensityOn
+; (intensity left set).
 CgaSelectPalette0:
     mov ah, 0Bh
     mov bh, 1
@@ -9523,7 +9524,7 @@ GridOffsetNegativeY:
 ; BP = record. Map the record's position to a level-map cell (13-byte rows, 16-pixel
 ; cells): GridYSum = ScrollSubRow + REC_Y; returns BX = MapScrollPos - 13*(GridYSum>>4)
 ; + REC_X>>4, or BX = FFFFh via GridOffsetNegativeY when GridYSum is negative.
-; Some callers do not check FFFFh (see ProbeGridForRecordResponse). Terrain callers use
+; Some callers do not check FFFFh (see PodProbeTerrain). Terrain callers use
 ; BX + MAP_ROW_BYTES as the cell under the point. X is unsigned; flags are not a result.
 ComputeRecordGridOffset:
     mov ax, word ptr ds:[ScrollSubRow]
@@ -9600,7 +9601,8 @@ WaitInputPressed:
 WaitInputClick:
     call WaitInputPressed
     jmp short WaitInputReleased
-; Black border: EGA attribute controller overscan, or the Tandy border register.
+; Black border: Tandy border register; any other adapter the EGA attribute-controller
+; overscan (3C0h index 11h).
 SetBorderBlack:
     mov ah, 0
     cmp word ptr cs:[VideoAdapter], 2

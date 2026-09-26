@@ -74,7 +74,7 @@ REC_FIELD_1C equ 1Ch
 REC_SIDE_FLAG equ 1Eh
 ; Set at spawn, decremented per collision; zero destroys the record.
 REC_HIT_POINTS equ 20h
-; Explosion frame, +1 on frames when CountGate2324 = 1; ends at 9 (size 1) or 0Ch
+; Explosion frame, +1 on frames when FrameParity = 1; ends at 9 (size 1) or 0Ch
 ; (size 2); a size-0 explosion never ends (it only scrolls until out of bounds).
 REC_ANIM_COUNTER equ 22h
 ; Nonzero selects the flash blitters; set to 5 on a hit. Decremented by the draw side

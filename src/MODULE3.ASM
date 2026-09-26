@@ -34,7 +34,6 @@ extrn Codeword:byte
 extrn CorruptMsgHead:byte
 extrn CorruptMsgPressKey:byte
 extrn CorruptMsgTail:byte
-extrn CountGate2324:word
 extrn CreditRandomWords:byte
 extrn CurrentSidePodSlot:word
 extrn CurrentTrailingPodSlot:word
@@ -101,6 +100,7 @@ extrn FrameCount32:word
 extrn FrameCount4:word
 extrn FrameCount64:word
 extrn FrameCount8:word
+extrn FrameParity:word
 extrn FramesSinceInvaderSpawn:word
 extrn FrontPodOffsets:word
 extrn FrontPodRecord:word
@@ -162,6 +162,7 @@ extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
 extrn MsgDeallocError:byte
 extrn MuzzleOffsets:word
+extrn NewGameClearedWord:word
 extrn NextLevelRequest:word
 extrn NonAsciiCodeword:byte
 extrn OffsetXWork:word
@@ -302,7 +303,6 @@ extrn WalkerFacingStep:word
 extrn WeaponMode:word
 extrn WhatOilShortageFlag:byte
 extrn WinScreenPageList:word
-extrn Word235A:word
 extrn XAdjustPathTaken:word
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
@@ -403,7 +403,6 @@ extrn CollapseScreenWithSfx:near
 extrn ComputeRecordGridOffset:near
 extrn CopyFullWorkspaceToScreen:near
 extrn CopyWorkspaceToScreen:near
-extrn CountXReturn:near
 extrn DrawEnergyGauge:near
 extrn DrawFuelGauge:near
 extrn DrawHud:near
@@ -456,6 +455,7 @@ extrn ResetPageAndClearScreen:near
 extrn RestartAtCheckpoint:near
 extrn RestoreRecordBackground:near
 extrn ReturnCarrySet:near
+extrn ReturnNear:near
 extrn RunLevelScriptEvents:near
 extrn RunOptionsMenu:near
 extrn SaveRecordBackground:near
@@ -731,7 +731,7 @@ StartNewGame:
     call RunOptionsMenu
     mov word ptr ds:[LevelIndex], 0
     mov word ptr ds:[LivesLeft], INITIAL_LIVES
-    mov word ptr ds:[Word235A], 0
+    mov word ptr ds:[NewGameClearedWord], 0
     mov word ptr ds:[GameOverRequest], 0
     mov byte ptr ds:[ScoreBcd], 0
     mov byte ptr ds:[ScoreBcd + 1], 0
@@ -1034,8 +1034,8 @@ RunLevelEndSequence:
     jmp word ptr cs:[bx + LevelEndPhaseCases]
     even
 LevelEndPhaseCases label word
-    dw offset CountXReturn, offset LevelEndFlyToWaypointA, offset LevelEndFlyToWaypointB, offset LevelEndRefill
-    dw offset CountXReturn
+    dw offset ReturnNear, offset LevelEndFlyToWaypointA, offset LevelEndFlyToWaypointB, offset LevelEndRefill
+    dw offset ReturnNear
 LevelEndRefill:
     mov byte ptr ds:[InputBits], IN_YMINUS
     call PickupFuel
@@ -1054,7 +1054,8 @@ LevelEndRefill:
 @@refillDone:
     inc word ptr ds:[LevelEndPhase]
     ret
-; Also spreads the side pods out.
+; Autopilot to AutopilotWaypointB; also draws the side pods in toward the ship (up to
+; 16 px, 30 px when the ship form is not 0).
 LevelEndFlyToWaypointB:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne @@widenSpread
@@ -1201,7 +1202,7 @@ UpdatePlayerFrame:
 @@checkEdgeSpread:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     ja @@checkTerrain
-    call UpdatePlacementXOffsetsAtRecordEdges
+    call UpdateSidePodSpreadAtEdges
 @@checkTerrain:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne @@advanceHistory
@@ -1238,7 +1239,7 @@ CountRightPod:
 
 ; BP = record. Push X two steps away from an edge where a side pod was clamped (unless
 ; the player steers that way), then one step towards the side with fewer pods (skipped for a
-; difference of one while CountGate2324 = 1). XAdjustPathTaken = 1 when any nudge path
+; difference of one while FrameParity = 1). XAdjustPathTaken = 1 when any nudge path
 ; was taken, even if the bound kept X unchanged; it triggers a history advance.
 AdjustRecordXFromCounts:
     mov word ptr ds:[XAdjustPathTaken], 0
@@ -1279,36 +1280,31 @@ AdjustRecordXFromCounts:
     add bl, ah
     add bl, ah
     shl bx, 1
-    jmp word ptr cs:[bx + CountXTable]
-; Nine exhaustive targets for index AL_count + 3*AH_count, each count0..2.
-CountXTable:
-    dw CountXReturn ; CS-relative code pointer; counts AH=0, AL=0
-    dw CountXDecIfGate ; CS-relative code pointer; counts AH=0, AL=1
-    dw CountXDec ; CS-relative code pointer; counts AH=0, AL=2
-    dw CountXIncIfGate ; CS-relative code pointer; counts AH=1, AL=0
-    dw CountXReturn ; CS-relative code pointer; counts AH=1, AL=1
-    dw CountXDecIfGate ; CS-relative code pointer; counts AH=1, AL=2
-    dw CountXInc ; CS-relative code pointer; counts AH=2, AL=0
-    dw CountXIncIfGate ; CS-relative code pointer; counts AH=2, AL=1
-    dw CountXReturn ; CS-relative code pointer; counts AH=2, AL=2
-CountXIncIfGate:
-    cmp word ptr ds:[CountGate2324], 1
+    jmp word ptr cs:[bx + SidePodBalanceCases]
+; Index = right pods + 3 * left pods (0..2 each): nudge the ship X toward the side with
+; fewer pods (by one pixel, or every other frame for a one-pod difference).
+SidePodBalanceCases label word
+    dw offset ReturnNear, offset NudgeShipLeftHalf, offset NudgeShipLeft
+    dw offset NudgeShipRightHalf, offset ReturnNear, offset NudgeShipLeftHalf
+    dw offset NudgeShipRight, offset NudgeShipRightHalf, offset ReturnNear
+NudgeShipRightHalf:
+    cmp word ptr ds:[FrameParity], 1
     jne @@nudgeRight
     ret
 @@nudgeRight:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr IncRecordXBelowMax
-CountXInc:
+NudgeShipRight:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr IncRecordXBelowMax
-CountXDecIfGate:
-    cmp word ptr ds:[CountGate2324], 1
+NudgeShipLeftHalf:
+    cmp word ptr ds:[FrameParity], 1
     jne @@nudgeLeft
     ret
 @@nudgeLeft:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr DecRecordXUnlessZero
-CountXDec:
+NudgeShipLeft:
     mov word ptr ds:[XAdjustPathTaken], 1
     jmp near ptr DecRecordXUnlessZero
 
@@ -1496,8 +1492,8 @@ DamagePlayerEnergy:
     jne RedrawEnergyGauge
 @@barEmpty:
     mov word ptr ds:[EnergyPoints], 018h
-; Also called on body contact. Without tanks left the ship dies (form 3), unless
-; AllCheatsFlag refills.
+; Also on body contact. Difficulty 0 ignores every second loss (EasyHitToggle). Without
+; tanks the ship dies (form 3) unless AllCheatsFlag refills.
 LosePlayerEnergyTank:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     jne @@checkShipAlive
@@ -1782,7 +1778,7 @@ FireMainWeapon:
     even
 WeaponPatternCases label word
     dw offset FireSingleShot, offset FireHeavyShot, offset FireForkShot, offset FireTwinRising3
-    dw offset FireTwinRising16, offset CountXReturn
+    dw offset FireTwinRising16, offset ReturnNear
 
 ; Three type 0Ch shots from FrontPodRecord (up, up-left, up-right), one burst at a
 ; time.
@@ -1892,7 +1888,7 @@ UpdateBeam:
     jne @@checkGrowFrame
     ret
 @@checkGrowFrame:
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     jne @@alignLinks
     cmp word ptr ds:[BeamListEnd], offset BeamListTerminator
     jne @@checkHead
@@ -2060,8 +2056,8 @@ SpawnSideShotFromSI:
     mov word ptr ds:[bx + REC_TYPE], 5
     ret
 
-; The WeaponMode pattern from the side pods (left pods fire up-left, right
-; pods up-right).
+; The WeaponMode pattern from the side pods; in fork mode left pods fire up-left, right
+; pods up-right (PodShotDirection).
 FireSidePodShots:
     mov word ptr ds:[PodShotDirection], 7
     mov si, word ptr ds:[SidePodLeftInner]
@@ -2100,7 +2096,7 @@ FirePodWeapon:
     even
 PodWeaponPatternCases label word
     dw offset SpawnShotAtPod, offset PodHeavyShot, offset PodForkShot, offset PodTwinRising3
-    dw offset PodTwinRising16, offset CountXReturn
+    dw offset PodTwinRising16, offset ReturnNear
 PodTwinRising16:
     cmp word ptr ds:[ShotsAtFireMain], 0
     je @@spawnShots
@@ -2216,8 +2212,7 @@ FireMissile:
     inc word ptr ds:[MissilesLive]
     dec word ptr ds:[MissileAmmo]
     ret
-; First DS:[BX+4] = SS:[BP+4]+10 modulo 65536; then DS:[BX+2] = SS:[BP+2]+10. AX holds the
-; latter result. Order matters if memory aliases. Flags are from the second ADD.
+; BX record's REC_X, then REC_Y = BP record's + 0Ah each; AX = the new Y.
 CopyRecordPositionPlus10:
     mov ax, word ptr ss:[bp + REC_X]
     add ax, 0Ah
@@ -2312,15 +2307,15 @@ IncRecordXBelowMax:
     inc word ptr ss:[bp + REC_X]
     ret
 
-; BP = record; no-op while MapScrollPos <= B6h. Pushing against the right edge (REC_X =
-; RECORD_X_MAX with IN_XPLUS) widens SidePodSpreadLeft by one up to 8; otherwise it
-; relaxes back towards 0. UpdatePlacementXGroupA does the mirror for the left edge first.
-UpdatePlacementXOffsetsAtRecordEdges:
+; BP = ship; no-op while MapScrollPos <= MAP_INTRO_END_POS. At the right edge (X =
+; RECORD_X_MAX with IN_XPLUS) pulls the left pod pair in (SidePodSpreadLeft up to 8),
+; else relaxes it toward 0. Equality guards, not clamps.
+UpdateSidePodSpreadAtEdges:
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
     ja @@updateSpread
     ret
 @@updateSpread:
-    call UpdatePlacementXGroupA
+    call UpdateSidePodSpreadRight
     cmp word ptr ss:[bp + REC_X], RECORD_X_MAX
     jne @@relaxLeftSpread
     test byte ptr ds:[InputBits], IN_XPLUS
@@ -2340,7 +2335,7 @@ UpdatePlacementXOffsetsAtRecordEdges:
 ; BP = record. Pushing against the left edge (REC_X = 0 with IN_XMINUS) moves
 ; SidePodSpreadRight down by one to -8; otherwise it relaxes back towards 0.
 ; Guards are equality checks, not clamps.
-UpdatePlacementXGroupA:
+UpdateSidePodSpreadRight:
     cmp word ptr ss:[bp + REC_X], 0
     jne @@relaxRightSpread
     test byte ptr ds:[InputBits], IN_XMINUS
@@ -2361,6 +2356,7 @@ UpdatePlacementXGroupA:
 
 ; Scrolls one line unless an encounter or the level end holds the map; at MapScrollPos
 ; MAP_END_POS starts the level end (smart bomb, four type 53h records).
+; At MAP_LAST_SPAWN_POS also restores DAC colour 6.
 ScrollForwardAndCheckLevelEnd:
     cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     je @@checkEncounter
@@ -2462,6 +2458,7 @@ WrapScrollWindowForward:
     ret
 
 ; Draws the map row at MapScrollPos, then MapScrollPos + 0Dh, LevelScriptClock - 1.
+; Sfx 7 up to MAP_INTRO_END_POS; requests MUSIC_LEVEL_END when the clock reaches 4.
 EnterNextMapRowForward:
     call DrawMapRowIntoScrollBand
     cmp word ptr ds:[MapScrollPos], MAP_INTRO_END_POS
@@ -2781,9 +2778,9 @@ UpdateRecordByKind:
     shl bx, 1
     jmp word ptr cs:[bx + KindHandlers]
     even
-; KIND_PLAYER is a bare ret (CountXReturn); the primary is never visited anyway.
+; KIND_PLAYER is a bare ret (ReturnNear); the primary is never visited anyway.
 KindHandlers label word
-    dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
+    dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset ReturnNear
     dw offset RunTypeHandler, offset UpdatePickup, offset UpdateExhaust
 ; Shared exit: CF clear (no hit).
 ReturnNoHit:
@@ -2872,7 +2869,7 @@ CollectPickup:
     shl bx, 1
     jmp word ptr cs:[bx + PickupHandlers]
 PickupHandlers label word
-    dw offset CountXReturn, offset PickupUpgradeSelector, offset PickupEnergy, offset SmartBombAll
+    dw offset ReturnNear, offset PickupUpgradeSelector, offset PickupEnergy, offset SmartBombAll
     dw offset PickupFuel, offset PickupDone
 PickupDone:
     pop bp
@@ -3019,41 +3016,41 @@ PodTerrainHit:
     jmp near ptr ReturnNoHit
 @@checkDemo:
     cmp word ptr ds:[DemoActive], 1
-    jne ProbeGridForRecordResponse
+    jne PodProbeTerrain
     jmp near ptr ReturnNoHit
 ; Part of PodTerrainHit. Test the map cell at grid offset + 13 and, when X is not
 ; cell-aligned, its right neighbour; a nonzero attribute is a hit. The FFFFh
 ; negative-Y result of ComputeRecordGridOffset is not checked (+13 wraps to 000Ch).
-ProbeGridForRecordResponse:
+PodProbeTerrain:
     call ComputeRecordGridOffset
     add bx, MAP_ROW_BYTES
     call ReadIndexedByteAttribute
-    jne SetResponseAndStepRecordCounter
+    jne PodTakeHit
     test word ptr ss:[bp + REC_X], 0Fh
-    je RecordResponseReturnClear
+    je ReturnPodNotHit
     inc bx
     call ReadIndexedByteAttribute
-    jne SetResponseAndStepRecordCounter
-; Shared NC return of the probe and of SetResponseAndStepRecordCounter.
-RecordResponseReturnClear:
+    jne PodTakeHit
+; Shared NC return of the probe and of PodTakeHit.
+ReturnPodNotHit:
     clc
     ret
 ; BP = pod that was hit (by terrain, or from PodCollideRecords). Request sound 0Eh and
-; flash 5 frames; lose a hit point unless DifficultySetting = 0 and CountGate2324 != 1.
+; flash 5 frames; lose a hit point unless DifficultySetting = 0 and FrameParity != 1.
 ; CF = 1 when the last hit point is lost (flash cancelled); 0 HP would wrap to FFFFh.
-SetResponseAndStepRecordCounter:
+PodTakeHit:
     cmp byte ptr ds:[SfxEnabled], 0
-    je SetRecordResponseWord
+    je PodTakeHitSilent
     mov byte ptr ds:[SfxRequest], 0Eh
-SetRecordResponseWord:
+PodTakeHitSilent:
     mov word ptr ss:[bp + REC_FLASH_TIMER], 5
     cmp word ptr ds:[DifficultySetting], 0
-    jne StepRecordResponseCounter
-    cmp word ptr ds:[CountGate2324], 1
-    jne RecordResponseReturnClear
-StepRecordResponseCounter:
+    jne PodLoseHitPoint
+    cmp word ptr ds:[FrameParity], 1
+    jne ReturnPodNotHit
+PodLoseHitPoint:
     dec word ptr ss:[bp + REC_HIT_POINTS]
-    jne RecordResponseReturnClear
+    jne ReturnPodNotHit
     mov word ptr ss:[bp + REC_FLASH_TIMER], 0
     stc
     ret
@@ -3111,7 +3108,7 @@ PodCollideRecords:
     jne @@nextRecord
     call DestroyRecordAtBX
 ; Record scan shares the same response/counter path as the grid attribute probe.
-    call SetResponseAndStepRecordCounter
+    call PodTakeHit
     jb @@podDestroyed
     ret
 @@podDestroyed:
@@ -3170,7 +3167,8 @@ UpdatePod:
 ShotScrollAndBounds:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
-; Removes the shot outside Y 8..E0h or past X C8h, or a player shot hitting a wall.
+; Removes the shot outside Y 8..E0h or past X C8h, or when a type 2/4/5/6/8/9/0Ch shot is
+; over a wall cell (attribute exactly 1); the wall test is skipped in the demo.
 ShotBoundsCheck:
     cmp word ptr ss:[bp + REC_Y], 8
     jae @@checkBottom
@@ -3630,7 +3628,8 @@ TerrainStepLeft:
     dec dx
     ret
 
-; Finds the next live KIND_ENEMY record for the homing missile.
+; Round-robin from TargetSearchCursor: next live KIND_ENEMY, not types 1/21h/22h/26h, with
+; Y <= E0h (unsigned); BX = FFFFh when none.
 FindMissileTarget:
     mov cx, POOL_A_COUNT
     mov bx, word ptr ds:[TargetSearchCursor]
@@ -4220,7 +4219,7 @@ SteerToSaved:
 ; Hops between formation slots; when few remain, moves above the player and drops 4 px
 ; per frame.
 ; Fires random aimed shots while RecordTickCounter is 2BCh..2D0h. The drop sets the
-; global RecordTickCounter = 28h, targets (player X + 8) & ~7 unless CountGate2324 = 1,
+; global RecordTickCounter = 28h, targets (player X + 8) & ~7 unless FrameParity = 1,
 ; and keeps falling 4 px per frame past A0h.
 Type20SlotHopperDropper:
     cmp word ptr ss:[bp + REC_DIVE_PHASE], -1
@@ -4280,7 +4279,7 @@ Type20SlotHopper:
     jae @@maybeShoot
     jmp near ptr FinishRecordUpdate
 @@fewLeft:
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     je @@startDrop
 @@targetPlayerX:
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
@@ -4833,6 +4832,7 @@ RemoveRecordAtBX:
 ; BP = record: REC_STATUS = 0 and per-class bookkeeping. Enemy: ReleaseEncounterMember
 ; (leaders drop their item even when leaving the screen) and, unless type 1, zero its
 ; group's GROUP_LIVE (no drop). Pod -> KIND_TYPED. Type 9: frees the whole BeamList.
+; Shots 5-8/0Ch decrement their ShotsLive* count; type 0Ah decrements MissilesLive.
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
     cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
@@ -4967,7 +4967,7 @@ ProbeOverlapsWalker:
 ; Explosion: REC_ANIM advances every 2nd frame; small ones end at 9 (types 24h/25h leave
 ; a type 26h wreck), large ones at 0Ch. Size class 0 only scrolls.
 Type01ExplosionAnimation:
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     je @@advance
     jmp near ptr ScrollRecordThenFinish
 @@advance:
@@ -5175,7 +5175,7 @@ DestroyRecord:
     jmp word ptr cs:[bx + ExplosionStartCases]
     even
 ExplosionStartCases label word
-    dw offset CountXReturn, offset StartExplosion16, offset StartExplosion32
+    dw offset ReturnNear, offset StartExplosion16, offset StartExplosion32
 StartExplosion16:
     mov word ptr ss:[bp + REC_SPRITE], 0
     ret
@@ -5394,7 +5394,7 @@ SpawnChildAt12:
 ; parent below E0h (unsigned), requests an effect chosen by the parent's REC_TYPE and
 ; returns BX = child. Pool full: BX = FFFFh. Throttled: returns with BX UNCHANGED (AL = 0
 ; only at difficulty 0); callers that test BX = FFFFh then write through the stale BX
-; (types 24h/25h: RunTypeHandler's REC_TYPE * 2, hitting DS:0050/0052).
+; (types 24h/25h: RunTypeHandler's REC_TYPE * 2, hitting JoyCalCenterY/TimerVectorInstalled).
 SpawnThrottledChild:
     cmp word ptr ds:[DifficultySetting], 2
     je @@spawn
@@ -5639,8 +5639,8 @@ ResetRecordsForLife:
     mov word ptr ds:[RecordTickCounter], 0
     ret
 
-; Frees all of pool A, clears weapon, side shots, missiles and pod slots, and refreshes
-; the upgrade display.
+; Frees all of pool A, resets weapon, side shots, missiles, pod slots and ship form 0,
+; and redraws the upgrade slots.
 ResetPoolAAndUpgrades:
     mov word ptr cs:[SaveBufferCursor], offset PoolASaveBuffers
     mov cx, POOL_A_POINTER_COUNT
@@ -5681,8 +5681,8 @@ LevelCgaPaletteCases label word
     dw offset CgaSelectBrightPaletteNoBurst, offset CgaSelectBrightPalette1, offset CgaSelectBrightPalette0, offset CgaSelectBrightPalette1
     dw offset CgaSelectBrightPaletteNoBurst, offset CgaSelectBrightPalette0
 
-; CGA: the level's palette routine; otherwise DAC colour 6 for the level (EGA with a VGA
-; DAC only).
+; CGA: the level's palette routine; EGA: DAC entry 6 for the level (written blind; only
+; a VGA DAC reacts). Tandy: nothing.
 ApplyLevelPalette:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je ApplyCgaLevelPalette
@@ -7100,11 +7100,11 @@ DemoCountDownStep:
     shl bx, 1
     jmp word ptr cs:[bx + DemoStepActions]
 DemoStepActions label word
-    dw offset CountXReturn, offset DemoStepLaunchFrontPod, offset DemoStepLaunchInnerSidePods, offset DemoStepNextShipForm
+    dw offset ReturnNear, offset DemoStepLaunchFrontPod, offset DemoStepLaunchInnerSidePods, offset DemoStepNextShipForm
     dw offset DemoStepLaunchOuterSidePods, offset DemoStepNextShipForm, offset DemoStepLaunchTrailingPodNear, offset DemoStepLaunchTrailingPodFar
-    dw offset CountXReturn, offset CountXReturn, offset DemoStepNextWeaponMode, offset DemoStepEnableSideShots
+    dw offset ReturnNear, offset ReturnNear, offset DemoStepNextWeaponMode, offset DemoStepEnableSideShots
     dw offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode, offset DemoStepNextWeaponMode
-    dw offset DemoStepSpawnPathEnemy51, offset DemoStepGiveMissile, offset CountXReturn, offset CountXReturn
+    dw offset DemoStepSpawnPathEnemy51, offset DemoStepGiveMissile, offset ReturnNear, offset ReturnNear
 ; Uses BX without checking for FFFFh (pool A full).
 DemoStepSpawnPathEnemy51:
     call SpawnEnemyHere
@@ -7185,7 +7185,7 @@ DemoStepLaunchTrailingPodFar:
     call DemoLaunchTrailingPod
     add word ptr ss:[bp + REC_SAVED_Y], 14h
     ret
-; BP = pod: DemoLaunchPod homing on the player position + (8, 28h).
+; BP = pod: DemoLaunchPod homing on player Y + 28h, X + 8.
 DemoLaunchTrailingPod:
     call DemoLaunchPod
     mov ax, word ptr ds:[PrimaryRecord + REC_X]
@@ -8731,7 +8731,7 @@ Type72DescendFiringAimed:
     add ax, 1Ch
     mov ss:[bp + REC_SPRITE], ax
     inc word ptr ss:[bp + REC_Y]
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     jne @@done
     call SpawnAimedShot
 @@done:

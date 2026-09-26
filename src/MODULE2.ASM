@@ -21,7 +21,6 @@ extrn CheatLifeInTheFastLane:word
 extrn CheatMyNameIsSmith:word
 extrn CheatRemindMe:word
 extrn CheatWhatOilShortage:word
-extrn CountGate2324:word
 extrn DemoActive:word
 extrn DemoUpgradeStatus:word
 extrn DifficultySetting:word
@@ -53,6 +52,7 @@ extrn FrameCount4:word
 extrn FrameCount64:word
 extrn FrameCount8:word
 extrn FrameDivider4:word
+extrn FrameParity:word
 extrn FrontPodRecord:word
 extrn Fuel:word
 extrn FuelGaugeOffset:word
@@ -231,8 +231,6 @@ public CollapseScreenWithSfx
 public CopyEgaPage0ToPage1
 public CopyFullWorkspaceToScreen
 public CopyWorkspaceToScreen
-public DecodeByte5BA0
-public DecodeByte5BA1
 public DecodeDest
 public DecodeFileFlags
 public DecodeGraphicsImages
@@ -253,6 +251,8 @@ public DrawPanelGraphic
 public DrawRecordSprite
 public DrawSprite8Record
 public DrawUpgradeSlots
+public EgaMaskBits
+public EgaPixelColor
 public FarCallMainNearViaAX
 public FindFreeRecordPoolA
 public FindFreeRecordPoolB
@@ -406,7 +406,6 @@ extrn CopyPackedRowsToTandyBanks:near
 extrn CopyWorkspace104x192ToTandy:near
 extrn CopyWorkspaceToScreenCga:near
 extrn CopyWorkspaceToScreenEga:near
-extrn CountXReturn:near
 extrn DecodeGraphicsImagesCga:near
 extrn DecodeGraphicsImagesEga:near
 extrn DecodeGraphicsImagesTandy:near
@@ -531,6 +530,7 @@ extrn RestoreBackground8Ega:near
 extrn RestoreBackground8Tandy:near
 extrn RestoreKeyboardVector09:near
 extrn RestoreTimerVector08:near
+extrn ReturnNear:near
 extrn RunAttractSequence:near
 extrn SaveBackground16Cga:near
 extrn SaveBackground16Ega:near
@@ -1204,7 +1204,7 @@ StretchShownRows dw 0
 StretchRowError dw 0
 StretchFlagA dw 0
 StretchFlagB dw 0
-StretchWord5909 dw 0
+StretchUnusedWord dw 0
 ; Uncalled variant of the stretch drawers: squash and stretch until a key or the
 ; primary button (SquashAndStretchUntilInput).
 StretchUntilInputUnused:
@@ -1217,7 +1217,7 @@ StretchUntilInputUnused:
     mov cs:[StretchDest], di
     mov word ptr cs:[StretchFlagA], 0
     mov word ptr cs:[StretchFlagB], 0
-    mov word ptr cs:[StretchWord5909], 0
+    mov word ptr cs:[StretchUnusedWord], 0
     mov es, cs:[ScreenSegment]
 @@stretchCycle:
     push cx
@@ -1289,8 +1289,7 @@ SquashAndStretchUntilInput:
     xor ax, ax
     inc ax
     ret
-; Per-adapter dispatch; no caller found in this image.
-; BP = record: AX = screen offset of REC_Y/REC_X. No caller found.
+; BP = record: AX = screen offset of REC_Y/REC_X, per adapter. No caller found.
 RecordScreenOffset:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
@@ -1402,8 +1401,8 @@ DecodeRowBuffer db 0A0h dup (0)
 DecodePixelBytes db 8 dup (0)
 DecodePlaneRowBytes dw 0
 DecodeRows dw 0
-DecodeByte5BA0 db 0
-DecodeByte5BA1 db 0
+EgaMaskBits db 0
+EgaPixelColor db 0
 DecodePlaneBits db 4 dup (0)
 DecodeDest dw 0
 ; Images decoded so far in this file; index into the per-file flag table.
@@ -1935,7 +1934,7 @@ TickFrameTimers:
     and word ptr ds:[SlowCount8], 7
     inc word ptr ds:[EncounterTicks]
 @@frameCounters:
-    xor word ptr ds:[CountGate2324], 1
+    xor word ptr ds:[FrameParity], 1
     inc word ptr ds:[FrameCount4]
     and word ptr ds:[FrameCount4], 3
     inc word ptr ds:[FrameCount8]
@@ -1984,8 +1983,8 @@ UpdateRefuelTimersAndScore:
     call DrawScore
     ret
 
-; Level load: scrolls the map from 0EA0h back to the level start (MapScrollPos 9Ch), 16
-; pixels at a time, then LevelScriptClock -= 3.
+; Level load: from MAP_END_POS scrolls back to MAP_START_POS 16 lines at a time, then
+; LevelScriptClock -= 3.
 ScrollMapToLevelStart:
     mov ax, word ptr cs:[ScrollStartOffset]
     mov word ptr ds:[ScrollWindowOffset], ax
@@ -2139,6 +2138,8 @@ DecrementFirstEnergyCell:
 
 ; Rebuilds EnergyCells from EnergyPoints and draws the six cells, then the tank image
 ; (20h + EnergyTanks). Preserves BP.
+; Then draws the ship icon beside it; HudTankCompare is never written, so the tank image
+; is always redrawn.
 DrawEnergyGauge:
     push bp
     mov es, word ptr cs:[MainDataSegment]
@@ -4182,7 +4183,7 @@ SpawnItemDrop:
     mov ax, 0C0h
 @@storeX:
     mov word ptr ds:[bx + REC_X], ax
-; BX = record: a 16x16 KIND_PICKUP for DropKind (sprite 46h + kind), not drawn yet.
+; BX = record: a 16x16 KIND_PICKUP for DropKind (sprite 46h + kind), draw pass 0.
 InitPickupRecord:
     mov word ptr ds:[bx + REC_ANIM_COUNTER], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
@@ -4997,7 +4998,7 @@ Level0MapCell:
 ; Map bytes E1h..F9h; the range check also admits FAh and FBh, which would index past
 ; the table into code (those bytes presumably never occur in level 0 maps).
 Level0CellCases label word
-    dw offset SpawnCellBurstFirer88, offset SpawnCellBurstFirer88, offset SpawnCellJitterShooter68, offset SpawnCellJitterDropper69
+    dw offset SpawnCellBurstFirer88, offset SpawnCellBurstFirer88, offset SpawnCellJitterShooter68, offset SpawnCellJitterer69
     dw offset SpawnCellCrawler6A, offset SpawnCellCrawler6A, offset SpawnCellDescender6B, offset SpawnCellDescender6C
     dw offset SpawnCellDescender6D, offset SpawnCellCrawler6E, offset SpawnCellDiver71, offset SpawnCellCruiser6F
     dw offset SpawnCellClimbWalker8D, offset SpawnCellClimbWalker8E, offset SpawnCellPatroller8A, offset SpawnCellCrawler54InwardB
@@ -5035,7 +5036,7 @@ Level3CellCases label word
     dw offset SpawnCellFireBurst87, offset SpawnCellFireBurst87, offset SpawnCellDropper55, offset SpawnCellPatroller83
     dw offset SpawnCellCrawler5F, offset SpawnCellSlider63, offset SpawnCellCrawler59, offset SpawnCellCrawler58Right
     dw offset SpawnCellCrawler57Left, offset SpawnCellWallPatroller19Down, offset SpawnCellPatroller89, offset SpawnCellClimbWalker8C
-    dw offset SpawnCellClimbWalker8B, offset CountXReturn, offset SpawnCellFaller4F, offset SpawnCellBouncer37
+    dw offset SpawnCellClimbWalker8B, offset ReturnNear, offset SpawnCellFaller4F, offset SpawnCellBouncer37
     dw offset SpawnCellPlunger2D, offset SpawnCellCrawler5E, offset SpawnCellDropper5D, offset SpawnCellSideTurret34
     dw offset SpawnCellSideTurret34, offset SpawnCellRiser5B, offset SpawnCellPatroller47, offset SpawnCellBurster35
 Level4MapCell:
@@ -5077,7 +5078,7 @@ Level4CellCases label word
     dw offset SpawnCellCrawler54UpRight, offset SpawnCellCrawler54UpLeft, offset SpawnCellCrawler5F, offset SpawnCellPatroller8A
     dw offset SpawnCellFaller4F, offset SpawnCellCrawler59, offset SpawnCellPatroller83, offset SpawnCellDropper5D
     dw offset SpawnCellWallBouncer38Right, offset SpawnCellWallBouncer38Left, offset SpawnCellSideTurret34, offset SpawnCellJitterShooter68
-    dw offset SpawnCellJitterDropper69, offset SpawnCellBurster35, offset SpawnCellCrawler5E
+    dw offset SpawnCellJitterer69, offset SpawnCellBurster35, offset SpawnCellCrawler5E
 ; Level 4 byte DAh: type 38h heading down-right.
 SpawnCellWallBouncer38Right:
     call SpawnMapEnemy
@@ -5217,8 +5218,8 @@ Level5MapCell:
     jmp word ptr cs:[bx + Level5CellCases]
 ; Map bytes D7h..EFh; the range check also admits F0h and F1h (past the table).
 Level5CellCases label word
-    dw offset SpawnCellClimbWalker8D, offset SpawnCellClimbWalker8E, offset SpawnCellCreeper48, offset SpawnCellLevelFirer92Right
-    dw offset SpawnCellLevelFirer92Left, offset SpawnCellCrawler54UpRight, offset SpawnCellCrawler54UpLeft, offset SpawnCellFireBurst87
+    dw offset SpawnCellClimbWalker8D, offset SpawnCellClimbWalker8E, offset SpawnCellCreeper48, offset SpawnCellRowFirer92Right
+    dw offset SpawnCellRowFirer92Left, offset SpawnCellCrawler54UpRight, offset SpawnCellCrawler54UpLeft, offset SpawnCellFireBurst87
     dw offset SpawnCellFireBurst87, offset SpawnCellDropper5D, offset ClearMapCell, offset ClearMapCell
     dw offset SpawnCellSlider63, offset SpawnCellShooter30, offset SpawnCellCrawler58Right, offset SpawnCellCrawler57Left
     dw offset SpawnCellWallPatroller19Right, offset SpawnCellPatroller89, offset SpawnCellPatroller47, offset SpawnCellBurster35
@@ -5248,7 +5249,7 @@ SpawnCellShooter30:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     ret
 ; Level 5 byte DAh: type 92h facing right.
-SpawnCellLevelFirer92Right:
+SpawnCellRowFirer92Right:
     call SpawnMapEnemy
     jne @@spawned
     ret
@@ -5258,7 +5259,7 @@ SpawnCellLevelFirer92Right:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_RIGHT
     ret
 ; Level 5 byte DBh: type 92h facing left.
-SpawnCellLevelFirer92Left:
+SpawnCellRowFirer92Left:
     call SpawnMapEnemy
     jne @@spawned
     ret
@@ -5424,7 +5425,6 @@ SpawnCellCruiser6F:
     call SpawnMapGroupEnemy
     jne @@spawned
     ret
-; Offset-placement use of field+8 does not define its role in other record types.
 @@spawned:
     mov word ptr ds:[bx + REC_DIRECTION], DIR_DOWN
     mov word ptr ds:[bx + REC_TYPE], 6Fh
@@ -5579,7 +5579,7 @@ SpawnCellBurster35:
     mov word ptr ds:[bx + REC_TYPE], 35h
     ret
 ; Level 0 E4h, level 4 DEh: type 69h.
-SpawnCellJitterDropper69:
+SpawnCellJitterer69:
     call SpawnMapEnemy
     jne @@spawned
     ret
@@ -5655,8 +5655,8 @@ JoinMapGroup:
     mov ds:[bx + REC_SLOT_INDEX], ax
     or ax, 1
     ret
-; Clears the cell and spawns a pool A enemy at (MapCellX, 10h), invisible for now
-; (REC_DRAW_PASS 0); BX = record and NZ, or ZF set when the pool is full.
+; Clears the cell and spawns a pool A enemy at (MapCellX, 10h) in draw pass 0 (under
+; pass-1 records); BX = record and NZ, or ZF when full. REC_SAVED = the caller BP's position.
 SpawnMapEnemy:
     call ClearMapCell
 SpawnMapEnemyKeepCell:
@@ -5844,8 +5844,8 @@ Type27SlowDescender:
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr ScrollRecordThenFinish
 
-; Moves each upgrade slot to the first list entry whose availability test passes (NZ);
-; after 10 failures shows the empty icon 24h.
+; Moves the selected upgrade slot to the next list entry whose availability test passes
+; (NZ); after 10 failures shows the empty icon 24h. No-op when none is selected.
 AdvanceToAvailableUpgrade:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne @@haveSelection
@@ -6444,7 +6444,7 @@ Type33TerrainBouncer:
     jmp near ptr ScrollRecordThenFinish
 ; Fires sideways with sfx 13h from FrameCount64 32h on; level 0 waits until Y 50h (the
 ; compare with 6 never matches).
-; The shot alternates each frame (CountGate2324) between horizontal and diagonal-down;
+; The shot alternates each frame (FrameParity) between horizontal and diagonal-down;
 ; fires every frame while FrameCount64 >= 32h, subject to the throttle.
 Type34SideFiringTurret:
     mov bx, ds:[LevelIndex]
@@ -6472,7 +6472,7 @@ Type34SideFiringTurret:
     mov byte ptr ds:[SfxRequest], 13h
 @@leftAim:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_RIGHT
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     je @@fireShot
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_RIGHT
     jmp short @@fireShot
@@ -6495,7 +6495,7 @@ Type34SideFiringTurret:
     mov byte ptr ds:[SfxRequest], 13h
 @@rightAim:
     mov word ptr ss:[bp + REC_DIRECTION], DIR_LEFT
-    cmp word ptr ds:[CountGate2324], 1
+    cmp word ptr ds:[FrameParity], 1
     je @@fireShot
     mov word ptr ss:[bp + REC_DIRECTION], DIR_DOWN_LEFT
 @@fireShot:

@@ -28,7 +28,6 @@ extrn ApplyTrailingPods:far
 extrn ApplyTwinRising16:far
 extrn ApplyTwinRising3:far
 extrn BeamAvailable:far
-extrn CountXReturn:far
 extrn ForkShotAvailable:far
 extrn FrontPodAvailable:far
 extrn HeavyShotAvailable:far
@@ -45,6 +44,7 @@ extrn MapResetList3:word
 extrn MapResetList4:word
 extrn MapResetList5:word
 extrn MissilesAvailable:far
+extrn ReturnNear:far
 extrn SfxCmdRest:far
 extrn SfxCmdSlide:far
 extrn SfxCmdStepDown:far
@@ -111,7 +111,6 @@ public Codeword
 public CorruptMsgHead
 public CorruptMsgPressKey
 public CorruptMsgTail
-public CountGate2324
 public CreditRandomWords
 public CurrentSidePodSlot
 public CurrentTrailingPodSlot
@@ -202,6 +201,7 @@ public FrameCount4
 public FrameCount64
 public FrameCount8
 public FrameDivider4
+public FrameParity
 public FramesSinceInvaderSpawn
 public FrontPodOffsets
 public FrontPodRecord
@@ -248,13 +248,13 @@ public InvaderSlotCursor
 public JitterAxisFields
 public JoyButtonSelect
 public JoyCalAbortSp
-public JoyCalByte98BF
 public JoyCalCenterX
 public JoyCalCenterY
 public JoyCalHighX
 public JoyCalHighY
 public JoyCalLowX
 public JoyCalLowY
+public JoyCalUnusedByte
 public JoyCalibratingFlag
 public JoyXHighThreshold
 public JoyXLowThreshold
@@ -331,6 +331,7 @@ public ModuleSoundRequest
 public MsgDeallocError
 public MsgNotEnoughMemory
 public MuzzleOffsets
+public NewGameClearedWord
 public NextLevelRequest
 public NonAsciiCodeword
 public OPageList
@@ -529,7 +530,6 @@ public WeaponMode
 public WhatOilShortageFlag
 public WideRowOffsets
 public WinScreenPageList
-public Word235A
 public XAdjustPathTaken
 StateData label byte
 ; Unreferenced FFh bytes at DS:0000, the start of the state segment.
@@ -1209,10 +1209,10 @@ ScoreBcd db 00h,00h,00h,00h
 ScoreMessagePrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Dh, 1Dh, 0
 ; Music number per LevelIndex (RequestLifeStartMusic, TickFrameTimers).
 LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
-CountGate2324 dw 00000h
+FrameParity dw 00000h
 ; Wrapping frame counters (@@sway..): 0..3 up to 0..7Fh each frame; the slow
 ; counters step when FrameDivider4 wraps (SlowCount10 and SlowCount3 have no reader).
-; Never reset (nor CountGate2324, ThrustDrainToggle, EasyHitToggle): their phase carries
+; Never reset (nor FrameParity, ThrustDrainToggle, EasyHitToggle): their phase carries
 ; over from the demo, level intros and earlier lives and games.
 FrameCount4 dw 0h
 FrameCount8 dw 0h
@@ -1258,7 +1258,7 @@ LevelIndex dw 00000h
 ; Starts at INITIAL_LIVES; the HUD draws one icon per life; -1 ends the game.
 LivesLeft dw 00000h
 ; Cleared by StartNewGame; no reader found.
-Word235A dw 0h
+NewGameClearedWord dw 0h
 ; Printed before the level number (DrawLevelNumber), and the digit per LevelIndex.
 LevelNumberPrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Fh, 20h, 0h
 LevelDigitChars db '612345'
@@ -1308,7 +1308,7 @@ PoolBCursor dw offset PoolB
 FuelGaugeOffset dw 0h
 ; Per LevelIndex: handler called with AL = level map byte while a map row is set up.
 LevelMapCellHandlers dw offset Level0MapCell, offset Level1MapCell, offset Level2MapCell, offset Level3MapCell, offset Level4MapCell, offset Level5MapCell
-; Sprite frame and case per DS:2330 >> 5 (types 90h, 91h).
+; Sprite frame and case per FrameCount128 >> 5 (types 90h, 91h).
 TurretPhaseTable dw 1, 0, 1, 2
 ; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
 ; secondary button applies the selected slot's current entry (ApplySelectedUpgrade).
@@ -1323,27 +1323,27 @@ SelectedUpgradeSlot dw 0
 UpgradeSlotPtrs dw offset UpgradeSlot0, offset UpgradeSlot1, offset UpgradeSlot2, offset UpgradeSlot3
 ; Entries {icon, condition routine (ZF = 0: usable), apply routine}, ending with
 ; icon FFFFh (the index then restarts at 0).
-UpgradeList0 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+UpgradeList0 dw 24h, offset UpgradeNeverAvailable, offset ReturnNear
     dw 0h, offset SingleShotAvailable, offset ApplySingleShot
     dw 1h, offset HeavyShotAvailable, offset ApplyHeavyShot
     dw 2h, offset ForkShotAvailable, offset ApplyForkShot
     dw 3h, offset TwinRising3Available, offset ApplyTwinRising3
     dw 4h, offset TwinRising16Available, offset ApplyTwinRising16
     dw 5h, offset BeamAvailable, offset ApplyBeam
-    dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList1 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 0FFFFh, 0FFFFh, offset ReturnNear
+UpgradeList1 dw 24h, offset UpgradeNeverAvailable, offset ReturnNear
     dw 6h, offset SideShotsAvailable, offset ApplySideShots
     dw 7h, offset MissilesAvailable, offset ApplyMissiles
-    dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList2 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 0FFFFh, 0FFFFh, offset ReturnNear
+UpgradeList2 dw 24h, offset UpgradeNeverAvailable, offset ReturnNear
     dw 9h, offset FrontPodAvailable, offset ApplyFrontPod
     dw 0Ah, offset SidePodsAvailable, offset ApplySidePods
     dw 0Bh, offset TrailingPodsAvailable, offset ApplyTrailingPods
-    dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList3 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 0FFFFh, 0FFFFh, offset ReturnNear
+UpgradeList3 dw 24h, offset UpgradeNeverAvailable, offset ReturnNear
     dw 0Dh, offset ShipForm1Available, offset ApplyShipForm1
     dw 0Eh, offset ShipForm2Available, offset ApplyShipForm2
-    dw 0FFFFh, 0FFFFh, offset CountXReturn
+    dw 0FFFFh, 0FFFFh, offset ReturnNear
 ; Slots: current icon, screen offset, panel image, entry list, entry index
 ; (UPGRADE_SLOT_* fields).
 UpgradeSlot0 dw 0, 0, 0Fh, offset UpgradeList0, 0
@@ -1389,7 +1389,7 @@ KeepLivesFlag db 0
 BonusKeysEnabled db 0
 ; F4 skips to the next level.
 LevelSkipEnabled db 0
-; Fire without waiting for the fire latch (DS:A980) to clear.
+; Fire without waiting for the fire latch (FireLatch) to clear.
 RapidFireEnabled db 0
 ; Set only together with all the others (CheckCheatRemindMe). Infinite energy:
 ; LosePlayerEnergyTank refills three tanks instead of killing the ship.
@@ -1462,7 +1462,7 @@ UnusedInputArea db 00h,00h
 ; joystick, or synthesized by the level-end autopilot and the demo.
 InputBits db 00h
 ; Cleared by the joystick calibration routines; no reader found.
-JoyCalByte98BF db 0h
+JoyCalUnusedByte db 0h
 ; Every one of its 52 tests gates an SfxRequest write or waits on SfxActive.
 SfxEnabled db 01h
 ; Gates CB1C's copy of ModuleSoundRequest into module header word +8.
@@ -2700,7 +2700,7 @@ LevelEndMapRows db 1h,1h,1h,27h,28h,29h,1h,2Ah,2Bh,2Ch,1h,1h,1h
 ; Written by the TypeHandlers dispatcher for every record; no reader found.
 DispatchRecordX dw 0
 DispatchRecordY dw 0
-; Four-frame sprite cycles indexed by DS:232E bits 4..5: types 86h and 88h, facing
+; Four-frame sprite cycles indexed by FrameCount64 bits 4..5: types 86h and 88h, facing
 ; REC_DIRECTION 6 or not.
 Type86FramesDir6 dw 0C8h, 0C9h, 0CAh, 0C9h
 Type86Frames dw 0DAh, 0DBh, 0DCh, 0DBh
