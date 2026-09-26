@@ -25,20 +25,70 @@ ROL_PROGRAM equ 90h
 ROL_VELOCITY equ 91h
 ROL_LENGTH equ 0DFh
 
+; MPU-401 ports (UART mode after init).
+MPU_DATA_PORT equ 0330h
+MPU_STATUS_PORT equ 0331h
+; Channel record (RolandChannel0..7, 1Fh bytes).
+; Note sounding (stream value), negative = none; rows until the next stream event.
+ROC_NOTE equ 0
+ROC_ROWS_LEFT equ 1
+; Pitch-bend MSB last sent; note velocity; MIDI channel (0-based).
+ROC_BEND_MSB equ 5
+ROC_VELOCITY equ 6
+ROC_MIDI_CHANNEL equ 7
+ROC_ORDER_PTR equ 0Ah
+ROC_STREAM equ 0Ch
+; Last CC7 volume sent; written, never read.
+ROC_VOLUME equ 0Eh
+ROC_ACTIVE equ 10h
+; Rows per note/rest, transpose, signed per-row note change.
+ROC_LENGTH equ 11h
+ROC_TRANSPOSE equ 12h
+ROC_NOTE_STEP equ 13h
+; Pitch envelope (89h): signed bend step (+15h unused), delay and count in effect periods.
+ROC_ENV_STEP equ 14h
+ROC_ENV_DELAY equ 16h
+ROC_ENV_COUNT equ 17h
+; Slide (8Ah): base bend added to 3Fh at note on, step per tick, ticks, countdown.
+ROC_BEND_BASE equ 18h
+ROC_SLIDE_STEP equ 19h
+ROC_SLIDE_TICKS equ 1Ah
+ROC_SLIDE_LEFT equ 1Bh
+; Effect period counter and reload (8Ch).
+ROC_PERIOD_COUNT equ 1Ch
+ROC_PERIOD_RELOAD equ 1Dh
+; Cleared by 85h only; never read.
+ROC_UNUSED_1E equ 1Eh
+
 driver segment byte public 'CODE'
 assume cs:driver,ds:nothing,ss:nothing,es:nothing
-    call loc_00063
+    call MusicTick
     retf
-    call loc_00374
+    call DetectMpu401
     retf
-; UNKNOWN: not yet classified as code or data
-    db 00h,00h,00h,00h,00h,00h,030h,03h,00h,00h,054h,079h,070h,065h,020h,03Ah
-    db 020h,052h,06Fh,06Ch,061h,06Eh,064h,0Dh,0Ah,020h,046h,069h,06Ch,065h,020h,03Ah
-    db 020h,04Fh,076h,065h,072h,06Bh,069h,06Ch,06Ch,024h,044h,061h,074h,065h,020h,03Ah
-    db 020h,030h,033h,02Eh,031h,031h,02Eh,039h,032h,024h,04Dh,075h,073h,069h,063h,020h
-    db 062h,079h,020h,053h,06Fh,075h,06Eh,064h,020h,049h,06Dh,061h,067h,065h,073h,020h
-    db 028h,063h,029h,020h,031h,039h,039h,032h,00h,01h,00h
-loc_00063:
+; Module header (the game addresses +8/+9 as MODULE_MUSIC_REQUEST/CURRENT).
+; Written by the game (word write: tune in +8, 0 in +9); 1..0Ah start a tune, others
+; stop. Taken on the next tick by HandleMusicRequest.
+MusicRequest db 0
+; Tune now playing, 0 = none.
+MusicCurrent db 0
+; Never touched by the module.
+HeaderUnused0A db 0, 0
+; Timer ticks per sequencer row (from the song header), and its countdown.
+Tempo db 0
+TempoCountdown db 0
+; Never read: the MPU-401 ports are hard-coded (MPU_DATA_PORT/MPU_STATUS_PORT).
+MpuPortUnused dw 0330h
+HeaderUnused10 dw 0
+ModuleIdent db 'Type : Roland', 0Dh, 0Ah, ' File : Overkill$Date : 03.11.92$'
+    db 'Music by Sound Images (c) 1992'
+; Pending tune latch (also set by stream commands 80h and 8Eh from MusicRequest).
+PendingTune db 0
+; Channel count of the current tune; written, never read.
+ChannelCount dw 1
+; Far entry +0, every timer interrupt (about 72.8 Hz): handles a music request, counts
+; TempoCountdown down, updates the eight channels, reloads the countdown from Tempo.
+MusicTick:
     push ax
     push bx
     push cx
@@ -48,29 +98,29 @@ loc_00063:
     push ds
     push cs
     pop ds
-    call loc_002EC
-    dec byte ptr ds:[0Dh]
-    mov di, 0448h
-    call loc_000B8
-    mov di, 0467h
-    call loc_000B8
-    mov di, 0486h
-    call loc_000B8
-    mov di, 04A5h
-    call loc_000B8
-    mov di, 04C4h
-    call loc_000B8
-    mov di, 04E3h
-    call loc_000B8
-    mov di, 0502h
-    call loc_000B8
-    mov di, 0521h
-    call loc_000B8
-    cmp byte ptr ds:[0Dh], 0
-    jne loc_000B0
-    mov al, byte ptr ds:[0Ch]
-    mov byte ptr ds:[0Dh], al
-loc_000B0:
+    call HandleMusicRequest
+    dec byte ptr ds:[TempoCountdown]
+    mov di, offset RolandChannel0
+    call UpdateChannel
+    mov di, offset RolandChannel1
+    call UpdateChannel
+    mov di, offset RolandChannel2
+    call UpdateChannel
+    mov di, offset RolandChannel3
+    call UpdateChannel
+    mov di, offset RolandChannel4
+    call UpdateChannel
+    mov di, offset RolandChannel5
+    call UpdateChannel
+    mov di, offset RolandChannel6
+    call UpdateChannel
+    mov di, offset RolandChannel7
+    call UpdateChannel
+    cmp byte ptr ds:[TempoCountdown], 0
+    jne TickExit
+    mov al, byte ptr ds:[Tempo]
+    mov byte ptr ds:[TempoCountdown], al
+TickExit:
     pop ds
     pop si
     pop di
@@ -79,465 +129,487 @@ loc_000B0:
     pop bx
     pop ax
     ret
-loc_000B8:
+; DI = channel (skipped when inactive). On a row tick: ROC_ROWS_LEFT - 1; at 0 read the
+; stream (no effects that tick), otherwise the note step. Every tick: slide, pitch envelope.
+UpdateChannel:
     xor al, al
-    cmp al, byte ptr ds:[di + 010h]
-    je loc_000D6
-    mov bx, word ptr ds:[di + 0Ch]
-    cmp al, byte ptr ds:[0Dh]
-    jne loc_000D0
-    dec byte ptr ds:[di + 1]
-    je loc_000D7
-    call loc_0013E
-loc_000D0:
-    call loc_0017D
-    call loc_00195
-loc_000D6:
+    cmp al, byte ptr ds:[di + ROC_ACTIVE]
+    je UpdateChannelDone
+    mov bx, word ptr ds:[di + ROC_STREAM]
+    cmp al, byte ptr ds:[TempoCountdown]
+    jne UpdateChannelEffects
+    dec byte ptr ds:[di + ROC_ROWS_LEFT]
+    je ReadStream
+    call StepNote
+UpdateChannelEffects:
+    call SlideTick
+    call PitchEnvTick
+UpdateChannelDone:
     ret
-loc_000D7:
+; BX = ROC_STREAM. Consumes bytes until one takes time (note, rest, tie). A note turns
+; the old one off, sends a pitch bend of 3Fh + ROC_BEND_BASE when changed, then note on.
+ReadStream:
     mov al, byte ptr ds:[bx]
     inc bx
     or al, al
-    js loc_0011C
+    js DispatchStreamByte
     push ax
-    mov ah, byte ptr ds:[di]
+    mov ah, byte ptr ds:[di + ROC_NOTE]
     or ah, ah
-    js loc_000EA
+    js StartNewNote
     mov ah, 080h
-    call loc_0040B
-loc_000EA:
+    call SendNoteMessage
+StartNewNote:
     pop ax
-    mov byte ptr ds:[di], al
-    mov al, byte ptr ds:[di + 01Ah]
-    mov byte ptr ds:[di + 01Bh], al
-    mov al, byte ptr ds:[di + 018h]
+    mov byte ptr ds:[di + ROC_NOTE], al
+    mov al, byte ptr ds:[di + ROC_SLIDE_TICKS]
+    mov byte ptr ds:[di + ROC_SLIDE_LEFT], al
+    mov al, byte ptr ds:[di + ROC_BEND_BASE]
     add al, 03Fh
-    cmp al, byte ptr ds:[di + 5]
-    je loc_00103
-    mov byte ptr ds:[di + 5], al
-    call loc_0035E
-loc_00103:
+    cmp al, byte ptr ds:[di + ROC_BEND_MSB]
+    je SendNoteOn
+    mov byte ptr ds:[di + ROC_BEND_MSB], al
+    call SendPitchBend
+SendNoteOn:
     mov ah, 090h
-    call loc_0040B
-loc_00108:
-    mov word ptr ds:[di + 0Ch], bx
-    mov al, byte ptr ds:[di + 011h]
-    mov byte ptr ds:[di + 1], al
+    call SendNoteMessage
+; Tie (82h), and the tail of a note: store the stream pointer, reload the row count.
+StreamCmd82:
+    mov word ptr ds:[di + ROC_STREAM], bx
+    mov al, byte ptr ds:[di + ROC_LENGTH]
+    mov byte ptr ds:[di + ROC_ROWS_LEFT], al
     ret
 StreamCmd81:
     mov ah, 080h
-    call loc_0040B
-    mov byte ptr ds:[di], 0FFh
-    jmp short loc_00108
-loc_0011C:
+    call SendNoteMessage
+    mov byte ptr ds:[di + ROC_NOTE], 0FFh
+    jmp short StreamCmd82
+; E0h..FFh length, 80h..91h command table, 92h..DFh stop all (signed compare).
+DispatchStreamByte:
     cmp al, 0E0h
-    jae loc_0012F
+    jae SetEventLength
     cmp al, 091h
-    jg loc_00158
+    jg StopAllChannels
     shl al, 1
     xor ah, ah
     mov si, offset StreamCommandHandlers
     add si, ax
     jmp word ptr ds:[si]
-loc_0012F:
+SetEventLength:
     sub al, 0DFh
-    mov byte ptr ds:[di + 011h], al
-    jmp short loc_000D7
+    mov byte ptr ds:[di + ROC_LENGTH], al
+    jmp short ReadStream
 StreamCmd91:
     mov al, byte ptr ds:[bx]
     inc bx
-    mov byte ptr ds:[di + 6], al
-    jmp short loc_000D7
-loc_0013E:
-    mov al, byte ptr ds:[di + 013h]
+    mov byte ptr ds:[di + ROC_VELOCITY], al
+    jmp short ReadStream
+StepNote:
+    mov al, byte ptr ds:[di + ROC_NOTE_STEP]
     or al, al
-    je loc_00157
+    je StepNoteDone
     push ax
-    mov al, byte ptr ds:[di]
+    mov al, byte ptr ds:[di + ROC_NOTE]
     mov ah, 080h
-    call loc_0040B
+    call SendNoteMessage
     pop ax
-    add al, byte ptr ds:[di]
-    mov byte ptr ds:[di], al
+    add al, byte ptr ds:[di + ROC_NOTE]
+    mov byte ptr ds:[di + ROC_NOTE], al
     mov ah, 090h
-    call loc_0040B
-loc_00157:
+    call SendNoteMessage
+StepNoteDone:
     ret
-loc_00158:
-    mov di, 0448h
+; All Notes Off (Bn 7B 00) on every channel record, all inactive, request/current cleared.
+StopAllChannels:
+    mov di, offset RolandChannel0
     mov cx, 8
-loc_0015E:
-    mov byte ptr ds:[di + 010h], ch
-    mov al, byte ptr ds:[di + 7]
+StopAllChannelsLoop:
+    mov byte ptr ds:[di + ROC_ACTIVE], ch
+    mov al, byte ptr ds:[di + ROC_MIDI_CHANNEL]
     or al, 0B0h
-    call loc_003F8
+    call MidiOut
     mov al, 07Bh
-    call loc_003F8
+    call MidiOut
     xor al, al
-    call loc_003F8
+    call MidiOut
     add di, 01Fh
-    loop loc_0015E
-    mov word ptr ds:[8], cx
+    loop StopAllChannelsLoop
+    mov word ptr ds:[MusicRequest], cx
     ret
-loc_0017D:
+; While ROC_SLIDE_TICKS and ROC_SLIDE_LEFT: bend MSB += ROC_SLIDE_STEP, send the bend.
+SlideTick:
     xor al, al
-    cmp al, byte ptr ds:[di + 01Ah]
-    je loc_001AC
-    cmp al, byte ptr ds:[di + 01Bh]
-    je loc_001AC
-    dec byte ptr ds:[di + 01Bh]
-    mov al, byte ptr ds:[di + 019h]
-    add byte ptr ds:[di + 5], al
-    jmp near ptr loc_0035E
-loc_00195:
-    dec byte ptr ds:[di + 01Ch]
-    jne loc_001AC
-    mov al, byte ptr ds:[di + 01Dh]
-    mov byte ptr ds:[di + 01Ch], al
+    cmp al, byte ptr ds:[di + ROC_SLIDE_TICKS]
+    je EffectDone
+    cmp al, byte ptr ds:[di + ROC_SLIDE_LEFT]
+    je EffectDone
+    dec byte ptr ds:[di + ROC_SLIDE_LEFT]
+    mov al, byte ptr ds:[di + ROC_SLIDE_STEP]
+    add byte ptr ds:[di + ROC_BEND_MSB], al
+    jmp near ptr SendPitchBend
+; Every ROC_PERIOD_RELOAD ticks: after ROC_ENV_DELAY periods, bend MSB += ROC_ENV_STEP for
+; ROC_ENV_COUNT periods.
+PitchEnvTick:
+    dec byte ptr ds:[di + ROC_PERIOD_COUNT]
+    jne EffectDone
+    mov al, byte ptr ds:[di + ROC_PERIOD_RELOAD]
+    mov byte ptr ds:[di + ROC_PERIOD_COUNT], al
     xor al, al
-    cmp al, byte ptr ds:[di + 016h]
-    je loc_001AD
-    dec byte ptr ds:[di + 016h]
-    je loc_001AD
-loc_001AC:
+    cmp al, byte ptr ds:[di + ROC_ENV_DELAY]
+    je PitchEnvStep
+    dec byte ptr ds:[di + ROC_ENV_DELAY]
+    je PitchEnvStep
+EffectDone:
     ret
-loc_001AD:
-    cmp al, byte ptr ds:[di + 017h]
-    je loc_001AC
-    dec byte ptr ds:[di + 017h]
-    mov al, byte ptr ds:[di + 014h]
-    add byte ptr ds:[di + 5], al
-    jmp near ptr loc_0035E
+PitchEnvStep:
+    cmp al, byte ptr ds:[di + ROC_ENV_COUNT]
+    je EffectDone
+    dec byte ptr ds:[di + ROC_ENV_COUNT]
+    mov al, byte ptr ds:[di + ROC_ENV_STEP]
+    add byte ptr ds:[di + ROC_BEND_MSB], al
+    jmp near ptr SendPitchBend
 StreamCmd90:
-    mov al, byte ptr ds:[di + 7]
+    mov al, byte ptr ds:[di + ROC_MIDI_CHANNEL]
     or al, 0C0h
-    call loc_003F8
+    call MidiOut
     mov al, byte ptr ds:[bx]
     inc bx
-    call loc_003F8
-    mov al, byte ptr ds:[di + 7]
+    call MidiOut
+    mov al, byte ptr ds:[di + ROC_MIDI_CHANNEL]
     or al, 0B0h
-    call loc_003F8
+    call MidiOut
     mov al, 7
-    call loc_003F8
+    call MidiOut
     mov al, 064h
-    mov byte ptr ds:[di + 0Eh], al
-    call loc_003F8
-    jmp near ptr loc_000D7
+    mov byte ptr ds:[di + ROC_VOLUME], al
+    call MidiOut
+    jmp near ptr ReadStream
+; Volume: sends CC 07 b without a status byte, relying on the running status Bn left by
+; the program change (90h) just before it, the only place the data uses it.
 StreamCmd88:
     mov al, 7
-    call loc_003F8
+    call MidiOut
     mov al, ds:[bx]
     inc bx
-    mov ds:[di + 0Eh], al
-    call loc_003F8
-    jmp near ptr loc_000D7
+    mov ds:[di + ROC_VOLUME], al
+    call MidiOut
+    jmp near ptr ReadStream
 StreamCommandHandlers label word
-    dw offset StreamCmd80, offset StreamCmd81, offset loc_00108, offset loc_00158
+    dw offset StreamCmd80, offset StreamCmd81, offset StreamCmd82, offset StopAllChannels
     dw offset StreamCmd84, offset StreamCmd85, offset StreamCmd86, offset StreamCmd87
     dw offset StreamCmd88, offset StreamCmd89, offset StreamCmd8A, offset StreamCmd8B
     dw offset StreamCmd8C, offset StreamCmd8D, offset StreamCmd8E, offset StreamCmd8F
     dw offset StreamCmd90, offset StreamCmd91
-loc_00219:
+OrderLoop:
     mov bx, ds:[bx]
     mov cx, ds:[bx]
     inc bx
     inc bx
-    mov ds:[di + 0Ah], bx
-    mov ds:[di + 0Ch], cx
+    mov ds:[di + ROC_ORDER_PTR], bx
+    mov ds:[di + ROC_STREAM], cx
     mov bx, cx
-    jmp near ptr loc_000D7
+    jmp near ptr ReadStream
 StreamCmd80:
-    mov al, ds:[8h]
-    mov ds:[60h], al
-    mov bx, ds:[di + 0Ah]
+    mov al, ds:[MusicRequest]
+    mov ds:[PendingTune], al
+    mov bx, ds:[di + ROC_ORDER_PTR]
     mov cx, ds:[bx]
     inc bx
     inc bx
-    jcxz loc_00219
-    mov ds:[di + 0Ah], bx
-    mov ds:[di + 0Ch], cx
+    jcxz OrderLoop
+    mov ds:[di + ROC_ORDER_PTR], bx
+    mov ds:[di + ROC_STREAM], cx
     mov bx, cx
-    jmp near ptr loc_000D7
+    jmp near ptr ReadStream
 StreamCmd84:
     mov al, ds:[bx]
     inc bx
-    mov ds:[di + 12h], al
-    jmp near ptr loc_000D7
+    mov ds:[di + ROC_TRANSPOSE], al
+    jmp near ptr ReadStream
 StreamCmd85:
     mov ah, 80h
-    call loc_0040B
+    call SendNoteMessage
     xor al, al
-    mov ds:[di + 10h], al
-    mov ds:[di + 1Eh], al
+    mov ds:[di + ROC_ACTIVE], al
+    mov ds:[di + ROC_UNUSED_1E], al
     ret
 StreamCmd86:
-    mov byte ptr ds:[di + 13h], 1
-    jmp near ptr loc_000D7
+    mov byte ptr ds:[di + ROC_NOTE_STEP], 1
+    jmp near ptr ReadStream
 StreamCmd87:
-    mov byte ptr ds:[di + 13h], 0FFh
-    jmp near ptr loc_000D7
+    mov byte ptr ds:[di + ROC_NOTE_STEP], 0FFh
+    jmp near ptr ReadStream
 StreamCmd8F:
-    mov byte ptr ds:[di + 13h], 0
-    jmp near ptr loc_000D7
+    mov byte ptr ds:[di + ROC_NOTE_STEP], 0
+    jmp near ptr ReadStream
 StreamCmd89:
     mov ax, ds:[bx]
-    mov ds:[di + 14h], ax
+    mov ds:[di + ROC_ENV_STEP], ax
     inc bx
     inc bx
     mov ax, ds:[bx]
-    mov ds:[di + 16h], ax
+    mov ds:[di + ROC_ENV_DELAY], ax
     inc bx
     inc bx
-    jmp near ptr loc_000D7
+    jmp near ptr ReadStream
 StreamCmd8A:
     mov ax, ds:[bx]
-    mov ds:[di + 18h], ax
+    mov ds:[di + ROC_BEND_BASE], ax
     inc bx
     inc bx
     mov al, ds:[bx]
-    mov ds:[di + 1Ah], al
+    mov ds:[di + ROC_SLIDE_TICKS], al
     inc bx
-    jmp near ptr loc_000D7
+    jmp near ptr ReadStream
 StreamCmd8B:
     xor al, al
-    mov ds:[di + 1Ah], al
-    mov ds:[di + 18h], al
-    jmp near ptr loc_000D7
+    mov ds:[di + ROC_SLIDE_TICKS], al
+    mov ds:[di + ROC_BEND_BASE], al
+    jmp near ptr ReadStream
 StreamCmd8C:
     mov al, ds:[bx]
     inc bx
-    mov ds:[di + 1Dh], al
-    jmp near ptr loc_000D7
+    mov ds:[di + ROC_PERIOD_RELOAD], al
+    jmp near ptr ReadStream
+; Bend range b through RPN 0 (Bn 64 00, Bn 65 00, Bn 06 b); ignored by an MT-32.
 StreamCmd8D:
-    mov ah, ds:[di + 7]
+    mov ah, ds:[di + ROC_MIDI_CHANNEL]
     mov al, ah
     add al, 0B0h
-    call loc_003F8
+    call MidiOut
     mov al, 64h
-    call loc_003F8
+    call MidiOut
     xor al, al
-    call loc_003F8
+    call MidiOut
     mov al, ah
     mov al, ah
     add al, 0B0h
-    call loc_003F8
+    call MidiOut
     mov al, 65h
-    call loc_003F8
+    call MidiOut
     xor al, al
-    call loc_003F8
+    call MidiOut
     mov al, ah
     add al, 0B0h
-    call loc_003F8
+    call MidiOut
     mov al, 6
-    call loc_003F8
+    call MidiOut
     mov al, ds:[bx]
-    call loc_003F8
+    call MidiOut
     inc bx
-    jmp near ptr loc_000D7
+    jmp near ptr ReadStream
 StreamCmd8E:
     mov bx, ds:[bx]
-    mov al, ds:[8h]
-    mov ds:[60h], al
-    jmp near ptr loc_000D7
-loc_002EC:
+    mov al, ds:[MusicRequest]
+    mov ds:[PendingTune], al
+    jmp near ptr ReadStream
+; Latch MusicRequest into PendingTune when nothing is current; then stop all and, for
+; tunes 1..0Ah, start it: Tempo, channel count and per channel its order list.
+HandleMusicRequest:
     xor ah, ah
-    cmp ah, byte ptr ds:[9]
-    jne loc_002FA
-    mov al, byte ptr ds:[8]
-    mov byte ptr ds:[060h], al
-loc_002FA:
-    mov al, byte ptr ds:[060h]
+    cmp ah, byte ptr ds:[MusicCurrent]
+    jne CheckPendingTune
+    mov al, byte ptr ds:[MusicRequest]
+    mov byte ptr ds:[PendingTune], al
+CheckPendingTune:
+    mov al, byte ptr ds:[PendingTune]
     or al, al
-    je loc_0035D
-    mov byte ptr ds:[8], ah
-    mov byte ptr ds:[060h], ah
+    je RequestDone
+    mov byte ptr ds:[MusicRequest], ah
+    mov byte ptr ds:[PendingTune], ah
     push ax
-    call loc_00158
+    call StopAllChannels
     pop ax
     cmp al, 0Bh
-    jae loc_0035D
-    mov byte ptr ds:[9], al
+    jae RequestDone
+    mov byte ptr ds:[MusicCurrent], al
     shl al, 1
-    mov si, 053Eh
+    mov si, offset SongTable - 2
     add si, ax
     lodsw
     mov si, ax
     lodsb
-    mov byte ptr ds:[0Ch], al
+    mov byte ptr ds:[Tempo], al
     lodsb
     mov cl, al
     xor ch, ch
-    mov word ptr ds:[061h], cx
+    mov word ptr ds:[ChannelCount], cx
     mov dx, 01FFh
-    mov byte ptr ds:[0Dh], dh
-    mov di, 0448h
-loc_00336:
+    mov byte ptr ds:[TempoCountdown], dh
+    mov di, offset RolandChannel0
+StartTuneChannel:
     lodsw
     mov bx, ax
     mov ax, word ptr ds:[bx]
     inc bx
     inc bx
-    mov word ptr ds:[di + 0Ah], bx
-    mov word ptr ds:[di + 0Ch], ax
-    mov byte ptr ds:[di + 012h], ch
-    mov byte ptr ds:[di + 013h], ch
-    mov byte ptr ds:[di + 017h], ch
-    mov byte ptr ds:[di + 01Ah], ch
-    mov byte ptr ds:[di + 018h], ch
-    mov byte ptr ds:[di + 1], dh
-    mov byte ptr ds:[di + 010h], dh
+    mov word ptr ds:[di + ROC_ORDER_PTR], bx
+    mov word ptr ds:[di + ROC_STREAM], ax
+    mov byte ptr ds:[di + ROC_TRANSPOSE], ch
+    mov byte ptr ds:[di + ROC_NOTE_STEP], ch
+    mov byte ptr ds:[di + ROC_ENV_COUNT], ch
+    mov byte ptr ds:[di + ROC_SLIDE_TICKS], ch
+    mov byte ptr ds:[di + ROC_BEND_BASE], ch
+    mov byte ptr ds:[di + ROC_ROWS_LEFT], dh
+    mov byte ptr ds:[di + ROC_ACTIVE], dh
     add di, 01Fh
-    loop loc_00336
-loc_0035D:
+    loop StartTuneChannel
+RequestDone:
     ret
-loc_0035E:
-    mov al, byte ptr ds:[di + 7]
+; Pitch bend En 00 (ROC_BEND_MSB & 7Fh).
+SendPitchBend:
+    mov al, byte ptr ds:[di + ROC_MIDI_CHANNEL]
     or al, 0E0h
-    call loc_003F8
+    call MidiOut
     xor al, al
-    call loc_003F8
-    mov al, byte ptr ds:[di + 5]
+    call MidiOut
+    mov al, byte ptr ds:[di + ROC_BEND_MSB]
     and al, 07Fh
-    call loc_003F8
+    call MidiOut
     ret
-loc_00374:
+; Far entry +4, called once by the game's LoadSoundModule: probe the MPU-401 (27 resets),
+; enter UART mode and send the MT-32 setup (SysexTable). AL = 1 when found, else 0.
+DetectMpu401:
     push ds
     push cs
     pop ds
     push cx
     push dx
     mov cx, 01Bh
-loc_0037C:
-    call loc_003C4
+ProbeLoop:
+    call MpuResetProbe
     cmp al, 0FEh
-    je loc_0038B
-    loop loc_0037C
+    je MpuFound
+    loop ProbeLoop
     pop dx
     pop cx
     pop ds
     xor al, al
     ret
-loc_0038B:
+MpuFound:
     mov al, 0FFh
-    call loc_003DF
-    call loc_003B4
+    call MpuCommand
+    call MpuShortDelay
     mov al, 03Fh
-    call loc_003DF
+    call MpuCommand
     push si
-    call loc_003B4
-    mov si, 034EEh
-loc_0039F:
+    call MpuShortDelay
+    mov si, offset SysexTable
+SendSysexLoop:
     lodsw
     or ax, ax
-    je loc_003AD
+    je SysexDone
     push si
     mov si, ax
-    call loc_00424
+    call SendSysex
     pop si
-    jmp short loc_0039F
-loc_003AD:
+    jmp short SendSysexLoop
+SysexDone:
     pop si
     pop dx
     pop cx
     pop ds
     mov al, 1
     ret
-loc_003B4:
+MpuShortDelay:
     push ax
     push cx
     push dx
     mov cx, 064h
-    mov dx, 0330h
-loc_003BD:
+    mov dx, MPU_DATA_PORT
+MpuShortDelayLoop:
     in al, dx
-    loop loc_003BD
+    loop MpuShortDelayLoop
     pop dx
     pop cx
     pop ax
     ret
-loc_003C4:
+MpuResetProbe:
     push cx
-    mov dx, 0331h
+    mov dx, MPU_STATUS_PORT
     mov cx, 0FFFFh
-loc_003CB:
+ProbeWaitReady:
     in al, dx
     test al, 040h
-    loopne loc_003CB
+    loopne ProbeWaitReady
     mov al, 0FFh
     out dx, al
     mov cx, 0FFFFh
-loc_003D6:
+ProbeWaitData:
     in al, dx
     test al, 080h
-    loopne loc_003D6
+    loopne ProbeWaitData
     dec dx
     in al, dx
     pop cx
     ret
-loc_003DF:
+; AL = MPU-401 command: wait, write it, wait for and read the acknowledge (no timeout).
+MpuCommand:
     push ax
     push dx
-    mov dx, 0331h
+    mov dx, MPU_STATUS_PORT
     mov ah, al
-loc_003E6:
+CommandWaitReady:
     in al, dx
     add al, al
-    js loc_003E6
+    js CommandWaitReady
     mov al, ah
     out dx, al
-loc_003EE:
+CommandWaitAck:
     in al, dx
     or al, al
-    js loc_003EE
+    js CommandWaitAck
     dec dx
     in al, dx
     pop dx
     pop ax
     ret
-loc_003F8:
+; AL = MIDI byte: wait for the MPU-401 to accept data (no timeout), write it.
+MidiOut:
     push ax
     push dx
-    mov dx, 0331h
+    mov dx, MPU_STATUS_PORT
     mov ah, al
-loc_003FF:
+MidiOutWait:
     in al, dx
     add al, al
-    js loc_003FF
+    js MidiOutWait
     mov al, ah
     dec dx
     out dx, al
     pop dx
     pop ax
     ret
-loc_0040B:
-    mov al, byte ptr ds:[di + 7]
+; AH = 80h or 90h: note off/on with key ROC_NOTE + ROC_TRANSPOSE + 18h, ROC_VELOCITY.
+SendNoteMessage:
+    mov al, byte ptr ds:[di + ROC_MIDI_CHANNEL]
     or al, ah
-    call loc_003F8
-    mov al, byte ptr ds:[di]
-    add al, byte ptr ds:[di + 012h]
+    call MidiOut
+    mov al, byte ptr ds:[di + ROC_NOTE]
+    add al, byte ptr ds:[di + ROC_TRANSPOSE]
     add al, 018h
-    call loc_003F8
-    mov al, byte ptr ds:[di + 6]
-    call loc_003F8
+    call MidiOut
+    mov al, byte ptr ds:[di + ROC_VELOCITY]
+    call MidiOut
     ret
-loc_00424:
+; SI = sysex body: send F0 41 10 16 12 (Roland DT1 to the MT-32), then the body through F7.
+SendSysex:
     push ax
     mov al, 0F0h
-    call loc_003F8
+    call MidiOut
     mov al, 041h
-    call loc_003F8
+    call MidiOut
     mov al, 010h
-    call loc_003F8
+    call MidiOut
     mov al, 016h
-    call loc_003F8
+    call MidiOut
     mov al, 012h
-    call loc_003F8
-loc_0043E:
+    call MidiOut
+SendSysexByte:
     lodsb
-    call loc_003F8
+    call MidiOut
     cmp al, 0F7h
-    jne loc_0043E
+    jne SendSysexByte
     pop ax
     ret
 ; ---- Player data ----------------------------------------------------------------
