@@ -1,4 +1,4 @@
-; ASM -> C entry stubs for the DOS hybrid. Each stub keeps an oracle label and its register
+; ASM -> C entry stubs of the movement region (c/movement.c) for the DOS hybrid. Each stub keeps an oracle label and its register
 ; contract (see the oracle routine's comment) and calls the C function that owns it
 ; (c/game.h convention: SI, DI in; AX out; all else preserved). Only labels the remaining
 ; ASM still reaches need a stub; calls between C functions do not pass through here.

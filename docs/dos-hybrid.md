@@ -37,7 +37,7 @@ next to the original launcher. Run `OVERKILL.EXE /T /A` there (Tandy + AdLib; `/
   an owned label to the next label that is not owned), turns fall-through into it into a
   `jmp`, short and conditional jumps into near jumps, `public` into `extrn`, and makes every
   label public (no bytes change). The oracle files are never edited.
-- `c/BRIDGE.ASM` defines the owned labels the remaining ASM still reaches: a few
+- `c/<region>.asm` (one bridge per region, next to `c/<region>.c`) defines the owned labels the remaining ASM still reaches: a few
   instructions each that adapt the oracle's register contract (BP = record, results in
   flags, registers the oracle preserves) to the C convention. Calls between C functions do
   not pass through it.

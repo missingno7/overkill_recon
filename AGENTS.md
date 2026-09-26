@@ -100,7 +100,7 @@ disassembly-dump look, no extra infrastructure needed to read it.
   claims of recovered historical identifiers or module boundaries.
 - Do not force a game/platform split where the code mixes concerns (e.g. a renderer
   that mutates game state); record the real boundary.
-- C lives in c/ (sources, c/BRIDGE.ASM, c/game.h); tests in tests/. C mirrors the oracle's
+- C lives in c/ (per region `<region>.c` and bridge `<region>.asm`, shared c/game.h); tests in tests/. C mirrors the oracle's
   memory model (GAME_GEN.H is generated from include/ and DATA.ASM, never copied by hand),
   owns no data, and keeps original behaviour including bugs. No shadow state, converted
   records or synchronisation layers.

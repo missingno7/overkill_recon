@@ -4,7 +4,7 @@
 
    Calling convention for all C code: names upper-cased to match TASM's publics (no
    prefix; keep C names distinct from ASM labels, e.g. snake_case), arguments in SI then
-   DI, result in AX, every other register preserved. c/BRIDGE.ASM adapts the oracle's
+   DI, result in AX, every other register preserved. each region's bridge c/<region>.asm adapts the oracle's
    register contracts (BP = record, results in flags) to it. C owns no static data and
    uses no `static` (TLINK 2.0 rejects local symbols); tools/hybrid.py checks both. */
 #ifndef GAME_H

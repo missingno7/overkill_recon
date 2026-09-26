@@ -92,5 +92,5 @@ MUTANTS = [
     ('movement.c', '(PRIMARY->x + 9)', '(PRIMARY->x + 8)'),
     ('movement.c', 'if ((sword)dx < 0)', 'if ((sword)dx <= 0)'),
     ('movement.c', 'case DIR_DOWN_LEFT:  r->y += n; r->x -= n;', 'case DIR_DOWN_LEFT:  r->y += n; r->x += n;'),
-    ('BRIDGE.ASM', 'MoveInDirectionN:\r\n    push ax\r\n', 'MoveInDirectionN:\r\n'),
+    ('movement.asm', 'MoveInDirectionN:\r\n    push ax\r\n', 'MoveInDirectionN:\r\n'),
 ]

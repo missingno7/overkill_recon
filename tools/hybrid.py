@@ -10,7 +10,7 @@ build/hybrid/ and every routine the C side owns is cut out of the copy:
   - code that fell through into a removed range gets an explicit `jmp`, short and
     conditional jumps into it become near jumps, and `public` lines for removed
     labels become `extrn`, so the rest of the ASM reaches the same labels, now
-    defined by c/BRIDGE.ASM (ASM calling contract -> C function).
+    defined by the region's bridge c/<region>.asm (ASM calling contract -> C function).
 
 Then TASM assembles the derived ASM and the bridge, the C compiler compiles c/*.c,
 TLINK links everything into one EXE with the oracle's link order, and
@@ -204,15 +204,16 @@ def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
         objects.append(path.stem)
     missing = sorted(set(owned) - {n.upper() for n in removed_all})
     if missing: raise ValueError('OWNS names no oracle label: ' + ' '.join(missing))
-    if with_c:
-        shutil.copyfile(c_dir/'BRIDGE.ASM', out/'BRIDGE.ASM'); objects.append('BRIDGE')
+    # One bridge per C region (c/<region>.asm); DOS 8.3 names in the build directory.
+    for k, bridge in enumerate(sorted(c_dir.glob('*.asm')) if with_c else (), 1):
+        shutil.copyfile(bridge, out/f'B{k:02}.ASM'); objects.append(f'B{k:02}')
     for stem in objects:
         (out/(stem + '.OBJ')).unlink(missing_ok=True)
         log = dos('TASM.EXE', [f'{stem}.ASM,{stem}.OBJ,{stem}.LST'], out)
         if not (out/(stem + '.OBJ')).exists(): raise ValueError(f'TASM failed for {stem}:\n{log}')
-    for source in sorted(c_dir.glob('*.c')) if with_c else ():
-        stem = source.stem.upper(); obj = out/(stem + '.OBJ'); obj.unlink(missing_ok=True)
-        watcom([str(source), *WCC_OPTIONS, f'-i={c_dir}', f'-i={out}', f'-nm={stem}', f'-fo={obj}'], out)
+    for k, source in enumerate(sorted(c_dir.glob('*.c')) if with_c else (), 1):
+        stem = f'C{k:02}'; obj = out/(stem + '.OBJ'); obj.unlink(missing_ok=True)
+        watcom([str(source), *WCC_OPTIONS, f'-i={c_dir}', f'-i={out}', f'-nm={source.stem.upper()}', f'-fo={obj}'], out)
         check_c_object(obj); objects.append(stem)
     (out/'OVERKILL.EXE').unlink(missing_ok=True)
     (out/'LINK.RSP').write_text('+\n'.join(s + '.OBJ' for s in objects) + '\nOVERKILL.EXE\nOVERKILL.MAP\n')
