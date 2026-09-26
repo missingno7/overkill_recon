@@ -14,18 +14,19 @@ public SoundModuleSlot
 public SoundModuleTickEntry
 SoundModuleSlot:
 SoundModuleTickEntry:
-    call loc_10232
+    call SoundStubNop
     retf
 
 SoundModuleInitEntry:
-    call loc_10232
+    call SoundStubNop
     retf
 ; Header fields at +8 as in a loaded module: MODULE_MUSIC_REQUEST (with the current
 ; music in its high byte), two unused words here, the OPL2 base port 388h at +0Eh, and a
 ; final word; the stub keeps these defaults.
     dw 2, 0, 0, 388h, 0
 
-loc_10232:
+; The empty routine the built-in SLOT1022 sound stub calls; a loaded module replaces it.
+SoundStubNop:
     ret
 ; Space the loaded ADLIB.ENC or ROLAND.ENC image overwrites (both end below
 ; SlotBuffer). Zero in the image.

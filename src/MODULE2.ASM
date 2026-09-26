@@ -173,6 +173,7 @@ extrn ThrustDrainToggle:word
 extrn TrailingPodFar:word
 extrn TrailingPodNear:word
 extrn TurretPhaseTable:word
+extrn Type21LeaderPathBody:far
 extrn Type28FrameRamp:byte
 extrn Type34SpriteByLevel:word
 extrn Type37Speed:word
@@ -194,14 +195,17 @@ extrn UpgradeTries:word
 extrn WeaponMode:word
 extrn WhatOilShortageFlag:byte
 extrn XorCodeHiscoreBlock:far
-extrn loc_1009C:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AdapterDrawHandlers
+public AddScoreBcd
+public AdvanceToAvailableUpgrade
 public AimAtPlayer
+public AllocGroupSlot
 public AllocPoolBRecordEvicting
 public AllocRecordEvicting
 public ApplyFrontPod
+public ApplySelectedUpgrade
 public ApplySidePods
 public ApplyTrailingPods
 public BlitPackedStride104
@@ -210,6 +214,10 @@ public BlitPackedToScreen
 public BlockOffsets
 public CheckCheatCodes
 public ClearScreen104x200
+public CollapseScreenAndClear
+public CollapseScreenWithSfx
+public CopyEgaPage0ToPage1
+public CopyFullWorkspaceToScreen
 public CopyWorkspaceToScreen
 public DecodeByte5BA0
 public DecodeByte5BA1
@@ -221,14 +229,23 @@ public DecodePlaneBits
 public DecodePlaneRowBytes
 public DecodeRowBuffer
 public DecodeRows
+public DrawEnergyGauge
+public DrawFuelGauge
+public DrawHud
 public DrawOffsetFromPlayfieldRow
 public DrawOffsetFromScreenRow
 public DrawOffsetFromWideRow
 public DrawPanelGraphic
+public DrawRecordSprite
+public DrawSprite8Record
+public DrawUpgradeSlots
 public FarCallMainNearViaAX
 public FindFreeRecordPoolA
 public FindFreeRecordPoolB
 public FrontPodAvailable
+public InitEnemyRecordHere
+public InitUpgradeSlots
+public InsertHighScore
 public Level0MapCell
 public Level1MapCell
 public Level2MapCell
@@ -238,7 +255,15 @@ public Level5MapCell
 public LoadHiscoreFile
 public PlayerShotsHitRecord
 public RecordWorkspaceOffset
+public RequestLifeStartMusic
+public ResetPageAndClearScreen
+public RestoreRecordBackground
+public RunOptionsMenu
+public SaveRecordBackground
+public ScrollMapToLevelStart
+public SetBestFitAllocStrategy
 public SetDeltaToward
+public SetHiscoreRankColor
 public ShutdownGame
 public SidePodsAvailable
 public SmartBombAll
@@ -246,12 +271,18 @@ public SpawnAimedShot
 public SpawnEnemyHere
 public SpawnEnemyHereQuiet
 public SpawnFromMapRow
+public SpawnItemDrop
 public Sprite16Offsets
 public Sprite32Offsets
 public Sprite8Offsets
 public StartLeaderScript
 public SteerTowardTarget
 public StepAlongDelta
+public StretchInHudPanel
+public StretchInTheEndImage
+public StretchInWindowImage
+public TickFrameTimers
+public TickRefuel
 public TrailingPodsAvailable
 public Type13FormationLeader
 public Type24TurretLeftFire32
@@ -313,6 +344,7 @@ public Type8FAnimFireBurstB
 public Type90TurretVolley
 public Type91TurretVolleyAlt
 public Type93SweepDescendClimb
+public UpdateRefuelTimersAndScore
 public WipeDest
 public WipeFlagA
 public WipeFlagB
@@ -321,37 +353,10 @@ public WipeProgress
 public WipeSource
 public WipeStep
 public WipeWidth
-public loc_0532D
-public loc_054C0
-public loc_05559
-public loc_057E6
-public loc_05800
 public loc_05A7E
-public loc_05A92
-public loc_05AC8
 public loc_05BAC
-public loc_05BEE
-public loc_05C04
-public loc_05C22
-public loc_05C35
-public loc_05C9A
-public loc_05CB7
 public loc_05D0B
-public loc_05F0D
-public loc_05F43
-public loc_05F61
-public loc_060A2
-public loc_060AC
-public loc_06176
-public loc_061DC
-public loc_07420
-public loc_07596
-public loc_07746
-public loc_077C5
-public loc_077DF
-public loc_08209
 public loc_08331
-public loc_0837A
 public loc_083D7
 public loc_083DE
 public loc_083E4
@@ -373,13 +378,8 @@ public loc_084C9
 public loc_084D6
 public loc_084F0
 public loc_084FD
-public loc_08517
-public loc_08546
-public loc_0859E
 public loc_0878C
 public loc_08D83
-public loc_0F953
-public loc_0F980
 extrn AddFrontPod:near
 extrn AddSidePods:near
 extrn AddTrailingPod:near
@@ -403,6 +403,7 @@ extrn CopyWorkspaceToScreenCga:near
 extrn CopyWorkspaceToScreenEga:near
 extrn CountXReturn:near
 extrn DestroyRecord:near
+extrn DrainFuelUnit:near
 extrn DrawOffsetFromPlayfieldRowCga:near
 extrn DrawOffsetFromPlayfieldRowEga:near
 extrn DrawOffsetFromScreenRowCga:near
@@ -475,6 +476,7 @@ extrn FlashSprite32Shift5Ega:near
 extrn FlashSprite32Shift6Ega:near
 extrn FlashSprite32Shift7Ega:near
 extrn FlashSprite32Tandy:near
+extrn FlipEgaDrawPage:near
 extrn HorizontalTerrainPatrol:near
 extrn InstallKeyboardVector09:near
 extrn LevelMapSegment:word
@@ -484,6 +486,7 @@ extrn MainDataSegment:word
 extrn ManExplSegment:word
 extrn MoveInDirection1:near
 extrn MoveInDirection2:near
+extrn MoveInDirection3:near
 extrn MoveInDirection4:near
 extrn MoveInDirection8:near
 extrn NextRandomWord:near
@@ -498,10 +501,13 @@ extrn RecordWorkspaceOffsetTandy:near
 extrn ReleaseEmsCache:near
 extrn RemoveRecordAtBX:near
 extrn RequestModuleMusic:near
+extrn ResetEgaPages:near
 extrn RestoreKeyboardVector09:near
 extrn RestoreTimerVector08:near
+extrn RunAttractSequence:near
 extrn SaveHiscoreFile:near
 extrn ScreenSegment:word
+extrn ScrollBackwardOneLine:near
 extrn ScrollRecordThenFinish:near
 extrn ScrollStartOffset:word
 extrn ShotHitsRecord:near
@@ -513,6 +519,7 @@ extrn Sprites2x2CSegment:word
 extrn Sprites2x2Segment:word
 extrn StartPathFollow:near
 extrn SteerToSaved:near
+extrn StopModuleMusic:near
 extrn TandyOffsetFromPlayfieldRow:near
 extrn TandyOffsetFromScreenRow:near
 extrn TandyOffsetFromWideRow:near
@@ -556,14 +563,7 @@ extrn loc_04896:near
 extrn loc_048E6:near
 extrn loc_0497A:near
 extrn loc_04A41:near
-extrn loc_0511F:near
-extrn loc_05145:near
-extrn loc_09EE4:near
-extrn loc_0A781:near
-extrn loc_0AF22:near
 extrn loc_0B2AC:near
-extrn loc_0CB3E:near
-extrn loc_0CBE8:near
 ; Load hiscore.dat: verify the checksum word over the encoded block, copy the block to
 ; HiscoreBlock, decode it and apply the saved settings. Returns AL=1 on success,
 ; AL=0 if the file is missing or damaged. The byte count read is not checked.
@@ -605,7 +605,9 @@ loc_0532A:
     xor al, al
     ret
 
-loc_0532D:
+; SS:BP = BCD score: when it makes the table, shifts the lower entries down, shows the
+; table and reads the player's name.
+InsertHighScore:
     mov byte ptr ds:[HiscoreEntryRow], 4
     mov bx, offset HiscoreBlock
     mov cx, 8
@@ -627,8 +629,8 @@ loc_0535D:
     mov word ptr ds:[HiscoreQualified], 1
     mov es, word ptr cs:[MainDataSegment]
     std
-    mov si, 02257h
-    mov di, 02267h
+    mov si, offset HiscoreBlock + 7Fh
+    mov di, offset HiscoreBlock + 8Fh
 loc_0536F:
     movsb
     cmp si, bx
@@ -637,7 +639,7 @@ loc_0536F:
     cld
     mov di, bx
     push di
-    call loc_05450
+    call ShowHighScoreTable
     mov ah, 0A8h
     mov al, 0
     mov si, 056h
@@ -655,7 +657,7 @@ loc_0536F:
     mov bp, offset HiscoreRankPrefix
     call PrintMessageBP
     mov bp, offset ScoreBcd
-    call loc_05EE4
+    call PrintBcd32
     mov al, byte ptr ds:[HiscoreEntryRow]
     mov byte ptr ds:[HiscoreNamePrefix + 1], al
     mov word ptr ds:[HiscoreNameCursor], offset HiscoreNameBuffer
@@ -671,12 +673,12 @@ loc_053C9:
     call PrintMessageBP
     mov bp, offset HiscoreNameBuffer
     call PrintMessageBP
-    call loc_05497
+    call ReadKeyThroughDos
     cmp al, 8
     je loc_05408
     cmp al, 0Dh
     je loc_0541E
-    cmp word ptr ds:[HiscoreNameCursor], 022A5h
+    cmp word ptr ds:[HiscoreNameCursor], offset HiscoreNameBuffer + 0Ah
     je loc_053FC
     cmp al, 020h
     jb loc_053C9
@@ -687,10 +689,10 @@ loc_053C9:
     inc word ptr ds:[HiscoreNameCursor]
     jmp short loc_053C9
 loc_053FC:
-    call loc_05401
+    call BiosBeep
     jmp short loc_053C9
 
-loc_05401:
+BiosBeep:
     mov al, 7
     mov ah, 0Eh
     int 010h
@@ -704,7 +706,7 @@ loc_05408:
     mov byte ptr ds:[di], al
     jmp short loc_053C9
 loc_0541E:
-    cmp word ptr ds:[HiscoreNameCursor], 022A5h
+    cmp word ptr ds:[HiscoreNameCursor], offset HiscoreNameBuffer + 0Ah
     je loc_05433
     mov di, word ptr ds:[HiscoreNameCursor]
     mov byte ptr ds:[di], 020h
@@ -727,7 +729,7 @@ loc_05433:
 ; Row being drawn while listing the high scores.
 HiscoreRowIndex db 0
 
-loc_05450:
+ShowHighScoreTable:
     mov ax, offset HiscorePageList
     call far ptr ShowPageList
     mov byte ptr cs:[HiscoreRowIndex], 0
@@ -750,13 +752,15 @@ loc_05461:
     call PrintMessageBP
     pop bp
     lea bp, ss:[bp + 0Ch]
-    call loc_05EE4
+    call PrintBcd32
     pop cx
     inc byte ptr cs:[HiscoreRowIndex]
     loop loc_05461
     ret
 
-loc_05497:
+; Reads a key through DOS (BIOS INT 09h restored meanwhile); AL = key, also in
+; QuitAnswer.
+ReadKeyThroughDos:
     mov ds, word ptr cs:[MainDataSegment]
     call RestoreKeyboardVector09
     mov word ptr ds:[LastKeyExtended], 0
@@ -775,7 +779,7 @@ loc_054B7:
     pop ax
     ret
 
-loc_054C0:
+SetHiscoreRankColor:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_054CE
     mov byte ptr ds:[HiscoreRankPrefix + 4], 0Ah
@@ -784,7 +788,8 @@ loc_054CE:
     mov byte ptr ds:[HiscoreRankPrefix + 4], 3
     ret
 
-loc_054D4:
+; Draws the input-mode and sound-option graphics with the current choices highlighted.
+DrawOptionsSelections:
     mov ah, 041h
     mov al, 9
     mov si, 040h
@@ -838,7 +843,9 @@ DrawPanelGraphic:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_05559:
+; Title menu: input mode, sound, key redefinition, info pages, boss key; alternates with
+; the high scores and the intro when idle. Returns on the primary button.
+RunOptionsMenu:
     mov word ptr ds:[MenuShowingHiscores], 0
 loc_0555F:
     cmp word ptr ds:[MenuShowingHiscores], 0
@@ -846,14 +853,14 @@ loc_0555F:
     call far ptr WaitAllKeysReleased
     mov ax, offset OkMenuPageList
     call far ptr ShowPageList
-    call loc_054D4
+    call DrawOptionsSelections
 loc_05576:
     cmp word ptr ds:[MenuShowingHiscores], 0
     je loc_05582
-    call loc_05450
+    call ShowHighScoreTable
     jmp short loc_05585
 loc_05582:
-    call loc_054D4
+    call DrawOptionsSelections
 loc_05585:
     mov word ptr ds:[MenuIdleFrames], 0
 loc_0558B:
@@ -897,8 +904,8 @@ loc_055EE:
     jb loc_05613
     cmp word ptr ds:[MenuShowingHiscores], 0
     je loc_0560A
-    call loc_0CBE8
-    jmp near ptr loc_05559
+    call RunAttractSequence
+    jmp near ptr RunOptionsMenu
 loc_0560A:
     mov word ptr ds:[MenuShowingHiscores], 1
     jmp near ptr loc_0555F
@@ -912,14 +919,14 @@ loc_05620:
 loc_05621:
     mov ax, offset OPageList
     call far ptr ShowPageList
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_0562C:
     mov ax, offset IPageList
     call far ptr ShowPageList
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_05637:
     call ShowBossKeyScreen
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_0563D:
     cmp word ptr ds:[MenuKeyLatchK], 1
     je loc_055EE
@@ -933,7 +940,7 @@ loc_05656:
     jne loc_05666
     jmp near ptr loc_05576
 loc_05666:
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_05669:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_05675
@@ -941,7 +948,7 @@ loc_05669:
 loc_05675:
     cmp byte ptr ds:[KeyDownTable + SCAN_J], KEY_STATE_DOWN
     je loc_05675
-    call loc_0CB3E
+    call StopModuleMusic
     call CalibrateJoystickWithAbort
     mov al, byte ptr ds:[ModuleSoundRequest]
     call RequestModuleMusic
@@ -953,12 +960,12 @@ loc_05675:
 loc_0569B:
     cmp byte ptr ds:[KeyDownTable + SCAN_ESC], KEY_STATE_DOWN
     je loc_0569B
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_056A5:
     call PollInputBits
     cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je loc_056A5
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_056B2:
     cmp word ptr ds:[MenuKeyLatchA], 1
     jne loc_056BC
@@ -974,7 +981,7 @@ loc_056CE:
     jne loc_056DE
     jmp near ptr loc_05576
 loc_056DE:
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_056E1:
     cmp word ptr ds:[MenuKeyLatchM], 1
     jne loc_056EB
@@ -990,7 +997,7 @@ loc_056EB:
     mov byte ptr ds:[ModuleSoundEnabled], bl
     cmp bl, 0
     jne loc_05714
-    call loc_0CB3E
+    call StopModuleMusic
 loc_05714:
     mov al, 2
     call RequestModuleMusic
@@ -1002,7 +1009,7 @@ loc_05725:
     jne loc_0572F
     jmp near ptr loc_05576
 loc_0572F:
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 loc_05732:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0573E
@@ -1034,7 +1041,7 @@ loc_0573E:
     mov al, byte ptr ds:[KeyBitScancodesA + KEY_SLOT_SECONDARY]
     mov byte ptr ds:[KeyBitScancodesB + KEY_SLOT_SECONDARY], al
     mov word ptr ds:[InputDeviceMode], INPUT_MODE_KEYS_A
-    jmp near ptr loc_05559
+    jmp near ptr RunOptionsMenu
 
 ; Show prompt graphic SI, wait for a key other than Esc/F9/F10, store its scancode at DI
 ; and wait for its release.
@@ -1068,7 +1075,7 @@ loc_057E0:
     jne loc_057E0
     ret
 
-loc_057E6:
+CollapseScreenWithSfx:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_057F4
 loc_057ED:
@@ -1076,15 +1083,17 @@ loc_057ED:
     jne loc_057ED
 loc_057F4:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_05800
+    je CollapseScreenAndClear
     mov byte ptr ds:[SfxRequest], 5
 
-loc_05800:
-    call loc_0580B
+CollapseScreenAndClear:
+    call CaptureAndCollapseScreen
     mov ds, word ptr cs:[MainDataSegment]
-    jmp near ptr loc_05BEE
+    jmp near ptr ResetPageAndClearScreen
 
-loc_0580B:
+; Captures the screen as a packed image in the workspace and redraws it squashed
+; vertically, fewer rows per retrace.
+CaptureAndCollapseScreen:
     xor si, si
     mov ds, word ptr cs:[ScreenSegment]
     mov es, word ptr cs:[WorkspaceSegment]
@@ -1206,9 +1215,9 @@ loc_0590B:
     mov es, cs:[ScreenSegment]
 loc_0593F:
     push cx
-    call loc_05960
+    call SquashAndStretchUntilInput
     jne loc_05953
-    call loc_05960
+    call SquashAndStretchUntilInput
     jne loc_05953
     pop cx
     loop loc_0593F
@@ -1221,7 +1230,8 @@ loc_05953:
 ; Per VideoAdapter: CGA, EGA and Tandy versions of the same draw routine.
 AdapterDrawHandlers label word
     dw offset loc_0497A, offset loc_02D2D, offset loc_0375B
-loc_05960:
+; Step of the unused loc_0590B; AX = 1 (NZ) when a key or the primary button stops it.
+SquashAndStretchUntilInput:
     mov cx, cs:[WipeWidth]
     sub cx, 2
 loc_05968:
@@ -1235,7 +1245,7 @@ loc_05968:
     cmp byte ptr ds:[KeyLastMakeCode], 0
     jne loc_059E7
     call PollInputBits
-    cmp byte ptr ds:[InputBits], 10h
+    cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je loc_059E7
     pop ds
     call WaitVerticalRetrace
@@ -1257,7 +1267,7 @@ loc_059B6:
     push ds
     mov ds, cs:[MainDataSegment]
     call PollInputBits
-    cmp byte ptr ds:[InputBits], 10h
+    cmp byte ptr ds:[InputBits], IN_BUTTON_PRIMARY
     je loc_059E7
     pop ds
     call WaitVerticalRetrace
@@ -1347,7 +1357,8 @@ loc_05A7E:
 loc_05A7ECases label word
     dw loc_048E6, loc_02B84, loc_036A2    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_05A92:
+; BP = record: copies REC_SAVE_BUFFER back at REC_WORK_OFS (and the lower half).
+RestoreRecordBackground:
     mov es, word ptr cs:[WorkspaceSegment]
     mov di, word ptr ss:[bp + REC_WORK_OFS]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
@@ -1363,7 +1374,8 @@ loc_05A92Cases label word
     dw offset loc_029E5, offset loc_029C6, offset loc_02991
     dw offset loc_03542, offset loc_034D8, offset loc_034AD
 
-loc_05AC8:
+; BP = record: sets REC_WORK_OFS and saves the workspace under it to REC_SAVE_BUFFER.
+SaveRecordBackground:
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     add bx, word ptr cs:[VideoAdapter]
     add bx, word ptr cs:[VideoAdapter]
@@ -1415,8 +1427,10 @@ CopyWorkspaceToScreen:
 CopyWorkspaceToScreenCases label word
     dw CopyWorkspaceToScreenCga, CopyWorkspaceToScreenEga, CopyWorkspace104x192ToTandy    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_05BEE:
-    call loc_05145
+; Clears the whole video buffer for the adapter (CGA 16K, EGA both pages, Tandy 32K),
+; after showing EGA page 0 again. Leaves ES = ScreenSegment.
+ResetPageAndClearScreen:
+    call ResetEgaPages
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_05BEECases]
@@ -1425,7 +1439,8 @@ loc_05BEE:
 loc_05BEECases label word
     dw offset loc_0446C, offset loc_02737, offset ClearTandy32K
 
-loc_05C04:
+; Copies 200 workspace rows to the screen from offset 0. Returns DS = MainDataSegment.
+CopyFullWorkspaceToScreen:
     xor di, di
     xor si, si
     mov bp, 0C8h
@@ -1436,25 +1451,32 @@ loc_05C04:
 loc_05C04Cases label word
     dw loc_04A41, loc_02E2D, loc_03824    ; per VideoAdapter: CGA, EGA, Tandy
 
-loc_05C22:
-    call loc_05BEE
+; Clears the screen, then stretches in the WINDOW.BIC image (WorkspaceSegment+7D1h:0) at
+; the top left.
+StretchInWindowImage:
+    call ResetPageAndClearScreen
     xor di, di
     xor si, si
     mov ax, word ptr cs:[WorkspaceSegment]
     add ax, 07D0h
     inc ax
     mov ds, ax
-    jmp short loc_05C46
+    jmp short StretchInImage
 
-loc_05C35:
-    call loc_05BEE
+; Game over: clears the screen and stretches in THEND.BIC at row 4Eh (falls into
+; StretchInImage).
+StretchInTheEndImage:
+    call ResetPageAndClearScreen
     mov ah, 04Eh
     xor al, al
     call DrawOffsetFromScreenRow
     xor si, si
     mov ds, word ptr cs:[TheEndSegment]
 
-loc_05C46:
+; DS:SI = image (width word, height word, data), DI = screen offset: draws it through
+; AdapterDrawHandlers once per retrace growing WipeStep (rows shown) each time. Returns
+; DS = MainDataSegment.
+StretchInImage:
     lodsw
     mov word ptr cs:[WipeWidth], ax
     lodsw
@@ -1477,8 +1499,10 @@ loc_05C74:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_05C9A:
-    call loc_05BEE
+; Clears the screen and stretches in the HUD frame (panel image 25h); falls through into
+; CopyEgaPage0ToPage1.
+StretchInHudPanel:
+    call ResetPageAndClearScreen
     mov ax, 01Bh
     call DrawOffsetFromScreenRow
     mov si, 025h
@@ -1486,9 +1510,10 @@ loc_05C9A:
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
     mov ds, word ptr cs:[PanelSegment]
-    call loc_05C46
+    call StretchInImage
 
-loc_05CB7:
+; EGA only: latch copy (write mode 1) of page 0 to page 2000h so both pages match.
+CopyEgaPage0ToPage1:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     je loc_05CC0
     ret
@@ -1550,8 +1575,8 @@ ShutdownGame:
     push word ptr ds:[FileNamePtr]
     call SaveHiscoreFile
     pop word ptr ds:[FileNamePtr]
-    call loc_05145
-    call loc_0CB3E
+    call ResetEgaPages
+    call StopModuleMusic
     call RestoreKeyboardVector09
     call RestoreTimerVector08
     mov ax, 3
@@ -1579,7 +1604,7 @@ loc_05D66:
     mov ah, DOS_PRINT_STRING
     int 021h
     call ReleaseEmsCache
-    call far ptr loc_0F99D
+    call far ptr RestoreAllocStrategy
     mov ax, 04C00h
     int 021h
 loc_05D7E:
@@ -1601,7 +1626,7 @@ loc_05D7E:
     mov byte ptr es:[041Ch], al
     sti
     call ReleaseEmsCache
-    call far ptr loc_0F99D
+    call far ptr RestoreAllocStrategy
     mov ax, 04C00h
     int 021h
 
@@ -1698,12 +1723,12 @@ loc_05E81:
     sub word ptr ss:[bp + REC_STEP_ERROR], ax
     jmp short loc_05E93
 loc_05E8E:
-    call loc_05EB5
+    call SetChaseXQuadrantBit
     jmp short loc_05E99
 loc_05E93:
-    call loc_05EB5
+    call SetChaseXQuadrantBit
 loc_05E96:
-    call loc_05EC8
+    call SetChaseYQuadrantBit
 loc_05E99:
     mov bx, offset DirectionFromQuadrant
     mov ax, word ptr ds:[ChaseQuadrantBits]
@@ -1715,10 +1740,11 @@ loc_05EA5:
     mov word ptr ss:[bp + REC_DIRECTION], ax
     cmp word ptr ds:[ChaseStepPixels], 3
     jne loc_05EB2
-    jmp near ptr loc_0AF22
+    jmp near ptr MoveInDirection3
 loc_05EB2:
     jmp near ptr MoveInDirection2
-loc_05EB5:
+; StepAlongDelta helper: ChaseQuadrantBits bit 1 if ChaseNegX = 1, else bit 2.
+SetChaseXQuadrantBit:
     cmp word ptr ds:[ChaseNegX], 1
     je loc_05EC2
     or word ptr ds:[ChaseQuadrantBits], 2
@@ -1726,7 +1752,8 @@ loc_05EB5:
 loc_05EC2:
     or word ptr ds:[ChaseQuadrantBits], 1
     ret
-loc_05EC8:
+; StepAlongDelta helper: ChaseQuadrantBits bit 4 if ChaseNegY = 1, else bit 8.
+SetChaseYQuadrantBit:
     cmp word ptr ds:[ChaseNegY], 1
     je loc_05ED5
     or word ptr ds:[ChaseQuadrantBits], 8
@@ -1735,35 +1762,40 @@ loc_05ED5:
     or word ptr ds:[ChaseQuadrantBits], 4
     ret
 
-loc_05EDB:
+; Prints ScoreMessagePrefix and the 8 digits of ScoreBcd (falls into PrintBcd32).
+DrawScore:
     mov bp, offset ScoreMessagePrefix
     call PrintMessageBP
     mov bp, offset ScoreBcd
 
-loc_05EE4:
+; SS:BP = 4-byte packed BCD, least significant byte first: prints 8 digits.
+PrintBcd32:
     mov al, byte ptr ss:[bp + 3]
-    call loc_05EF9
+    call PrintBcdByte
     mov al, byte ptr ss:[bp + 2]
-    call loc_05EF9
+    call PrintBcdByte
     mov al, byte ptr ss:[bp + 1]
-    call loc_05EF9
+    call PrintBcdByte
     mov al, byte ptr ss:[bp]
 
-loc_05EF9:
+; AL = packed BCD byte: prints both digits.
+PrintBcdByte:
     push ax
     shr al, 1
     shr al, 1
     shr al, 1
     shr al, 1
-    call loc_05F06
+    call PrintBcdDigit
     pop ax
 
-loc_05F06:
+; Prints the low nibble of AL as '0'..'9'.
+PrintBcdDigit:
     and al, 0Fh
     add al, 030h
     jmp near ptr PrintTextChar
 
-loc_05F0D:
+; BX = 4-digit packed BCD points, added to ScoreBcd. Preserves AX, DX and BP.
+AddScoreBcd:
     push bp
     push ax
     push dx
@@ -1795,7 +1827,9 @@ loc_05F0D:
     pop bp
     ret
 
-loc_05F43:
+; Music for the start of a life: 4 at MapScrollPos 9Ch, 5 at 0EA0h, else
+; LevelMusicTable[LevelIndex].
+RequestLifeStartMusic:
     mov al, 4
     cmp word ptr ds:[MapScrollPos], 09Ch
     je loc_05F5E
@@ -1809,7 +1843,9 @@ loc_05F5E:
     jmp near ptr RequestModuleMusic
 
 
-loc_05F61:
+; Per frame: restores the level music once an encounter has ended, updates the sway and
+; frame counters, then TickFuelDrain.
+TickFrameTimers:
     cmp word ptr ds:[EncounterLiveCount], 0
     jne loc_05F89
     cmp word ptr ds:[EncounterEndDelay], 0
@@ -1889,10 +1925,12 @@ loc_06030:
     and word ptr ds:[FrameCount64], 03Fh
     inc word ptr ds:[FrameCount128]
     and word ptr ds:[FrameCount128], 07Fh
-    call loc_0606F
+    call TickFuelDrain
     ret
 
-loc_0606F:
+; Drains one Fuel unit every 64 frames (DifficultySetting above 1) or every 128, plus
+; one more per FrameCount32 wrap in ship form 2.
+TickFuelDrain:
     cmp word ptr ds:[DifficultySetting], 1
     jbe loc_0607D
     cmp word ptr ds:[FrameCount64], 03Fh
@@ -1901,7 +1939,7 @@ loc_0607D:
     cmp word ptr ds:[FrameCount128], 07Fh
 loc_06082:
     jne loc_06087
-    call loc_09EE4
+    call DrainFuelUnit
 loc_06087:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_0608F
@@ -1915,15 +1953,17 @@ loc_06097:
     je loc_0609F
     ret
 loc_0609F:
-    jmp near ptr loc_09EE4
+    jmp near ptr DrainFuelUnit
 
-loc_060A2:
-    call loc_077C5
-    call loc_05F61
-    call loc_05EDB
+UpdateRefuelTimersAndScore:
+    call TickRefuel
+    call TickFrameTimers
+    call DrawScore
     ret
 
-loc_060AC:
+; Level load: scrolls the map from 0EA0h back to the level start (MapScrollPos 9Ch), 16
+; pixels at a time, then LevelScriptClock -= 3.
+ScrollMapToLevelStart:
     mov ax, word ptr cs:[ScrollStartOffset]
     mov word ptr ds:[ScrollWindowOffset], ax
     mov word ptr ds:[ScrollSubRow], 0
@@ -1934,7 +1974,7 @@ loc_060CB:
     mov cx, 010h
 loc_060CE:
     push cx
-    call loc_0A781
+    call ScrollBackwardOneLine
     pop cx
     loop loc_060CE
     cmp word ptr ds:[MapScrollPos], 09Ch
@@ -1942,7 +1982,7 @@ loc_060CE:
     sub word ptr ds:[LevelScriptClock], 3
     ret
 
-loc_060E3:
+DrawLevelNumber:
     mov bp, offset LevelNumberPrefix
     call PrintMessageBP
     mov bx, offset LevelDigitChars
@@ -1950,7 +1990,8 @@ loc_060E3:
     xlat
     jmp near ptr PrintTextChar
 
-loc_060F3:
+; Draws LivesLeft ship icons and 3 - LivesLeft empty ones (panel images 1Eh, 1Fh).
+DrawLivesIcons:
     mov al, 01Fh
     mov ah, 050h
     call DrawOffsetFromScreenRow
@@ -1959,7 +2000,7 @@ loc_060F3:
     add si, offset PanelImageOffsets
     mov si, word ptr cs:[si]
     mov cx, word ptr ds:[LivesLeft]
-    call loc_06120
+    call DrawPanelImageRow
     mov si, 01Fh
     shl si, 1
     add si, offset PanelImageOffsets
@@ -1967,7 +2008,9 @@ loc_060F3:
     mov cx, 3
     sub cx, word ptr ds:[LivesLeft]
 
-loc_06120:
+; SI = image in PanelSegment, CX = copies (0 allowed), DI = screen offset; each copy
+; advances DI two 8-pixel columns. Returns DS = MainDataSegment.
+DrawPanelImageRow:
     jcxz loc_06138
     push si
     push di
@@ -1977,14 +2020,15 @@ loc_06120:
     pop cx
     pop di
     pop si
-    call loc_0613E
-    call loc_0613E
-    loop loc_06120
+    call AdvanceDrawColumn
+    call AdvanceDrawColumn
+    loop DrawPanelImageRow
 loc_06138:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_0613E:
+; DI += one 8-pixel column in screen bytes (CGA 2, EGA 1, Tandy 4). Clobbers BX.
+AdvanceDrawColumn:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0613ECases]
@@ -2003,7 +2047,8 @@ loc_06156:
     add di, 4
     ret
 
-loc_0615A:
+; DI -= one 8-pixel column in screen bytes (CGA 2, EGA 1, Tandy 4). Clobbers BX.
+RetreatDrawColumn:
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
     jmp word ptr cs:[bx + loc_0615ACases]
@@ -2022,38 +2067,39 @@ loc_06172:
     sub di, 4
     ret
 
-loc_06176:
-    call loc_05EDB
+; Draws score, lives, energy gauge and level number (on both pages on EGA).
+DrawHud:
+    call DrawScore
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_0618A
-    call loc_0511F
-    call loc_05EDB
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawScore
+    call FlipEgaDrawPage
 loc_0618A:
-    call loc_060F3
+    call DrawLivesIcons
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_0619E
-    call loc_0511F
-    call loc_060F3
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawLivesIcons
+    call FlipEgaDrawPage
 loc_0619E:
-    call loc_061DC
+    call DrawEnergyGauge
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_061B2
-    call loc_0511F
-    call loc_061DC
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawEnergyGauge
+    call FlipEgaDrawPage
 loc_061B2:
-    call loc_060E3
+    call DrawLevelNumber
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_061C6
-    call loc_0511F
-    call loc_060E3
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawLevelNumber
+    call FlipEgaDrawPage
 loc_061C6:
     ret
 
-loc_061C7:
+DecrementFirstEnergyCell:
     mov di, offset EnergyCells
 loc_061CA:
     cmp word ptr ds:[di], 0
@@ -2066,7 +2112,9 @@ loc_061D2:
     jne loc_061CA
     ret
 
-loc_061DC:
+; Rebuilds EnergyCells from EnergyPoints and draws the six cells, then the tank image
+; (20h + EnergyTanks). Preserves BP.
+DrawEnergyGauge:
     push bp
     mov es, word ptr cs:[MainDataSegment]
     mov di, offset EnergyCells
@@ -2078,7 +2126,7 @@ loc_061DC:
     or cx, cx
     js loc_061FC
 loc_061F7:
-    call loc_061C7
+    call DecrementFirstEnergyCell
     loop loc_061F7
 loc_061FC:
     mov ah, 040h
@@ -2086,17 +2134,17 @@ loc_061FC:
     call DrawOffsetFromScreenRow
     mov ds, word ptr cs:[PanelSegment]
     mov si, word ptr ss:[EnergyCells]
-    call loc_06296
+    call DrawEnergyCell
     mov si, word ptr ss:[EnergyCells + 2]
-    call loc_06296
+    call DrawEnergyCell
     mov si, word ptr ss:[EnergyCells + 4]
-    call loc_06296
+    call DrawEnergyCell
     mov si, word ptr ss:[EnergyCells + 6]
-    call loc_06296
+    call DrawEnergyCell
     mov si, word ptr ss:[EnergyCells + 8]
-    call loc_06296
+    call DrawEnergyCell
     mov si, word ptr ss:[EnergyCells + 0Ah]
-    call loc_06296
+    call DrawEnergyCell
     mov ds, word ptr cs:[MainDataSegment]
     mov ax, word ptr ds:[EnergyTanks]
     cmp ax, word ptr ds:[HudTankCompare]
@@ -2130,7 +2178,8 @@ loc_06294:
     pop bp
     ret
 
-loc_06296:
+; SI = cell value 0..4: draws panel image 19h + SI at DI and advances DI one column.
+DrawEnergyCell:
     add si, 019h
     shl si, 1
     add si, offset PanelImageOffsets
@@ -2138,7 +2187,7 @@ loc_06296:
     push di
     call BlitPackedToScreen
     pop di
-    jmp near ptr loc_0613E
+    jmp near ptr AdvanceDrawColumn
 
 ; Item 3: SmartBombRecord on every live pool A record.
 SmartBombAll:
@@ -4089,7 +4138,9 @@ loc_0741C:
 PlayerShotsMissed:
     ret
 
-loc_07420:
+; Spawns the pickup DropKind at (DropX, DropY) in pool A (BX = FFFFh if none free);
+; falls through into InitPickupRecord.
+SpawnItemDrop:
     call FindFreeRecordPoolA
     cmp bx, -1
     jne loc_07429
@@ -4105,7 +4156,8 @@ loc_07429:
     mov ax, 0C0h
 loc_07442:
     mov word ptr ds:[bx + REC_X], ax
-loc_07445:
+; BX = record: a 16x16 KIND_PICKUP for DropKind (sprite 46h + kind), not drawn yet.
+InitPickupRecord:
     mov word ptr ds:[bx + REC_ANIM_COUNTER], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
     mov word ptr ds:[bx + REC_KIND], KIND_PICKUP
@@ -4142,10 +4194,11 @@ loc_0749E:
     mov ax, word ptr ss:[bp + REC_Y]
     add ax, dx
     mov word ptr ds:[bx + REC_Y], ax
-    call loc_074B5
+    call InitAimedShotRecord
     call AimAtPlayer
     ret
-loc_074B5:
+; BX = record: a live 8x8 KIND_TYPED type 0Bh shot, sprite 31h.
+InitAimedShotRecord:
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIDE_FLAG], 0
     mov word ptr ds:[bx + REC_DIRECTION], 0
@@ -4255,12 +4308,14 @@ loc_07591:
     mov word ptr ds:[PoolBCursor], bx
     ret
 
-loc_07596:
+; BP = record: blits its sprite at REC_WORK_OFS (FFFFh = skip) by REC_SIZE_CLASS; 32x32
+; sprites also draw their lower half at REC_WORK_OFS_LOWER. BP is clobbered.
+DrawRecordSprite:
     mov bx, word ptr ss:[bp + REC_SIZE_CLASS]
     shl bx, 1
     jmp word ptr cs:[bx + loc_07596Cases]
 loc_07596Cases label word
-    dw offset loc_07746, offset loc_0768E, offset loc_075A6
+    dw offset DrawSprite8Record, offset loc_0768E, offset loc_075A6
 loc_075A6:
     mov bx, word ptr ss:[bp + REC_SPRITE]
     mov cx, word ptr cs:[ManExplSegment]
@@ -4278,7 +4333,7 @@ loc_075BB:
     cmp di, -1
     je loc_075DB
     push bp
-    call loc_075F5
+    call DrawSprite32Half
     pop bp
 loc_075DB:
     mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
@@ -4291,7 +4346,9 @@ loc_075E4:
     mov ax, word ptr ds:[Sprite32Bytes]
     shr ax, 1
     add si, ax
-loc_075F5:
+; Inner entry of DrawRecordSprite: SI:CX = source, DI = workspace offset: 16 rows
+; through (Flash)Sprite32Blitters.
+DrawSprite32Half:
     mov es, word ptr cs:[WorkspaceSegment]
     mov bx, word ptr cs:[VideoAdapter]
     shl bx, 1
@@ -4386,7 +4443,8 @@ FlashSprite16Blitters label word
     dw offset FlashSprite16Tandy, offset SkipBlit, offset SkipBlit, offset SkipBlit
     dw offset SkipBlit, offset SkipBlit, offset SkipBlit, offset SkipBlit
 
-loc_07746:
+; BP = record: its 8x8 sprite at REC_WORK_OFS (FFFFh = skip); no flash variant.
+DrawSprite8Record:
     mov di, word ptr ss:[bp + REC_WORK_OFS]
     cmp di, -1
     jne loc_0774F
@@ -4425,7 +4483,9 @@ loc_077BE:
     mov word ptr ds:[RefuelActive], 0
     ret
 
-loc_077C5:
+; While RefuelActive: Fuel + 1 until full (58h, sfx 0Ch), stopped when the ship is
+; destroyed; falls into DrawFuelGauge.
+TickRefuel:
     cmp word ptr ds:[RefuelActive], 1
     je loc_077CD
     ret
@@ -4436,19 +4496,20 @@ loc_077CD:
     je loc_077B2
     inc word ptr ds:[Fuel]
 
-loc_077DF:
+; Draws the fuel gauge (on both pages on EGA). Preserves BP.
+DrawFuelGauge:
     push bp
-    call loc_077F6
+    call DrawFuelGaugeOnPage
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_077F4
-    call loc_0511F
-    call loc_077F6
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawFuelGaugeOnPage
+    call FlipEgaDrawPage
 loc_077F4:
     pop bp
     ret
 
-loc_077F6:
+DrawFuelGaugeOnPage:
     mov al, 01Dh
     mov ah, 05Fh
     call DrawOffsetFromScreenRow
@@ -4736,7 +4797,7 @@ loc_07A92:
 loc_07A98:
     mov ax, 4
     mov ds:[DropKind], ax
-    call loc_07445
+    call InitPickupRecord
     ret
 loc_07AA2:
     call SpawnMapGroupEnemy
@@ -4879,7 +4940,7 @@ loc_07BE6:
     mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
-    call far ptr loc_0F953
+    call far ptr AllocGroupSlot
     pop ax
     mov bl, al
     xor bh, bh
@@ -4915,7 +4976,7 @@ loc_07C49:
     mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
-    call far ptr loc_0F953
+    call far ptr AllocGroupSlot
     pop ax
     mov bl, al
     xor bh, bh
@@ -4957,7 +5018,7 @@ loc_07CC1:
     mov bl, byte ptr ds:[bx + GroupDropKinds]
     xor bh, bh
     mov word ptr ds:[GroupDropKind], bx
-    call far ptr loc_0F953
+    call far ptr AllocGroupSlot
     pop ax
     mov bl, al
     xor bh, bh
@@ -5092,7 +5153,7 @@ loc_07E05:
     mov bl, ds:[bx + GroupDropKinds]
     xor bh, bh
     mov ds:[GroupDropKind], bx
-    call far ptr loc_0F953
+    call far ptr AllocGroupSlot
     pop ax
     mov bl, al
     xor bh, bh
@@ -5525,7 +5586,7 @@ SpawnEnemyHereQuiet:
     jne loc_081F2
     ret
 loc_081F2:
-    jmp short loc_08209
+    jmp short InitEnemyRecordHere
 SpawnEnemyHere:
     call FindFreeRecordPoolA
     cmp bx, -1
@@ -5533,9 +5594,10 @@ SpawnEnemyHere:
     ret
 loc_081FD:
     cmp byte ptr ds:[SfxEnabled], 0
-    je loc_08209
+    je InitEnemyRecordHere
     mov byte ptr ds:[SfxRequest], 0Bh
-loc_08209:
+; Shared body of SpawnEnemyHere/Quiet.
+InitEnemyRecordHere:
     mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
@@ -5684,7 +5746,9 @@ loc_0836F:
     inc word ptr ss:[bp + REC_Y]
     jmp near ptr ScrollRecordThenFinish
 
-loc_0837A:
+; Moves each upgrade slot to the first list entry whose availability test passes (NZ);
+; after 10 failures shows the empty icon 24h.
+AdvanceToAvailableUpgrade:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_08382
     ret
@@ -5860,15 +5924,16 @@ loc_0850E:
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     jmp near ptr loc_08430
 
-loc_08517:
+InitUpgradeSlots:
     mov word ptr ds:[SelectedUpgradeSlot], 0FFFFh
     mov bp, offset UpgradeSlot0
     mov ah, 087h
-    call loc_0852B
-    call loc_0852B
-    call loc_0852B
+    call InitUpgradeSlotAtRow
+    call InitUpgradeSlotAtRow
+    call InitUpgradeSlotAtRow
 
-loc_0852B:
+; BP = upgrade slot, AH = screen row: resets it; returns BP = next slot, AH += 10h.
+InitUpgradeSlotAtRow:
     mov al, 01Ch
     push ax
     call DrawOffsetFromScreenRow
@@ -5880,7 +5945,9 @@ loc_0852B:
     add ah, 010h
     ret
 
-loc_08546:
+; Secondary button: runs the selected slot's apply routine, advances the slot and
+; redraws; sfx 9 when bought. Preserves BX and BP.
+ApplySelectedUpgrade:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_0854E
     ret
@@ -5902,10 +5969,10 @@ loc_0854E:
     mov ax, word ptr ds:[SelectedUpgradeSlot]
     mov word ptr ds:[SavedUpgradeSlot], ax
     pop word ptr ds:[SelectedUpgradeSlot]
-    call loc_0837A
+    call AdvanceToAvailableUpgrade
     mov ax, word ptr ds:[SavedUpgradeSlot]
     mov word ptr ds:[SelectedUpgradeSlot], ax
-    call loc_0859E
+    call DrawUpgradeSlots
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     jne loc_0859B
     cmp byte ptr ds:[SfxEnabled], 0
@@ -5916,32 +5983,35 @@ loc_0859B:
     pop bx
     ret
 
-loc_0859E:
+; Draws the four upgrade slots (on both pages on EGA). Preserves BP.
+DrawUpgradeSlots:
     push bp
-    call loc_085B5
+    call DrawUpgradeSlotsOnPage
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_085B3
-    call loc_0511F
-    call loc_085B5
-    call loc_0511F
+    call FlipEgaDrawPage
+    call DrawUpgradeSlotsOnPage
+    call FlipEgaDrawPage
 loc_085B3:
     pop bp
     ret
 
-loc_085B5:
+DrawUpgradeSlotsOnPage:
     mov bp, offset UpgradeSlot0
     xor di, di
-    call loc_085D5
+    call DrawUpgradeSlot
     mov bp, offset UpgradeSlot1
     mov di, 1
-    call loc_085D5
+    call DrawUpgradeSlot
     mov bp, offset UpgradeSlot2
     mov di, 2
-    call loc_085D5
+    call DrawUpgradeSlot
     mov bp, offset UpgradeSlot3
     mov di, 3
 
-loc_085D5:
+; BP = upgrade slot, DI = its number (highlighted when selected); in the demo the
+; selected slot shows DemoUpgradeStatus.
+DrawUpgradeSlot:
     cmp word ptr ds:[SelectedUpgradeSlot], -1
     je loc_085ED
     mov si, word ptr ds:[SelectedUpgradeSlot]
@@ -5972,12 +6042,12 @@ loc_08605:
     push di
     mov cx, 5
 loc_0861B:
-    call loc_0613E
+    call AdvanceDrawColumn
     loop loc_0861B
     mov ds, word ptr cs:[PanelSegment]
     call BlitPackedToScreen
     pop di
-    call loc_0615A
+    call RetreatDrawColumn
     pop si
     add si, 017h
     shl si, 1
@@ -5986,7 +6056,7 @@ loc_0861B:
     push di
     call BlitPackedToScreen
     pop di
-    call loc_0613E
+    call AdvanceDrawColumn
     pop si
     shl si, 1
     add si, offset PanelImageOffsets
@@ -5994,7 +6064,9 @@ loc_0861B:
     call BlitPackedToScreen
     mov ds, word ptr cs:[MainDataSegment]
     ret
-loc_08654:
+; BP = record, CX = sprite base: steps the ramp phase (REC_DIRECTION, mod 18h) every 4th
+; frame; REC_SPRITE = Type28FrameRamp[phase] + CX.
+StepHatchRampFrame:
     cmp word ptr ds:[FrameDivider4], 0
     jne loc_08669
     inc word ptr ss:[bp + REC_DIRECTION]
@@ -6018,7 +6090,7 @@ Type28EnemyHatch:
     je loc_0868A
     mov cx, 1Ch
 loc_0868A:
-    call loc_08654
+    call StepHatchRampFrame
     cmp word ptr ds:[EncounterLiveCount], 0
     je loc_08697
     jmp near ptr ScrollRecordThenFinish
@@ -6168,11 +6240,12 @@ Type2EPlungeAtPlayerColumn:
     jmp near ptr ScrollRecordThenFinish
 loc_087F7:
     jne loc_087FC
-    call loc_08802
+    call SetPlungeTargetBelowPlayer
 loc_087FC:
     call SteerToSaved
     jmp near ptr FinishRecordUpdate
-loc_08802:
+; Type 2Eh: targets the player's column far below (REC_SAVED_Y 7530h); sfx 0Bh.
+SetPlungeTargetBelowPlayer:
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0880E
     mov byte ptr ds:[SfxRequest], 0Bh
@@ -6716,25 +6789,25 @@ Type53AnimateFromField36:
     ret
 ; Descends 1 px per frame and fires an aimed shot whenever a shot slot is free.
 Type48CreeperAimedFire:
-    call far ptr loc_0F9B2
+    call far ptr Type48CreeperBody
     call SpawnAimedShot
     jmp near ptr ScrollRecordThenFinish
 ; Falls to Y 90h, aims at the player and becomes type 7Ch.
 Type7BDropThenAim:
-    call far ptr loc_0FA4E
+    call far ptr Type7BDropThenAimBody
     jmp near ptr ScrollRecordThenFinish
 ; Types 13h/15h/1Ch/1Fh/7Dh/7Eh: steers along LeaderScriptCursor and drops followers at
 ; each point (13h: 14h, 15h: 16h/17h, 1Ch: 1Dh/1Eh, 1Fh: five 20h; 7Dh/7Eh: 7Fh/81h).
 Type13FormationLeader:
-    call far ptr loc_0FA6A
+    call far ptr Type13FormationLeaderBody
     jmp near ptr FinishRecordUpdate
 ; Steers to REC_SAVED, then becomes type 93h; no scroll.
 Type81SweeperEnterSteer:
-    call far ptr loc_0FC42
+    call far ptr Type81SweeperEnterBody
     jmp near ptr FinishRecordUpdate
 ; Sweeps sideways, descends and climbs back; destroyed after 100 blocked climbs.
 Type93SweepDescendClimb:
-    call far ptr loc_0FC63
+    call far ptr Type93SweepBody
     cmp word ptr ss:[bp + REC_FIELD_36], 064h
     jae loc_08D6D
     jmp near ptr FinishRecordUpdate
@@ -6743,15 +6816,15 @@ loc_08D6D:
     jmp near ptr FinishRecordUpdate
 ; Steers into its march slot (REC_SAVED), then becomes type 80h; no scroll.
 Type7FMarchEnterSteer:
-    call far ptr loc_0FE8A
+    call far ptr Type7FMarchEnterBody
     jmp near ptr FinishRecordUpdate
 ; Marches with the March* block state: shifts, drops and fires on the shared flags, and
 ; dives from sprite 164h on.
 Type80MarchFormationMember:
-    call far ptr loc_0FEA5
+    call far ptr Type80MarchMemberBody
     jmp near ptr FinishRecordUpdate
 loc_08D83:
-    call far ptr loc_1009C
+    call far ptr Type21LeaderPathBody
     jmp near ptr FinishRecordUpdate
 
 ; Far-call trampoline: lets far code call the main-frame near routine at offset AX.
@@ -6776,25 +6849,25 @@ MAIN ends
 
 FAR0F7F segment byte public 'CODE'
 assume cs:FAR0F7F,ds:nothing,ss:nothing,es:nothing
-extrn loc_10044:near
-extrn loc_10108:near
+extrn ResetMarchState:near
+extrn ResetType21Path:near
 ; Far: when a key was pressed (KeyLastMakeCode), advance every cheat code by it and
 ; apply the codes it completes, then clear KeyLastMakeCode.
 CheckCheatCodes:
     cmp byte ptr ds:[KeyLastMakeCode], 0
     je loc_0F89D
-    call loc_0F8E4
-    call loc_0F90B
-    call loc_0F89E
-    call loc_0F8AC
-    call loc_0F8BA
-    call loc_0F8C8
-    call loc_0F8D6
+    call CheckCheatRemindMe
+    call CheckCheatEveryDayIDie
+    call CheckCheatWhatOilShortage
+    call CheckCheatLifeInTheFastLane
+    call CheckCheatBonusCheatOn
+    call CheckCheatMyNameIsSmith
+    call CheckCheatSchnellfeuer
     mov byte ptr ds:[KeyLastMakeCode], 0
 loc_0F89D:
     retf
 
-loc_0F89E:
+CheckCheatWhatOilShortage:
     mov bx, offset CheatWhatOilShortage
     call MatchCheatKey
     jne loc_0F8AB
@@ -6802,7 +6875,7 @@ loc_0F89E:
 loc_0F8AB:
     ret
 
-loc_0F8AC:
+CheckCheatLifeInTheFastLane:
     mov bx, offset CheatLifeInTheFastLane
     call MatchCheatKey
     jne loc_0F8B9
@@ -6810,7 +6883,7 @@ loc_0F8AC:
 loc_0F8B9:
     ret
 
-loc_0F8BA:
+CheckCheatBonusCheatOn:
     mov bx, offset CheatBonusCheatOn
     call MatchCheatKey
     jne loc_0F8C7
@@ -6818,7 +6891,7 @@ loc_0F8BA:
 loc_0F8C7:
     ret
 
-loc_0F8C8:
+CheckCheatMyNameIsSmith:
     mov bx, offset CheatMyNameIsSmith
     call MatchCheatKey
     jne loc_0F8D5
@@ -6826,7 +6899,7 @@ loc_0F8C8:
 loc_0F8D5:
     ret
 
-loc_0F8D6:
+CheckCheatSchnellfeuer:
     mov bx, offset CheatGibStMirSchnellfeuer
     call MatchCheatKey
     jne loc_0F8E3
@@ -6834,7 +6907,8 @@ loc_0F8D6:
 loc_0F8E3:
     ret
 
-loc_0F8E4:
+; Sets all five cheat flags and AllCheatsFlag.
+CheckCheatRemindMe:
     mov bx, offset CheatRemindMe
     call MatchCheatKey
     jne loc_0F90A
@@ -6847,7 +6921,8 @@ loc_0F8E4:
 loc_0F90A:
     ret
 
-loc_0F90B:
+; Clears all five cheat flags and AllCheatsFlag.
+CheckCheatEveryDayIDie:
     mov bx, offset CheatEveryDayIDie
     call MatchCheatKey
     jne loc_0F931
@@ -6861,7 +6936,7 @@ loc_0F931:
     ret
 
 ; BX = cheat entry. On a match advance its cursor; ZF = 1 when that was the last
-; scancode (then loc_05401 runs through the far bridge). A mismatch resets the cursor
+; scancode (then BiosBeep runs through the far bridge). A mismatch resets the cursor
 ; without retrying the key.
 MatchCheatKey:
     mov di, word ptr ds:[bx]
@@ -6871,7 +6946,7 @@ MatchCheatKey:
     inc word ptr ds:[bx]
     cmp byte ptr ds:[di + 1], 0
     jne loc_0F952
-    mov bp, offset loc_05401
+    mov bp, offset BiosBeep
     call far ptr FarCallMainNearViaBP
     jmp short loc_0F952
 loc_0F94D:
@@ -6880,7 +6955,9 @@ loc_0F94D:
 loc_0F952:
     ret
 
-loc_0F953:
+; With a GroupDropKind: GroupSlotPtr/GroupSlotIndex = the first empty GroupTable entry;
+; otherwise, or when full, GroupSlotPtr = FFFFh (GroupSlotIndex is then stale).
+AllocGroupSlot:
     push bx
     push cx
     cmp word ptr ds:[GroupDropKind], 0
@@ -6902,7 +6979,8 @@ loc_0F979:
     pop bx
     retf
 
-loc_0F980:
+; DOS 3+: saves the allocation strategy and selects best fit.
+SetBestFitAllocStrategy:
     mov ah, DOS_GET_VERSION
     xor al, al
     int 021h
@@ -6919,7 +6997,7 @@ loc_0F980:
 loc_0F99C:
     retf
 
-loc_0F99D:
+RestoreAllocStrategy:
     mov ah, DOS_GET_VERSION
     xor al, al
     int 021h
@@ -6931,7 +7009,9 @@ loc_0F99D:
     int 021h
 loc_0F9B1:
     retf
-loc_0F9B2:
+; Far body of Type48CreeperAimedFire: sprite by level (level 5 also drifts toward the
+; player), REC_Y + 1.
+Type48CreeperBody:
     cmp word ptr ds:[LevelIndex], 5
     je loc_0F9CD
     mov ax, 1Ch
@@ -6975,8 +7055,8 @@ StartLeaderScript:
     mov word ptr ds:[SwayDropY], 0
     mov word ptr ds:[SwayReversals], 0
     mov word ptr ds:[EncounterTicks], 0
-    call loc_10044
-    call loc_10108
+    call ResetMarchState
+    call ResetType21Path
     retf
 
 ; Spin until no KeyDownTable entry is set; only the keyboard IRQ can end the wait.
@@ -6997,7 +7077,7 @@ loc_0FA43:
     pop cx
     pop ax
     retf
-loc_0FA4E:
+Type7BDropThenAimBody:
     mov word ptr ss:[bp + REC_SPRITE], 15Ch
     cmp word ptr ss:[bp + REC_Y], 90h
     jl loc_0FA69
@@ -7007,7 +7087,7 @@ loc_0FA4E:
     call far ptr FarCallMainNearViaAX
 loc_0FA69:
     retf
-loc_0FA6A:
+Type13FormationLeaderBody:
     mov si, word ptr ds:[LeaderScriptCursor]
     lodsw
     add ax, 020h
@@ -7174,7 +7254,7 @@ loc_0FC38:
     add ax, 03Bh
     mov word ptr ss:[bp + REC_SPRITE], ax
     retf
-loc_0FC42:
+Type81SweeperEnterBody:
     mov word ptr ss:[bp + REC_SPRITE], 016Ah
     mov word ptr ds:[SteerSpeed], 1
     push word ptr ss:[bp + REC_DIRECTION]
@@ -7185,7 +7265,7 @@ loc_0FC42:
     mov word ptr ss:[bp + REC_TYPE], 093h
 loc_0FC62:
     retf
-loc_0FC63:
+Type93SweepBody:
     cmp word ptr ds:[LeaderScriptCursor], offset LeaderScript7DEnd
     je loc_0FC6E
     jmp near ptr loc_0FE69
@@ -7222,17 +7302,17 @@ loc_0FCC5:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     je loc_0FCD2
-    call loc_0FE76
+    call Type93BlockedTurnUp
 loc_0FCD2:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     je loc_0FCDF
-    call loc_0FE76
+    call Type93BlockedTurnUp
 loc_0FCDF:
     mov ax, offset TryTerrainStep
     call far ptr FarCallMainNearViaAX
     je loc_0FCEC
-    call loc_0FE76
+    call Type93BlockedTurnUp
 loc_0FCEC:
     jne loc_0FCF8
     mov word ptr ss:[bp + REC_FIELD_36], 0
@@ -7360,7 +7440,9 @@ loc_0FE69:
     mov word ptr ss:[bp + REC_DIRECTION], 4
 loc_0FE75:
     retf
-loc_0FE76:
+; BP = type 93h: counts a blocked climb (REC_FIELD_36) and turns diagonally up toward
+; the centre.
+Type93BlockedTurnUp:
     inc word ptr ss:[bp + REC_FIELD_36]
     mov word ptr ss:[bp + REC_DIRECTION], 7
     cmp word ptr ss:[bp + REC_X], 060h
@@ -7368,7 +7450,7 @@ loc_0FE76:
     mov word ptr ss:[bp + REC_DIRECTION], 1
 loc_0FE89:
     ret
-loc_0FE8A:
+Type7FMarchEnterBody:
     mov word ptr ss:[bp + REC_SPRITE], 162h
     mov word ptr ds:[SteerSpeed], 1
     mov ax, offset SteerToSaved
@@ -7377,7 +7459,7 @@ loc_0FE8A:
     mov word ptr ss:[bp + REC_TYPE], 80h
 loc_0FEA4:
     retf
-loc_0FEA5:
+Type80MarchMemberBody:
     cmp word ptr ds:[LeaderScriptCursor], offset LeaderScript7EEnd
     je loc_0FEB0
     jmp near ptr loc_1000C

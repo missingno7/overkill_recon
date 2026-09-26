@@ -9,6 +9,7 @@ include RECORDS.INC
 include MOVEMENT.INC
 locals
 extrn AdapterGeometry:word
+extrn AllocGroupSlot:far
 extrn AttributePatchPointers:word
 extrn BlankMessage:byte
 extrn BlockBytes:word
@@ -153,7 +154,6 @@ extrn TimerTickPhase:byte
 extrn TimerVectorInstalled:word
 extrn VideoBiosModeTable:byte
 extrn WideRowOffsets:word
-extrn loc_0F953:far
 MAIN segment para public 'CODE'
 assume cs:MAIN,ds:nothing,ss:nothing,es:nothing
 public AllocateBuffers
@@ -168,12 +168,16 @@ public BuildByteToNibbleMaskTable
 public BuildRowTables
 public CalibrateJoystickWithAbort
 public CgaColorMap
+public CgaSelectBrightPalette0
+public CgaSelectBrightPalette1
+public CheckBossKey
 public ClearKeyDownTable
 public ClearScreen104x200Cga
 public ClearScreen104x200Ega
 public ClearTandy104x200
 public ClearTandy32K
 public ClearTimerTick
+public ClearWorkspace
 public ComputeRecordGridOffset
 public CopyPackedRowsStride104
 public CopyPackedRowsStride160
@@ -228,6 +232,7 @@ public DrawSprite8Shift6Ega
 public DrawSprite8Shift7Ega
 public DrawSprite8Tandy
 public DrawStars
+public DrawStatusPanel
 public EraseStars
 public FlashSprite16Shift0Cga
 public FlashSprite16Shift0Ega
@@ -255,15 +260,19 @@ public FlashSprite32Shift5Ega
 public FlashSprite32Shift6Ega
 public FlashSprite32Shift7Ega
 public FlashSprite32Tandy
+public FlipEgaDrawPage
 public FlushBiosKeyboardBuffer
 public InitStars
 public InstallKeyboardVector09
 public InstallTimerVector08
+public LoadCommonGraphics
 public LoadDestOffset
 public LoadDestSegment
 public LoadFileToBuffer
 public LoadGraphicsRecordImages
 public LoadImageSlot
+public LoadLevelGraphics
+public LoadLevelMap
 public LoadNamePtr
 public LoadPackedFile
 public LoadSettingsFromHiscoreBlock
@@ -277,17 +286,22 @@ public PlaqueImageOffset
 public PollInputBits
 public PrintMessageBP
 public PrintTextChar
+public ProbeShipTerrainCollision
 public ReadIndexedByteAttribute
 public RecordWorkspaceOffsetCga
 public RecordWorkspaceOffsetEga
 public RecordWorkspaceOffsetTandy
+public RedrawStatusPanel
+public ResetEgaPages
 public RestartAtCheckpoint
 public RestoreKeyboardVector09
 public RestoreTimerVector08
+public RunLevelScriptEvents
 public SaveHiscoreFile
 public SetMapTile1
 public SetMapTile28
 public ShowBossKeyScreen
+public ShowEgaDrawPage
 public ShowFatalErrorAndExit
 public TandyOffsetFromPlayfieldRow
 public TandyOffsetFromScreenRow
@@ -296,12 +310,6 @@ public UpdateHighScoreTable
 public WaitTimerTick
 public WaitVerticalRetrace
 public XorCodeHiscoreBlock
-public loc_0073C
-public loc_00747
-public loc_007EF
-public loc_00B3E
-public loc_00D42
-public loc_00E9C
 public loc_025E9
 public loc_02737
 public loc_027D9
@@ -337,19 +345,13 @@ public loc_04896
 public loc_048E6
 public loc_0497A
 public loc_04A41
-public loc_04A65
 public loc_04F37
-public loc_04F57
-public loc_04FC3
-public loc_04FF9
 public loc_05059
-public loc_0511F
-public loc_05145
-public loc_05160
-public loc_0526A
 extrn AdapterDrawHandlers:word
+extrn ApplyLevelPalette:near
 extrn BlockOffsets:word
 extrn BlueBitsSegment:word
+extrn CopyEgaPage0ToPage1:near
 extrn DecodeByte5BA0:byte
 extrn DecodeByte5BA1:byte
 extrn DecodeDest:word
@@ -360,9 +362,13 @@ extrn DecodePlaneBits:byte
 extrn DecodePlaneRowBytes:word
 extrn DecodeRowBuffer:byte
 extrn DecodeRows:word
+extrn DrawFuelGauge:near
+extrn DrawHud:near
 extrn DrawOffsetFromScreenRow:near
 extrn DrawPanelGraphic:near
+extrn DrawUpgradeSlots:near
 extrn FindFreeRecordPoolA:near
+extrn InsertHighScore:near
 extrn LevelBlocksSegment:word
 extrn LevelMapSegment:word
 extrn LevelSpritesSegment:word
@@ -375,7 +381,9 @@ extrn PlaqueSegment:word
 extrn PlayfieldRowBytes:word
 extrn RecordWorkspaceOffset:near
 extrn RequestModuleMusic:near
+extrn ResetPageAndClearScreen:near
 extrn ScreenSegment:word
+extrn ScrollBackwardOneLine:near
 extrn ScrollBandBytes:word
 extrn ScrollMirrorDistance:word
 extrn ScrollStartOffset:word
@@ -389,6 +397,7 @@ extrn Sprite8Offsets:word
 extrn Sprites1x1Segment:word
 extrn Sprites2x2CSegment:word
 extrn Sprites2x2Segment:word
+extrn StopModuleMusic:near
 extrn TextVideoSegment:word
 extrn TheEndSegment:word
 extrn VideoAdapter:word
@@ -403,16 +412,7 @@ extrn WipeSource:word
 extrn WipeStep:word
 extrn WipeWidth:word
 extrn WorkspaceSegment:word
-extrn loc_0532D:near
 extrn loc_05BAC:near
-extrn loc_05BEE:near
-extrn loc_05CB7:near
-extrn loc_06176:near
-extrn loc_077DF:near
-extrn loc_0859E:near
-extrn loc_0A781:near
-extrn loc_0C57C:near
-extrn loc_0CB3E:near
 ; Palette index treated as transparent when sprites are loaded and drawn.
 TransparentColor db 05h
 ; Esc during calibration jumps here from PollJoystickPrimaryOrAbort. Reloading the SP
@@ -1119,30 +1119,33 @@ loc_0072F:
 ; restored by RestoreTimerVector08 and chained by Interrupt08Handler.
 SavedInt08 db 00h,00h,00h,00h
 
-loc_0073C:
+; F9 down: ShowBossKeyScreen, then falls into RedrawStatusPanel.
+CheckBossKey:
     cmp byte ptr ds:[KeyDownTable + SCAN_F9], KEY_STATE_DOWN
     je loc_00744
     ret
 loc_00744:
     call ShowBossKeyScreen
 
-loc_00747:
-    call loc_007EF
+; Draws the panel background and, outside the demo, the HUD, fuel gauge, upgrade slots
+; and level palette.
+RedrawStatusPanel:
+    call DrawStatusPanel
     cmp word ptr ds:[DemoActive], 1
     jne loc_00752
     ret
 loc_00752:
-    call loc_06176
-    call loc_077DF
-    call loc_0859E
-    call loc_0C57C
+    call DrawHud
+    call DrawFuelGauge
+    call DrawUpgradeSlots
+    call ApplyLevelPalette
     ret
 
-; F9 boss key: silence the sound module (loc_0CB3E), switch to text mode and show
+; F9 boss key: silence the sound module (StopModuleMusic), switch to text mode and show
 ; BossKeyScreen with coloured rows, wait for F9 release, any key and F9 release again,
 ; then restore the game's BIOS video mode.
 ShowBossKeyScreen:
-    call loc_0CB3E
+    call StopModuleMusic
     mov ax, 3
     int 010h
     mov ds, word ptr cs:[MainDataSegment]
@@ -1150,32 +1153,32 @@ ShowBossKeyScreen:
     mov es, ax
     xor di, di
     mov si, offset BossKeyScreen
-    call loc_00854
+    call CopyTextScreen
     mov di, 1
     mov al, 0Ch
-    call loc_0084C
+    call FillTextAttributeRow
     mov al, 0Eh
     mov cx, 01E0h
-    call loc_0084F
+    call FillTextAttributes
     mov cx, 0Fh
 loc_0078C:
     push cx
     mov al, 0Eh
     mov cx, 1
-    call loc_0084F
+    call FillTextAttributes
     mov al, 7
     mov cx, 04Fh
-    call loc_0084F
+    call FillTextAttributes
     pop cx
     loop loc_0078C
     mov al, 01Eh
-    call loc_0084C
+    call FillTextAttributeRow
     mov al, 01Eh
-    call loc_0084C
+    call FillTextAttributeRow
     mov di, 0731h
     mov al, 071h
     mov cx, 0Dh
-    call loc_0084F
+    call FillTextAttributes
     mov dl, 047h
     mov dh, 017h
     mov ah, 2
@@ -1200,8 +1203,10 @@ loc_007D7:
     call RequestModuleMusic
     ret
 
-loc_007EF:
-    call loc_05145
+; Draws the HUD frame (panel image 25h) in one step; on EGA also copies page 0 to page
+; 1.
+DrawStatusPanel:
+    call ResetEgaPages
     mov ax, 01Bh
     call DrawOffsetFromScreenRow
     mov si, 025h
@@ -1223,19 +1228,22 @@ loc_007EF:
     shl bx, 1
     call word ptr cs:[bx + AdapterDrawHandlers]
     mov ds, word ptr cs:[MainDataSegment]
-    call loc_05CB7
+    call CopyEgaPage0ToPage1
     ret
 
-loc_0084C:
+; ES:DI = attribute byte, AL = attribute: fills 80 text cells.
+FillTextAttributeRow:
     mov cx, 050h
 
-loc_0084F:
+; ES:DI = attribute byte, AL = attribute, CX = cells.
+FillTextAttributes:
     stosb
     inc di
-    loop loc_0084F
+    loop FillTextAttributes
     ret
 
-loc_00854:
+; Copies one 80x25 text page from DS:SI to ES:DI.
+CopyTextScreen:
     mov cx, 07D0h
     rep movsw
     ret
@@ -1534,7 +1542,9 @@ loc_00B39:
     mov word ptr cs:[ShipSegment], ax
     ret
 
-loc_00B3E:
+; Loads LevelMapFiles[LevelIndex] into LevelMapSegment (retrying until it succeeds),
+; then builds the attributes and patches the map end.
+LoadLevelMap:
     mov word ptr ds:[LevelScriptCursors + 0], offset LevelScript0
     mov word ptr ds:[LevelScriptCursors + 2], offset LevelScript1
     mov word ptr ds:[LevelScriptCursors + 4], offset LevelScript2
@@ -1628,7 +1638,7 @@ LoadGraphicsMaskedRecordImages:
     mov word ptr cs:[LoadMakeMask], 1
     mov word ptr cs:[LoadRecordImages], 1
 LoadGraphicsFile:
-    call loc_0526A
+    call ClearWorkspace
     mov ax, word ptr cs:[WorkspaceSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
@@ -1656,7 +1666,9 @@ loc_00D2E:
     xor si, si
     jmp near ptr loc_05BAC
 
-loc_00D42:
+; Startup load of the shared sprite banks, THEND, PANEL.ENC (CGA patched), BLUEBITS and
+; SHIP.BIC. THEND's image offsets are overwritten by PANEL's.
+LoadCommonGraphics:
     mov word ptr cs:[LoadNamePtr], offset File_1X1_BIC
     mov ax, word ptr cs:[Sprites1x1Segment]
     mov word ptr cs:[LoadDestSegment], ax
@@ -1793,7 +1805,8 @@ CloseFileHandle:
     jb UnwindFileError
     ret
 
-loc_00E9C:
+; Loads the level's blocks, sprites and plaque.
+LoadLevelGraphics:
     mov ax, word ptr cs:[LevelBlocksSegment]
     mov word ptr ds:[FileBufferSegment], ax
     mov word ptr ds:[FileBufferOffset], 0
@@ -1923,7 +1936,7 @@ loc_00FDA:
     stosw
     add ax, word ptr ds:[Sprite32Bytes]
     loop loc_00FDA
-    jmp near ptr loc_0526A
+    jmp near ptr ClearWorkspace
 
 ; For every byte value, write four bytes at ByteToNibbleMasks+4*value expanding bits 7..0 into
 ; nibble masks (F or 0), i.e. one mask byte per two Tandy 4-bit pixels.
@@ -4474,16 +4487,16 @@ loc_0276E:
     ret
 
 ClearScreen104x200Ega:
-    call loc_027B7
+    call ClearEgaPage104x200
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     jne loc_027B6
-    call loc_0511F
-    call loc_027B7
-    call loc_0511F
+    call FlipEgaDrawPage
+    call ClearEgaPage104x200
+    call FlipEgaDrawPage
 loc_027B6:
     ret
 
-loc_027B7:
+ClearEgaPage104x200:
     mov es, word ptr cs:[ScreenSegment]
     mov dx, 03C4h
     mov al, 2
@@ -4504,7 +4517,7 @@ loc_027CB:
 
 loc_027D9:
     inc word ptr cs:[DecodeImageIndex]
-    call loc_044D7
+    call ReadDecodeImageHeader
     jne loc_027E6
     jmp near ptr loc_044AA
 loc_027E6:
@@ -4517,7 +4530,7 @@ loc_027EB:
     mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_027FA:
     push cx
-    call loc_02932
+    call BuildEgaTransparencyMask
     pop cx
     loop loc_027FA
     pop si
@@ -4610,16 +4623,16 @@ loc_028DD:
 loc_028E0:
     mov di, offset DecodeRowBuffer
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-    call loc_0291C
+    call StoreDecodedPlaneRow
     mov di, offset DecodeRowBuffer + 28h
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-    call loc_0291C
+    call StoreDecodedPlaneRow
     mov di, offset DecodeRowBuffer + 50h
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-    call loc_0291C
+    call StoreDecodedPlaneRow
     mov di, offset DecodeRowBuffer + 78h
     mov cx, word ptr cs:[DecodePlaneRowBytes]
-    call loc_0291C
+    call StoreDecodedPlaneRow
     mov di, word ptr cs:[DecodeDest]
     pop cx
     loop loc_02916
@@ -4629,7 +4642,8 @@ loc_02916:
 loc_02919:
     jmp near ptr loc_027D9
 
-loc_0291C:
+; EGA decoder: copies CX bytes from CS:DI to ES:[DecodeDest] and advances DecodeDest.
+StoreDecodedPlaneRow:
     push cx
     mov al, byte ptr cs:[di]
     inc di
@@ -4639,10 +4653,12 @@ loc_0291C:
     mov word ptr cs:[DecodeDest], di
     pop di
     pop cx
-    loop loc_0291C
+    loop StoreDecodedPlaneRow
     ret
 
-loc_02932:
+; EGA decoder: DS:SI = plane-0 byte of 8 pixels: stores a mask byte at ES:DI with a bit
+; set for each TransparentColor pixel.
+BuildEgaTransparencyMask:
     mov byte ptr cs:[DecodeByte5BA0], 0
     mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
@@ -4681,15 +4697,16 @@ loc_02982:
 loc_02991:
     cmp di, -1
     je loc_02999
-    call loc_029A9
+    call RestoreEgaBackgroundHalf
 loc_02999:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
     cmp di, -1
-    jne loc_029A9
+    jne RestoreEgaBackgroundHalf
     ret
-loc_029A9:
+; DS:SI = save buffer, ES:DI = workspace: 16 rows of a 32x32 sprite's background.
+RestoreEgaBackgroundHalf:
     mov bx, 15h
     mov cx, 10h
 loc_029AF:
@@ -4813,7 +4830,7 @@ loc_02A4F:
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
-    call loc_02A8D
+    call SaveEgaBackgroundHalf
 loc_02A69:
     add word ptr ss:[bp + REC_Y], 10h
     call RecordWorkspaceOffset
@@ -4828,7 +4845,8 @@ loc_02A7D:
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     add di, 140h
-loc_02A8D:
+; SI = workspace offset, DI = save buffer: 16 rows of a 32x32 sprite's background.
+SaveEgaBackgroundHalf:
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
     mov bx, 15h
@@ -5926,7 +5944,7 @@ loc_033AB:
     ret
 
 loc_033AF:
-    call loc_044D7
+    call ReadDecodeImageHeader
     jne loc_033B7
     jmp near ptr loc_044AA
 loc_033B7:
@@ -5936,7 +5954,7 @@ loc_033BC:
     mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_033C2:
     push cx
-    call loc_033DD
+    call DecodeTandyPixelGroup
     pop cx
     loop loc_033C2
     add si, word ptr cs:[DecodePlaneRowBytes]
@@ -5946,7 +5964,9 @@ loc_033C2:
     loop loc_033BC
     jmp short loc_033AF
 
-loc_033DD:
+; Tandy decoder: 8 planar pixels at DS:SI to 4bpp at ES:DI (with mask words when
+; LoadMakeMask is set).
+DecodeTandyPixelGroup:
     mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
@@ -5954,16 +5974,16 @@ loc_033DD:
     mov dl, byte ptr ds:[bx + si]
     add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
-    call loc_0344B
+    call ExtractTandyPixelPair
     mov byte ptr cs:[DecodePixelBytes + 1], cl
     mov byte ptr cs:[DecodePixelBytes + 5], ch
-    call loc_0344B
+    call ExtractTandyPixelPair
     mov byte ptr cs:[DecodePixelBytes + 0], cl
     mov byte ptr cs:[DecodePixelBytes + 4], ch
-    call loc_0344B
+    call ExtractTandyPixelPair
     mov byte ptr cs:[DecodePixelBytes + 3], cl
     mov byte ptr cs:[DecodePixelBytes + 7], ch
-    call loc_0344B
+    call ExtractTandyPixelPair
     mov byte ptr cs:[DecodePixelBytes + 2], cl
     mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
@@ -5983,7 +6003,9 @@ loc_03445:
     stosw
     ret
 
-loc_0344B:
+; AL/AH/DL/DH = plane bytes: CL = the next two 4-bit pixels; with LoadMakeMask, CH =
+; their transparency mask.
+ExtractTandyPixelPair:
     ror dh, 1
     rcl cl, 1
     ror dl, 1
@@ -6033,15 +6055,15 @@ loc_034AA:
 loc_034AD:
     cmp di, -1
     je loc_034B5
-    call loc_034C5
+    call RestoreTandyBackgroundHalf
 loc_034B5:
     mov di, word ptr ss:[bp + REC_WORK_OFS_LOWER]
     mov si, word ptr ss:[bp + REC_SAVE_BUFFER]
     add si, 0140h
     cmp di, -1
-    jne loc_034C5
+    jne RestoreTandyBackgroundHalf
     ret
-loc_034C5:
+RestoreTandyBackgroundHalf:
     mov bx, 058h
     mov cx, 010h
 loc_034CB:
@@ -6183,7 +6205,7 @@ loc_0356C:
     mov word ptr ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
-    call loc_035AA
+    call SaveTandyBackgroundHalf
 loc_03586:
     add word ptr ss:[bp + REC_Y], 010h
     call RecordWorkspaceOffset
@@ -6198,7 +6220,7 @@ loc_0359A:
     mov si, ax
     mov di, word ptr ss:[bp + REC_SAVE_BUFFER]
     add di, 0140h
-loc_035AA:
+SaveTandyBackgroundHalf:
     mov es, word ptr cs:[MainDataSegment]
     mov ds, word ptr cs:[WorkspaceSegment]
     mov bx, 058h
@@ -7982,7 +8004,10 @@ loc_044D2:
 ; UNKNOWN: not yet classified as code or data
     db 00h
 
-loc_044D7:
+; DS:SI = image header (rows, bytes per plane row): ZF at the 0,0 terminator; otherwise
+; sets DecodeRows/DecodePlaneRowBytes and records the image when LoadRecordImages is
+; set.
+ReadDecodeImageHeader:
     mov ax, word ptr ds:[si]
     or ax, word ptr ds:[si + 2]
     jne loc_044DF
@@ -8009,7 +8034,7 @@ loc_04505:
     db 00h
 
 loc_0450C:
-    call loc_044D7
+    call ReadDecodeImageHeader
     je loc_044AA
     mov cx, word ptr cs:[DecodeRows]
 loc_04516:
@@ -8017,7 +8042,7 @@ loc_04516:
     mov cx, word ptr cs:[DecodePlaneRowBytes]
 loc_0451C:
     push cx
-    call loc_04537
+    call DecodeCgaPixelGroup
     pop cx
     loop loc_0451C
     add si, word ptr cs:[DecodePlaneRowBytes]
@@ -8027,7 +8052,9 @@ loc_0451C:
     loop loc_04516
     jmp short loc_0450C
 
-loc_04537:
+; CGA decoder: 8 planar pixels at DS:SI to one CGA pixel word at ES:DI (colours through
+; CgaColorMap, with a mask word when LoadMakeMask is set).
+DecodeCgaPixelGroup:
     mov bx, word ptr cs:[DecodePlaneRowBytes]
     mov al, byte ptr ds:[si]
     mov ah, byte ptr ds:[bx + si]
@@ -8035,48 +8062,48 @@ loc_04537:
     mov dl, byte ptr ds:[bx + si]
     add bx, word ptr cs:[DecodePlaneRowBytes]
     mov dh, byte ptr ds:[bx + si]
-    call loc_045F6
+    call ExtractCgaPixelPair
     mov byte ptr cs:[DecodePixelBytes + 1], cl
     mov byte ptr cs:[DecodePixelBytes + 5], ch
-    call loc_045F6
+    call ExtractCgaPixelPair
     mov byte ptr cs:[DecodePixelBytes + 0], cl
     mov byte ptr cs:[DecodePixelBytes + 4], ch
-    call loc_045F6
+    call ExtractCgaPixelPair
     mov byte ptr cs:[DecodePixelBytes + 3], cl
     mov byte ptr cs:[DecodePixelBytes + 7], ch
-    call loc_045F6
+    call ExtractCgaPixelPair
     mov byte ptr cs:[DecodePixelBytes + 2], cl
     mov byte ptr cs:[DecodePixelBytes + 6], ch
     inc si
     cmp word ptr cs:[LoadMakeMask], 0
     je loc_045A9
     mov al, byte ptr cs:[DecodePixelBytes + 4]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 5]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 6]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 7]
-    call loc_045CB
+    call PackCgaPixelPair
     mov ax, word ptr cs:[CgaPixelWord]
     stosw
 loc_045A9:
     mov al, byte ptr cs:[DecodePixelBytes + 0]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 1]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 2]
-    call loc_045CB
+    call PackCgaPixelPair
     mov al, byte ptr cs:[DecodePixelBytes + 3]
-    call loc_045CB
+    call PackCgaPixelPair
     mov ax, word ptr cs:[CgaPixelWord]
     stosw
     ret
 
-loc_045CB:
-    call loc_045CE
+PackCgaPixelPair:
+    call PackCgaPixel
 
-loc_045CE:
+PackCgaPixel:
     rol al, 1
     rol al, 1
     rol al, 1
@@ -8085,13 +8112,14 @@ loc_045CE:
     rcl word ptr cs:[CgaPixelWord],1
     ret
     even
-; Scratch AX of loc_045F6, and the CGA pixel word built two bits at a time.
+; Scratch AX of ExtractCgaPixelPair, and the CGA pixel word built two bits at a time.
 CgaSavedAX dw 0
 CgaPixelWord dw 0
 ; 16-colour index to CGA colour 0..3 (RunChooseScreen switches entry 7 between 0 and 1).
 CgaColorMap db 0, 1, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 2, 1, 3
 
-loc_045F6:
+; ExtractTandyPixelPair with both pixels mapped through CgaColorMap.
+ExtractCgaPixelPair:
     ror dh, 1
     rcl cl, 1
     ror dl, 1
@@ -8160,15 +8188,15 @@ loc_04656:
 loc_04684:
     cmp di, -1
     je loc_0468C
-    call loc_0469C
+    call RestoreCgaBackgroundHalf
 loc_0468C:
     mov di, ss:[bp + REC_WORK_OFS_LOWER]
     mov si, ss:[bp + REC_SAVE_BUFFER]
     add si, 140h
     cmp di, -1
-    jne loc_0469C
+    jne RestoreCgaBackgroundHalf
     ret
-loc_0469C:
+RestoreCgaBackgroundHalf:
     mov cx, 10h
 loc_0469F:
     movsw
@@ -8288,7 +8316,7 @@ loc_04740:
     mov ss:[bp + REC_WORK_OFS], ax
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
-    call loc_0477E
+    call SaveCgaBackgroundHalf
 loc_0475A:
     add word ptr ss:[bp + REC_Y], 10h
     call RecordWorkspaceOffset
@@ -8303,7 +8331,7 @@ loc_0476E:
     mov si, ax
     mov di, ss:[bp + REC_SAVE_BUFFER]
     add di, 140h
-loc_0477E:
+SaveCgaBackgroundHalf:
     mov es, cs:[MainDataSegment]
     mov ds, cs:[WorkspaceSegment]
     movsw
@@ -8699,7 +8727,9 @@ loc_04A5C:
     mov ds, word ptr cs:[MainDataSegment]
     ret
 
-loc_04A65:
+; Spawns the formation of each level script event whose trigger equals LevelScriptClock.
+; Preserves DI.
+RunLevelScriptEvents:
     push di
 ProcessLevelScript:
     mov bx, word ptr ds:[LevelIndex]
@@ -8746,7 +8776,7 @@ loc_04A98:
     mov word ptr ds:[FormationType], ax
     lodsw
     mov cx, ax
-    call far ptr loc_0F953
+    call far ptr AllocGroupSlot
 loc_04ACE:
     push cx
     call FindFreeRecordPoolA
@@ -8976,20 +9006,22 @@ DrawStars:
     mov di, offset StarDrawnOffsets
     mov bp, offset loc_04D4D
     mov cx, 014h
-    call loc_04D15
+    call DrawStarGroup
     mov bp, offset loc_04D51
     mov cx, 0Ah
-    call loc_04D15
+    call DrawStarGroup
     mov cx, 0Ah
-    call loc_04D15
+    call DrawStarGroup
     mov word ptr ds:[di], 0FFFFh
     ret
 
-loc_04D15:
+; CX stars from DS:SI: plots each on a clear workspace byte and logs its offset at DS:DI
+; for EraseStars.
+DrawStarGroup:
     lodsw
     mov bx, ax
     shl bx, 1
-    add bx, 09A08h
+    add bx, offset RecordRowOffsets + 40h
     mov bx, word ptr ds:[bx]
     add bx, word ptr ds:[ScrollWindowOffset]
     lodsw
@@ -9016,7 +9048,7 @@ loc_04D59:
     mov word ptr ds:[di], bx
     add di, 2
 loc_04D61:
-    loop loc_04D15
+    loop DrawStarGroup
     ret
 
 EraseStars:
@@ -9075,7 +9107,7 @@ loc_04DD8:
     push si
     push di
     push word ptr ds:[LevelScriptClock]
-    call loc_00B3E
+    call LoadLevelMap
     pop word ptr ds:[LevelScriptClock]
     pop di
     mov word ptr ds:[MapScrollPos], di
@@ -9084,7 +9116,7 @@ loc_04DD8:
     mov word ptr ds:[MapScrollPos], 0E93h
     pop di
     pop si
-    call loc_04E0D
+    call ScrollToCheckpoint
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
     add bx, offset CheckpointCursorPtrs
@@ -9093,16 +9125,18 @@ loc_04DD8:
     mov word ptr ds:[bx], ax
     ret
 
-loc_04E0D:
+; DI = target MapScrollPos, SI = script clock: scrolls back to the checkpoint, then sets
+; LevelScriptClock.
+ScrollToCheckpoint:
     push di
     push si
-    call loc_0A781
+    call ScrollBackwardOneLine
     pop si
     pop di
     cmp word ptr ds:[MapScrollPos], di
-    ja loc_04E0D
+    ja ScrollToCheckpoint
     cmp word ptr ds:[ScrollSubRow], 0
-    jne loc_04E0D
+    jne ScrollToCheckpoint
     mov word ptr ds:[LevelScriptClock], si
     ret
 
@@ -9280,7 +9314,7 @@ loc_04F37:
     je loc_04F40
     ret
 loc_04F40:
-    call loc_04FC3
+    call CgaSelectBrightPalette1
     mov ax, 40h
     mov es, ax
     mov al, es:[65h]
@@ -9290,7 +9324,7 @@ loc_04F40:
     mov es:[65h], al
     ret
 
-loc_04F57:
+CgaSelectBrightPalette0:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_04F60
     ret
@@ -9345,7 +9379,7 @@ CgaIntensityOff:
     out dx, al
     ret
 
-loc_04FC3:
+CgaSelectBrightPalette1:
     cmp word ptr cs:[VideoAdapter], VIDEO_CGA
     je loc_04FCC
     ret
@@ -9370,7 +9404,9 @@ loc_04FCC:
     mov byte ptr es:[066h], al
     ret
 
-loc_04FF9:
+; BP = ship: CF when it is destroyed (form 3+) or the map under its hit point
+; (PlayerHitOffsets) is solid. REC_Y and REC_X are restored.
+ProbeShipTerrainCollision:
     mov si, word ptr ss:[bp + REC_SPRITE]
     cmp si, 3
     jae loc_05059
@@ -9540,7 +9576,8 @@ loc_05110:
     out dx, al
     ret
 
-loc_0511F:
+; EGA only: toggles EgaPageToggle and ScreenSegment (A000h/A200h).
+FlipEgaDrawPage:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     je loc_05128
     ret
@@ -9554,18 +9591,20 @@ loc_0513D:
     mov word ptr cs:[ScreenSegment], 0A200h
     ret
 
-loc_05145:
+; EGA only: draws and shows page 0.
+ResetEgaPages:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     je loc_0514E
     ret
 loc_0514E:
     mov word ptr cs:[EgaPageToggle], 0
     mov word ptr cs:[ScreenSegment], 0A000h
-    jmp short loc_05160
+    jmp short ShowEgaDrawPage
 ; EGA page being drawn (0/1): ScreenSegment alternates between A000h and A200h.
 EgaPageToggle dw 0
 
-loc_05160:
+; EGA only: sets the CRTC start address for EgaPageToggle outside retrace.
+ShowEgaDrawPage:
     cmp word ptr cs:[VideoAdapter], VIDEO_EGA
     je loc_05169
     ret
@@ -9657,16 +9696,17 @@ FormatDecimalToBuffer:
 PrintDecimalDX:
     xor bl, bl
     mov cx, 0D8F0h
-    call loc_05233
+    call EmitDecimalDigit
     mov cx, 0FC18h
-    call loc_05233
+    call EmitDecimalDigit
     mov cx, 0FF9Ch
-    call loc_05233
+    call EmitDecimalDigit
     mov cl, 0F6h
-    call loc_05233
+    call EmitDecimalDigit
     mov al, dl
     jmp short loc_05250
-loc_05233:
+; PrintDecimalDX step: CX = -10^n, DX = value; a leading zero prints as a space.
+EmitDecimalDigit:
     xor al, al
 loc_05235:
     add dx, cx
@@ -9702,7 +9742,8 @@ loc_05265:
     inc di
     jmp short loc_05261
 
-loc_0526A:
+; Zeroes WorkspaceSegment (64 KB, or 32 KB with ClearWorkspaceHalfOnly).
+ClearWorkspace:
     mov es, word ptr cs:[WorkspaceSegment]
     xor di, di
     mov ax, di
@@ -9717,9 +9758,9 @@ loc_05280:
 ; Insert ScoreBcd into the high-score table (532D) and save hiscore.dat if it qualified.
 UpdateHighScoreTable:
     mov word ptr ds:[HiscoreQualified], 0
-    call loc_05BEE
+    call ResetPageAndClearScreen
     mov bp, offset ScoreBcd
-    call loc_0532D
+    call InsertHighScore
     cmp word ptr ds:[HiscoreQualified], 0
     jne SaveHiscoreFile
     ret

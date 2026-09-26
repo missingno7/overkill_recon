@@ -1060,7 +1060,7 @@ FormationDrawPass dw 00000h
 FormationType dw 00000h
 ; 16 groups of script-spawned records: {live members, item kind to drop}.
 GroupTable db 16 dup (0, 0)
-; Index of the GroupTable entry allocated by loc_0F953.
+; Index of the GroupTable entry allocated by AllocGroupSlot.
 GroupSlotIndex dw 0h
 ; That entry, or FFFFh.
 GroupSlotPtr dw 0h
@@ -1095,7 +1095,7 @@ KbdSavedInt09 db 00h,00h,00h,00h
 KeyBitScancodesA db 00h,00h,02Ch,039h,010h,01Eh,018h,019h
 KeyBitScancodesB db 00h,00h,02Ch,077h,07Ch,07Bh,07Ah,079h
 ; (Y, X) of the player's hit point from its position, per ship form (REC_SPRITE 0..2):
-; terrain contact (loc_04FF9) and pickup/collision tests (loc_0AA46).
+; terrain contact (ProbeShipTerrainCollision) and pickup/collision tests (SmallRecordHitsPlayer).
 PlayerHitOffsets dw 7, 8,  0Ah, 8,  9, 8
 ; ComputeRecordGridOffset stores its wrapped Y sum here.
 GridYSum dw 00000h
@@ -1122,7 +1122,7 @@ FileHandle dw 00000h
 CgaNibbleToPixels db 0h,3h,0Ch,0Fh,30h,33h,3Ch,3Fh,0C0h,0C3h,0CCh,0CFh,0F0h,0F3h,0FCh,0FFh
 CgaColorFill db 0h,55h,0AAh,0FFh
 DecimalToBuffer dw 00000h
-; Set while choose.enc loads: loc_0526A then clears only the first 4000h words.
+; Set while choose.enc loads: ClearWorkspace then clears only the first 4000h words.
 ClearWorkspaceHalfOnly dw 0h
 HiscoreFileName db 'hiscore.dat',00h
 ; Prefix of a high-score row; loc_05461 patches the row byte.
@@ -1196,9 +1196,9 @@ ChaseNegY dw 0h
 ChaseQuadrantBits dw 0h
 ChaseStepPixels dw 3h
 ScoreBcd db 00h,00h,00h,00h
-; Colour and position prefix of the printed score (loc_05EDB).
+; Colour and position prefix of the printed score (DrawScore).
 ScoreMessagePrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Dh, 1Dh, 0
-; Music number per LevelIndex (loc_05F43, loc_05F61).
+; Music number per LevelIndex (RequestLifeStartMusic, TickFrameTimers).
 LevelMusicTable db 8, 1, 3, 7, 9, 0Ah
 CountGate2324 dw 00000h
 ; Wrapping frame counters (loc_05F89..): 0..3 up to 0..7Fh each frame; the slow
@@ -1231,7 +1231,7 @@ ScrollSubRow dw 0h
 ; View position in the level map, in map bytes (13 tiles per row); each scroll step
 ; moves it by 0Dh and LevelScriptClock by one.
 MapScrollPos dw 00000h
-; 1 while scrolling backward (loc_0A781).
+; 1 while scrolling backward (ScrollBackwardOneLine).
 ScrollingBackward dw 0h
 ; 1 after a backward tile step.
 LastTileStepBackward dw 0h
@@ -1242,16 +1242,16 @@ LevelIndex dw 00000h
 LivesLeft dw 00000h
 ; Cleared by StartNewGame; no reader found.
 Word235A dw 0h
-; Printed before the level number (loc_060E3), and the digit per LevelIndex.
+; Printed before the level number (DrawLevelNumber), and the digit per LevelIndex.
 LevelNumberPrefix db TEXT_SET_COLOR, 0Ah, TEXT_MOVE_TO, 0Fh, 20h, 0h
 LevelDigitChars db '612345'
-; Six HUD energy cell images (words 0..4), rebuilt from EnergyPoints by loc_061DC:
+; Six HUD energy cell images (words 0..4), rebuilt from EnergyPoints by DrawEnergyGauge:
 ; all start at 4 and each point takes one off the first nonzero cell.
 EnergyCells dw 4, 4, 4, 4, 4, 4
 EnergyCellsEnd label word
 ; Compared with EnergyTanks (loc_061FC); never written.
 HudTankCompare dw 8000h
-; Pending item drop (loc_07420): position and kind.
+; Pending item drop (SpawnItemDrop): position and kind.
 DropX dw 0h
 DropY dw 0h
 DropKind dw 0h
@@ -1285,18 +1285,18 @@ endm
 PoolBSaveBuffers db POOL_B_COUNT * POOL_B_SAVE_BYTES dup (0)
 PoolACursor dw 023B4h
 PoolBCursor dw 02B5Ch
-; Screen offset of the fuel gauge (loc_077F6); no reader found.
+; Screen offset of the fuel gauge (DrawFuelGaugeOnPage); no reader found.
 FuelGaugeOffset dw 0h
 ; Per LevelIndex: handler called with AL = level map byte while a map row is set up.
 LevelMapCellHandlers dw offset Level0MapCell, offset Level1MapCell, offset Level2MapCell, offset Level3MapCell, offset Level4MapCell, offset Level5MapCell
 ; Sprite frame and case per DS:2330 >> 5 (types 90h, 91h).
 TurretPhaseTable dw 1, 0, 1, 2
 ; Upgrade selector: four HUD slots, each cycling through a list of upgrades; the
-; secondary button applies the selected slot's current entry (loc_08546).
+; secondary button applies the selected slot's current entry (ApplySelectedUpgrade).
 ; Hit box centre (Y, X) tested by loc_08331.
 UpgradeHitY dw 0
 UpgradeHitX dw 0
-; Scratch copy of SelectedUpgradeSlot, and entries tried by loc_0837A.
+; Scratch copy of SelectedUpgradeSlot, and entries tried by AdvanceToAvailableUpgrade.
 SavedUpgradeSlot dw 0
 UpgradeTries dw 0
 ; 0..3, or FFFFh for none.
@@ -1358,7 +1358,7 @@ Type51Path dw 0B0h, 0C0h,  0B0h, 0h,  0A0h, 0h,  0A0h, 0C0h
 ; Pool A record added by the auto-move sequence (LevelEndPhase 2), FFFFh = none;
 ; drawn last while LevelEndPhase is nonzero.
 AutoMoveExtraRecord dw 0FFFFh
-; DOS allocation strategy saved at startup (loc_0F980), restored on exit (loc_0F99D).
+; DOS allocation strategy saved at startup (SetBestFitAllocStrategy), restored on exit (RestoreAllocStrategy).
 SavedAllocStrategy dw 0
 ; Cheat flags, set by the typed codes below (CheckCheatCodes).
 WhatOilShortageFlag db 0
@@ -1406,7 +1406,7 @@ CheatEveryDayIDie dw offset CheatEveryDayIDie + 2
     db SCAN_E, SCAN_V, SCAN_E, SCAN_R, SCAN_Y, SCAN_D, SCAN_A, SCAN_Y, SCAN_I, SCAN_D
     db SCAN_I, SCAN_E, 0
     even
-; Looping (Y, X) path of the level-4 type 21h leader (loc_1009C, cursor in CS at
+; Looping (Y, X) path of the level-4 type 21h leader (Type21LeaderPathBody, cursor in CS at
 ; Type21PathCursor): a child spawns at each waypoint; FFFFh restarts it.
 Type21Path dw 10h, 10h,  40h, 40h,  10h, 40h,  20h, 20h,  0h, 0h
     dw 50h, 30h,  10h, 70h,  30h, 90h,  40h, 90h,  20h, 0B0h
@@ -1415,7 +1415,7 @@ Type21Path dw 10h, 10h,  40h, 40h,  10h, 40h,  20h, 20h,  0h, 0h
     dw 10h, 0C0h,  0h, 0B0h,  30h, 20h,  30h, 80h,  10h, 0h
     dw 30h, 60h,  40h, 10h,  0h, 60h,  20h, 90h,  40h, 80h
     dw 0FFFFh
-; Level-5 march (loc_0A940 drives it, Type80MarchFormationMember marchers follow).
+; Level-5 march (UpdateAllRecords drives it, Type80MarchFormationMember marchers follow).
 MarchEdgeHit db 0
 MarchStepNow db 0
 MarchDropNow db 0
@@ -1429,7 +1429,7 @@ Type93KilledLatch db 0
 Type93KilledPulse db 0
 ; X step of the marchers, negated at each edge.
 MarchStepX dw 2
-; Written FFFFh by loc_10044; no reader found.
+; Written FFFFh by ResetMarchState; no reader found.
 MarchWord98AC dw 0FFFFh
 ; UNKNOWN: not yet classified as code or data
     db 00h,00h
@@ -1582,7 +1582,7 @@ FrontPodOffsets dw -5, 8,  -0Dh, 8,  -0Eh, 8
 CurrentSidePodSlot dw 0
 CurrentTrailingPodSlot dw 0
 ; TryTerrainStep scratch: 1 when the step was blocked; the start position (written,
-; no reader found); the probe position moved by the step and checked by loc_0BDD0.
+; no reader found); the probe position moved by the step and checked by ProbeOverlapsWalker.
 TerrainBlocked dw 00000h
 TerrainStartY dw 00000h
 TerrainStartX dw 00000h
@@ -1603,7 +1603,7 @@ LevelEndPhase dw 00000h
 EncounterLiveCount dw 0
 ; Counts down (from 64h) once no encounter record is left.
 EncounterEndDelay dw 0
-; Current entry of the leader's script (loc_0FA6A advances it by 4 or 8).
+; Current entry of the leader's script (Type13FormationLeaderBody advances it by 4 or 8).
 LeaderScriptCursor dw 0
 ; Leader scripts, one per leader REC_TYPE, each ending with a LEADER_END_Y waypoint
 ; (never reached; the leader flies off). Type 13h and 1Fh scripts are waypoints; the
@@ -1704,7 +1704,7 @@ SegBossPart79 dw 0
 SegBossActive dw 0
 SegBossPathCursor dw 0
 ; Invader march (Type62InvaderMarch): 0 = right towards X C0h, 1 = left towards 0; the
-; Next* values are latched at an edge and copied by loc_0A940 once per frame.
+; Next* values are latched at an edge and copied by UpdateAllRecords once per frame.
 InvaderMarchLeft dw 0
 InvaderNextMarchLeft dw 0
 InvaderDropStep dw 0
@@ -1758,7 +1758,7 @@ ShotsLiveType9 dw 0h
 ShotsLiveFrontPod dw 0h
 ShotsLiveSide dw 0h
 LevelScriptClock dw 00000h
-; Fuel 0..58h, drained every 40h/80h frames (loc_09EE4); empty kills the player.
+; Fuel 0..58h, drained every 40h/80h frames (DrainFuelUnit); empty kills the player.
 Fuel dw 0h
 ; Refuelling: +1 per frame up to 58h.
 RefuelActive dw 0h
@@ -1766,7 +1766,7 @@ RefuelActive dw 0h
 MissilesLive dw 0h
 ; Set after firing; RapidFireEnabled ignores it.
 FireLatch dw 0h
-; VGA DAC colour 6 (RGB): default, and on level 1 (loc_0C57C, loc_0C591).
+; VGA DAC colour 6 (RGB): default, and on level 1 (ApplyLevelPalette, SetDacColor6).
 DacColor6Default db 42, 21, 0
 DacColor6Level1 db 48, 36, 4
 ; Text-mode screen (80x25, attribute 07h) copied to B800h when the game exits.
@@ -1821,11 +1821,11 @@ LoadWordBB82 dw 0
 ; DecodeEncFile instead of LoadPackedFile.
 LoadIsEnc db 00h
     even
-; Floppy drives A: and B: reported by INT 11h (loc_0C83C); AdvanceABColonPrefix
+; Floppy drives A: and B: reported by INT 11h (DetectFloppyDrives); AdvanceABColonPrefix
 ; skips drive letters that are absent.
 DriveAPresent db 0
 DriveBPresent db 0
-; Files checked at startup (loc_0C8AD): opened as ASCIIZ, printed with AH=09h.
+; Files checked at startup (VerifyStartupChecksums): opened as ASCIIZ, printed with AH=09h.
 IntegrityFileExe db 'OVERKILL.EXE',0,'$'
 IntegrityFileData db 'OVERKILL',0,'$'
 ; Checksum failure message: head, file name, tail (8 = backspace over the NUL).
@@ -1846,7 +1846,7 @@ OldNonAsciiCodeword db 16 dup (0)
 DebugPasswordLine db TEXT_MOVE_TO, 3, 0, TEXT_SET_COLOR, 0Fh, 'Password           = '
 Password db 16 dup (0)
     db 0
-; Module file name tried by LoadSoundModule (loc_0CB95).
+; Module file name tried by LoadSoundModule (LoadSoundModuleFile).
 SoundModuleNamePtr dw 0
 SoundModuleSelect db 00h
 ; "Sound card used" captions; their only reader has no caller (see LoadSoundModule).
@@ -1857,7 +1857,7 @@ SoundModuleNameAdlib db 'adlib.enc',00h
 SoundModuleNameTandy db 'tandy.enc',00h
 SoundModuleNameRoland db 'roland.enc',00h
     even
-; Title animation (loc_0CC04..): logo pieces {row, column, BlueBits image}, three
+; Title animation (PlayTitleAnimation..): logo pieces {row, column, BlueBits image}, three
 ; frames of five; then five rectangles {row, column, rows, columns} revealed cell by cell.
 TitleLogoPieces db 1Fh, 7h, 0,  39h, 17h, 3,  89h, 7h, 6,  8Dh, 15h, 9,  0B6h, 1h, 12
     db 18h, 4h, 1,  35h, 17h, 4,  85h, 4h, 7,  8Dh, 15h, 10,  0B6h, 1h, 13
@@ -1898,7 +1898,7 @@ DemoStepTimer dw 0
 DemoFireCycle dw 0
 ; UNKNOWN: not yet classified as code or data
     db 10h,03h,11h,03h,1Fh,00h,11h,05h,1Fh,00h
-; Status shown for the demo's selected upgrade slot (loc_085D5 while DemoActive).
+; Status shown for the demo's selected upgrade slot (DrawUpgradeSlot while DemoActive).
 DemoUpgradeStatus dw 0
 ; Demo steps {caption PanelSegment image, upgrade slot or FFFFh, status}.
 DemoScript dw 2Ah, 3h, 0Ch,  2Dh, 2h, 9h,  30h, 2h, 0Ah,  33h, 3h, 0Dh
@@ -2307,7 +2307,7 @@ AttributePatches5 db 1h,0, 3h,0, 0Ch,0, 0Dh,0, 13h,0, 16h,0, 1Eh,0, 23h,0
     db ATTRIBUTE_PATCH_END
 ; Per LevelIndex: pointers to the level's script cursor (LevelScriptCursors).
 LevelScriptCursorPtrs dw offset LevelScriptCursors + 0, offset LevelScriptCursors + 2, offset LevelScriptCursors + 4, offset LevelScriptCursors + 6, offset LevelScriptCursors + 8, offset LevelScriptCursors + 10
-; Next event of each level's script; loc_00B3E resets them to the script starts.
+; Next event of each level's script; LoadLevelMap resets them to the script starts.
 LevelScriptCursors dw offset LevelScript0, offset LevelScript1, offset LevelScript2, offset LevelScript3, offset LevelScript4, offset LevelScript5
 ; Per LevelIndex: restart checkpoints used after a life is lost (RestartAtCheckpoint).
 LevelCheckpointPtrs dw offset LevelCheckpoints0, offset LevelCheckpoints1, offset LevelCheckpoints2, offset LevelCheckpoints3, offset LevelCheckpoints4, offset LevelCheckpoints5
