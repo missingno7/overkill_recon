@@ -5294,8 +5294,8 @@ loc_02E39:
     out dx, al
     mov ds, word ptr cs:[MainDataSegment]
     ret
-; Tandy masked sprite blitters (one phase: 4-bit pixels are byte aligned at even X),
-; same contract as the EGA ones.
+; Tandy masked sprite blitters (a single phase: drawn at whole-byte positions), same
+; contract as the EGA ones.
 DrawSprite32Tandy:
     mov bx, 058h
     lodsw
