@@ -95,6 +95,9 @@ extrn LevelScriptClock:word
 extrn LevelSkipEnabled:byte
 extrn LivesLeft:word
 extrn LoadSettingsFromHiscoreBlock:far
+extrn MapCellX:word
+extrn MapRowCellsLeft:word
+extrn MapRowCursor:word
 extrn MapScrollPos:word
 extrn MarchDropNow:byte
 extrn MarchEdgeHit:byte
@@ -230,6 +233,7 @@ public ShutdownGame
 public SpawnAimedShot
 public SpawnEnemyHere
 public SpawnEnemyHereQuiet
+public SpawnFromMapRow
 public Sprite16Offsets
 public Sprite32Offsets
 public Sprite8Offsets
@@ -335,7 +339,6 @@ public loc_07596
 public loc_07746
 public loc_077C5
 public loc_077DF
-public loc_07948
 public loc_08209
 public loc_08331
 public loc_0837A
@@ -4570,19 +4573,22 @@ loc_0792D:
 loc_07947:
     ret
 
-loc_07948:
+; Runs the level's map cell handler for each of the 13 cells of the map row at
+; MapRowCursor (AL = cell byte, ES:SI = the cell, MapCellX = its pixel X); handlers
+; spawn the enemies placed in the map and overwrite their cells.
+SpawnFromMapRow:
     mov es, word ptr cs:[LevelMapSegment]
-    mov si, word ptr ds:[0A408h]
-    mov word ptr ds:[0A406h], 0Dh
-    mov word ptr ds:[0A40Ah], 0
+    mov si, word ptr ds:[MapRowCursor]
+    mov word ptr ds:[MapRowCellsLeft], 0Dh
+    mov word ptr ds:[MapCellX], 0
 loc_0795D:
     mov al, byte ptr es:[si]
     mov bx, word ptr ds:[LevelIndex]
     shl bx, 1
     call word ptr ds:[bx + LevelMapCellHandlers]
-    add word ptr ds:[0A40Ah], 010h
+    add word ptr ds:[MapCellX], 010h
     inc si
-    dec word ptr ds:[0A406h]
+    dec word ptr ds:[MapRowCellsLeft]
     jne loc_0795D
     ret
 Level1MapCell:
@@ -4613,45 +4619,46 @@ loc_079A1:
     cmp al, 0C9h
     je loc_07A11
     ret
-loc_079A6:
+; Overwrites the 2x2 cells at ES:SI (the map is 13 cells wide) with cell 1.
+Clear2x2MapCells:
     mov byte ptr es:[si], 1
     mov byte ptr es:[si + 1], 1
     mov byte ptr es:[si + 0Dh], 1
     mov byte ptr es:[si + 0Eh], 1
     ret
 loc_079BA:
-    call loc_079A6
+    call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
     jne loc_079C6
     ret
 loc_079C6:
-    call loc_07A40
-    mov word ptr ds:[bx + 18h], 48h
-    mov word ptr ds:[bx + 6], 4
-    jmp near ptr loc_081A7
+    call InitMapLargeEnemy
+    mov word ptr ds:[bx + REC_TYPE], 48h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    jmp near ptr JoinMapGroup
 loc_079D6:
-    call loc_079A6
+    call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
     jne loc_079E2
     ret
 loc_079E2:
-    call loc_07A40
-    mov word ptr ds:[bx + 18h], 75h
-    mov word ptr ds:[bx + 8], 24h
-    mov word ptr ds:[bx + 6], 4
-    jmp near ptr loc_081A7
+    call InitMapLargeEnemy
+    mov word ptr ds:[bx + REC_TYPE], 75h
+    mov word ptr ds:[bx + REC_SPRITE], 24h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    jmp near ptr JoinMapGroup
 loc_079F7:
-    call loc_079A6
+    call Clear2x2MapCells
     call FindFreeRecordPoolA
     cmp bx, -1
     jne loc_07A03
     ret
 loc_07A03:
-    call loc_07A40
-    mov word ptr ds:[bx + 18h], 72h
-    mov word ptr ds:[bx + 6], 4
+    call InitMapLargeEnemy
+    mov word ptr ds:[bx + REC_TYPE], 72h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
     ret
 loc_07A11:
     mov byte ptr es:[si + 0Dh], 026h
@@ -4663,46 +4670,48 @@ loc_07A11:
     jne loc_07A2D
     ret
 loc_07A2D:
-    call loc_07A40
-    mov word ptr ds:[bx + 018h], 028h
-    mov word ptr ds:[bx + 8], 01Ch
-    mov word ptr ds:[bx + 6], 0
+    call InitMapLargeEnemy
+    mov word ptr ds:[bx + REC_TYPE], 028h
+    mov word ptr ds:[bx + REC_SPRITE], 01Ch
+    mov word ptr ds:[bx + REC_DIRECTION], 0
     ret
-loc_07A40:
-    mov word ptr ds:[bx + 016h], 4
-    mov ax, word ptr ds:[0A40Ah]
-    mov word ptr ds:[bx + 4], ax
-    mov word ptr ds:[bx], 1
-    mov word ptr ds:[bx + 0Ah], 0
-    mov word ptr ds:[bx + 2], 0
-    mov word ptr ds:[bx + 014h], 2
-    mov word ptr ds:[bx + 024h], 0
-    mov word ptr ds:[bx + 020h], 0Ah
-    mov word ptr ds:[bx + 028h], 0FFFFh
+; BX = pool A record: a large (size class 2) KIND_ENEMY with 10 hit points at the
+; top of the map row, X = MapCellX.
+InitMapLargeEnemy:
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
+    mov ax, word ptr ds:[MapCellX]
+    mov word ptr ds:[bx + REC_X], ax
+    mov word ptr ds:[bx + REC_STATUS], 1
+    mov word ptr ds:[bx + REC_DRAW_PASS], 0
+    mov word ptr ds:[bx + REC_Y], 0
+    mov word ptr ds:[bx + REC_SIZE_CLASS], 2
+    mov word ptr ds:[bx + REC_FLASH_TIMER], 0
+    mov word ptr ds:[bx + REC_HIT_POINTS], 0Ah
+    mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     ret
 loc_07A6E:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07A74
     ret
 loc_07A74:
-    mov word ptr ds:[bx + 018h], 08Bh
+    mov word ptr ds:[bx + REC_TYPE], 08Bh
     ret
 loc_07A7A:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07A80
     ret
 loc_07A80:
-    mov word ptr ds:[bx + 018h], 08Ch
+    mov word ptr ds:[bx + REC_TYPE], 08Ch
     ret
 loc_07A86:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07A8C
     ret
 loc_07A8C:
-    mov word ptr ds:[bx + 18h], 8Eh
+    mov word ptr ds:[bx + REC_TYPE], 8Eh
     ret
 loc_07A92:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07A98
     ret
 loc_07A98:
@@ -4711,47 +4720,47 @@ loc_07A98:
     call loc_07445
     ret
 loc_07AA2:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07AA8
     ret
 loc_07AA8:
-    mov word ptr ds:[bx + 18h], 8Dh
+    mov word ptr ds:[bx + REC_TYPE], 8Dh
     ret
 loc_07AAE:
-    call loc_081CC
+    call SpawnMapEnemyKeepCell
     jne loc_07AB4
     ret
 loc_07AB4:
-    mov word ptr ds:[bx + 018h], 024h
-    mov word ptr ds:[bx + 8], 08Fh
-    mov word ptr ds:[bx + 6], 6
+    mov word ptr ds:[bx + REC_TYPE], 024h
+    mov word ptr ds:[bx + REC_SPRITE], 08Fh
+    mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
 loc_07AC4:
-    call loc_081CC
+    call SpawnMapEnemyKeepCell
     jne loc_07ACA
     ret
 loc_07ACA:
-    mov word ptr ds:[bx + 018h], 025h
-    mov word ptr ds:[bx + 8], 090h
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_TYPE], 025h
+    mov word ptr ds:[bx + REC_SPRITE], 090h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07ADA:
-    call loc_081CC
+    call SpawnMapEnemyKeepCell
     jne loc_07AE0
     ret
 loc_07AE0:
-    mov word ptr ds:[bx + 018h], 090h
-    mov word ptr ds:[bx + 8], 089h
-    mov word ptr ds:[bx + 6], 6
+    mov word ptr ds:[bx + REC_TYPE], 090h
+    mov word ptr ds:[bx + REC_SPRITE], 089h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
 loc_07AF0:
-    call loc_081CC
+    call SpawnMapEnemyKeepCell
     jne loc_07AF6
     ret
 loc_07AF6:
-    mov word ptr ds:[bx + 018h], 091h
-    mov word ptr ds:[bx + 8], 08Ch
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_TYPE], 091h
+    mov word ptr ds:[bx + REC_SPRITE], 08Ch
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 Level2MapCell:
     cmp al, 30h
@@ -4768,9 +4777,9 @@ loc_07B13:
     ret
 loc_07B1C:
     mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
-    mov ax, ds:[0A40Ah]
+    mov ax, ds:[MapCellX]
     mov ds:[bx + REC_X], ax
-    mov word ptr ds:[bx], 1
+    mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_DRAW_PASS], 0
     mov word ptr ds:[bx + REC_Y], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 2
@@ -4781,54 +4790,54 @@ loc_07B1C:
     mov word ptr ds:[bx + REC_DIRECTION], 0
     ret
 loc_07B54:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07B5A
     ret
 loc_07B5A:
-    mov word ptr ds:[bx + 18h], 2Eh
-    sub word ptr ds:[bx + 2], 6
+    mov word ptr ds:[bx + REC_TYPE], 2Eh
+    sub word ptr ds:[bx + REC_Y], 6
     ret
 loc_07B64:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07B6A
     ret
 loc_07B6A:
-    mov word ptr ds:[bx + 18h], 8Fh
-    mov word ptr ds:[bx + 8], 0BFh
-    mov word ptr ds:[bx + 6], 6
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_TYPE], 8Fh
+    mov word ptr ds:[bx + REC_SPRITE], 0BFh
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07B80
     ret
 loc_07B80:
-    mov word ptr ds:[bx + 8], 0C2h
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_SPRITE], 0C2h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07B8B:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07B91
     ret
 loc_07B91:
-    sub word ptr ds:[bx + 4], 0Ch
-    push word ptr ds:[bx + 4]
-    pop word ptr ds:[bx + 32h]
-    mov word ptr ds:[bx + 6], 2
-    mov word ptr ds:[bx + 18h], 73h
-    mov word ptr ds:[bx + 8], 14Ch
+    sub word ptr ds:[bx + REC_X], 0Ch
+    push word ptr ds:[bx + REC_X]
+    pop word ptr ds:[bx + REC_SAVED_X]
+    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_TYPE], 73h
+    mov word ptr ds:[bx + REC_SPRITE], 14Ch
     ret
 loc_07BAB:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07BB1
     ret
 loc_07BB1:
-    add word ptr ds:[bx + 4], 0Ch
-    push word ptr ds:[bx + 4]
-    pop word ptr ds:[bx + 32h]
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 74h
-    mov word ptr ds:[bx + 8], 14Fh
+    add word ptr ds:[bx + REC_X], 0Ch
+    push word ptr ds:[bx + REC_X]
+    pop word ptr ds:[bx + REC_SAVED_X]
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 74h
+    mov word ptr ds:[bx + REC_SPRITE], 14Fh
     ret
 Level0MapCell:
-    cmp word ptr ds:[0A40Ah], 60h
+    cmp word ptr ds:[MapCellX], 60h
     ja loc_07BD8
     cmp al, 0BCh
     je loc_07B8B
@@ -4942,84 +4951,84 @@ loc_07CC1Cases label word
     dw offset loc_07D08, offset loc_07D19, offset loc_080EF, offset loc_08143
     dw offset loc_08137, offset loc_0812B, offset loc_07FD4
 loc_07D08:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D0E
     ret
 loc_07D0E:
-    mov word ptr ds:[bx + 18h], 38h
-    mov word ptr ds:[bx + 6], 3
+    mov word ptr ds:[bx + REC_TYPE], 38h
+    mov word ptr ds:[bx + REC_DIRECTION], 3
     ret
 loc_07D19:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D1F
     ret
 loc_07D1F:
-    mov word ptr ds:[bx + 18h], 38h
-    mov word ptr ds:[bx + 6], 5
+    mov word ptr ds:[bx + REC_TYPE], 38h
+    mov word ptr ds:[bx + REC_DIRECTION], 5
     ret
 loc_07D2A:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D30
     ret
 loc_07D30:
-    mov word ptr ds:[bx + 6], 1
-    mov word ptr ds:[bx + 18h], 54h
-    mov word ptr ds:[bx + 8], 172h
+    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_TYPE], 54h
+    mov word ptr ds:[bx + REC_SPRITE], 172h
     cmp word ptr ds:[LevelIndex], 4
     jne loc_07D47
     ret
 loc_07D47:
-    mov word ptr ds:[bx + 8], 17Ah
+    mov word ptr ds:[bx + REC_SPRITE], 17Ah
     ret
 loc_07D4D:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D53
     ret
 loc_07D53:
-    mov word ptr ds:[bx + 6], 7
-    mov word ptr ds:[bx + 18h], 54h
-    mov word ptr ds:[bx + 8], 173h
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_TYPE], 54h
+    mov word ptr ds:[bx + REC_SPRITE], 173h
     cmp word ptr ds:[LevelIndex], 4
     jne loc_07D6A
     ret
 loc_07D6A:
-    mov word ptr ds:[bx + 8], 17Bh
+    mov word ptr ds:[bx + REC_SPRITE], 17Bh
     ret
 loc_07D70:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D76
     ret
 loc_07D76:
-    mov word ptr ds:[bx + 6], 0
-    mov word ptr ds:[bx + 18h], 84h
-    mov word ptr ds:[bx + 8], 156h
+    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_TYPE], 84h
+    mov word ptr ds:[bx + REC_SPRITE], 156h
     ret
 loc_07D86:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07D8C
     ret
 loc_07D8C:
-    mov word ptr ds:[bx + 6], 2
-    mov word ptr ds:[bx + 18h], 84h
-    mov word ptr ds:[bx + 8], 157h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_TYPE], 84h
+    mov word ptr ds:[bx + REC_SPRITE], 157h
     ret
 loc_07D9C:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07DA2
     ret
 loc_07DA2:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 84h
-    mov word ptr ds:[bx + 8], 158h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 84h
+    mov word ptr ds:[bx + REC_SPRITE], 158h
     ret
 loc_07DB2:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07DB8
     ret
 loc_07DB8:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 84h
-    mov word ptr ds:[bx + 8], 159h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 84h
+    mov word ptr ds:[bx + REC_SPRITE], 159h
     ret
 Level5MapCell:
     cmp al, 30h
@@ -5074,338 +5083,339 @@ loc_07E05:
 Level5CellCases label word
     dw offset loc_07AA2, offset loc_07A86, offset loc_079BA, offset loc_07E84
     dw offset loc_07E9A, offset loc_07D2A, offset loc_07D4D, offset loc_080B7
-    dw offset loc_080B7, offset loc_080A1, offset loc_07E58, offset loc_07E58
+    dw offset loc_080B7, offset loc_080A1, offset ClearMapCell, offset ClearMapCell
     dw offset loc_07EFE, offset loc_07E6E, offset loc_08172, offset loc_08188
     dw offset loc_07E5D, offset loc_08166, offset loc_0803B, offset loc_0812B
     dw offset loc_08143, offset loc_08113, offset loc_080FB, offset loc_0802A
     dw offset loc_07FD4
-loc_07E58:
+; Overwrites the current map cell (ES:SI) with the plain cell 1.
+ClearMapCell:
     mov byte ptr es:[si], 1
     ret
 loc_07E5D:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07E63
     ret
 loc_07E63:
-    mov word ptr ds:[bx + 18h], 19h
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_TYPE], 19h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07E6E:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07E74
     ret
 loc_07E74:
-    mov word ptr ds:[bx + 8], 46h
-    mov word ptr ds:[bx + 18h], 30h
-    mov word ptr ds:[bx + 6], 4
+    mov word ptr ds:[bx + REC_SPRITE], 46h
+    mov word ptr ds:[bx + REC_TYPE], 30h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
     ret
 loc_07E84:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07E8A
     ret
 loc_07E8A:
-    mov word ptr ds:[bx + 18h], 92h
-    mov word ptr ds:[bx + 8], 15Ah
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_TYPE], 92h
+    mov word ptr ds:[bx + REC_SPRITE], 15Ah
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07E9A:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07EA0
     ret
 loc_07EA0:
-    mov word ptr ds:[bx + 18h], 92h
-    mov word ptr ds:[bx + 8], 15Bh
-    mov word ptr ds:[bx + 6], 6
+    mov word ptr ds:[bx + REC_TYPE], 92h
+    mov word ptr ds:[bx + REC_SPRITE], 15Bh
+    mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
 loc_07EB0:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07EB6
     ret
 loc_07EB6:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 86h
-    mov word ptr ds:[bx + 8], 0C8h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 86h
+    mov word ptr ds:[bx + REC_SPRITE], 0C8h
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07ECC
     ret
 loc_07ECC:
-    mov word ptr ds:[bx + 8], 0DAh
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_SPRITE], 0DAh
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07ED7:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07EDD
     ret
 loc_07EDD:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 88h
-    mov word ptr ds:[bx + 8], 0FDh
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 88h
+    mov word ptr ds:[bx + REC_SPRITE], 0FDh
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07EF3
     ret
 loc_07EF3:
-    mov word ptr ds:[bx + 8], 0FAh
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_SPRITE], 0FAh
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_07EFE:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07F04
     ret
 loc_07F04:
-    mov word ptr ds:[bx + 6], 2
-    mov word ptr ds:[bx + 18h], 63h
-    mov word ptr ds:[bx + 8], 0E7h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_TYPE], 63h
+    mov word ptr ds:[bx + REC_SPRITE], 0E7h
     ret
 loc_07F14:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07F1A
     ret
 loc_07F1A:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 71h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 71h
     ret
 loc_07F25:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07F2B
     ret
 loc_07F2B:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 8Ah
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 8Ah
     ret
 loc_07F36:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07F3C
     ret
 loc_07F3C:
-    mov word ptr ds:[bx + 6], 7
-    mov word ptr ds:[bx + 18h], 54h
-    mov word ptr ds:[bx + 8], 0F5h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_TYPE], 54h
+    mov word ptr ds:[bx + REC_SPRITE], 0F5h
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07F52
     ret
 loc_07F52:
-    mov word ptr ds:[bx + 6], 1
-    mov word ptr ds:[bx + 8], 0F4h
+    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_SPRITE], 0F4h
     ret
 loc_07F5D:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07F63
     ret
 loc_07F63:
-    mov word ptr ds:[bx + 18h], 6Bh
+    mov word ptr ds:[bx + REC_TYPE], 6Bh
     ret
 loc_07F69:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07F6F
     ret
 loc_07F6F:
-    mov word ptr ds:[bx + 18h], 6Ch
-    mov word ptr ds:[bx + 8], 123h
+    mov word ptr ds:[bx + REC_TYPE], 6Ch
+    mov word ptr ds:[bx + REC_SPRITE], 123h
     ret
 loc_07F7A:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07F80
     ret
 loc_07F80:
-    mov word ptr ds:[bx + 18h], 6Dh
+    mov word ptr ds:[bx + REC_TYPE], 6Dh
     ret
 loc_07F86:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07F8C
     ret
 loc_07F8C:
-    mov word ptr ds:[bx + 6], 5
-    mov word ptr ds:[bx + 18h], 6Ah
-    mov word ptr ds:[bx + 8], 11Eh
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 5
+    mov word ptr ds:[bx + REC_TYPE], 6Ah
+    mov word ptr ds:[bx + REC_SPRITE], 11Eh
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07FA2
     ret
 loc_07FA2:
-    mov word ptr ds:[bx + 6], 3
-    mov word ptr ds:[bx + 8], 11Dh
+    mov word ptr ds:[bx + REC_DIRECTION], 3
+    mov word ptr ds:[bx + REC_SPRITE], 11Dh
     ret
 loc_07FAD:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_07FB3
     ret
 loc_07FB3:
-    mov word ptr ds:[bx + 6], 7
-    mov word ptr ds:[bx + 18h], 54h
-    mov word ptr ds:[bx + 8], 143h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_TYPE], 54h
+    mov word ptr ds:[bx + REC_SPRITE], 143h
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_07FC9
     ret
 loc_07FC9:
-    mov word ptr ds:[bx + 6], 1
-    mov word ptr ds:[bx + 8], 144h
+    mov word ptr ds:[bx + REC_DIRECTION], 1
+    mov word ptr ds:[bx + REC_SPRITE], 144h
     ret
 loc_07FD4:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07FDA
     ret
 loc_07FDA:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 5Eh
-    mov word ptr ds:[bx + 8], 27h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 5Eh
+    mov word ptr ds:[bx + REC_SPRITE], 27h
     ret
 loc_07FEA:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_07FF0
     ret
 loc_07FF0:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 6Eh
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 6Eh
     ret
 loc_07FFB:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08001
     ret
 ; Offset-placement use of field+8 does not define its role in other record types.
 loc_08001:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 6Fh
-    mov word ptr ds:[bx + 8], 136h
-    mov word ptr ds:[bx + 6], 3
-    sub word ptr ds:[bx + 4], 10h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 6Fh
+    mov word ptr ds:[bx + REC_SPRITE], 136h
+    mov word ptr ds:[bx + REC_DIRECTION], 3
+    sub word ptr ds:[bx + REC_X], 10h
+    cmp word ptr ds:[bx + REC_X], 60h
     jae loc_08020
     ret
 loc_08020:
-    mov word ptr ds:[bx + 6], 5
-    add word ptr ds:[bx + 4], 20h
+    mov word ptr ds:[bx + REC_DIRECTION], 5
+    add word ptr ds:[bx + REC_X], 20h
     ret
 loc_0802A:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08030
     ret
 loc_08030:
-    mov word ptr ds:[bx + 6], 0
-    mov word ptr ds:[bx + 18h], 2Dh
+    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_TYPE], 2Dh
     ret
 loc_0803B:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08041
     ret
 loc_08041:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 47h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 47h
     ret
 loc_0804C:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_08052
     ret
 loc_08052:
-    mov word ptr ds:[bx + 6], 7
-    mov word ptr ds:[bx + 18h], 59h
-    mov word ptr ds:[bx + 8], 0E3h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 7
+    mov word ptr ds:[bx + REC_TYPE], 59h
+    mov word ptr ds:[bx + REC_SPRITE], 0E3h
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_08068
     ret
 loc_08068:
-    mov word ptr ds:[bx + 6], 1
+    mov word ptr ds:[bx + REC_DIRECTION], 1
     ret
 loc_0806E:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_08074
     ret
 loc_08074:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 5Fh
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 5Fh
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_08085
     ret
 loc_08085:
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_0808B:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_08091
     ret
 loc_08091:
-    mov word ptr ds:[bx + 6], 0
-    mov word ptr ds:[bx + 18h], 5Bh
-    mov word ptr ds:[bx + 8], 74h
+    mov word ptr ds:[bx + REC_DIRECTION], 0
+    mov word ptr ds:[bx + REC_TYPE], 5Bh
+    mov word ptr ds:[bx + REC_SPRITE], 74h
     ret
 loc_080A1:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_080A7
     ret
 loc_080A7:
-    mov word ptr ds:[bx + 6], 4
-    mov word ptr ds:[bx + 18h], 5Dh
-    mov word ptr ds:[bx + 8], 77h
+    mov word ptr ds:[bx + REC_DIRECTION], 4
+    mov word ptr ds:[bx + REC_TYPE], 5Dh
+    mov word ptr ds:[bx + REC_SPRITE], 77h
     ret
 loc_080B7:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_080BD
     ret
 loc_080BD:
-    mov word ptr ds:[bx + 6], 6
-    mov word ptr ds:[bx + 18h], 87h
-    mov word ptr ds:[bx + 8], 0E0h
-    cmp word ptr ds:[bx + 4], 60h
+    mov word ptr ds:[bx + REC_DIRECTION], 6
+    mov word ptr ds:[bx + REC_TYPE], 87h
+    mov word ptr ds:[bx + REC_SPRITE], 0E0h
+    cmp word ptr ds:[bx + REC_X], 60h
     jna loc_080D3
     ret
 loc_080D3:
-    mov word ptr ds:[bx + 6], 2
-    mov word ptr ds:[bx + 8], 0DDh
+    mov word ptr ds:[bx + REC_DIRECTION], 2
+    mov word ptr ds:[bx + REC_SPRITE], 0DDh
     ret
 loc_080DE:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_080E4
     ret
 loc_080E4:
-    mov word ptr ds:[bx + 18h], 55h
-    mov word ptr ds:[bx + 8], 77h
+    mov word ptr ds:[bx + REC_TYPE], 55h
+    mov word ptr ds:[bx + REC_SPRITE], 77h
     ret
 loc_080EF:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_080F5
     ret
 loc_080F5:
-    mov word ptr ds:[bx + 18h], 34h
+    mov word ptr ds:[bx + REC_TYPE], 34h
     ret
 loc_080FB:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08101
     ret
 loc_08101:
-    mov word ptr ds:[bx + 18h], 37h
+    mov word ptr ds:[bx + REC_TYPE], 37h
     ret
 loc_08107:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_0810D
     ret
 loc_0810D:
-    mov word ptr ds:[bx + 18h], 83h
+    mov word ptr ds:[bx + REC_TYPE], 83h
     ret
 loc_08113:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_08119
     ret
 loc_08119:
-    mov word ptr ds:[bx + 18h], 4Fh
+    mov word ptr ds:[bx + REC_TYPE], 4Fh
     ret
 loc_0811F:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08125
     ret
 loc_08125:
-    mov word ptr ds:[bx + 18h], 19h
+    mov word ptr ds:[bx + REC_TYPE], 19h
     ret
 loc_0812B:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_08131
     ret
 loc_08131:
-    mov word ptr ds:[bx + 18h], 35h
+    mov word ptr ds:[bx + REC_TYPE], 35h
     ret
 loc_08137:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_0813D
     ret
 loc_0813D:
-    mov word ptr ds:[bx + 18h], 69h
+    mov word ptr ds:[bx + REC_TYPE], 69h
     ret
 loc_08143:
     cmp word ptr ds:[LevelIndex], 5
@@ -5414,47 +5424,50 @@ loc_08143:
     and bx, 0Fh
     cmp bx, 0Fh
     jne loc_0815A
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jmp short loc_0815D
 loc_0815A:
-    call loc_081C9
+    call SpawnMapEnemy
 loc_0815D:
     jne loc_08160
     ret
 loc_08160:
-    mov word ptr ds:[bx + 18h], 68h
+    mov word ptr ds:[bx + REC_TYPE], 68h
     ret
 loc_08166:
-    call loc_0819E
+    call SpawnMapGroupEnemy
     jne loc_0816C
     ret
 loc_0816C:
-    mov word ptr ds:[bx + 18h], 89h
+    mov word ptr ds:[bx + REC_TYPE], 89h
     ret
 loc_08172:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_08178
     ret
 loc_08178:
-    mov word ptr ds:[bx + 18h], 58h
-    mov word ptr ds:[bx + 8], 99h
-    mov word ptr ds:[bx + 6], 2
+    mov word ptr ds:[bx + REC_TYPE], 58h
+    mov word ptr ds:[bx + REC_SPRITE], 99h
+    mov word ptr ds:[bx + REC_DIRECTION], 2
     ret
 loc_08188:
-    call loc_081C9
+    call SpawnMapEnemy
     jne loc_0818E
     ret
 loc_0818E:
-    mov word ptr ds:[bx + 18h], 57h
-    mov word ptr ds:[bx + 8], 9Bh
-    mov word ptr ds:[bx + 6], 6
+    mov word ptr ds:[bx + REC_TYPE], 57h
+    mov word ptr ds:[bx + REC_SPRITE], 9Bh
+    mov word ptr ds:[bx + REC_DIRECTION], 6
     ret
-loc_0819E:
-    call loc_081C9
+; SpawnMapEnemy, then registers the record in the current enemy group.
+SpawnMapGroupEnemy:
+    call SpawnMapEnemy
     cmp bx, -1
-    jne loc_081A7
+    jne JoinMapGroup
     ret
-loc_081A7:
+; BX = record: counts it in the group at GroupSlotPtr (with GroupDropKind as the
+; group's drop) and stores GroupSlotIndex, or FFFFh without a group, in REC_SLOT_INDEX.
+JoinMapGroup:
     mov ax, 0FFFFh
     cmp word ptr ds:[GroupSlotPtr], -1
     je loc_081C2
@@ -5466,18 +5479,20 @@ loc_081A7:
     pop bx
     mov ax, ds:[GroupSlotIndex]
 loc_081C2:
-    mov ds:[bx + 28h], ax
+    mov ds:[bx + REC_SLOT_INDEX], ax
     or ax, 1
     ret
-loc_081C9:
-    call loc_07E58
-loc_081CC:
+; Clears the cell and spawns a pool A enemy at (MapCellX, 10h), invisible for now
+; (REC_DRAW_PASS 0); BX = record and NZ, or ZF set when the pool is full.
+SpawnMapEnemy:
+    call ClearMapCell
+SpawnMapEnemyKeepCell:
     call SpawnEnemyHereQuiet
     cmp bx, -1
     jne loc_081D5
     ret
 loc_081D5:
-    mov ax, word ptr ds:[0A40Ah]
+    mov ax, word ptr ds:[MapCellX]
     mov word ptr ds:[bx + REC_X], ax
     mov word ptr ds:[bx + REC_Y], 010h
     mov word ptr ds:[bx + REC_DRAW_PASS], 0

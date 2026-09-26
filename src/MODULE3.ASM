@@ -138,6 +138,7 @@ extrn LifeLostRequest:word
 extrn LivesLeft:word
 extrn LoadIsEnc:byte
 extrn LoadWordBB82:word
+extrn MapRowCursor:word
 extrn MapScrollPos:word
 extrn MarchDelay:byte
 extrn MarchDropNow:byte
@@ -403,6 +404,7 @@ extrn ShowFatalErrorAndExit:near
 extrn SpawnAimedShot:near
 extrn SpawnEnemyHere:near
 extrn SpawnEnemyHereQuiet:near
+extrn SpawnFromMapRow:near
 extrn SteerTowardTarget:near
 extrn StepAlongDelta:near
 extrn Type13FormationLeader:near
@@ -512,7 +514,6 @@ extrn loc_07596:near
 extrn loc_07746:near
 extrn loc_077C5:near
 extrn loc_077DF:near
-extrn loc_07948:near
 extrn loc_08209:near
 extrn loc_08331:near
 extrn loc_0837A:near
@@ -2476,10 +2477,10 @@ loc_0A81B:
     sub bx, 0A9h
     jmp near ptr loc_05A7E
 loc_0A82D:
-    mov word ptr ds:[0A408h], bx
+    mov word ptr ds:[MapRowCursor], bx
     cmp word ptr ds:[MapScrollPos], 0E52h
     ja loc_0A83F
-    call loc_07948
+    call SpawnFromMapRow
     call loc_04A65
 loc_0A83F:
     mov bx, word ptr ds:[MapScrollPos]

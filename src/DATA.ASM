@@ -296,7 +296,10 @@ public LifeLostRequest
 public LivesLeft
 public LoadIsEnc
 public LoadWordBB82
+public MapCellX
 public MapResetLists
+public MapRowCellsLeft
+public MapRowCursor
 public MapScrollPos
 public MarchDelay
 public MarchDropNow
@@ -1508,7 +1511,13 @@ ClampXHighSeen db 00h
     db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh
     db 0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,0FFh,00h,00h,00h,00h,020h,00h
     db 018h,00h,010h,00h,020h,00h,098h,00h,013h,00h,040h,00h,028h,00h,016h,00h
-    db 040h,00h,088h,00h,019h,00h,00h,00h,00h,00h,00h,00h,00h,01h,02h,03h
+    db 040h,00h,088h,00h,019h,00h
+; Map row being spawned by SpawnFromMapRow: cells left, cursor into the level map
+; (LevelMapSegment), and the pixel X of the current cell.
+MapRowCellsLeft dw 00000h
+MapRowCursor dw 00000h
+MapCellX dw 00000h
+    db 00h,01h,02h,03h
     db 04h,03h,02h,01h,019h,00h,08h,00h,016h,00h,08h,00h,018h,00h,08h,00h
     db 0FBh,0FFh,08h,00h,0F3h,0FFh,08h,00h,0F2h,0FFh,08h,00h,00h,00h,00h,00h
     db 00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
