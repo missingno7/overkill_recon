@@ -137,6 +137,7 @@ extrn LeaderScript1FEnd:word
 extrn LeaderScript7DEnd:word
 extrn LeaderScript7EEnd:word
 extrn LeaderScriptCursor:word
+extrn LevelEndPhase:word
 extrn LevelIndex:word
 extrn LevelScriptClock:word
 extrn LevelSkipEnabled:byte
@@ -158,7 +159,6 @@ extrn MissileAmmo:word
 extrn MissilesLive:word
 extrn ModuleSoundEnabled:byte
 extrn ModuleSoundRequest:byte
-extrn MoveModeA47C:word
 extrn MsgDeallocError:byte
 extrn MuzzleOffsets:word
 extrn NextLevelRequest:word
@@ -1000,17 +1000,19 @@ loc_099CD:
     mov word ptr ds:[HistoryCursor47], offset HistoryPairs + HISTORY_LAG47_START
     ret
 
-loc_099F6:
+; Drives the player during the end-of-level sequence (LevelEndPhase) by synthesizing
+; InputBits: autopilot to two waypoints, then refill fuel and energy.
+RunLevelEndSequence:
     and word ptr ds:[PrimaryRecord + REC_X], 0FFFEh
     mov byte ptr ds:[InputBits], 0
-    mov bx, word ptr ds:[MoveModeA47C]
+    mov bx, word ptr ds:[LevelEndPhase]
     shl bx, 1
-    jmp word ptr cs:[bx + loc_099F6Cases]
+    jmp word ptr cs:[bx + LevelEndPhaseCases]
     even
-loc_099F6Cases label word
-    dw offset CountXReturn, offset loc_09A78, offset loc_09A3E, offset loc_09A16
+LevelEndPhaseCases label word
+    dw offset CountXReturn, offset loc_09A78, offset loc_09A3E, offset LevelEndRefill
     dw offset CountXReturn
-loc_09A16:
+LevelEndRefill:
     mov byte ptr ds:[InputBits], 8
     call PickupFuel
     call loc_09DEA
@@ -1026,7 +1028,7 @@ loc_09A31:
     je loc_09A39
     ret
 loc_09A39:
-    inc word ptr ds:[MoveModeA47C]
+    inc word ptr ds:[LevelEndPhase]
     ret
 loc_09A3E:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
@@ -1053,15 +1055,15 @@ loc_09A73:
 loc_09A78:
     mov si, offset AutopilotWaypointA
 loc_09A7B:
-    call loc_09AD1
+    call SteerInputToWaypoint
     cmp byte ptr ds:[InputBits], 0
     je loc_09A86
     ret
 loc_09A86:
-    inc word ptr ds:[MoveModeA47C]
-    cmp word ptr ds:[MoveModeA47C], 2
+    inc word ptr ds:[LevelEndPhase]
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_B
     je loc_09A94
-    jmp near ptr loc_099F6
+    jmp near ptr RunLevelEndSequence
 loc_09A94:
     mov word ptr ds:[SidePodSpreadRight], 0
     mov word ptr ds:[SidePodSpreadLeft], 0
@@ -1075,8 +1077,9 @@ loc_09A94:
     mov word ptr ds:[bx + REC_Y], 20h
     mov word ptr ds:[bx + REC_X], 58h
     mov ds:[AutoMoveExtraRecord], bx
-    jmp near ptr loc_099F6
-loc_09AD1:
+    jmp near ptr RunLevelEndSequence
+; SI = (Y, X) waypoint: sets InputBits to move the player toward it (0 when there).
+SteerInputToWaypoint:
     lodsw
     cmp word ptr ds:[PrimaryRecord + REC_Y], ax
     je loc_09AE4
@@ -1119,11 +1122,11 @@ loc_09B2E:
     mov word ptr ds:[LifeLostRequest], 0
     mov word ptr ds:[NextLevelRequest], 0
     call PollInputBits
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     je loc_09B47
-    call loc_099F6
+    call RunLevelEndSequence
 loc_09B47:
-    cmp word ptr ds:[MoveModeA47C], 4
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_DONE
     jne loc_09B55
     mov word ptr ds:[NextLevelRequest], 1
     ret
@@ -1165,11 +1168,11 @@ loc_09BA9:
     jne loc_09BC0
     call PickupUpgradeSelector
 loc_09BC0:
-    cmp word ptr ds:[MoveModeA47C], 1
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     ja loc_09BCA
     call UpdatePlacementXOffsetsAtRecordEdges
 loc_09BCA:
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_09BDF
     call loc_09CB6
     cmp word ptr ds:[MapScrollPos], 0B6h
@@ -1424,7 +1427,7 @@ loc_09E12:
     jmp near ptr loc_09EC2
 
 loc_09E19:
-    cmp word ptr ds:[MoveModeA47C], 1
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     jne loc_09E21
     ret
 loc_09E21:
@@ -1456,7 +1459,7 @@ loc_09E5D:
 loc_09E63:
     mov word ptr ds:[EnergyPoints], 018h
 loc_09E69:
-    cmp word ptr ds:[MoveModeA47C], 1
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     jne loc_09E71
     ret
 loc_09E71:
@@ -2209,10 +2212,10 @@ loc_0A5A4:
     mov word ptr ds:[bx + REC_TYPE], 6
     ret
 
-; BP = record. MoveModeA47C = 0: two guarded REC_Y decrements (call, then fall through
+; BP = record. LevelEndPhase = 0: two guarded REC_Y decrements (call, then fall through
 ; into DecRecordYUnlessAtMin again); otherwise one unguarded decrement.
 DecRecordYByMode:
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_0A5E6
     call DecRecordYUnlessAtMin
 ; Decrement REC_Y unless it equals RECORD_Y_MIN. Equality guard only: smaller values
@@ -2313,7 +2316,7 @@ loc_0A66A:
     ret
 
 loc_0A66F:
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     je loc_0A679
     jmp near ptr loc_0A6FD
 loc_0A679:
@@ -2349,7 +2352,7 @@ loc_0A6A8:
     pop ax
     cmp word ptr ds:[MapScrollPos], 0EA0h
     jne loc_0A6FD
-    mov word ptr ds:[MoveModeA47C], 1
+    mov word ptr ds:[LevelEndPhase], LEVEL_END_TO_WAYPOINT_A
     call SmartBombAll
     mov si, offset Type53SpawnTable
     mov cx, 4
@@ -2579,7 +2582,7 @@ loc_0A8EB:
 loc_0A8F4:
     pop cx
     loop loc_0A8C7
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_0A8FF
     ret
 loc_0A8FF:
@@ -2801,13 +2804,13 @@ PickupDone:
     pop bp
     jmp near ptr RemoveRecord
 ; BP = the exhaust: animates it under the ship; freed silently once the ship form is
-; 3 or more (destroyed) or MoveModeA47C is 3 or more.
+; 3 or more (destroyed) or LevelEndPhase is 3 or more.
 UpdateExhaust:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AB1A
     jmp near ptr FreeRecordSilently
 loc_0AB1A:
-    cmp word ptr ds:[MoveModeA47C], 3
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_REFILL
     jb loc_0AB24
     jmp near ptr FreeRecordSilently
 loc_0AB24:
@@ -2934,9 +2937,9 @@ FreeRecordSilently:
     mov word ptr ss:[bp + REC_STATUS], 0
     ret
 ; CF when terrain contact took BP's last hit point; always NC in the demo or when
-; MoveModeA47C is not 0.
+; LevelEndPhase is not 0.
 PodTerrainHit:
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     je loc_0AC32
     jmp near ptr loc_0AA44
 loc_0AC32:
@@ -4614,10 +4617,10 @@ ScrollRecordThenFinish:
     mov ax, word ptr ds:[ScrollDeltaY]
     add word ptr ss:[bp + REC_Y], ax
 ; Clamp X, remove the record when it leaves the screen vertically (some types
-; exempt), then run the collision checks unless MoveModeA47C is set.
+; exempt), then run the collision checks unless LevelEndPhase is set.
 FinishRecordUpdate:
     call ClampRecordX
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_0BC96
     cmp word ptr ss:[bp + REC_TYPE], 0
     je loc_0BC96
@@ -4648,7 +4651,7 @@ loc_0BC96:
     cmp word ptr ss:[bp + REC_Y], 0F0h
     jge RemoveRecord
 loc_0BCA3:
-    cmp word ptr ds:[MoveModeA47C], 0
+    cmp word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     jne loc_0BCB0
     call loc_0BCCB
     call PlayerShotsHitRecord
@@ -5504,7 +5507,7 @@ loc_0C41E:
     mov word ptr ds:[RandomWordCursor], offset CreditRandomWords
     mov word ptr ds:[EncounterLiveCount], 0
     mov word ptr ds:[EncounterEndDelay], 0
-    mov word ptr ds:[MoveModeA47C], 0
+    mov word ptr ds:[LevelEndPhase], LEVEL_END_OFF
     mov word ptr ds:[RecordTickCounter], 0
     ret
 

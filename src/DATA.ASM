@@ -284,6 +284,7 @@ public LevelBankFiles
 public LevelCheckpointPtrs
 public LevelDigitChars
 public LevelEndMapRows
+public LevelEndPhase
 public LevelIndex
 public LevelMapCellHandlers
 public LevelMapFiles
@@ -325,7 +326,6 @@ public MissileAmmo
 public MissilesLive
 public ModuleSoundEnabled
 public ModuleSoundRequest
-public MoveModeA47C
 public MsgDeallocError
 public MsgNotEnoughMemory
 public MuzzleOffsets
@@ -1350,8 +1350,8 @@ Type4APath dw 60h, 0A0h,  LEADER_END_Y, 60h
 Type51Path dw 0B0h, 0C0h,  0B0h, 0h,  0A0h, 0h,  0A0h, 0C0h
     dw 90h, 0C0h,  90h, 0h,  80h, 0h,  80h, 0C0h
     dw LEADER_END_Y, 60h
-; Pool A record added by the auto-move sequence (MoveModeA47C 2), FFFFh = none;
-; drawn last while MoveModeA47C is nonzero.
+; Pool A record added by the auto-move sequence (LevelEndPhase 2), FFFFh = none;
+; drawn last while LevelEndPhase is nonzero.
 AutoMoveExtraRecord dw 0FFFFh
 ; DOS allocation strategy saved at startup (loc_0F980), restored on exit (loc_0F99D).
 SavedAllocStrategy dw 0
@@ -1501,7 +1501,7 @@ LifeLostRequest dw 00000h
 ; diagonals between them; FFh when aligned (no move).
 DirectionFromQuadrant db 0FFh,02h,06h,02h,04h,03h,05h,04h
     db 00h,01h,07h,00h,00h,02h,06h,02h
-; Autopilot waypoints (Y, X) for MoveModeA47C modes 1 and 2 (loc_09AD1).
+; Autopilot waypoints (Y, X) for LevelEndPhase modes 1 and 2 (SteerInputToWaypoint).
 AutopilotWaypointA dw 0AAh, 58h
 AutopilotWaypointB dw 0h, 58h
 XAdjustPathTaken dw 00000h
@@ -1590,7 +1590,8 @@ SteerPath11 dw 50h, 0B0h,  90h, 68h,  10h, 68h,  0h, 80h
     dw 40h, 90h,  0A0h, 68h,  0B0h, 0B0h,  LEADER_END_Y, 0B0h
 SteerPath10 dw 50h, 10h,  90h, 58h,  10h, 58h,  0h, 40h
     dw 40h, 30h,  0A0h, 58h,  0B0h, 10h,  LEADER_END_Y, 10h
-MoveModeA47C dw 00000h
+; End-of-level sequence phase, LEVEL_END_* (0..4).
+LevelEndPhase dw 00000h
 ; Encounter state. Waypoints and spawn points below are (Y, X) words; Y gets +20h
 ; when loaded (target Y at DS:2306 or REC_SAVED_Y), X is used as is.
 ; Live leader and child records of the current encounter.

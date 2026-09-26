@@ -20,8 +20,6 @@ layout argument appears (as the linker padding at far 10162 did).
 
 ## Open questions worth settling statically
 
-- 9A06 mode dispatch: its table has five slots (code follows at 9A16); that DS:A47C
-  stays within 0..4 is not yet shown.
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.

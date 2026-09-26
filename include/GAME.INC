@@ -15,3 +15,13 @@ UPGRADE_SLOT_IMAGE equ 4
 UPGRADE_SLOT_LIST equ 6
 UPGRADE_SLOT_INDEX equ 8
 UPGRADE_SLOT_BYTES equ 0Ah
+; LevelEndPhase: the end-of-level sequence started at MapScrollPos 0EA0h.
+LEVEL_END_OFF equ 0
+; Autopilot to AutopilotWaypointA.
+LEVEL_END_TO_WAYPOINT_A equ 1
+; Autopilot to AutopilotWaypointB, side pods spread out.
+LEVEL_END_TO_WAYPOINT_B equ 2
+; Refuel and refill energy until full.
+LEVEL_END_REFILL equ 3
+; Raises NextLevelRequest.
+LEVEL_END_DONE equ 4
