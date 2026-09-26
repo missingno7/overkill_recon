@@ -30,8 +30,20 @@ REC_SCREEN_OFS_LOWER equ 10h
 REC_PIXEL_PHASE equ 12h
 ; 0 = 8x8, 1 = 16 rows, 2 = two 16-row halves.
 REC_SIZE_CLASS equ 14h
-; Update handler index (table at CS:AA36); the primary record uses 3.
+; Update handler index (KindHandlers):
 REC_KIND equ 16h
+; Moves with the scroll only; skipped by the collision pass.
+KIND_SCENERY equ 0
+; A pod (UpdatePod); becomes KIND_TYPED when removed.
+KIND_POD equ 1
+; Runs its REC_TYPE handler; not destroyed by the smart bomb (e.g. enemy shots).
+KIND_TYPED equ 2
+; The player record (no kind handler).
+KIND_PLAYER equ 3
+; Runs its REC_TYPE handler; an enemy the smart bomb destroys.
+KIND_ENEMY equ 4
+KIND_PICKUP equ 5
+KIND_COMPANION equ 6
 ; Detailed type, 0..94h; 1 marks a record being destroyed (old type kept in +1A).
 REC_TYPE equ 18h
 REC_PREV_TYPE equ 1Ah

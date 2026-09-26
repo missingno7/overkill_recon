@@ -2344,7 +2344,7 @@ loc_0A6C8:
     je loc_0A6FA
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 2
-    mov word ptr ds:[bx + REC_KIND], 4
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     mov word ptr ds:[bx + REC_TYPE], 053h
     mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     lodsw
@@ -2531,7 +2531,7 @@ loc_0A894:
     je loc_0A8B8
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8B8
-    cmp word ptr ss:[bp + REC_KIND], 1
+    cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0A8C1
 loc_0A8B8:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 0
@@ -2552,7 +2552,7 @@ loc_0A8C7:
     je loc_0A8EB
     cmp word ptr ds:[MapScrollPos], 0B6h
     ja loc_0A8EB
-    cmp word ptr ss:[bp + REC_KIND], 1
+    cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0A8F4
 loc_0A8EB:
     cmp word ptr ss:[bp + REC_DRAW_PASS], 1
@@ -2696,8 +2696,8 @@ UpdateRecordByKind:
     jmp word ptr cs:[bx + KindHandlers]
     even
 KindHandlers label word
-    dw offset ScrollRecordThenFinish, offset loc_0AD04, offset RunTypeHandler, offset CountXReturn
-    dw offset RunTypeHandler, offset loc_0AAC2, offset loc_0AB10
+    dw offset ScrollRecordThenFinish, offset UpdatePod, offset RunTypeHandler, offset CountXReturn
+    dw offset RunTypeHandler, offset UpdatePickup, offset UpdateCompanion
 loc_0AA44:
     clc
     ret
@@ -2750,15 +2750,15 @@ loc_0AAAB:
     ja loc_0AA44
     stc
     ret
-loc_0AAC2:
+UpdatePickup:
     inc word ptr ss:[bp + REC_Y]
     call loc_0AA46
     jb loc_0AACD
     jmp near ptr ScrollRecordThenFinish
 loc_0AACD:
-    call loc_0AAD3
+    call CollectPickup
     jmp near ptr ScrollRecordThenFinish
-loc_0AAD3:
+CollectPickup:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AADB
     ret
@@ -2781,7 +2781,7 @@ loc_0AAE7Cases label word
 loc_0AB0C:
     pop bp
     jmp near ptr RemoveRecord
-loc_0AB10:
+UpdateCompanion:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 3
     jb loc_0AB1A
     jmp near ptr loc_0AC22
@@ -2890,7 +2890,7 @@ loc_0ABF9:
     mov byte ptr ds:[SfxRequest], 019h
 loc_0AC05:
     mov word ptr ss:[bp + REC_TYPE], 1
-    mov word ptr ss:[bp + REC_KIND], 4
+    mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     mov word ptr ss:[bp + REC_ANIM_COUNTER], 0
     mov word ptr ss:[bp + REC_SPRITE], 0
 loc_0AC19:
@@ -3007,12 +3007,12 @@ loc_0ACF7:
 loc_0ACF9:
     push bp
     mov bp, bx
-    call loc_0AAD3
+    call CollectPickup
     mov bx, bp
     pop bp
     clc
     ret
-loc_0AD04:
+UpdatePod:
     cmp word ptr ds:[DemoActive], 1
     je loc_0AD14
     cmp word ptr ds:[MapScrollPos], 0B6h
@@ -3066,7 +3066,7 @@ loc_0AD73:
     jbe loc_0AD7D
     jmp near ptr RemoveRecord
 loc_0AD7D:
-    cmp word ptr ss:[bp + REC_KIND], 2
+    cmp word ptr ss:[bp + REC_KIND], KIND_TYPED
     jne loc_0ADC8
     cmp word ptr ss:[bp + REC_TYPE], 2
     je loc_0ADAF
@@ -3778,7 +3778,7 @@ loc_0B421:
     mov word ptr ds:[bx + REC_SIDE_FLAG], 0
     mov word ptr ds:[bx + REC_DRAW_PASS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
-    mov word ptr ds:[bx + REC_KIND], 2
+    mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 3
     mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
     pop cx
@@ -3798,7 +3798,7 @@ loc_0B46E:
     pop ax
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_0B486
-    cmp word ptr ss:[bp + REC_KIND], 4
+    cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
     jne loc_0B486
     inc ax
 loc_0B486:
@@ -4577,7 +4577,7 @@ loc_0BCCB:
     jne loc_0BCD2
     ret
 loc_0BCD2:
-    cmp word ptr ss:[bp + REC_KIND], 5
+    cmp word ptr ss:[bp + REC_KIND], KIND_PICKUP
     jne loc_0BCD9
     ret
 loc_0BCD9:
@@ -4622,9 +4622,9 @@ RemoveRecordAtBX:
 ; type belong to (shots, encounter, companion).
 RemoveRecord:
     mov word ptr ss:[bp + REC_STATUS], 0
-    cmp word ptr ss:[bp + REC_KIND], 4
+    cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
     je loc_0BD5C
-    cmp word ptr ss:[bp + REC_KIND], 1
+    cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0BD56
     cmp word ptr ss:[bp + REC_TYPE], 7
     je loc_0BDAC
@@ -4644,7 +4644,7 @@ loc_0BD43:
     je loc_0BD9E
     ret
 loc_0BD56:
-    mov word ptr ss:[bp + REC_KIND], 2
+    mov word ptr ss:[bp + REC_KIND], KIND_TYPED
     ret
 loc_0BD5C:
     call loc_0C054
@@ -5200,7 +5200,7 @@ loc_0C277:
     mov word ptr ds:[bx + REC_SPRITE], 030h
     mov word ptr ds:[bx + REC_DRAW_PASS], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 0
-    mov word ptr ds:[bx + REC_KIND], 2
+    mov word ptr ds:[bx + REC_KIND], KIND_TYPED
     mov word ptr ds:[bx + REC_TYPE], 4
     mov word ptr ds:[bx + REC_FIELD_1C], 0FFFFh
     cmp word ptr ds:[bx + REC_Y], 8
@@ -5356,7 +5356,7 @@ loc_0C3F1:
     shl bx, 1
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     mov word ptr ss:[bp + REC_DRAW_PASS], 1
-    cmp word ptr ss:[bp + REC_KIND], 1
+    cmp word ptr ss:[bp + REC_KIND], KIND_POD
     je loc_0C41E
     mov word ptr ss:[bp + REC_STATUS], 0
     mov word ptr ss:[bp + REC_STEP_ERROR], 0
@@ -5371,7 +5371,7 @@ loc_0C41E:
     loop loc_0C3F1
     mov bp, offset PrimaryRecord
     mov word ptr ss:[bp + REC_STATUS], 1
-    mov word ptr ss:[bp + REC_KIND], 3
+    mov word ptr ss:[bp + REC_KIND], KIND_PLAYER
     mov word ptr ss:[bp + REC_SIZE_CLASS], 2
     mov word ptr ss:[bp + REC_Y], 0C0h
     mov word ptr ss:[bp + REC_X], 058h
@@ -5379,7 +5379,7 @@ loc_0C41E:
     call FindFreeRecordPoolA
     mov word ptr ds:[bx + REC_STATUS], 1
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
-    mov word ptr ds:[bx + REC_KIND], 6
+    mov word ptr ds:[bx + REC_KIND], KIND_COMPANION
     mov es, word ptr cs:[MainDataSegment]
     mov di, 0A3B4h
     mov ax, 0FFFFh
@@ -6948,7 +6948,7 @@ loc_0D269:
     mov word ptr ss:[bp + REC_Y], 0C8h
     mov word ptr ss:[bp + REC_X], 0C0h
     mov word ptr ss:[bp + REC_TYPE], 050h
-    mov word ptr ss:[bp + REC_KIND], 4
+    mov word ptr ss:[bp + REC_KIND], KIND_ENEMY
     ret
 TypeHandler50:
     mov ax, word ptr ss:[bp + REC_SAVED_X]
@@ -6962,7 +6962,7 @@ TypeHandler50:
     jne loc_0D2A4
     ret
 loc_0D2A4:
-    mov word ptr ss:[bp + REC_KIND], 1
+    mov word ptr ss:[bp + REC_KIND], KIND_POD
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0D2B5
     mov byte ptr ds:[SfxRequest], 0Eh

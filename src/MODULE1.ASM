@@ -8767,7 +8767,7 @@ loc_04AF5:
     mov word ptr ds:[bx + REC_DIRECTION], 4
     mov ax, word ptr ds:[FormationSizeClass]
     mov word ptr ds:[bx + REC_SIZE_CLASS], ax
-    mov word ptr ds:[bx + REC_KIND], 4
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     mov ax, word ptr ds:[FormationType]
     mov word ptr ds:[bx + REC_TYPE], ax
     cmp word ptr ds:[bx + REC_DRAW_PASS], 1

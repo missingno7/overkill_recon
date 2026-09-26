@@ -25,7 +25,7 @@ layout argument appears (as the linker padding at far 10162 did).
 - Pool-A allocation callers C450 and D1AE do not check for FFFF (pool full).
 - 9CB6: keep unnamed until 9E19's countdown and the 511F/61DC effects are clear.
 - MapScrollPos 9Ch gates RunTimedSequenceUntilPrimary.
-- Record fields +1C and +36 are type-dependent; REC_KIND values 0, 2, 6 are unexplained.
+- Record fields +1C and +36 are type-dependent.
 
 ## Next reconstruction targets
 

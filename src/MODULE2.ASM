@@ -2143,19 +2143,19 @@ loc_062BA:
     mov bp, word ptr ds:[bx + PoolAPointers - 2]
     cmp word ptr ss:[bp + REC_STATUS], 0
     je loc_062CC
-    call loc_062D1
+    call SmartBombRecord
 loc_062CC:
     pop cx
     loop loc_062BA
     pop bp
     ret
 
-loc_062D1:
+SmartBombRecord:
     cmp word ptr ss:[bp + REC_Y], 0E0h
     jbe loc_062D9
     ret
 loc_062D9:
-    cmp word ptr ss:[bp + REC_KIND], 4
+    cmp word ptr ss:[bp + REC_KIND], KIND_ENEMY
     je loc_062E0
     ret
 loc_062E0:
@@ -2178,7 +2178,7 @@ loc_062FF:
     jge loc_06308
     jmp near ptr loc_0741F
 loc_06308:
-    cmp word ptr ss:[bp + REC_KIND], 0
+    cmp word ptr ss:[bp + REC_KIND], KIND_SCENERY
     jne loc_06311
     jmp near ptr loc_0741F
 loc_06311:
@@ -4093,7 +4093,7 @@ loc_07442:
 loc_07445:
     mov word ptr ds:[bx + REC_ANIM_COUNTER], 0
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
-    mov word ptr ds:[bx + REC_KIND], 5
+    mov word ptr ds:[bx + REC_KIND], KIND_PICKUP
     mov word ptr ds:[bx + REC_TYPE], 0
     mov word ptr ds:[bx + REC_SLOT_INDEX], 0FFFFh
     mov word ptr ds:[bx + REC_FLASH_TIMER], 0
@@ -4160,9 +4160,9 @@ loc_07507:
     mov cx, POOL_A_COUNT
     mov bx, offset PoolA
 loc_0750D:
-    cmp word ptr ds:[bx + REC_KIND], 6
+    cmp word ptr ds:[bx + REC_KIND], KIND_COMPANION
     je loc_07519
-    cmp word ptr ds:[bx + REC_KIND], 1
+    cmp word ptr ds:[bx + REC_KIND], KIND_POD
     jne loc_07521
 loc_07519:
     add bx, RECORD_SIZE
@@ -4207,7 +4207,7 @@ loc_07556:
     je loc_07568
     cmp word ptr ds:[bx + REC_TYPE], 0Ah
     je loc_07568
-    cmp word ptr ds:[bx + REC_KIND], 1
+    cmp word ptr ds:[bx + REC_KIND], KIND_POD
     jne loc_07570
 loc_07568:
     add bx, RECORD_SIZE
@@ -4760,7 +4760,7 @@ loc_07B13:
     jne loc_07B1C
     ret
 loc_07B1C:
-    mov word ptr ds:[bx + REC_KIND], 4
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     mov ax, ds:[0A40Ah]
     mov ds:[bx + REC_X], ax
     mov word ptr ds:[bx], 1
@@ -5497,7 +5497,7 @@ loc_08209:
     mov word ptr ds:[bx + REC_SAVED_X], ax
     mov word ptr ds:[bx + REC_DIRECTION], 4
     mov word ptr ds:[bx + REC_SIZE_CLASS], 1
-    mov word ptr ds:[bx + REC_KIND], 4
+    mov word ptr ds:[bx + REC_KIND], KIND_ENEMY
     mov word ptr ds:[bx + REC_TYPE], 014h
     mov word ptr ds:[bx + REC_HIT_POINTS], 4
     mov word ptr ds:[bx + REC_FLASH_TIMER], 0
