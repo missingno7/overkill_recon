@@ -204,10 +204,21 @@ public AimAtPlayer
 public AllocGroupSlot
 public AllocPoolBRecordEvicting
 public AllocRecordEvicting
+public ApplyBeam
+public ApplyForkShot
 public ApplyFrontPod
+public ApplyHeavyShot
+public ApplyMissiles
 public ApplySelectedUpgrade
+public ApplyShipForm1
+public ApplyShipForm2
 public ApplySidePods
+public ApplySideShots
+public ApplySingleShot
 public ApplyTrailingPods
+public ApplyTwinRising16
+public ApplyTwinRising3
+public BeamAvailable
 public BlitPackedStride104
 public BlitPackedStride160
 public BlitPackedToScreen
@@ -244,7 +255,9 @@ public DrawUpgradeSlots
 public FarCallMainNearViaAX
 public FindFreeRecordPoolA
 public FindFreeRecordPoolB
+public ForkShotAvailable
 public FrontPodAvailable
+public HeavyShotAvailable
 public InitEnemyRecordHere
 public InitUpgradeSlots
 public InsertHighScore
@@ -255,6 +268,7 @@ public Level3MapCell
 public Level4MapCell
 public Level5MapCell
 public LoadHiscoreFile
+public MissilesAvailable
 public PlayerShotsHitRecord
 public RecordWorkspaceOffset
 public RequestLifeStartMusic
@@ -266,8 +280,12 @@ public ScrollMapToLevelStart
 public SetBestFitAllocStrategy
 public SetDeltaToward
 public SetHiscoreRankColor
+public ShipForm1Available
+public ShipForm2Available
 public ShutdownGame
 public SidePodsAvailable
+public SideShotsAvailable
+public SingleShotAvailable
 public SmartBombAll
 public SpawnAimedShot
 public SpawnEnemyHere
@@ -294,6 +312,8 @@ public StretchSource
 public TickFrameTimers
 public TickRefuel
 public TrailingPodsAvailable
+public TwinRising16Available
+public TwinRising3Available
 public Type13FormationLeader
 public Type24TurretLeftFire32
 public Type25TurretRightFire32
@@ -355,29 +375,9 @@ public Type90TurretVolley
 public Type91TurretVolleyAlt
 public Type93SweepDescendClimb
 public UpdateRefuelTimersAndScore
+public UpgradeNeverAvailable
 public loc_05D0B
 public loc_08331
-public loc_083D7
-public loc_083DE
-public loc_083E4
-public loc_083EA
-public loc_083F0
-public loc_083F6
-public loc_083FC
-public loc_08402
-public loc_0840A
-public loc_08412
-public loc_0841A
-public loc_08422
-public loc_0842A
-public loc_08437
-public loc_0843D
-public loc_08445
-public loc_0844E
-public loc_084C9
-public loc_084D6
-public loc_084F0
-public loc_084FD
 public loc_0878C
 public loc_08D83
 extrn AddFrontPod:near
@@ -5855,143 +5855,145 @@ loc_083CA:
 loc_083D0:
     mov word ptr ss:[bp + UPGRADE_SLOT_INDEX], 0
     jmp short loc_08398
-loc_083D7:
+; Upgrade list condition routines: ZF = 0 when the entry can be offered; the apply
+; routines end in FinishUpgrade (SelectedUpgradeSlot = FFFFh).
+UpgradeNeverAvailable:
     xor ax, ax
     ret
-loc_083DA:
+UpgradeAlwaysAvailable:
     xor ax, ax
     inc ax
     ret
-loc_083DE:
-    cmp word ptr ds:[WeaponMode], 0
+SingleShotAvailable:
+    cmp word ptr ds:[WeaponMode], WEAPON_SINGLE
     ret
-loc_083E4:
-    cmp word ptr ds:[WeaponMode], 1
+HeavyShotAvailable:
+    cmp word ptr ds:[WeaponMode], WEAPON_HEAVY
     ret
-loc_083EA:
-    cmp word ptr ds:[WeaponMode], 2
+ForkShotAvailable:
+    cmp word ptr ds:[WeaponMode], WEAPON_FORK
     ret
-loc_083F0:
-    cmp word ptr ds:[WeaponMode], 3
+TwinRising3Available:
+    cmp word ptr ds:[WeaponMode], WEAPON_TWIN_RISING3
     ret
-loc_083F6:
-    cmp word ptr ds:[WeaponMode], 4
+TwinRising16Available:
+    cmp word ptr ds:[WeaponMode], WEAPON_TWIN_RISING16
     ret
-loc_083FC:
-    cmp word ptr ds:[WeaponMode], 5
+BeamAvailable:
+    cmp word ptr ds:[WeaponMode], WEAPON_BEAM
     ret
-loc_08402:
-    mov word ptr ds:[WeaponMode], 0
-    jmp short loc_08430
-loc_0840A:
-    mov word ptr ds:[WeaponMode], 1
-    jmp short loc_08430
-loc_08412:
-    mov word ptr ds:[WeaponMode], 2
-    jmp short loc_08430
-loc_0841A:
-    mov word ptr ds:[WeaponMode], 3
-    jmp short loc_08430
-loc_08422:
-    mov word ptr ds:[WeaponMode], 4
-    jmp short loc_08430
-loc_0842A:
-    mov word ptr ds:[WeaponMode], 5
-loc_08430:
+ApplySingleShot:
+    mov word ptr ds:[WeaponMode], WEAPON_SINGLE
+    jmp short FinishUpgrade
+ApplyHeavyShot:
+    mov word ptr ds:[WeaponMode], WEAPON_HEAVY
+    jmp short FinishUpgrade
+ApplyForkShot:
+    mov word ptr ds:[WeaponMode], WEAPON_FORK
+    jmp short FinishUpgrade
+ApplyTwinRising3:
+    mov word ptr ds:[WeaponMode], WEAPON_TWIN_RISING3
+    jmp short FinishUpgrade
+ApplyTwinRising16:
+    mov word ptr ds:[WeaponMode], WEAPON_TWIN_RISING16
+    jmp short FinishUpgrade
+ApplyBeam:
+    mov word ptr ds:[WeaponMode], WEAPON_BEAM
+FinishUpgrade:
     mov word ptr ds:[SelectedUpgradeSlot], 0FFFFh
     ret
-loc_08437:
+SideShotsAvailable:
     cmp word ptr ds:[SideShotsEnabled], 1
     ret
-loc_0843D:
+ApplySideShots:
     mov word ptr ds:[SideShotsEnabled], 1
-    jmp short loc_08430
-loc_08445:
+    jmp short FinishUpgrade
+MissilesAvailable:
     cmp word ptr ds:[MissileAmmo], 0
-    je loc_083DA
-    jmp short loc_083D7
-loc_0844E:
+    je UpgradeAlwaysAvailable
+    jmp short UpgradeNeverAvailable
+ApplyMissiles:
     mov word ptr ds:[MissileAmmo], 4
-    jmp short loc_08430
+    jmp short FinishUpgrade
 FrontPodAvailable:
     cmp word ptr ds:[FrontPodRecord], -1
     jne loc_08460
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_08460:
-    jmp near ptr loc_083D7
+    jmp near ptr UpgradeNeverAvailable
 ApplyFrontPod:
     call AddFrontPod
-    jmp short loc_08430
+    jmp short FinishUpgrade
 SidePodsAvailable:
     cmp word ptr ds:[SidePodLeftInner], -1
     jne loc_08472
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_08472:
     cmp word ptr ds:[SidePodRightInner], -1
     jne loc_0847C
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_0847C:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_08486
-    jmp near ptr loc_083D7
+    jmp near ptr UpgradeNeverAvailable
 loc_08486:
     cmp word ptr ds:[SidePodLeftOuter], -1
     jne loc_08490
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_08490:
     cmp word ptr ds:[SidePodRightOuter], -1
     jne loc_0849A
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_0849A:
-    jmp near ptr loc_083D7
+    jmp near ptr UpgradeNeverAvailable
 ApplySidePods:
     call AddSidePods
-    jmp short loc_08430
+    jmp short FinishUpgrade
 TrailingPodsAvailable:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_084AC
-    jmp near ptr loc_083D7
+    jmp near ptr UpgradeNeverAvailable
 loc_084AC:
     cmp word ptr ds:[TrailingPodNear], -1
     jne loc_084B6
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_084B6:
     cmp word ptr ds:[TrailingPodFar], -1
     jne loc_084C0
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_084C0:
-    jmp near ptr loc_083D7
+    jmp near ptr UpgradeNeverAvailable
 ApplyTrailingPods:
     call AddTrailingPod
-    jmp near ptr loc_08430
-loc_084C9:
+    jmp near ptr FinishUpgrade
+ShipForm1Available:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 0
     jne loc_084D3
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_084D3:
-    jmp near ptr loc_083D7
-loc_084D6:
+    jmp near ptr UpgradeNeverAvailable
+ApplyShipForm1:
     mov byte ptr ds:[SfxActive], 0
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_084E7
     mov byte ptr ds:[SfxRequest], 6
 loc_084E7:
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 1
-    jmp near ptr loc_08430
-loc_084F0:
+    jmp near ptr FinishUpgrade
+ShipForm2Available:
     cmp word ptr ds:[PrimaryRecord + REC_SPRITE], 2
     je loc_084FA
-    jmp near ptr loc_083DA
+    jmp near ptr UpgradeAlwaysAvailable
 loc_084FA:
-    jmp near ptr loc_083D7
-loc_084FD:
+    jmp near ptr UpgradeNeverAvailable
+ApplyShipForm2:
     mov byte ptr ds:[SfxActive], 0
     cmp byte ptr ds:[SfxEnabled], 0
     je loc_0850E
     mov byte ptr ds:[SfxRequest], 6
 loc_0850E:
     mov word ptr ds:[PrimaryRecord + REC_SPRITE], 2
-    jmp near ptr loc_08430
+    jmp near ptr FinishUpgrade
 
 InitUpgradeSlots:
     mov word ptr ds:[SelectedUpgradeSlot], 0FFFFh

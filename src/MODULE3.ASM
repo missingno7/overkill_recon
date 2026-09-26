@@ -1709,7 +1709,7 @@ loc_0A084:
     ja loc_0A0A6
     cmp word ptr ds:[DemoActive], 0
     jne loc_0A0A6
-    cmp word ptr ds:[WeaponMode], 2
+    cmp word ptr ds:[WeaponMode], WEAPON_FORK
     jne loc_0A0A3
     jmp near ptr FireForkShot
 loc_0A0A3:
@@ -1743,7 +1743,7 @@ loc_0A0D8:
 ; Starts the beam in WeaponMode 5, fires the front pod burst, then the WeaponMode
 ; pattern.
 FireMainWeapon:
-    cmp word ptr ds:[WeaponMode], 5
+    cmp word ptr ds:[WeaponMode], WEAPON_BEAM
     jne loc_0A0F2
     call StartBeam
 loc_0A0F2:
@@ -5585,7 +5585,7 @@ loc_0C4E5:
     add word ptr cs:[SaveBufferCursor], POOL_A_SAVE_BYTES
     pop cx
     loop loc_0C4E5
-    mov word ptr ds:[WeaponMode], 0
+    mov word ptr ds:[WeaponMode], WEAPON_SINGLE
     mov word ptr ds:[SideShotsEnabled], 0
     mov word ptr ds:[MissileAmmo], 0
     mov word ptr ds:[TrailingPodNear], 0FFFFh

@@ -41,3 +41,10 @@ MAP_END_ROWS_POS equ 283 * MAP_ROW_BYTES
 MAP_RESTART_POS equ 287 * MAP_ROW_BYTES
 ; Reaching it starts the level end (LevelEndPhase).
 MAP_END_POS equ 288 * MAP_ROW_BYTES
+; WeaponMode values (FireMainWeapon, FirePodWeapon).
+WEAPON_SINGLE equ 0
+WEAPON_HEAVY equ 1
+WEAPON_FORK equ 2
+WEAPON_TWIN_RISING3 equ 3
+WEAPON_TWIN_RISING16 equ 4
+WEAPON_BEAM equ 5

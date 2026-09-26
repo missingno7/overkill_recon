@@ -14,11 +14,24 @@ TEXTROW macro attr, text
     endm
 endm
 locals
+extrn ApplyBeam:far
+extrn ApplyForkShot:far
 extrn ApplyFrontPod:far
+extrn ApplyHeavyShot:far
+extrn ApplyMissiles:far
+extrn ApplyShipForm1:far
+extrn ApplyShipForm2:far
 extrn ApplySidePods:far
+extrn ApplySideShots:far
+extrn ApplySingleShot:far
 extrn ApplyTrailingPods:far
+extrn ApplyTwinRising16:far
+extrn ApplyTwinRising3:far
+extrn BeamAvailable:far
 extrn CountXReturn:far
+extrn ForkShotAvailable:far
 extrn FrontPodAvailable:far
+extrn HeavyShotAvailable:far
 extrn Level0MapCell:far
 extrn Level1MapCell:far
 extrn Level2MapCell:far
@@ -31,35 +44,22 @@ extrn MapResetList2:word
 extrn MapResetList3:word
 extrn MapResetList4:word
 extrn MapResetList5:word
+extrn MissilesAvailable:far
 extrn SfxCmdRest:far
 extrn SfxCmdSlide:far
 extrn SfxCmdStepDown:far
 extrn SfxCmdStepUp:far
 extrn SfxStopAll:far
 extrn SfxStreamStoreAndWait:far
+extrn ShipForm1Available:far
+extrn ShipForm2Available:far
 extrn SidePodsAvailable:far
+extrn SideShotsAvailable:far
+extrn SingleShotAvailable:far
 extrn TrailingPodsAvailable:far
-extrn loc_083D7:far
-extrn loc_083DE:far
-extrn loc_083E4:far
-extrn loc_083EA:far
-extrn loc_083F0:far
-extrn loc_083F6:far
-extrn loc_083FC:far
-extrn loc_08402:far
-extrn loc_0840A:far
-extrn loc_08412:far
-extrn loc_0841A:far
-extrn loc_08422:far
-extrn loc_0842A:far
-extrn loc_08437:far
-extrn loc_0843D:far
-extrn loc_08445:far
-extrn loc_0844E:far
-extrn loc_084C9:far
-extrn loc_084D6:far
-extrn loc_084F0:far
-extrn loc_084FD:far
+extrn TwinRising16Available:far
+extrn TwinRising3Available:far
+extrn UpgradeNeverAvailable:far
 DATA segment para public 'CODE'
 assume cs:DATA,ds:nothing,ss:nothing,es:nothing
 public AdapterGeometry
@@ -1304,26 +1304,26 @@ SelectedUpgradeSlot dw 0
 UpgradeSlotPtrs dw offset UpgradeSlot0, offset UpgradeSlot1, offset UpgradeSlot2, offset UpgradeSlot3
 ; Entries {icon, condition routine (ZF = 0: usable), apply routine}, ending with
 ; icon FFFFh (the index then restarts at 0).
-UpgradeList0 dw 24h, offset loc_083D7, offset CountXReturn
-    dw 0h, offset loc_083DE, offset loc_08402
-    dw 1h, offset loc_083E4, offset loc_0840A
-    dw 2h, offset loc_083EA, offset loc_08412
-    dw 3h, offset loc_083F0, offset loc_0841A
-    dw 4h, offset loc_083F6, offset loc_08422
-    dw 5h, offset loc_083FC, offset loc_0842A
+UpgradeList0 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 0h, offset SingleShotAvailable, offset ApplySingleShot
+    dw 1h, offset HeavyShotAvailable, offset ApplyHeavyShot
+    dw 2h, offset ForkShotAvailable, offset ApplyForkShot
+    dw 3h, offset TwinRising3Available, offset ApplyTwinRising3
+    dw 4h, offset TwinRising16Available, offset ApplyTwinRising16
+    dw 5h, offset BeamAvailable, offset ApplyBeam
     dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList1 dw 24h, offset loc_083D7, offset CountXReturn
-    dw 6h, offset loc_08437, offset loc_0843D
-    dw 7h, offset loc_08445, offset loc_0844E
+UpgradeList1 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 6h, offset SideShotsAvailable, offset ApplySideShots
+    dw 7h, offset MissilesAvailable, offset ApplyMissiles
     dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList2 dw 24h, offset loc_083D7, offset CountXReturn
+UpgradeList2 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
     dw 9h, offset FrontPodAvailable, offset ApplyFrontPod
     dw 0Ah, offset SidePodsAvailable, offset ApplySidePods
     dw 0Bh, offset TrailingPodsAvailable, offset ApplyTrailingPods
     dw 0FFFFh, 0FFFFh, offset CountXReturn
-UpgradeList3 dw 24h, offset loc_083D7, offset CountXReturn
-    dw 0Dh, offset loc_084C9, offset loc_084D6
-    dw 0Eh, offset loc_084F0, offset loc_084FD
+UpgradeList3 dw 24h, offset UpgradeNeverAvailable, offset CountXReturn
+    dw 0Dh, offset ShipForm1Available, offset ApplyShipForm1
+    dw 0Eh, offset ShipForm2Available, offset ApplyShipForm2
     dw 0FFFFh, 0FFFFh, offset CountXReturn
 ; Slots: current icon, screen offset, panel image, entry list, entry index
 ; (UPGRADE_SLOT_* fields).
