@@ -5,9 +5,6 @@
    climbing walkers' wall probe. Same state, same results; see the oracle comments at each
    routine for the original contracts.
 
-   ReturnCarrySet (the shared `stc / ret` after ProbeShipTerrainCollision) stays ASM: its
-   other user is PodCollideRecords.
-
    SEGMENT: CGAME
    OWNS: ProbeShipTerrainCollision ReadIndexedByteAttribute GridOffsetNegativeY
    OWNS: ComputeRecordGridOffset DamagePlayerOnTerrainContact DamagePlayerEnergy
@@ -22,6 +19,7 @@
    OWNS: ClimbWalkerBlocked ClimbWalkerStep ProbeOverlapsWalker
 */
 #include "game.h"
+#include "pods.h"
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -33,9 +31,8 @@ void step_along_delta(Record *r);
    routines go through the near thunk CALL_MAIN_BP in c/shots.asm (BP = SI around the far
    call), not an inline pragma: Watcom's cross-jump optimisation merges the tail of an
    inline `call far ptr` with another copy and drops its segment fixup (it corrupted the
-   second RemoveRecord call of shot_bounds_check). */
+   second RemoveRecord call of shot_bounds_check, since moved to C: c/pods.c). */
 extern void RedrawEnergyGauge(void);     /* platform: the energy gauge (keeps BP) */
-extern void RemoveRecord(void);          /* BP = record */
 extern void TryTerrainStep(void);        /* BP = record */
 extern void FindMissileTarget(void);     /* BX out, clobbers CX */
 void call_main(main_routine target);
@@ -156,7 +153,7 @@ void damage_player_on_terrain_contact(Record *ship)
 void shot_bounds_check(Record *s)
 {
     if (s->y < 8 || s->y > 0xE0 || s->x > 0xC8) {
-        call_main_bp(RemoveRecord, s);
+        remove_record(s);
         return;
     }
     if (s->kind != KIND_TYPED) return;
@@ -165,7 +162,7 @@ void shot_bounds_check(Record *s)
     default: return;
     }
     if (DemoActive == 1) return;
-    if (map_attribute(compute_record_grid_offset(s) + MAP_ROW_BYTES) == 1) call_main_bp(RemoveRecord, s);
+    if (map_attribute(compute_record_grid_offset(s) + MAP_ROW_BYTES) == 1) remove_record(s);
 }
 
 void shot_scroll_and_bounds(Record *s)
