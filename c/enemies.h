@@ -13,5 +13,7 @@ word spawn_throttled_child(Record *r, word bx);
 word try_terrain_step(Record *r);
 void scroll_record_then_finish(Record *r);
 void finish_record_update(Record *r);
+void run_type_handler(Record *r);
+void update_pickup(Record *r);
 
 #endif

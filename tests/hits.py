@@ -11,7 +11,7 @@ from world import World, K, RECORD
 import struct
 
 LOOP = ('BP', 'SP', 'DS', 'SS')
-# Registers DestroyRecord, SmartBombRecord and ReleaseEncounterMember leave alone in the oracle.
+# Registers DestroyRecord and ReleaseEncounterMember leave alone in the oracle.
 KEEPS = ('DX', 'DI', 'ES') + LOOP
 SEG_BOSS_PARTS = ('SegBossAnchor', 'SegBossPart77', 'SegBossCore', 'SegBossPart79')
 LEADERS = (0x13, 0x15, 0x1C, 0x1F, 0x7D, 0x7E)
@@ -88,7 +88,8 @@ def cases(rng, scale, pair):
     for i in range(n):
         w = world(rng, pair)
         r = enemy(w, y=rng.choice((0xE0, 0xE1, 0x40, 0xFFF0)))
-        yield Case('SmartBombRecord', {'BP': r.at}, w.writes(), KEEPS, name=f'#{i}')
+        # SmartBombRecord's only caller, SmartBombAll, is C (c/frame.c): no bridge stub left.
+        yield Case('SmartBombAll', {}, w.writes(), LOOP, name=f'record #{i}')
     for i in range(n // 5):
         w = world(rng, pair)
         for k in range(K.POOL_A_COUNT):

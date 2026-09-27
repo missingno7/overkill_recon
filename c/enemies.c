@@ -57,6 +57,7 @@
 */
 #include "enemies.h"
 #include "hits.h"
+#include "pods.h"
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -84,6 +85,12 @@ Record *spawn_enemy_here(Record *here);
 Record *spawn_enemy_here_quiet(Record *here);
 void type13_formation_leader(Record *r);
 void type21_leader_path(Record *r);
+/* c/frame.c: the frame region's record handlers and helpers */
+void type50_steer_home(Record *r);
+void seg_boss_part(Record *r, word part);
+void type80_march_member(Record *r);
+void step_hatch_ramp_frame(Record *r, word base);
+void smart_bomb_all(void);
 /* c/hits.c (hits.h): the burst descenders end in the scroll tail */
 void type36_fall_then_burst(Record *r);
 void type22_descend_then_burst(Record *r);
@@ -93,21 +100,6 @@ void type22_descend_then_burst(Record *r);
    call; every register but BP comes back clobbered. */
 void enemies_call_bp(main_routine target, Record *r);
 #pragma aux enemies_call_bp "CALL_MAIN_BP" parm [ax] [si] modify exact [ax bx cx dx si di es]
-word enemies_call_bp_ax(main_routine target, Record *r);
-#pragma aux enemies_call_bp_ax "CALL_MAIN_BP" parm [ax] [si] value [ax] modify exact [ax bx cx dx si di es]
-void enemies_call_bp_cx(main_routine target, Record *r, word cx);
-#pragma aux enemies_call_bp_cx "CALL_MAIN_BP" parm [ax] [si] [cx] modify exact [ax bx cx dx si di es]
-void enemies_call_main(main_routine target);
-#pragma aux enemies_call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
-
-extern void RemoveRecord(void);            /* BP = record */
-extern void CheckRecordHitsPlayer(void);   /* BP = record */
-extern void CollectPickup(void);           /* BP = pickup */
-extern void AnimateExplosion16(void);      /* BP = record; ends in the scroll tail or RemoveRecord */
-extern void AnimateExplosion32(void);
-extern void StepHatchRampFrame(void);      /* BP = hatch, CX = sprite base */
-extern void SmartBombAll(void);            /* keeps BP */
-extern void EnemiesSmallRecordHitsPlayer(void); /* c/enemies.asm: AX = FFFFh when CF */
 
 /* Handlers of other regions that stay ASM (RunTypeHandler's table). */
 extern void Type10StartPathFollowerA(void);
@@ -134,7 +126,6 @@ extern void Type47PatrolShootDown32B(void);
 extern void Type4AFollowPathType4A(void);
 extern void Type4BDescendThenBounceUpRight(void);
 extern void Type4EAnimDescendThenBounce(void);
-extern void Type50SteerHomeThenBecomePod(void);
 extern void Type51FollowType51Path(void);
 extern void Type5BScrollPastY_B0ThenType5C(void);
 extern void Type5CRiseFast4(void);
@@ -143,15 +134,10 @@ extern void Type66FollowPathType66(void);
 extern void Type67FollowPathType67(void);
 extern void Type68JitterDescendFiring(void);
 extern void Type71FireThenDiveBelow60(void);
-extern void Type76SegBossPart0(void);
-extern void Type77SegBossPart1(void);
-extern void Type78SegBossCore(void);
-extern void Type79SegBossPart3(void);
 extern void Type7AAimLineFlyer(void);
 extern void Type7BDropThenAim(void);
 extern void Type7CAimLineFlyerAlt(void);
 extern void Type7FMarchEnterSteer(void);
-extern void Type80MarchFormationMember(void);
 extern void Type81SweeperEnterSteer(void);
 extern void Type84LurkUntilAligned(void);
 extern void Type87AnimFireBurstA(void);
@@ -340,12 +326,6 @@ word try_terrain_step(Record *r)
     return TerrainBlocked;
 }
 
-/* SmallRecordHitsPlayer (ASM, pods region) as a flag: 1 when CF. */
-word enemies_small_record_hits_player(Record *r)
-{
-    return enemies_call_bp_ax(EnemiesSmallRecordHitsPlayer, r);
-}
-
 /* ---- the shared tail ------------------------------------------------------------------ */
 
 /* FinishRecordUpdate: clamp X, then remove the record when REC_Y < -0C0h or >= 0F0h
@@ -359,15 +339,15 @@ void finish_record_update(Record *r)
     if (LevelEndPhase == LEVEL_END_OFF && r->type != 0 && r->type != 0x48 && r->type != 0x26
             && r->type != 0x86 && r->type != 0x28 && r->type != 0x29 && r->type != 0x34) {
         if ((sword)r->y < (sword)0xFF40 || (sword)r->y >= 0xF0) {
-            enemies_call_bp(RemoveRecord, r);
+            remove_record(r);
             return;
         }
     } else if ((sword)r->y < -0x14 || (sword)r->y >= 0xF0) {
-        enemies_call_bp(RemoveRecord, r);
+        remove_record(r);
         return;
     }
     if (LevelEndPhase == LEVEL_END_OFF) {
-        enemies_call_bp(CheckRecordHitsPlayer, r);
+        check_record_hits_player(r);
         player_shots_hit_record(r);
     }
 }
@@ -396,14 +376,14 @@ void steer_to_saved_tail(Record *r)
 void update_pickup(Record *r)
 {
     r->y++;
-    if (enemies_small_record_hits_player(r)) enemies_call_bp(CollectPickup, r);
+    if (small_record_hits_player(r)) collect_pickup(r);
     scroll_record_then_finish(r);
 }
 
 /* Type 1: REC_ANIM_COUNTER advances every second frame (FrameParity 1), then the size
-   class picks the frame routine (0 only scrolls; 1, 2: AnimateExplosion16/32, ASM,
-   which end in the scroll tail or remove the record). REC_SIZE_CLASS is 0..2 (the
-   oracle's table is unchecked). */
+   class picks the frame routine (0 only scrolls; 1, 2: AnimateExplosion16/32, c/pods.c,
+   which continue in the scroll tail unless the explosion ended). REC_SIZE_CLASS is 0..2
+   (the oracle's table is unchecked). */
 void type01_explosion_animation(Record *r)
 {
     if (FrameParity != 1) {
@@ -413,8 +393,8 @@ void type01_explosion_animation(Record *r)
     r->anim_counter++;
     switch (r->size_class) {
     case 0: scroll_record_then_finish(r); break;
-    case 1: enemies_call_bp(AnimateExplosion16, r); break;
-    case 2: enemies_call_bp(AnimateExplosion32, r); break;
+    case 1: if (animate_explosion16(r)) scroll_record_then_finish(r); break;
+    case 2: if (animate_explosion32(r)) scroll_record_then_finish(r); break;
     }
 }
 
@@ -489,14 +469,14 @@ void type27_slow_descender(Record *r)
     scroll_record_then_finish(r);
 }
 
-/* Types 28h/2Ah: StepHatchRampFrame (ASM, base 1Ch); at ramp phase 7 while
+/* Types 28h/2Ah: StepHatchRampFrame (c/frame.c, base 1Ch); at ramp phase 7 while
    EncounterLiveCount is 0 it steps the phase and releases a child at +8, +8 with 4 HP:
    29h (levels 1, 4), 2Bh aimed (level 2), 7Ah aimed (level 5), else a plain 14h. */
 void type28_enemy_hatch(Record *r)
 {
     Record *c;
 
-    enemies_call_bp_cx(StepHatchRampFrame, r, 0x1C);
+    step_hatch_ramp_frame(r, 0x1C);
     if (EncounterLiveCount == 0 && r->direction == 7) {
         r->direction++;
         c = spawn_enemy_here(r);
@@ -1436,7 +1416,7 @@ void encounter_invader_level(Record *r)
 
 /* Level 0: once the director is the only live KIND_ENEMY in pool A, it becomes the
    segmented boss core (type 78h) and three parts (76h anchor, 77h, 79h) are made. Pool A
-   full: EncounterLiveCount 0 and SmartBombAll (ASM), which also destroys this core; its
+   full: EncounterLiveCount 0 and SmartBombAll, which also destroys this core; its
    ReleaseEncounterMember then explodes the stale part pointers. */
 void encounter_seg_boss_level(Record *r)
 {
@@ -1480,7 +1460,7 @@ void encounter_seg_boss_level(Record *r)
     return;
 failed:
     EncounterLiveCount = 0;
-    enemies_call_main(SmartBombAll);
+    smart_bomb_all();
     finish_record_update(r);
 }
 
@@ -1970,7 +1950,7 @@ void run_type_handler(Record *r)
     case 0x4D: type4d_sink_rise_then_dash(r); break;
     case 0x4E: enemies_call_bp(Type4EAnimDescendThenBounce, r); break;
     case 0x4F: type4f_fall_fast4_flicker(r); break;
-    case 0x50: enemies_call_bp(Type50SteerHomeThenBecomePod, r); break;
+    case 0x50: type50_steer_home(r); break;          /* no finish tail */
     case 0x51: enemies_call_bp(Type51FollowType51Path, r); break;
     case 0x52: scroll_record_then_finish(r); break;   /* Type52ScrollOnly */
     case 0x53: type53_animate_from_sprite_base(r); break;
@@ -2007,15 +1987,18 @@ void run_type_handler(Record *r)
     case 0x73: type73_wait_then_run_right(r); break;
     case 0x74: type74_wait_then_run_left(r); break;
     case 0x75: type75_descend_spread_shot(r); break;
-    case 0x76: enemies_call_bp(Type76SegBossPart0, r); break;
-    case 0x77: enemies_call_bp(Type77SegBossPart1, r); break;
-    case 0x78: enemies_call_bp(Type78SegBossCore, r); break;
-    case 0x79: enemies_call_bp(Type79SegBossPart3, r); break;
+    case 0x76: case 0x77: case 0x78: case 0x79:
+        seg_boss_part(r, r->type - 0x76);
+        scroll_record_then_finish(r);
+        break;
     case 0x7A: enemies_call_bp(Type7AAimLineFlyer, r); break;
     case 0x7B: enemies_call_bp(Type7BDropThenAim, r); break;
     case 0x7C: enemies_call_bp(Type7CAimLineFlyerAlt, r); break;
     case 0x7F: enemies_call_bp(Type7FMarchEnterSteer, r); break;
-    case 0x80: enemies_call_bp(Type80MarchFormationMember, r); break;
+    case 0x80:
+        type80_march_member(r);
+        finish_record_update(r);
+        break;
     case 0x81: enemies_call_bp(Type81SweeperEnterSteer, r); break;
     case 0x83: type83_patrol_shoot_down64(r); break;
     case 0x84: enemies_call_bp(Type84LurkUntilAligned, r); break;

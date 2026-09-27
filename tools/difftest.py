@@ -19,6 +19,9 @@ MUTANTS list of (file, old, new) edits to c/*.c must each make the suite fail.
     python tools/difftest.py                    all suites, default scale
     python tools/difftest.py movement 20        one suite, 20x the default case count
     python tools/difftest.py --mutants          every mutant must be detected
+
+Each PASS line also reports the deepest stack use seen in the suite on each side (bytes
+below the entry SP; the game's stack is STACK_BYTES, shared with interrupts).
 """
 from common import *
 from build import main_sources
@@ -63,10 +66,16 @@ class Side:
         self.by_address = sorted(((LOAD + seg) * 16 + off, name) for name, (seg, off) in self.m.symbols.items())
         self.keys = [a for a, _ in self.by_address]
         self.outside, self.undo = [], []
+        # Stack depth: the lowest stack word written (pushes and calls write below SP), as a
+        # state offset; the game's whole stack is StackArea..StackTop (STACK_BYTES).
+        stack_low, stack_high = base + self.m.offset('StackArea'), base + self.m.stack_top
+        self.low, self.depth = 0x10000, 0
         def write(u, access, address, size, value, _):
             if not (base <= address and address + size <= end):
                 self.outside.append((self.where(address), size, value & ((1 << 8 * size) - 1)))
                 self.undo.append((address, bytes(u.mem_read(address, size))))
+            elif stack_low <= address < stack_high and address - base < self.low:
+                self.low = address - base
         self.m.u.hook_add(UC_HOOK_MEM_WRITE, write)
 
     def where(self, address):
@@ -99,7 +108,10 @@ class Side:
             # A register value given as a label name is that image word on this side (e.g.
             # ES = 'LevelMapSegment': segment values differ between the links).
             self.entry = {r: self.m.peek(v) if isinstance(v, str) else v for r, v in case.regs.items()}
+            self.low = 0x10000
             regs = self.m.call(case.label, self.entry, sp=sp)
+            # bytes below the entry SP (the call's return address sits at sp - 2)
+            self.depth = max(0, sp - 2 - self.low)
             return regs, self.m.read(0, STATE_BYTES)
         finally:
             if not keep: self.rollback()
@@ -117,6 +129,7 @@ class Pair:
         # Static tables of code offsets differ between the two links; nothing else may.
         self.mask = bytes(1 if pa[i] != pb[i] else 0 for i in range(STATE_BYTES))
         self.stack_area = self.a.m.offset('StackArea')
+        self.max_depth = {'oracle': (0, ''), 'hybrid': (0, '')}   # deepest stack use seen, and where
         self.sym = self.a.m.offset
 
     def set_map(self, data=None):
@@ -151,6 +164,8 @@ class Pair:
         except AssertionError:
             self.a.rollback(); self.b.rollback(); raise
         where = f'{case.label} {case.name}'
+        for key, side in (('oracle', self.a), ('hybrid', self.b)):
+            if side.depth > self.max_depth[key][0]: self.max_depth[key] = (side.depth, where)
         if self.a.m.ports != self.b.m.ports:
             raise AssertionError(f'{where}: port traffic differs\n  oracle {self.a.m.ports[:6]}\n  hybrid {self.b.m.ports[:6]}')
         if self.a.outside != self.b.outside:
@@ -183,6 +198,7 @@ def run_suites(names=None, scale=1, seed=0x0F67C9B, pair=None, quiet=False):
         module = importlib.import_module(name)
         pair.set_map(getattr(module, 'MAP', None))
         rng = random.Random(seed); t = time.time(); n = 0
+        pair.max_depth = {'oracle': (0, ''), 'hybrid': (0, '')}
         cases = module.cases(rng, scale, pair) if hasattr(module, 'cases') else ()
         if getattr(module, 'FUZZ', ()):
             from fuzz import corpus_cases   # saved fuzz corpora replay as regression cases
@@ -190,7 +206,10 @@ def run_suites(names=None, scale=1, seed=0x0F67C9B, pair=None, quiet=False):
         for case in cases:
             if isinstance(case, list): pair.sequence(case); n += len(case)
             else: pair.compare(case); n += 1
-        if not quiet: print(f'PASS {name}: {n} cases in {time.time() - t:.1f} s', flush=True)
+        if not quiet:
+            (da, wa), (db, wb) = pair.max_depth['oracle'], pair.max_depth['hybrid']
+            print(f'PASS {name}: {n} cases in {time.time() - t:.1f} s; stack below entry SP: '
+                  f'oracle {da}, hybrid {db} bytes ({wb})', flush=True)
         total += n
     return total
 

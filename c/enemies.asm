@@ -13,7 +13,6 @@ extrn SPAWN_AIMED_SHOT:near
 extrn SPAWN_THROTTLED_CHILD:near
 extrn SPAWN_SHOT_DOWN:near
 extrn TRY_TERRAIN_STEP:near
-extrn SmallRecordHitsPlayer:near
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
@@ -101,14 +100,6 @@ TryTerrainStep:
     call TRY_TERRAIN_STEP
     pop si
     cmp ax, 0
-    ret
-
-; C -> SmallRecordHitsPlayer (pods region, ASM) through CALL_MAIN_BP: AX = FFFFh when it
-; returns CF (hit), else 0.
-public EnemiesSmallRecordHitsPlayer
-EnemiesSmallRecordHitsPlayer:
-    call SmallRecordHitsPlayer
-    sbb ax, ax
     ret
 
 MAIN ends

@@ -141,6 +141,12 @@ the map segment in ES get ES = 'LevelMapSegment' (a register given as a label na
 image word on each side). Limits of the cases: graphics files are not loaded (allocated
 buffers hold a fixed pattern) and no interrupt runs inside a case.
 
+Stack: each PASS line reports the deepest stack use seen in the suite on each side (bytes
+below the entry SP, from the lowest StackArea word written). The C island uses several
+times the oracle's depth (Watcom frames, far trampolines, bridge pushes); the game's whole
+stack is STACK_BYTES (200h), shared with the interrupt handlers, so watch the hybrid figure
+as regions grow.
+
 ## Growing the C region
 
 Move coherent regions, not single routines: the goal is a C island with a small, stable

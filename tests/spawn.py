@@ -253,9 +253,10 @@ def cases(rng, scale, pair):
         yield scroll_sequence(rng, pair, i)
 
 def scroll_sequence(rng, pair, i):
-    """Map rows entering forward (EnterNextMapRowForward: row spawns, script events, the
-    clock) with record updates between them: leaders and map enemies run their handlers,
-    which call the spawn routines back."""
+    """Map rows entering forward (row spawns, script events, the clock) with record updates
+    between them: leaders and map enemies run their handlers, which call the spawn routines
+    back. EnterNextMapRowForward is C now (c/frame.c): each row enters through
+    ScrollForwardAndCheckLevelEnd with a row boundary due and the scroll not held."""
     w = World(pair, rng)
     level = rng.randrange(6)
     row_world(w, level, synthetic=rng.randrange(2) == 0, pos=ROW * rng.randrange(20, 270))
@@ -264,11 +265,12 @@ def scroll_sequence(rng, pair, i):
     for pool, count in (('PoolA', K.POOL_A_COUNT), ('PoolB', K.POOL_B_COUNT)):
         for k in range(count): w.record(pool, k).free(stale=False)
     w.word('ScrollingBackward', 0)
-    steps = [Case('EnterNextMapRowForward', {'BP': pair.sym('PrimaryRecord')}, w.writes(), LOOP, name=f'seq {i} row 0')]
+    row = lambda: [(pair.sym(n), b'\0\0') for n in ('ScrollSubRow', 'LevelEndPhase', 'EncounterLiveCount', 'EncounterEndDelay')]
+    steps = [Case('ScrollForwardAndCheckLevelEnd', {'BP': pair.sym('PrimaryRecord')}, w.writes() + row(), LOOP, name=f'seq {i} row 0')]
     for f in range(1, rng.choice((6, 10, 16))):
         steps.append(Case('UpdateAllRecords', {}, (), LOOP, name=f'seq {i} update {f}'))
         steps.append(Case('TickFrameTimers', {}, (), LOOP, name=f'seq {i} tick {f}'))
-        steps.append(Case('EnterNextMapRowForward', {'BP': pair.sym('PrimaryRecord')}, (), LOOP, name=f'seq {i} row {f}'))
+        steps.append(Case('ScrollForwardAndCheckLevelEnd', {'BP': pair.sym('PrimaryRecord')}, row(), LOOP, name=f'seq {i} row {f}'))
     return steps
 
 def check(cond, what):

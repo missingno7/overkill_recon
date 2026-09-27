@@ -3,19 +3,14 @@
 ; the C function that owns it (c/game.h convention: SI, DI in; AX out; all else preserved).
 ; Only labels the remaining ASM still reaches need a stub.
 locals
-extrn SMART_BOMB_RECORD:near
 extrn DESTROY_RECORD:near
 extrn RELEASE_ENCOUNTER_MEMBER:near
 extrn INIT_PICKUP_RECORD:near
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
-public SmartBombRecord, DestroyRecord, ReleaseEncounterMember
+public DestroyRecord, ReleaseEncounterMember
 ; BP = record; clobbers AX (the oracle clobbers more; its callers keep only BP).
-SmartBombRecord:
-    push si
-    mov si, bp
-    call SMART_BOMB_RECORD
     pop si
     ret
 DestroyRecord:

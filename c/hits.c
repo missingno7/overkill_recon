@@ -15,18 +15,13 @@
 */
 #include "hits.h"
 #include "enemies.h"
+#include "pods.h"
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
 extern void FindFreeRecordPoolA(void);   /* BX = free record (cursor saved) or FFFFh; clobbers CX */
-extern void AddScoreBcd(void);           /* BX = packed BCD points; preserves every register */
-extern void RemoveRecordAtBX(void);      /* RemoveRecord for BX (may re-enter this region) */
 
 Record *call_main_find_free(main_routine finder);
 #pragma aux call_main_find_free "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx cx]
-void call_main_add_score(main_routine target, word points);
-#pragma aux call_main_add_score "FarCallMainNearViaAX" far parm [ax] [bx] modify exact [ax]
-void call_main_remove_at_bx(main_routine target, Record *r);
-#pragma aux call_main_remove_at_bx "FarCallMainNearViaAX" far parm [ax] [bx] modify exact [ax bx cx dx si di es]
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -139,7 +134,7 @@ void destroy_record(Record *r)
     byte *group;
 
     if (r->type == 0x21 && LevelIndex != 4) return;
-    call_main_add_score(AddScoreBcd, r->size_class == 1 ? 0x30 : 0x60);
+    add_score_bcd(r->size_class == 1 ? 0x30 : 0x60);
     clamp_record_x(r);
     if (r->slot_index != 0xFFFF) {
         group = GroupTable + (r->slot_index << 1);
@@ -216,7 +211,7 @@ void shot_hits_record(Record *r, Record *shot)
     switch (shot->type) {
     case 7: case 8: case 0x0C:
         if (SegBossActive == 1) {
-            call_main_remove_at_bx(RemoveRecordAtBX, shot);
+            remove_record(shot);
             damage_two(r);
             return;
         }
@@ -232,7 +227,7 @@ void shot_hits_record(Record *r, Record *shot)
         else damage_one(r);
         return;
     case 6: case 5:
-        call_main_remove_at_bx(RemoveRecordAtBX, shot);
+        remove_record(shot);
         destroy_unless_seg_boss(r);
         return;
     }
