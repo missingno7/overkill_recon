@@ -72,7 +72,7 @@ def cases(rng, scale, pair):
         r = enemy(w, kind=rng.choice((K.KIND_ENEMY,) * 6 + (K.KIND_SCENERY, K.KIND_PICKUP, K.KIND_TYPED)))
         shots_near(w, r, rng.choice((1, 2, 4, 12, 34)))
         if i % 16 == 0: r.set(status=0)
-        yield Case('PlayerShotsHitRecord', {'BP': r.at}, w.writes(), LOOP, name=f'#{i}')
+        yield Case('FinishRecordUpdate', {'BP': r.at}, w.writes(), LOOP, name=f'#{i}')
     for i in range(n):
         w = world(rng, pair)
         r = enemy(w)
@@ -99,7 +99,7 @@ def cases(rng, scale, pair):
         w = world(rng, pair)
         r = w.record('PoolA', rng.randrange(K.POOL_A_COUNT)).randomize()
         r.set(x=rng.choice((0, 1, 0xBF, 0xC0, 0xC1, 0x7FFF, 0x8000, 0xFFFF, rng.randrange(0x10000))))
-        yield Case('ClampRecordX', {'BP': r.at, 'AX': rng.randrange(0x10000)}, w.writes(), ALL_REGS, name=f'#{i}')
+        yield Case('FinishRecordUpdate', {'BP': r.at, 'AX': rng.randrange(0x10000)}, w.writes(), LOOP, name=f'clamp #{i}')
     for i in range(n):
         w = world(rng, pair)
         at = w.record(rng.choice(('PoolA', 'PoolB')), rng.randrange(K.POOL_B_COUNT)).randomize().at
@@ -117,8 +117,7 @@ def cases(rng, scale, pair):
         r = enemy(w, type=t, y=rng.choice((0x9E, 0x9F, 0xA0, 0xFFFF, rng.randrange(0x60, 0xB0))))
         if rng.randrange(3) == 0: w.fill('PoolB', rng.choice((30, 33, 34)))
         w.word('ScrollDeltaY', rng.choice((0, 1, 2)))
-        handler = 'Type36FallThenBurst' if t == 0x36 else 'Type22DescendThenBurst'
-        yield Case(handler, {'BP': r.at}, w.writes(), LOOP, name=f'#{i}')
+        yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name=f'#{i}')
     # The shared tail and the contact check: ClampRecordX, CheckRecordHitsPlayer (DestroyRecord
     # on contact) and PlayerShotsHitRecord after a handler.
     for i in range(n):
@@ -168,7 +167,7 @@ def scan_slots(rng, pair):
                     w = world(rng, pair, seg_boss=False)
                     # tall rows always with a type that has them (78h/79h get the Y-miss row 32)
                     r = slot_hit(w, k, size, dx, dy, type=0x14 if dy in (16, 24) else None)
-                    yield Case('PlayerShotsHitRecord', {'BP': r.at}, w.writes(), LOOP, name=f'slot {k} size {size} dx {dx} dy {dy}')
+                    yield Case('FinishRecordUpdate', {'BP': r.at}, w.writes(), LOOP, name=f'slot {k} size {size} dx {dx} dy {dy}')
 # Pool A types for the frame sequences: the burst handlers, counted members, a leader-less
 # formation diver and chasers (handlers that are safe on randomised fields).
 SEQUENCE_TYPES = (0x22, 0x35, 0x36, 0x14, 0x1D, 0x1E, 0x2E, 0x48, 0x81, 0x93, 0x21, 0x30)
@@ -220,14 +219,14 @@ def quirks(pair):
     # later slot is never tested, the record survives untouched.
     missile = rec(pair, status=1, y=0x50, x=0x40, kind=K.KIND_TYPED, type=0x0A, player_shot=1, target=a1)
     pierce = rec(pair, status=1, y=0x50, x=0x40, kind=K.KIND_TYPED, type=7, player_shot=1)
-    yield Case('PlayerShotsHitRecord', {'BP': a0}, common + [(a0, target), (b0, missile), (b1, pierce)], LOOP,
+    yield Case('FinishRecordUpdate', {'BP': a0}, common + [(a0, target), (b0, missile), (b1, pierce)], LOOP,
                name='missile aimed elsewhere ends the scan',
                expect=lambda m, r: check(m.word(a0 + 0x18) == 0x14 and m.word(a0 + 0x20) == 3 and m.word(b1) == 1,
                                          'first overlap ends the scan'))
 
     # Type 2 is used up by clearing its status only: RemoveRecord is not called.
     t2 = rec(pair, status=1, y=0x50, x=0x40, kind=K.KIND_TYPED, type=2, player_shot=1, sprite=0x33)
-    yield Case('PlayerShotsHitRecord', {'BP': a0}, common + [(a0, target), (b0, t2)], LOOP,
+    yield Case('FinishRecordUpdate', {'BP': a0}, common + [(a0, target), (b0, t2)], LOOP,
                name='type 2 shot: DamageTwo, status cleared',
                expect=lambda m, r: check(m.word(b0) == 0 and m.word(a0 + 0x20) == 1 and m.word(a0 + 0x24) == 5,
                                          'type 2 hit takes 2 HP and flashes'))
@@ -235,7 +234,7 @@ def quirks(pair):
     # A type 21h left at 0 HP outside level 4 wraps to FFFFh on its next hit and flashes.
     survivor = rec(pair, status=1, y=0x50, x=0x40, kind=K.KIND_ENEMY, type=0x21, size_class=2, hit_points=0, slot_index=0xFFFF)
     t2b = rec(pair, status=1, y=0x50, x=0x40, kind=K.KIND_TYPED, type=2, player_shot=1, sprite=0x20)
-    yield Case('PlayerShotsHitRecord', {'BP': a0}, common + [(a0, survivor), (b0, t2b)], LOOP,
+    yield Case('FinishRecordUpdate', {'BP': a0}, common + [(a0, survivor), (b0, t2b)], LOOP,
                name='type 21h at 0 HP wraps',
                expect=lambda m, r: check(m.word(a0 + 0x20) == 0xFFFF and m.word(a0 + 0x18) == 0x21, 'HP wrap to FFFFh'))
 
@@ -264,7 +263,7 @@ MUTANTS = [
     ('hits.c', '((shot->x & 7) != 0 && dx == 0xFFF8)', '(dx == 0xFFF8)'),                          # hit box
     ('hits.c', 'r->type != 0x78 && r->type != 0x79', 'r->type != 0x78'),                           # boss rows
     ('hits.c', 'group[GROUP_LIVE] != 0 && --group[GROUP_LIVE] == 0', '--group[GROUP_LIVE] == 0'),  # wrap of a 0 group
-    ('hits.c', 'call_main_find_free(FindFreeRecordPoolA)', 'call_main_find_free(FindFreeRecordPoolB)'),  # wrong pool for drops
+    ('hits.c', 'call_main_find_free(FindFreeRecordPoolA)', 'find_free_record_pool_b()'),  # wrong pool for drops
     ('hits.c', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        break;', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        return;'),
     ('hits.c', 'if (x > PLAYFIELD_MAX_X) x', 'if ((sword)x > PLAYFIELD_MAX_X) x'),                  # unsigned drop X
     ('hits.asm', 'InitPickupRecord:\r\n    push ax\r\n    mov si, bx\r\n    call INIT_PICKUP_RECORD\r\n    mov si, ax\r\n',
@@ -340,16 +339,19 @@ def _smart_seed(w):
 
 def world_into(w): return world(w.rng, w.pair, w=w)
 
-def in_domain(seed):
+def in_domain(seed, types=None):
     """Seed builder whose every record (also stale free ones, which the fuzzer may revive or
-    enter) meets the oracle preconditions in DOMAINS."""
+    enter) meets the oracle preconditions in DOMAINS; with `types`, every REC_TYPE is one of
+    them (the entry goes through RunTypeHandler, and the fuzzer copies whole records onto it)."""
     def build(w):
         regs = seed(w)
         for r in w._records.values():
             if r.get('size_class') > 2: r.set(size_class=w.rng.randrange(3))
             if r.get('slot_index') != 0xFFFF: r.set(slot_index=r.get('slot_index') & 15)
+            if types and r.get('type') not in types: r.set(type=w.rng.choice(types))
         return regs
     return build
+BURSTERS = (0x36, 0x22, 0x35)
 
 def _pool_a_slots(pair): return [pair.sym('PoolA') + RECORD * i for i in range(K.POOL_A_COUNT)]
 
@@ -360,15 +362,15 @@ DOMAINS = {'size_class': range(3), 'slot_index': (0xFFFF,) + tuple(range(16)),
 GLOBALS = ('SegBossActive', 'DifficultySetting', 'LevelIndex', 'SfxEnabled', 'ScrollDeltaY', 'EncounterLiveCount',
            'SwayDirX') + SEG_BOSS_PARTS
 FUZZ = [
-    Target('shothit', 'PlayerShotsHitRecord', in_domain(_shothit_seed), REGION, types=ENEMY_TYPES + SHOT_TYPES,
+    Target('shothit', 'FinishRecordUpdate', in_domain(_shothit_seed), REGION, types=ENEMY_TYPES + SHOT_TYPES,
            globals=GLOBALS, watch=('EncounterLiveCount', 'SegBossActive'), domains=DOMAINS),
-    Target('shotslot', 'PlayerShotsHitRecord', in_domain(_slot_seed), REGION, types=ENEMY_TYPES + SHOT_TYPES,
+    Target('shotslot', 'FinishRecordUpdate', in_domain(_slot_seed), REGION, types=ENEMY_TYPES + SHOT_TYPES,
            globals=GLOBALS, domains=DOMAINS),
     Target('destroy', 'DestroyRecord', in_domain(_destroy_seed), REGION, KEEPS, types=ENEMY_TYPES,
            globals=GLOBALS, watch=('EncounterLiveCount', 'SegBossActive', 'LeaderScriptCursor'), domains=DOMAINS),
-    Target('burst', 'Type36FallThenBurst', in_domain(_burst_seed), REGION, types=(0x36, 0x22, 0x35) + ENEMY_TYPES,
-           globals=GLOBALS, domains=DOMAINS),
+    Target('burst', 'RunTypeHandler', in_domain(_burst_seed, BURSTERS), REGION, types=BURSTERS,
+           globals=GLOBALS, domains=dict(DOMAINS, type=BURSTERS)),
     Target('remove', 'RemoveRecord', in_domain(_remove_seed), REGION, types=ENEMY_TYPES, globals=GLOBALS, domains=DOMAINS),
-    Target('descend', 'Type22DescendThenBurst', in_domain(_descend_seed), REGION, types=(0x22, 0x35), globals=GLOBALS,
-           domains=DOMAINS),    Target('smartbomb', 'SmartBombAll', in_domain(_smart_seed), REGION, types=ENEMY_TYPES, globals=GLOBALS, domains=DOMAINS),
+    Target('descend', 'RunTypeHandler', in_domain(_descend_seed, (0x22, 0x35)), REGION, types=(0x22, 0x35), globals=GLOBALS,
+           domains=dict(DOMAINS, type=(0x22, 0x35))),    Target('smartbomb', 'SmartBombAll', in_domain(_smart_seed), REGION, types=ENEMY_TYPES, globals=GLOBALS, domains=DOMAINS),
 ]

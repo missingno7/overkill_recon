@@ -40,6 +40,7 @@
    OWNS: AllocGroupSlot StartLeaderScript ResetMarchState
 */
 #include "game.h"
+#include "enemies.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -53,9 +54,6 @@ extern word __far Type21PathCursor;    /* far segment: next Type21Path waypoint 
 void steer_toward_target(Record *r);           /* c/movement.c */
 
 /* Remaining ASM reached through the oracle's trampoline (see c/game.h). */
-extern void NextRandomWord(void);              /* BX out */
-word call_main_bx(main_routine target);
-#pragma aux call_main_bx "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx]
 /* SpawnCellFuelPickup (level 0 map byte F9h, not this region): SI = the map cell, BP = the
    spawn origin; returns SI: unchanged when pool A is full, else DropKind + 46h (the scratch
    use of SI in its InitPickupRecord). */
@@ -412,7 +410,7 @@ void spawn_cell_jitter_shooter68(Record *here, word off)
 {
     Record *r;
 
-    if (LevelIndex == 5 && (call_main_bx(NextRandomWord) & 0x0F) == 0x0F)
+    if (LevelIndex == 5 && (next_random_word() & 0x0F) == 0x0F)
         r = spawn_map_group_enemy(here, off);
     else
         r = spawn_map_enemy(here, off);

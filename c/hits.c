@@ -14,10 +14,10 @@
    OWNS: ReleaseEncounterMember ExplodeRecordAtBX
 */
 #include "hits.h"
+#include "enemies.h"
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
 extern void FindFreeRecordPoolA(void);   /* BX = free record (cursor saved) or FFFFh; clobbers CX */
-extern void FindFreeRecordPoolB(void);
 extern void AddScoreBcd(void);           /* BX = packed BCD points; preserves every register */
 extern void RemoveRecordAtBX(void);      /* RemoveRecord for BX (may re-enter this region) */
 
@@ -297,7 +297,7 @@ void spawn_eight_way_burst(Record *r)
     BurstOriginX = r->x + offset;
     BurstOriginY = r->y + offset;
     for (n = 8; n != 0; n--) {
-        shot = call_main_find_free(FindFreeRecordPoolB);
+        shot = find_free_record_pool_b();
         if (shot == NO_RECORD) return;
         shot->direction = n - 1;
         shot->sprite = n - 1 + 8;

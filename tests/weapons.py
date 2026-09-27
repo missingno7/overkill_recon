@@ -222,7 +222,7 @@ def cases(rng, scale, pair):
         m = w.record('PoolB', rng.randrange(34)).live(kind=K.KIND_TYPED, type=0x0A, size=0, player_shot=1, field_1c=0)
         p = w.record('PrimaryRecord', 0)
         m.set(x=(p.get('x') + 0x0C) & ~3, y=(p.get('y') + 0x0A) & ~3)   # at the player: relock
-        yield Case('Type0AHomingMissile', {'BP': m.at}, w.writes(), LOOP, name=f'relock #{i}')
+        yield Case('RunTypeHandler', {'BP': m.at}, w.writes(), LOOP, name=f'relock #{i}')
     # Sequences: fire every frame with the beam and the whole record update in between.
     for i in range(20 * scale):
         w = fire_world(rng, pair, frames=True)

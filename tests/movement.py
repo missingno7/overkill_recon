@@ -39,12 +39,7 @@ def put(data, off, value): struct.pack_into('<H', data, off, value & 0xFFFF)
 def cases(rng, scale, pair):
     s = pair.sym
     n = 6000 * scale
-    # MoveInDirection3/8 have no ASM caller left (c/shots.c calls move_in_direction).
-    moves = ('MoveInDirection2', 'MoveInDirection4')
-    for i in range(n):
-        at, rec = record(rng, pair)
-        put(rec, 2, word(rng)); put(rec, 4, word(rng)); put(rec, 6, i % 8)
-        yield Case(moves[i // 8 % 2], regs(rng, BP=at), [(at, rec)], keep('BX'), name=f'#{i}')
+    # MoveInDirectionN and SetDeltaToward have no ASM caller left (c/shots.c, c/enemies.c).
     for i in range(n):
         at, rec = record(rng, pair)
         tx, ty = word(rng), word(rng)
@@ -60,13 +55,6 @@ def cases(rng, scale, pair):
         put(rec, 4, word(rng, sx)); put(rec, 2, word(rng, sy))
         writes = [(at, rec), (s('SteerSpeed'), struct.pack('<H', i % 4))]
         yield Case('SteerToSaved', regs(rng, BP=at), writes, keep('AX', 'BX'), flags=('ZF',), name=f'#{i}')
-    for i in range(n):
-        at, rec = record(rng, pair)
-        tat, trec = record(rng, pair)
-        put(trec, 0x14, rng.choice((0, 1, 2, 1, word(rng))))
-        writes = [(tat, trec), (at, rec)] if rng.randrange(2) else [(at, rec), (tat, trec)]
-        if rng.randrange(8) == 0: tat = at   # self as target
-        yield Case('SetDeltaToward', regs(rng, BP=at, BX=tat), writes, keep('AX', 'CX', 'DX'), name=f'#{i}')
     for i in range(n):
         at, rec = record(rng, pair)
         pat, prim = s('PrimaryRecord'), bytearray(rng.randrange(256) for _ in range(RECORD))
@@ -93,7 +81,6 @@ MUTANTS = [
     ('movement.c', '(PRIMARY->x + 9)', '(PRIMARY->x + 8)'),
     ('movement.c', 'if ((sword)dx < 0)', 'if ((sword)dx <= 0)'),
     ('movement.c', 'case DIR_DOWN_LEFT:  r->y += n; r->x -= n;', 'case DIR_DOWN_LEFT:  r->y += n; r->x += n;'),
-    ('movement.asm', 'MoveInDirectionN:\r\n    push ax\r\n', 'MoveInDirectionN:\r\n'),
 ]
 
 # Coverage-guided differential fuzzing (python tools/fuzz.py movement N): the movement
@@ -144,12 +131,15 @@ DOMAINS = {'SteerSpeed': range(4), 'direction': range(8)}
 FUZZ = [
     Target('steer', 'SteerTowardTarget', _steer_seed, REGION, NOT_AX_BX, globals=('SteerTargetX', 'SteerTargetY', 'SteerSpeed'), domains=DOMAINS),
     Target('step', 'StepAlongDelta', _step_seed, REGION, NOT_AX_BX, globals=('ChaseStepPixels',), domains=DOMAINS),
-    Target('missile', 'Type0AHomingMissile', _missile_seed, REGION, types=(0x14, 0x12, 0x26, 1, 0x21),
-           globals=('MissilesLive', 'FrameCount8', 'DemoActive', 'SfxEnabled', 'ScrollDeltaY'), watch=('MissilesLive',), domains=DOMAINS),
+    Target('missile', 'RunTypeHandler', _missile_seed, REGION, types=(0x14, 0x12, 0x26, 1, 0x21),
+           globals=('MissilesLive', 'FrameCount8', 'DemoActive', 'SfxEnabled', 'ScrollDeltaY'), watch=('MissilesLive',),
+           # entered through RunTypeHandler: REC_TYPE only takes types whose handlers are safe here
+           domains=dict(DOMAINS, type=(0x0A, 0x14, 0x26, 0x21))),
     Target('aimshot', 'SpawnAimedShot', _aim_seed, REGION, ('SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS'), outputs=('BX',),
            globals=('SegBossActive', 'SfxEnabled', 'PoolBCursor'), domains=DOMAINS),
-    Target('slotbob', 'Type1DSlotBobThenChase', _slot_seed, REGION, types=(0x1D,),
-           globals=('EncounterTicks', 'EncounterLiveCount', 'SteerSpeed', 'FrameCount8', 'RecordTickCounter'), domains=DOMAINS),
+    Target('slotbob', 'RunTypeHandler', _slot_seed, REGION, types=(0x1D,),
+           globals=('EncounterTicks', 'EncounterLiveCount', 'SteerSpeed', 'FrameCount8', 'RecordTickCounter'),
+           domains=dict(DOMAINS, type=(0x1D,))),
     Target('pathfollow', 'Type12WaypointPathFollower', _path_seed, REGION,
            globals=('LevelIndex', 'DemoActive', 'MapScrollPos'),
            # REC_PATH only ever points at a waypoint of the Type41..Type51 path tables.

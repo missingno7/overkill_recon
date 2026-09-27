@@ -3,36 +3,14 @@
 ; (c/game.h convention: SI, DI in; AX out; all else preserved). Only labels the remaining
 ; ASM still reaches need a stub; calls between C functions do not pass through here.
 locals
-extrn MOVE_IN_DIRECTION:near
 extrn STEER_TOWARD_TARGET:near
 extrn STEER_TO_SAVED:near
-extrn SET_DELTA_TOWARD:near
 extrn AIM_AT_PLAYER:near
 extrn STEP_ALONG_DELTA:near
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
 ; c/movement.c ----------------------------------------------------------------------
-
-public MoveInDirection2, MoveInDirection4
-; BP = record: moves N px along REC_DIRECTION; preserves AX like the oracle (which clobbers
-; only BX; this keeps BX too). MoveInDirection3/8 have no ASM caller left (c/shots.c).
-MoveInDirection2:
-    push di
-    mov di, 2
-    jmp short MoveInDirectionN
-MoveInDirection4:
-    push di
-    mov di, 4
-MoveInDirectionN:
-    push ax
-    push si
-    mov si, bp
-    call MOVE_IN_DIRECTION
-    pop si
-    pop ax
-    pop di
-    ret
 
 public SteerTowardTarget, StepAlongDelta, SteerToSaved
 ; BP = record; clobbers AX (the oracle: AX, BX).
@@ -57,17 +35,7 @@ SteerToSaved:
     cmp ax, 0
     ret
 
-public SetDeltaToward, AimAtPlayer
-; BP = self, BX = target; clobbers AX (the oracle: AX, CX, DX).
-SetDeltaToward:
-    push si
-    push di
-    mov si, bp
-    mov di, bx
-    call SET_DELTA_TOWARD
-    pop di
-    pop si
-    ret
+public AimAtPlayer
 ; BX = record, kept; clobbers AX (the oracle: AX, CX).
 AimAtPlayer:
     push si

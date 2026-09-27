@@ -22,6 +22,7 @@
    OWNS: ClimbWalkerBlocked ClimbWalkerStep ProbeOverlapsWalker
 */
 #include "game.h"
+#include "enemies.h"
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -36,7 +37,6 @@ void step_along_delta(Record *r);
    second RemoveRecord call of shot_bounds_check). */
 extern void RedrawEnergyGauge(void);     /* platform: the energy gauge (keeps BP) */
 extern void RemoveRecord(void);          /* BP = record */
-extern void TryTerrainStep(void);        /* BP = record */
 extern void FindMissileTarget(void);     /* BX out, clobbers CX */
 void call_main(main_routine target);
 #pragma aux call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
@@ -507,7 +507,7 @@ word climb_walker_step(Record *w)
             cell -= MAP_ROW_BYTES;
         }
         if (map_attribute(cell)) {
-            call_main_bp(TryTerrainStep, w);
+            try_terrain_step(w);
             return TerrainBlocked;
         }
     }

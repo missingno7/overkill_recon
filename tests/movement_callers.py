@@ -1,8 +1,7 @@
-"""Movement cluster through its real ASM callers: the unchanged record handlers enter the C
-code through every kind of edge (near call, tail jump with a pushed return, fall-through,
-far trampoline, ZF result, BX-preserving spawner) and continue into the unchanged ASM
-tails (collisions, bounds, removal). Both sides run the same handler bytes except the
-cluster, so any difference is the cluster's."""
+"""Movement cluster through its callers: the record handlers (through RunTypeHandler; many
+are C now, c/enemies.c and c/shots.c) and the ASM ones that still enter the C code through
+a near call, far trampoline, ZF result or BX-preserving spawner, continuing into the
+shared tails (collisions, bounds, removal)."""
 from difftest import Case, ALL_REGS
 from movement import word, regs, put, EDGE
 import struct
@@ -51,13 +50,13 @@ def cases(rng, scale, pair):
         at = slot(pair, 'PoolB', rng.randrange(34))
         shot = live(rng, 2, rng.choice((2, 3)), 0)
         put(shot, 0x1E, rng.randrange(2)); put(shot, 0x1C, rng.choice((1, 2, 5, 30, 0xFFFF)))
-        yield Case('Type02TimedStraightShot', regs(rng, BP=at), w + [(at, shot)], LOOP, name=f'fallthrough #{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, shot)], LOOP, name=f'fallthrough #{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolB', rng.randrange(34))
         shot = live(rng, 2, 0x0B, 0)
         put(shot, 0x1E, 0); put(shot, 0x2A, word(rng)); put(shot, 0x2C, word(rng)); put(shot, 0x2E, word(rng))
-        yield Case('Type0BAimedEnemyShot', regs(rng, BP=at), w + [(at, shot)], LOOP, name=f'#{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, shot)], LOOP, name=f'#{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolB', rng.randrange(34))
@@ -67,14 +66,14 @@ def cases(rng, scale, pair):
         missile = live(rng, 2, 0x0A, 0)
         put(missile, 0x1E, 1); put(missile, 0x1C, rng.randrange(2)); put(missile, 0x30, tat)
         put(missile, 0x2E, word(rng))
-        yield Case('Type0AHomingMissile', regs(rng, BP=at), w + [(tat, target), (at, missile)], LOOP, name=f'#{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(tat, target), (at, missile)], LOOP, name=f'#{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolA', rng.randrange(35))
         rec = live(rng, 4, 0x1D)
         put(rec, 0x32, rng.randrange(0, 0xC1) & ~1); put(rec, 0x34, rng.randrange(0x10, 0x90) & ~1)
         if rng.randrange(3) == 0: rec[2:6] = rec[0x34:0x36] + rec[0x32:0x34]   # already in the slot
-        yield Case('Type1DSlotBobThenChase', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'ZF #{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'ZF #{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolA', rng.randrange(35))
@@ -100,4 +99,4 @@ def cases(rng, scale, pair):
         rec = live(rng, 4, rng.choice((0x1E, 0x2E, 0x14)))
         put(rec, 0x32, rng.randrange(0, 0xC1)); put(rec, 0x34, rng.randrange(0x10, 0xC0))
         w.append((s('SteerSpeed'), struct.pack('<H', rng.randrange(4))))
-        yield Case('SteerToSavedTail', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'#{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'#{i}')

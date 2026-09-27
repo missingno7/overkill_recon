@@ -5,17 +5,12 @@
 ; pass through here.
 locals
 extrn FIND_FREE_RECORD_POOL_A:near
-extrn SPAWN_ENEMY_HERE:near
-extrn SPAWN_ENEMY_HERE_QUIET:near
 extrn SPAWN_MAP_ENEMY:near
 extrn LEVEL_MAP_CELL:near
 extrn DRAW_INCOMING_MAP_ROW:near
-extrn TYPE13_FORMATION_LEADER:near
-extrn TYPE21_LEADER_PATH:near
 extrn DEMO_STEP_SPAWN_PATH_ENEMY51:near
 extrn DEMO_STEP_LAUNCH_FRONT_POD:near
 extrn DrawMapRowBlocks:near
-extrn FinishRecordUpdate:near
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
@@ -27,22 +22,6 @@ FindFreeRecordPoolA:
     call FIND_FREE_RECORD_POOL_A
     mov bx, ax
     pop ax
-    ret
-
-public SpawnEnemyHere, SpawnEnemyHereQuiet
-; BP = spawn origin: BX = the new type 14h enemy or FFFFh; clobbers AX (the oracle: AX, CX).
-SpawnEnemyHere:
-    push si
-    mov si, bp
-    call SPAWN_ENEMY_HERE
-    jmp short SpawnEnemyHereDone
-SpawnEnemyHereQuiet:
-    push si
-    mov si, bp
-    call SPAWN_ENEMY_HERE_QUIET
-SpawnEnemyHereDone:
-    mov bx, ax
-    pop si
     ret
 
 public SpawnMapEnemy
@@ -101,24 +80,6 @@ DrawIncomingMapRow:
     pop si
     mov bx, ax
     jmp DrawMapRowBlocks
-
-public Type13FormationLeader
-; Record handler (BP = leader): the far body in C, then the shared tail.
-Type13FormationLeader:
-    push si
-    mov si, bp
-    call TYPE13_FORMATION_LEADER
-    pop si
-    jmp FinishRecordUpdate
-
-public Type21LeaderPathBody
-; Far body of Type21LeaderPath (BP = leader), entered with call far.
-Type21LeaderPathBody:
-    push si
-    mov si, bp
-    call TYPE21_LEADER_PATH
-    pop si
-    retf
 
 public DemoStepSpawnPathEnemy51, DemoStepLaunchFrontPod
 ; DemoStepActions entries. The path enemy spawns at BP; the front pod step leaves BP = the

@@ -20,6 +20,7 @@
    OWNS: DemoStepNextWeaponMode DemoStepEnableSideShots DemoStepGiveMissile DemoRiseShipToY60
 */
 #include "game.h"
+#include "enemies.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -34,7 +35,6 @@
 #define SHOT_FRONT_POD 0x0C
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
-extern void FindFreeRecordPoolB(void);
 extern void RemoveRecordAtBX(void);
 extern void DrawUpgradeSlots(void);
 extern void StoreApplyHistoryAndConditionalPlacement(void);
@@ -46,11 +46,6 @@ extern void DemoStepLaunchTrailingPodFar(void);
 extern void DemoStepNextShipForm(void);
 extern void DemoStepSpawnPathEnemy51(void);
 extern void DrawDemoCaption(void);          /* platform thunk in c/weapons.asm */
-
-/* FindFreeRecordPoolB: BX = free pool B record or FFFFh; clobbers CX. */
-Record *find_free_pool_b(main_routine target);
-#pragma aux find_free_pool_b = "call far ptr FarCallMainNearViaAX" \
-    parm [ax] value [bx] modify exact [ax bx cx]
 
 /* RemoveRecordAtBX: BX = victim, kept; BP kept. *si is the oracle's SI on the way in
    and out: RemoveRecord changes it for some victims (see alloc_pool_b_evicting). */
@@ -82,7 +77,7 @@ void handle_fire_button(Record *ship);
    next allocation of the salvo, but the effect is kept. */
 Record *alloc_pool_b_evicting(Record **si)
 {
-    Record *r = find_free_pool_b(FindFreeRecordPoolB);
+    Record *r = find_free_record_pool_b();
     word n;
 
     if (r != NO_RECORD) return r;

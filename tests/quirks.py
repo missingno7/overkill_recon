@@ -33,7 +33,7 @@ def cases(rng, scale, pair):
     # SpawnThrottledChild leaves BX unchanged when throttled; Type92SpawnShot then stores
     # 44h through BX = player Y & ~3 = 4Ch, i.e. the word at DS:54h: TimerTickPhase = 44h
     # and SoundModuleLoaded = 0 (module music stops for the session).
-    yield Case('Type92FireWhenPlayerOnRow', {'BP': a0},
+    yield Case('RunTypeHandler', {'BP': a0},
                [(s('PrimaryRecord'), player), (s('DifficultySetting'), W(0)), (s('ChildSpawnThrottle'), b'\0'),
                 (s('SoundModuleLoaded'), b'\1'), (s('TimerTickPhase'), b'\1'),
                 (a0, rec(status=1, y=0x38, x=0x40, kind=4, type=0x92, size_class=1, slot_index=0xFFFF))],
@@ -50,7 +50,7 @@ def cases(rng, scale, pair):
                expect=lambda m, r: check(m.word(0xC9) == 0x44, 'Type8F stale-BX write at DS:C9h'))
 
     # SfxRequest is one mailbox: Type30's own request (0Eh) replaces its child's (0Bh).
-    yield Case('Type30AnimatedShooter', {'BP': a0},
+    yield Case('RunTypeHandler', {'BP': a0},
                [(s('PrimaryRecord'), player), (s('DifficultySetting'), W(2)), (s('SfxEnabled'), b'\1'),
                 (s('LevelIndex'), W(1)), (s('FrameCount16'), W(15)), (s('SfxRequest'), b'\0'),
                 (a0, rec(status=1, y=0x40, x=0x80, kind=4, type=0x30, size_class=1, slot_index=0xFFFF))],
@@ -58,10 +58,10 @@ def cases(rng, scale, pair):
                expect=lambda m, r: check(m.read(s('SfxRequest'), 1) == b'\x0e', 'SfxRequest 0Eh wins'))
 
     # Shot bounds are unsigned: a shot at X = FFF0h (just left of the playfield) is removed.
-    # (Entered through Type09BeamLink, which is exactly ShotBoundsCheck; that label is C now.)
+    # (A type 9 beam link through RunTypeHandler: Type09BeamLink is exactly ShotBoundsCheck.)
     for x, y in ((0xFFF0, 0x50), (0x40, 0xFFF0), (0xC9, 0x50), (0xC8, 0x50)):
-        yield Case('Type09BeamLink', {'BP': b0},
-                   [(s('DemoActive'), W(1)), (b0, rec(status=1, y=y, x=x, kind=2, type=4))],
+        yield Case('RunTypeHandler', {'BP': b0},
+                   [(s('DemoActive'), W(1)), (b0, rec(status=1, y=y, x=x, kind=2, type=9))],
                    ('BP', 'SP', 'DS', 'SS'), name=f'unsigned bounds X={x:04X} Y={y:04X}',
                    expect=lambda m, r, keep=(x == 0xC8): check(m.word(b0) == (1 if keep else 0), 'unsigned shot bounds'))
 

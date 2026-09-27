@@ -1,8 +1,9 @@
 """Spawn region (c/spawn.c): map row spawning, level script, formation leaders, pool A.
 
-Entries: every bridge label (FindFreeRecordPoolA, SpawnEnemyHere/Quiet, SpawnMapEnemy,
-Level0..5MapCell, DrawIncomingMapRow, Type13FormationLeader, Type21LeaderPathBody through
-its handler Type21LeaderPath, the two demo steps), the real callers DrawMapRowIntoScrollBand
+Entries: every bridge label (FindFreeRecordPoolA, SpawnMapEnemy, Level0..5MapCell,
+DrawIncomingMapRow, the two demo steps), the leader handlers (types 13h... and the level 4
+type 21h path) through RunTypeHandler (c/enemies.c, which also calls SpawnEnemyHere/Quiet
+directly now), the real callers DrawMapRowIntoScrollBand
 and EnterNextMapRowForward, and sequences of map rows entering with record updates between
 them. The level map (SlotBuffer, the segment in LevelMapSegment) and Type21PathCursor live
 outside the state segment and are placed with difftest.far().
@@ -189,6 +190,7 @@ def leader_world(w, rtype=None, fill=None, arrive=None, special=None, compact=Fa
 def path21_world(w, end=False, compact=False):
     rng, s = w.rng, w.sym
     w.plausible(); pool_a(w, compact=compact)
+    w.word('LevelIndex', 4)             # the type 21h director runs the leader path on level 4
     at = s('Type21Path') + 4 * (30 if end else rng.randrange(31))     # the 31st word is its FFFFh end
     w.put(far('Type21PathCursor'), struct.pack('<H', at))
     mem = w.pair.a.pristine
@@ -219,12 +221,6 @@ def cases(rng, scale, pair):
         yield Case('FindFreeRecordPoolA', {}, w.writes(), keep('BX', 'CX'), outputs=('BX',), name=f'#{i}')
     for i in range(n):
         w = world(); w.plausible(); pool_a(w)
-        bp = rng.choice((s('PrimaryRecord'), w.slot('PoolA', rng.randrange(35)), w.slot('PoolB', rng.randrange(34))))
-        w.byte('SfxEnabled', rng.randrange(2)); w.byte('SfxRequest', 0)
-        label = rng.choice(('SpawnEnemyHere', 'SpawnEnemyHereQuiet'))
-        yield Case(label, {'BP': bp}, w.writes(), keep('AX', 'BX', 'CX'), outputs=('BX',), name=f'#{i}')
-    for i in range(n):
-        w = world(); w.plausible(); pool_a(w)
         off = rng.randrange(MAP_BYTES - 2 * ROW)
         w.word('MapCellX', 16 * rng.randrange(ROW))
         w.put(far('SlotBuffer', off), bytes([rng.randrange(256)]))
@@ -241,11 +237,11 @@ def cases(rng, scale, pair):
         w = world(); row_world(w, synthetic=rng.randrange(2) == 0)
         yield Case('DrawMapRowIntoScrollBand', {'BP': s('PrimaryRecord')}, w.writes(), LOOP, name=f'caller #{i}')
     for i in range(n * 2):
-        w = world(); regs = leader_world(w, rng.choice(LEADER_TYPES + (rng.randrange(0x100),)))
-        yield Case('Type13FormationLeader', regs, w.writes(), LOOP, name=f'#{i}')
+        w = world(); regs = leader_world(w, rng.choice(LEADER_TYPES))
+        yield Case('RunTypeHandler', regs, w.writes(), LOOP, name=f'#{i}')
     for i in range(n):
         w = world(); regs = path21_world(w)
-        yield Case('Type21LeaderPath', regs, w.writes(), LOOP, name=f'far body #{i}')
+        yield Case('RunTypeHandler', regs, w.writes(), LOOP, name=f'far body #{i}')
     for i in range(n):
         w = world(); w.plausible(); pool_a(w, rng.choice((0, 20, 34, 35)))
         w.byte('SfxEnabled', rng.randrange(2))
@@ -308,7 +304,7 @@ def quirks(pair):
     w = World(pair, rng); w.plausible(); pool_a(w, 0)
     at = s('Type21Path') + 120
     r = w.record('PoolA', 3).live(kind=K.KIND_ENEMY, type=0x21, size=2).set(x=0x10, y=0x30)
-    yield Case('Type21LeaderPath', {'BP': r.at}, w.writes() + [(far('Type21PathCursor'), w16(at))], LOOP,
+    yield Case('RunTypeHandler', {'BP': r.at}, w.writes() + [(far('Type21PathCursor'), w16(at)), (s('LevelIndex'), w16(4))], LOOP,
                name='path restarts at its end',
                expect=lambda m, r: check(m.word(s('SteerTargetY')) == 0x30 and m.word(s('SteerTargetX')) == 0x10,
                                          'restart at FFFFh'))
@@ -412,9 +408,6 @@ def _path21_seed(w): return path21_world(w, _next('path21', (True, False, False)
 def _find_seed(w):
     w.plausible(); pool_a(w)
     return {}
-def _here_seed(w):
-    w.plausible(); pool_a(w, _next('here', (0, 20, 34, 35)), compact=True)
-    return {'BP': w.slot('PoolA', w.rng.randrange(35))}
 def _demo_seed(w):
     w.plausible(); pool_a(w, w.rng.choice((0, 34, 35)), compact=True)
     return {'BP': w.sym('PrimaryRecord')}
@@ -433,7 +426,7 @@ LEADER_DOMAINS = _domains({
     'LeaderScriptCursor': lambda pair: [pair.sym(a) + k for a, e, st in LEADER_SCRIPTS.values()
                                         for k in range(0, pair.sym(e) - pair.sym(a), st)],
     'FormationSlotCursor': lambda pair: range(pair.sym('FormationSlots'), pair.sym('FormationSlots') + 64, 4),
-    'SteerSpeed': range(4)})
+    'SteerSpeed': range(4), 'type': LEADER_TYPES})
 ROW_GLOBALS = ('MapScrollPos', 'ScrollingBackward', 'LevelScriptClock', 'PoolACursor', 'SfxEnabled',
                'RandomWordCursor', 'GroupDropKind')
 CELL_GLOBALS = ('MapScrollPos', 'PoolACursor', 'SfxEnabled', 'RandomWordCursor')
@@ -443,15 +436,13 @@ FUZZ = [
     *[Target(f'spawn_cells{level}', 'DrawIncomingMapRow', _level_seed(level), REGION, LOOP, globals=CELL_GLOBALS,
              domains=_domains()) for level in range(6)],
     Target('spawn_script', 'DrawIncomingMapRow', _script_seed, REGION, LOOP, globals=ROW_GLOBALS, domains=_domains()),
-    *[Target(f'spawn_leader{rtype:X}', 'Type13FormationLeader', _leader_seed(rtype), REGION, LOOP, types=LEADER_TYPES,
+    *[Target(f'spawn_leader{rtype:X}', 'RunTypeHandler', _leader_seed(rtype), REGION, LOOP, types=LEADER_TYPES,
              globals=('FormationSlotCursor', 'PoolACursor', 'SfxEnabled', 'EncounterLiveCount'),
              watch=('EncounterLiveCount',), domains=LEADER_DOMAINS) for rtype in LEADER_TYPES],
-    Target('spawn_path21', 'Type21LeaderPath', _path21_seed, REGION, LOOP, globals=('PoolACursor', 'SfxEnabled'),
-           domains=_domains()),
+    Target('spawn_path21', 'RunTypeHandler', _path21_seed, REGION, LOOP, globals=('PoolACursor', 'SfxEnabled'),
+           domains=_domains({'type': (0x21,), 'LevelIndex': (4,)})),
     Target('spawn_find', 'FindFreeRecordPoolA', _find_seed, REGION, keep('BX', 'CX'), outputs=('BX',),
            globals=('PoolACursor',), domains=_domains()),
-    Target('spawn_here', 'SpawnEnemyHere', _here_seed, REGION, keep('AX', 'BX', 'CX'), outputs=('BX',),
-           globals=('PoolACursor', 'SfxEnabled'), domains=_domains()),
     Target('spawn_demo_pod', 'DemoStepLaunchFrontPod', _demo_seed, REGION, ('SP', 'DS', 'SS'), outputs=('BP',),
            globals=('PoolACursor', 'SfxEnabled'), domains=_domains()),
     Target('spawn_demo51', 'DemoStepSpawnPathEnemy51', _demo_seed, REGION, ('SP', 'DS', 'SS'),

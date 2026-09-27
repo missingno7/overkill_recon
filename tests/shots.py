@@ -123,13 +123,12 @@ def keep(*scratch): return tuple(r for r in ALL_REGS if r not in scratch)
 def cases(rng, scale, pair):
     n = 400 * scale
     s = pair.sym
-    # Record handlers through their labels (and RunTypeHandler, their only caller).
+    # Record handlers through RunTypeHandler (c/enemies.c), their only caller.
     for i in range(n * 3):
         w = world(pair, rng)
         t = SHOT_TYPES[i % len(SHOT_TYPES)]
         r = shot(w, t)
-        label = HANDLERS[t] if i % 4 else 'RunTypeHandler'
-        yield Case(label, regs(rng, BP=r.at), w.writes(), LOOP, name=f'type {t:02X}h #{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=r.at), w.writes(), LOOP, name=f'type {t:02X}h #{i}')
     # Grid helpers as PodProbeTerrain uses them, and through PodTerrainHit.
     for i in range(n):
         w = world(pair, rng)
@@ -149,7 +148,7 @@ def cases(rng, scale, pair):
         if i % 3 == 0: p.set(x=rng.randrange(0, 0xC1, 16) + rng.choice((0, 7, 8, 9)), y=rng.randrange(0, 0xC0))
         yield Case('DamagePlayerOnTerrainContact', regs(rng, BP=s('PrimaryRecord')), w.writes(), LOOP, name=f'#{i}')
         yield Case('LosePlayerEnergyTank', regs(rng), w.writes(), LOOP, name=f'#{i}')
-    # Terrain steps: directly (TryTerrainStep's box) and through TryTerrainStep, its caller.
+    # Terrain steps through TryTerrainStep, their caller (c/enemies.c).
     for i in range(n * 2):
         w = world(pair, rng)
         r = walker(w, rng.choice((0x33, 0x56, 0x8A, 0x85) + WALKER_TYPES))
@@ -159,7 +158,7 @@ def cases(rng, scale, pair):
             r.set(x=16 * rng.randrange(1, 12) + rng.choice((0, 0x0F)), y=16 * rng.randrange(1, 12) + rng.choice((0, 0x0F)))
             r.set(draw_pass=1)
         w.word('TerrainProbeX', r.get('x')).word('TerrainProbeY', r.get('y') + rng.randrange(-2, 3))
-        yield Case('TerrainStepInDirection' if i % 3 == 0 else 'TryTerrainStep', regs(rng, BP=r.at), w.writes(),
+        yield Case('TryTerrainStep', regs(rng, BP=r.at), w.writes(),
                    LOOP, flags=('ZF',), name=f'dir {i % 8} #{i}')
     # Climbing walkers: ClimbWalkerStep (ZF result) and its callers, the type 8Bh..8Eh handlers.
     for i in range(n * 2):
@@ -210,7 +209,7 @@ def quirks(pair):
     w.record('PrimaryRecord', 0).set(sprite=0, y=0x80, x=0x60)
     r = w.record('PoolB', 4).live(kind=K.KIND_TYPED, type=2, size=0, player_shot=0, field_1c=5, direction=K.DIR_DOWN)
     r.set(y=0x78, x=0x64)
-    yield Case('Type02TimedStraightShot', {'BP': r.at}, w.writes(), LOOP, name='bar 0 wraps',
+    yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name='bar 0 wraps',
                expect=lambda m, regs: check(word(m, 'EnergyPoints') == 0xFFFF and word(m, 'EnergyTanks') == 2, 'bar wraps'))
     # Type 3 enemy shots cost 5 hits on the hardest difficulty; the shot is used up even
     # when the hits are ignored (level-end phase 1).
@@ -219,7 +218,7 @@ def quirks(pair):
         p = w.record('PrimaryRecord', 0).set(sprite=0, y=0x80, x=0x60)
         r = w.record('PoolB', 4).live(kind=K.KIND_TYPED, type=3, size=0, player_shot=0, field_1c=5, direction=K.DIR_DOWN)
         r.set(y=0x80 - 8, x=0x64)
-        yield Case('Type02TimedStraightShot', {'BP': r.at}, w.writes(), LOOP, name=f'type 3 hit, phase {phase}',
+        yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name=f'type 3 hit, phase {phase}',
                    expect=lambda m, regs, phase=phase: check(
                        m.word(r.at) == 0 and word(m, 'EnergyPoints') == (0x18 if phase else 0x18 - 15),
                        'type 3 shot: 5 hits x 3 points, shot removed even when ignored'))
@@ -229,7 +228,7 @@ def quirks(pair):
     w.record('PrimaryRecord', 0).set(sprite=0, y=1, x=0x60)
     r = w.record('PoolB', 4).live(kind=K.KIND_TYPED, type=2, size=0, player_shot=0, field_1c=5, direction=K.DIR_DOWN)
     r.set(y=0xFFF8, x=0x64)
-    yield Case('Type02TimedStraightShot', {'BP': r.at}, w.writes(), LOOP, name='signed hit window',
+    yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name='signed hit window',
                expect=lambda m, regs: check(word(m, 'EnergyPoints') == 0x0F, 'hit at Y 0 below PY - 2 = FFFFh'))
     # Terrain contact at difficulty 2 is 4 hits of 3 points; an FFFFh grid offset (negative
     # GridYSum) is not checked by the ship probe: + 13 wraps to cell 000Ch.
@@ -251,7 +250,7 @@ def quirks(pair):
     w = base(0.0); w.put('ByteAttributeTable', bytes([1]) * 256).word('ScrollDeltaY', 0)
     r = w.record('PoolB', 2).live(kind=K.KIND_TYPED, type=5, size=0, player_shot=1)
     r.set(x=0x40, y=0x80)
-    yield Case('Type05SideShotUpLeft', {'BP': r.at}, w.writes(), LOOP, name='side shot turns up at a wall',
+    yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name='side shot turns up at a wall',
                expect=lambda m, regs: check(m.word(r.at + 4) == 0x40 and m.word(r.at + 6) == K.DIR_UP, 'turned up, X kept'))
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants shots).
