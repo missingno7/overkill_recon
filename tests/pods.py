@@ -3,7 +3,7 @@ condition and apply routines, RemoveRecord and the evicting pool A allocator, th
 steps, pickups, the player hit tests, the BCD score, the ship's pod-balance nudges and the
 demo steps that launch pods.
 
-Entries are the bridge labels (c/pods.asm) and their real ASM callers: UpdateRecordByKind
+Entries are the bridge labels (c/pods.asm) and their real callers: UpdateAllRecords
 (KIND_POD), Type01ExplosionAnimation, UpdatePickup, FinishRecordUpdate, UpdatePlayerFrame,
 StoreApplyHistoryAndConditionalPlacement and RunDemoScriptFrame (c/weapons.c), plus whole
 frames (UpdatePlayerFrame, UpdateAllRecords, TickFrameTimers) over worlds with pods,
@@ -141,14 +141,14 @@ def cases(rng, scale, pair):
     s = pair.sym
     n = 300 * scale
     player = s('PrimaryRecord')
-    # UpdatePod through its label and through UpdateRecordByKind (KIND_POD).
+    # UpdatePod through its label (the KIND_POD dispatch of the record pass is in tests/frame.py).
     for i in range(n * 2):
         w = world(rng, pair)
         pod, name = a_pod(w)
         if rng.randrange(2): near(w, pod, rng.randrange(1, 5))
         if rng.randrange(4) == 0:
             pod.set(x=rng.randrange(0, 0xC1, 16) + rng.choice((0, 1)), hit_points=1)
-        yield Case('UpdatePod' if i % 2 else 'UpdateRecordByKind', {'BP': pod.at}, w.writes(), LOOP, name=f'{name} #{i}')
+        yield Case('UpdatePod', {'BP': pod.at}, w.writes(), LOOP, name=f'{name} #{i}')
     # RemoveRecord of every class; the missile refreshes the upgrade slots, the beam frees its links.
     for i in range(n):
         w = world(rng, pair)
