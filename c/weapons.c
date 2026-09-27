@@ -20,6 +20,7 @@
    OWNS: DemoStepNextWeaponMode DemoStepEnableSideShots DemoStepGiveMissile DemoRiseShipToY60
 */
 #include "game.h"
+#include "pods.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -35,15 +36,9 @@
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
 extern void FindFreeRecordPoolB(void);
-extern void RemoveRecordAtBX(void);
 extern void DrawUpgradeSlots(void);
 extern void StoreApplyHistoryAndConditionalPlacement(void);
 extern void DemoStepLaunchFrontPod(void);
-extern void DemoStepLaunchInnerSidePods(void);
-extern void DemoStepLaunchOuterSidePods(void);
-extern void DemoStepLaunchTrailingPodNear(void);
-extern void DemoStepLaunchTrailingPodFar(void);
-extern void DemoStepNextShipForm(void);
 extern void DemoStepSpawnPathEnemy51(void);
 extern void DrawDemoCaption(void);          /* platform thunk in c/weapons.asm */
 
@@ -51,13 +46,6 @@ extern void DrawDemoCaption(void);          /* platform thunk in c/weapons.asm *
 Record *find_free_pool_b(main_routine target);
 #pragma aux find_free_pool_b = "call far ptr FarCallMainNearViaAX" \
     parm [ax] value [bx] modify exact [ax bx cx]
-
-/* RemoveRecordAtBX: BX = victim, kept; BP kept. *si is the oracle's SI on the way in
-   and out: RemoveRecord changes it for some victims (see alloc_pool_b_evicting). */
-Record *remove_record_at(main_routine target, Record *victim, Record **si);
-#pragma aux remove_record_at = "push si" "mov si, [di]" "push di" \
-    "call far ptr FarCallMainNearViaAX" "pop di" "mov [di], si" "pop si" \
-    parm [ax] [bx] [di] value [bx] modify exact [ax bx cx dx di es]
 
 /* A MAIN routine with BP = r (Watcom cannot pass BP); everything but BP is clobbered. */
 void call_main_bp(main_routine target, Record *r);
@@ -89,7 +77,8 @@ Record *alloc_pool_b_evicting(Record **si)
     for (r = POOL_B, n = POOL_B_COUNT; n != 0; ++r, --n)
         if (r->type != SHOT_BEAM_LINK && r->type != SHOT_MISSILE && r->kind != KIND_POD) break;
     if (n == 0) r = POOL_B;
-    return remove_record_at(RemoveRecordAtBX, r, si);
+    *si = (Record *)remove_record_si(r, (word)*si);
+    return r;
 }
 
 /* A pool B record set up as a player shot: type 2, sprite 32h, heading up,
@@ -596,11 +585,11 @@ void demo_count_down_step(Record *bp)
     }
     switch (DemoStep) {
     case 1: call_main_bp(DemoStepLaunchFrontPod, bp); break;
-    case 2: call_main_bp(DemoStepLaunchInnerSidePods, bp); break;
-    case 3: case 5: call_main_bp(DemoStepNextShipForm, bp); break;
-    case 4: call_main_bp(DemoStepLaunchOuterSidePods, bp); break;
-    case 6: call_main_bp(DemoStepLaunchTrailingPodNear, bp); break;
-    case 7: call_main_bp(DemoStepLaunchTrailingPodFar, bp); break;
+    case 2: demo_step_launch_inner_side_pods(); break;
+    case 3: case 5: demo_step_next_ship_form(); break;
+    case 4: demo_step_launch_outer_side_pods(); break;
+    case 6: demo_step_launch_trailing_pod_near(); break;
+    case 7: demo_step_launch_trailing_pod_far(); break;
     case 10: case 12: case 13: case 14: case 15: ++WeaponMode; break;
     case 11: SideShotsEnabled = 1; break;
     case 16: call_main_bp(DemoStepSpawnPathEnemy51, bp); break;
