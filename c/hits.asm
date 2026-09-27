@@ -4,7 +4,6 @@
 ; Only labels the remaining ASM still reaches need a stub.
 locals
 extrn PLAYER_SHOTS_HIT_RECORD:near
-extrn SMART_BOMB_RECORD:near
 extrn DESTROY_RECORD:near
 extrn RELEASE_ENCOUNTER_MEMBER:near
 extrn CLAMP_RECORD_X:near
@@ -15,18 +14,12 @@ extrn ScrollRecordThenFinish:near
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
 
-public PlayerShotsHitRecord, SmartBombRecord, DestroyRecord, ReleaseEncounterMember
+public PlayerShotsHitRecord, DestroyRecord, ReleaseEncounterMember
 ; BP = record; clobbers AX (the oracle clobbers more; its callers keep only BP).
 PlayerShotsHitRecord:
     push si
     mov si, bp
     call PLAYER_SHOTS_HIT_RECORD
-    pop si
-    ret
-SmartBombRecord:
-    push si
-    mov si, bp
-    call SMART_BOMB_RECORD
     pop si
     ret
 DestroyRecord:

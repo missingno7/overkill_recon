@@ -5,8 +5,8 @@ build/hybrid/ and every routine the C side owns is cut out of the copy:
 
   - `c/*.c` declare what they own in a comment line `OWNS: Label Label ...`
     (the entry labels plus every label and table inside the replaced code);
-  - an owned range runs from an owned label to the next label that is not owned
-    (the comment block in front of that next label stays with it);
+  - an owned range runs from an owned label to the next label that is not owned or
+    the end of its segment (the comment block in front of that next label stays with it);
   - code that fell through into a removed range gets an explicit `jmp`, short and
     conditional jumps into it become near jumps, and `public` lines for removed
     labels become `extrn`, so the rest of the ASM reaches the same labels, now
@@ -28,6 +28,8 @@ import os, re, shutil, struct, subprocess
 
 LABEL = re.compile(r'^([A-Za-z_]\w*)(?::|\s+label\b|\s+(?:db|dw|dd)\b)', re.I)
 UNCONDITIONAL = re.compile(r'^\s+(jmp|ret|retf|iret)\b', re.I)
+SEGMENT_LINE = re.compile(r'^\s*(\w+\s+(segment|ends)\b|assume\b|end\b)', re.I)
+DATA_LINE = re.compile(r'^\s*(\w+\s+)?(db|dw|dd)\b', re.I)
 JUMP = re.compile(r'^(\s+)(j[a-z]+)\s+(?:short\s+|near\s+ptr\s+)?([A-Za-z_]\w*)\s*$', re.I)
 OPPOSITE = {'je': 'jne', 'jz': 'jnz', 'jne': 'je', 'jnz': 'jz', 'jb': 'jae', 'jc': 'jnc', 'jnae': 'jae',
             'jae': 'jb', 'jnb': 'jb', 'jnc': 'jc', 'ja': 'jbe', 'jnbe': 'jbe', 'jbe': 'ja', 'jna': 'ja',
@@ -55,6 +57,10 @@ def derive(text, owned):
     lines = text.split('\r\n')
     out, removed, skipping = [], [], False
     for i, line in enumerate(lines):
+        if SEGMENT_LINE.match(code(line)):
+            # A removed range never extends past its segment (a routine at the end of a
+            # segment, or the next owned label in another segment).
+            skipping = False; out.append(line); continue
         m = LABEL.match(line)
         name = m[1].upper() if m else None
         if name and name in owned:
@@ -63,7 +69,9 @@ def derive(text, owned):
                 # The comment block in front of a removed label belongs to it.
                 while out and out[-1].startswith(';'): out.pop()
                 prev = next((l for l in reversed(out) if code(l).strip()), '')
-                if not UNCONDITIONAL.match(prev):
+                # (Nothing falls through from a segment start or from a data table.)
+                if not UNCONDITIONAL.match(prev) and not SEGMENT_LINE.match(code(prev)) \
+                        and not DATA_LINE.match(code(prev)):
                     out.append(f'    jmp {m[1]}')
             skipping = True; removed.append(m[1]); continue
         if name and skipping and not name.startswith('@@'):
