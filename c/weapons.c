@@ -22,6 +22,8 @@
 #include "game.h"
 #include "enemies.h"
 #include "pods.h"
+#include "player.h"
+#include "render.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -36,17 +38,10 @@
 #define SHOT_FRONT_POD 0x0C
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
-extern void DrawUpgradeSlots(void);
-extern void StoreApplyHistoryAndConditionalPlacement(void);
-extern void DemoStepLaunchFrontPod(void);
-extern void DemoStepSpawnPathEnemy51(void);
 extern void DrawDemoCaption(void);          /* platform thunk in c/weapons.asm */
+extern Record *demo_step_launch_front_pod(void);
+extern void demo_step_spawn_path_enemy51(Record *here);
 
-
-/* A MAIN routine with BP = r (Watcom cannot pass BP); everything but BP is clobbered. */
-void call_main_bp(main_routine target, Record *r);
-#pragma aux call_main_bp = "push bp" "mov bp, si" "call far ptr FarCallMainNearViaAX" \
-    "pop bp" parm [ax] [si] modify exact [ax bx cx dx si di es]
 
 /* DrawDemoCaption with SI = PanelSegment image and BP = bp: the result is BP as the
    blitter leaves it (its row width), which the oracle passes on as UpdateBeam's BP. */
@@ -564,8 +559,8 @@ void handle_fire_button(Record *ship)
 /* Counts DemoStepTimer down; at 0 reloads it (64h), advances DemoStep, shows that
    step's upgrade slot and status (unless FFFFh) and runs its action. DemoStep indexes
    the oracle's action table unchecked (the demo ends at step 13h, before 14h). bp is the
-   oracle's BP here, the ship or the blitter's leftover: only DemoStepSpawnPathEnemy51
-   reads it (its SpawnEnemyHere copies BP's position into REC_SAVED_X/Y). */
+   oracle's BP here, the ship or the blitter's leftover: only the path-enemy spawn
+   reads it (SpawnEnemyHere copies its position into REC_SAVED_X/Y). */
 void demo_count_down_step(Record *bp)
 {
     word *row;
@@ -577,10 +572,12 @@ void demo_count_down_step(Record *bp)
     if (row[1] != 0xFFFF) {
         SelectedUpgradeSlot = row[1];
         DemoUpgradeStatus = row[2];
-        call_main_bp(DrawUpgradeSlots, bp);
+        /* The native renderer returns the old ES:SI pixel cursor. No demo-step action
+           consumes that cursor; it preserves BP as DrawUpgradeSlots did. */
+        render_draw_upgrade_slots();
     }
     switch (DemoStep) {
-    case 1: call_main_bp(DemoStepLaunchFrontPod, bp); break;
+    case 1: bp = demo_step_launch_front_pod(); break;
     case 2: demo_step_launch_inner_side_pods(); break;
     case 3: case 5: demo_step_next_ship_form(); break;
     case 4: demo_step_launch_outer_side_pods(); break;
@@ -588,7 +585,7 @@ void demo_count_down_step(Record *bp)
     case 7: demo_step_launch_trailing_pod_far(); break;
     case 10: case 12: case 13: case 14: case 15: ++WeaponMode; break;
     case 11: SideShotsEnabled = 1; break;
-    case 16: call_main_bp(DemoStepSpawnPathEnemy51, bp); break;
+    case 16: demo_step_spawn_path_enemy51(bp); break;
     case 17: MissileAmmo = 1; break;
     /* 0, 8, 9, 18, 19: no action. */
     }
@@ -603,7 +600,7 @@ void demo_rise_ship_to_y60(Record *bp)
         return;
     }
     --PRIMARY->y;
-    call_main_bp(StoreApplyHistoryAndConditionalPlacement, PRIMARY);
+    store_apply_history_and_placement(PRIMARY);
     if (PRIMARY->y == 0x60) DemoStepTimer = 0x32;
 }
 

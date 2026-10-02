@@ -2,8 +2,8 @@
 scroll/bounds/collision tail, the pickup update, the encounter director, the formation
 members, the throttled child shot and the terrain step.
 
-Entries: RunTypeHandler (every REC_TYPE 0..94h, the C handlers and the dispatch to the ASM
-ones), UpdatePickup, and the bridge labels the remaining ASM reaches (ScrollRecordThenFinish,
+Entries: RunTypeHandler (every REC_TYPE 0..94h, now dispatched directly to C),
+UpdatePickup, and the shared bridge entries (ScrollRecordThenFinish,
 FinishRecordUpdate, HorizontalTerrainPatrol, NextRandomWord, SpawnAimedShot,
 SpawnThrottledChild, SpawnShotDown, TryTerrainStep); sequences of UpdateAllRecords and
 TickFrameTimers over worlds of these types. Register contracts are the oracle's: the
@@ -223,7 +223,7 @@ def pools(w, rng, busy=None):
 def cases(rng, scale, pair):
     s = pair.sym
     n = 30 * scale
-    # Every REC_TYPE through RunTypeHandler (the C handlers and the dispatch to ASM ones).
+    # Every REC_TYPE through RunTypeHandler, across all C gameplay regions.
     for i in range(n):
         for t in ALL_TYPES:
             w = world(pair, rng)

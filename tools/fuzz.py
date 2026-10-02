@@ -20,9 +20,8 @@ from common import *
 from difftest import Case, Pair, ALL_REGS, OracleFault
 from world import World, Record, FIELDS, POOLS, RECORD, EQU, edge_word
 from emu import LOAD
-from build import main_sources
 from unicorn import UC_HOOK_CODE
-import bisect, gzip, importlib, json, random, re, sys, time, zlib
+import bisect, functools, gzip, importlib, json, random, sys, time, zlib
 
 _seen = {}
 for _n, _v in FIELDS.items(): _seen.setdefault(_v, _n)    # base names come before role aliases
@@ -46,12 +45,14 @@ class Target:
 
 def code_ranges(machine, labels, sort=True):
     """(begin, end) linear ranges of the given labels' code in an oracle-sym machine: from
-    the label to the next label (every label is public there)."""
+    the label to the next label or segment end (every label is public there)."""
     starts = sorted((LOAD + s) * 16 + o for s, o in machine.symbols.values())
     out = []
     for name in labels:
         begin = machine.linear(name)
-        out.append((begin, starts[bisect.bisect_right(starts, begin)]))
+        end = starts[bisect.bisect_right(starts, begin)]
+        frame = machine.symbols[name.upper()][0]
+        out.append((begin, min(end, machine.segment_ends[frame])))
     return sorted(out) if sort else out
 
 def compare_sites(machine, labels):
@@ -59,9 +60,9 @@ def compare_sites(machine, labels):
     import capstone
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16); md.detail = True
     sites = {}
-    for begin, end in code_ranges(machine, labels):
-        for ins in md.disasm(bytes(machine.u.mem_read(begin, end - begin)), begin):
-            if ins.mnemonic == 'cmp': sites[ins.address] = ins
+    for address in region_instructions(machine, labels):
+        ins = next(md.disasm(bytes(machine.u.mem_read(address, 8)), address), None)
+        if ins is not None and ins.mnemonic == 'cmp': sites[ins.address] = ins
     return sites
 
 def operand_values(u, ins):
@@ -251,25 +252,31 @@ class Fuzzer:
         missed = [a for a in code if a not in self.hit]
         return len(code) - len(missed), len(code), missed
 
-def jump_tables():
-    """Label -> byte size of the `X label word` + dw-row jump tables in the oracle code."""
-    tables = {}
-    for path in main_sources():
-        text = path.read_bytes().decode('latin-1')
-        for mt in re.finditer(r'^(\w+)[ \t]+label[ \t]+word[ \t]*\r?\n((?:[ \t]+dw[^\r\n]*\r?\n)+)', text, re.M | re.I):
-            tables[mt[1].upper()] = 2 * sum(len(row.split(';')[0].split(',')) for row in mt[2].splitlines())
-    return tables
+@functools.lru_cache(maxsize=1)
+def oracle_instruction_starts():
+    """Instruction starts from the maintained ASM and its checked oracle listing.
+
+    Linear decoding also treats alignment bytes and workspaces as instructions.
+    The graph reader already distinguishes instruction statements from data and
+    checks their addresses against the symbol-complete oracle. Cache only for this
+    process; the source and listing must stay fixed during a fuzz/coverage run.
+    """
+    from graph import build_model
+    model = build_model()
+    if model.problems:
+        raise ValueError('oracle source/listing mismatch: ' + '; '.join(model.problems))
+    return tuple(sorted({LOAD * 16 + offset
+                         for block in model.blocks
+                         for statement, offset in zip(block.stmts, block.offsets)
+                         if statement[1] == 'ins' and offset is not None}))
 
 def region_instructions(machine, labels):
-    """Linear addresses of the oracle instructions in the given labels' code (jump table
-    words skipped), decoded from an oracle-sym machine."""
-    import capstone
-    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
-    tables = jump_tables()
+    """Actual instruction addresses in the labels' oracle ranges; skip all named data
+    and alignment, including buffers between a routine and the next public label."""
+    starts = oracle_instruction_starts()
     out = []
-    for (begin, end), name in zip(code_ranges(machine, labels, sort=False), labels):
-        begin += tables.get(name.upper(), 0)
-        out += [i.address for i in md.disasm(bytes(machine.u.mem_read(begin, end - begin)), begin)]
+    for begin, end in code_ranges(machine, labels, sort=False):
+        out.extend(starts[bisect.bisect_left(starts, begin):bisect.bisect_left(starts, end)])
     return sorted(out)
 
 def minimize(corpus):

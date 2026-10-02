@@ -137,10 +137,119 @@ def beam_or_not(w):
     else:
         w.put('BeamList', W(0xFFFF) * 26).word('ShotsLiveType9', 0)
 
+def _upgrade_dispatch_cases(rng, pair):
+    """Drive every frozen list condition and apply token through its C-owned caller."""
+    condition_rows = (
+        (0, 1, 0), (0, 2, 1), (0, 3, 2), (0, 4, 3), (0, 5, 4), (0, 6, 5),
+        (1, 1, 6), (1, 2, 7), (2, 1, 9), (2, 2, 0x0A), (2, 3, 0x0B),
+        (3, 1, 0x0D), (3, 2, 0x0E),
+    )
+
+    def condition_world(slot, index, available):
+        w = world(rng, pair, pods=0, crowd=0, full=False)
+        w.fill('PoolA', 0)
+        w.word('PoolACursor', w.slot('PoolA', 0))
+        w.byte('BonusKeysEnabled', 0)
+        w.word('SelectedUpgradeSlot', (slot - 1) & 3)
+        w.word(SLOTS[slot], index, K.UPGRADE_SLOT_INDEX // 2)
+        if slot == 0:
+            mode = (K.WEAPON_SINGLE, K.WEAPON_HEAVY, K.WEAPON_FORK,
+                    K.WEAPON_TWIN_RISING3, K.WEAPON_TWIN_RISING16,
+                    K.WEAPON_BEAM)[index - 1]
+            w.word('WeaponMode', mode if not available else 0xFFFF)
+        elif slot == 1:
+            if index == 1: w.word('SideShotsEnabled', 1 if not available else 0)
+            else: w.word('MissileAmmo', 1 if not available else 0)
+        elif slot == 2:
+            if index == 1:
+                if not available: w.word('FrontPodRecord', w.slot('PoolA', 0))
+            elif index == 2:
+                w.record('PrimaryRecord', 0).set(sprite=0)
+                if not available:
+                    for name, n in zip(PODS, range(len(PODS))):
+                        w.word(name, w.slot('PoolA', n))
+                    w.word('FrontPodRecord', w.slot('PoolA', 0))
+            else:
+                w.record('PrimaryRecord', 0).set(sprite=2 if available else 0)
+                if not available:
+                    for name, n in zip(PODS, range(len(PODS))):
+                        w.word(name, w.slot('PoolA', n))
+                    w.word('FrontPodRecord', w.slot('PoolA', 0))
+        else:
+            w.record('PrimaryRecord', 0).set(sprite=(0 if available else (1 if index == 1 else 2)))
+        return w
+
+    # Entry zero is the shared always-false condition; each other frozen predicate gets a
+    # true and false input, so both token routing and the scan-after-rejection path run.
+    for slot, index, icon in ((0, 0, 0x24),) + condition_rows:
+        for available in ((False,) if index == 0 else (True, False)):
+            w = condition_world(slot, index, available)
+            label = f'condition slot {slot} entry {index} ' + ('available' if available else 'rejected')
+
+            def expect(m, regs, slot=slot, index=index, icon=icon, available=available):
+                got = m.word(pair.sym(SLOTS[slot]) + K.UPGRADE_SLOT_ICON)
+                if available:
+                    check(got == icon, f'{label}: selected condition offers its own icon')
+                    check(m.word(pair.sym(SLOTS[slot]) + K.UPGRADE_SLOT_INDEX) == index,
+                          f'{label}: available entry remains selected')
+                else:
+                    check(got != icon, f'{label}: rejected entry advances or exhausts the list')
+
+            yield Case('PickupUpgradeSelector', {}, w.writes(), LOOP, expect=expect, name=label)
+
+    actions = (
+        (0, 1, 'weapon', K.WEAPON_SINGLE), (0, 2, 'weapon', K.WEAPON_HEAVY),
+        (0, 3, 'weapon', K.WEAPON_FORK), (0, 4, 'weapon', K.WEAPON_TWIN_RISING3),
+        (0, 5, 'weapon', K.WEAPON_TWIN_RISING16), (0, 6, 'weapon', K.WEAPON_BEAM),
+        (1, 1, 'side_shots', 1), (1, 2, 'missiles', 4),
+        (2, 1, 'front_pod', 0), (2, 2, 'side_pods', 0), (2, 3, 'trailing_pod', 0),
+        (3, 1, 'ship_form', 1), (3, 2, 'ship_form', 2),
+    )
+    for slot, index, effect, value in actions:
+        w = world(rng, pair, pods=0, crowd=0, full=False)
+        w.fill('PoolA', 0)
+        w.word('PoolACursor', w.slot('PoolA', 0))
+        w.record('PrimaryRecord', 0).set(sprite=0, x=0x60, y=0x90)
+        w.byte('BonusKeysEnabled', 0).byte('SfxEnabled', 1).byte('SfxActive', 1).byte('SfxRequest', 0x55)
+        for name in PODS: w.word(name, 0xFFFF)
+        w.word('SelectedUpgradeSlot', slot).word(SLOTS[slot], index, K.UPGRADE_SLOT_INDEX // 2)
+        label = f'apply slot {slot} entry {index}'
+
+        def expect(m, regs, effect=effect, value=value, label=label):
+            if effect == 'weapon': check(m.peek('WeaponMode') == value, label + ': weapon mode')
+            elif effect == 'side_shots': check(m.peek('SideShotsEnabled') == value, label + ': side-shot state')
+            elif effect == 'missiles': check(m.peek('MissileAmmo') == value, label + ': missile count')
+            elif effect == 'front_pod': check(m.peek('FrontPodRecord') != 0xFFFF, label + ': front pod slot')
+            elif effect == 'side_pods':
+                check(m.peek('SidePodLeftInner') != 0xFFFF and m.peek('SidePodRightInner') != 0xFFFF,
+                      label + ': inner side pod slots')
+            elif effect == 'trailing_pod': check(m.peek('TrailingPodNear') != 0xFFFF, label + ': trailing pod slot')
+            elif effect == 'ship_form':
+                check(m.word(pair.sym('PrimaryRecord') + K.REC_SPRITE) == value, label + ': ship form')
+                check((m.peek('SfxActive') & 0xFF) == 0 and (m.peek('SfxRequest') & 0xFF) == 9,
+                      label + ': sound reset and purchase request')
+            if effect != 'ship_form':
+                check(m.peek('SelectedUpgradeSlot') == 0xFFFF and (m.peek('SfxRequest') & 0xFF) == 9,
+                      label + ': purchase closes selection and requests sound')
+
+        yield Case('ApplySelectedUpgrade', {}, w.writes(), LOOP + ('BX',), expect=expect, name=label)
+
+    # The ordinary first list entry calls ReturnNear: it leaves the selection and does not
+    # issue the purchase sound even though the caller still redraws the offered list.
+    w = world(rng, pair, pods=0, crowd=0, full=False)
+    w.fill('PoolA', 0).word('SelectedUpgradeSlot', 0).word('UpgradeSlot0', 0, K.UPGRADE_SLOT_INDEX // 2)
+    w.byte('SfxEnabled', 1).byte('SfxRequest', 0x55)
+    def no_op(m, regs):
+        check(m.peek('SelectedUpgradeSlot') == 0 and (m.peek('SfxRequest') & 0xFF) == 0x55,
+              'ReturnNear entry keeps selection and does not sound as a purchase')
+    yield Case('ApplySelectedUpgrade', {}, w.writes(), LOOP + ('BX',), expect=no_op,
+               name='ReturnNear no-op entry')
+
 def cases(rng, scale, pair):
     s = pair.sym
     n = 300 * scale
     player = s('PrimaryRecord')
+    yield from _upgrade_dispatch_cases(rng, pair)
     # UpdatePod through its label (the KIND_POD dispatch of the record pass is in tests/frame.py).
     for i in range(n * 2):
         w = world(rng, pair)
@@ -338,6 +447,10 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants pods).
 MUTANTS = [
+    ('pods.c', 'if (routine == (word)(main_routine)SingleShotAvailable) return single_shot_available();',
+               'if (routine == (word)(main_routine)SingleShotAvailable) return heavy_shot_available();'), # table condition token
+    ('pods.c', 'if (routine == (word)(main_routine)ApplyHeavyShot) { apply_heavy_shot(); return; }',
+               'if (routine == (word)(main_routine)ApplyHeavyShot) { apply_single_shot(); return; }'),    # table apply token
     ('pods.c', 'if ((sword)y > (sword)(r->y + 0x10) || (sword)y < (sword)(r->y - 0x10)) continue;',
                'if (y > r->y + 0x10 || y < r->y - 0x10) continue;'),                                  # signedness
     ('pods.c', 'if (++UpgradeTries >= 0x0A) break;', 'if (++UpgradeTries > 0x0A) break;'),            # off by one

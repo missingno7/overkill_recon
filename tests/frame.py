@@ -6,12 +6,14 @@ UpdateRefuelTimersAndScore, StepHatchRampFrame, ScrollForwardAndCheckLevelEnd,
 RestartAtCheckpoint, ScrollMapToLevelStart, SmartBombAll and the handlers of types 50h,
 76h..79h and 80h); whole frames as sequences (ScrollForwardAndCheckLevelEnd,
 UpdateAllRecords, UpdateRefuelTimersAndScore: record handlers in C and ASM run inside the C
-record pass); and documented quirks asserted on the oracle.
+record pass); and documented quirks asserted on the oracle. Timer/score cases also compare
+the BP/ES results returned by the retained MAIN bridge.
 
 The level map (SlotBuffer, the segment in LevelMapSegment) is placed with difftest.far().
-RestartAtCheckpoint reloads it through LoadLevelMap: a FileCache entry names the level's map
-file with the map window itself as the cached copy, so the load is a copy onto itself (no
-DOS call) and the rest of LoadLevelMap (attributes, fixed rows) runs as in the game.
+RestartAtCheckpoint reloads it through LoadLevelMap in the oracle; the hybrid calls the
+native load_level_map coordinator. A FileCache entry names the level's map file with the
+map window itself as the cached copy, so the load is a copy onto itself (no DOS call) and
+the rest of the map load (attributes, fixed rows) runs as in the game.
 """
 from difftest import Case, ALL_REGS, far
 from world import World, K, RECORD
@@ -235,7 +237,9 @@ def cases(rng, scale, pair):
         yield Case('RunTypeHandler', {'BP': r.at}, w.writes(), LOOP, name=f'type {t:X} #{i}')
     for i in range(200 * scale):
         w = timers(world())
-        yield Case(rng.choice(('TickFrameTimers', 'UpdateRefuelTimersAndScore', 'TickRefuel')), {}, w.writes(), LOOP,
+        entry = rng.choice(('TickFrameTimers', 'UpdateRefuelTimersAndScore', 'TickRefuel'))
+        yield Case(entry, {}, w.writes(), LOOP,
+                   outputs=('ES',) if entry == 'UpdateRefuelTimersAndScore' else (),
                    name=f'#{i}')
     for i in range(100 * scale):
         w = world(); regs = hatch(w)
@@ -267,7 +271,8 @@ def frames(rng, pair, i):
     steps = [Case('ScrollForwardAndCheckLevelEnd', bp, w.writes(), LOOP, name=f'frames {i} scroll 0')]
     for f in range(rng.choice((4, 8, 16))):
         steps.append(Case('UpdateAllRecords', {}, (), LOOP, name=f'frames {i} records {f}'))
-        steps.append(Case('UpdateRefuelTimersAndScore', {}, (), LOOP, name=f'frames {i} timers {f}'))
+        steps.append(Case('UpdateRefuelTimersAndScore', {}, (), LOOP, outputs=('ES',),
+                          name=f'frames {i} timers {f}'))
         steps.append(Case('ScrollForwardAndCheckLevelEnd', bp, (), LOOP, name=f'frames {i} scroll {f + 1}'))
     return steps
 
@@ -335,6 +340,7 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants frame).
 MUTANTS = [
+    ('frame.c', '    load_level_map(&map_registers);', '    ;'),
     ('frame.c', 'if (++RecordTickCounter >= 0x5DC) RecordTickCounter = 0;',
                 'if (++RecordTickCounter > 0x5DC) RecordTickCounter = 0;'),
     ('frame.c', 'if ((sword)r->y < 0) r->y = 0;', 'if (r->y < 0x8000) r->y = 0;'),
@@ -429,7 +435,8 @@ FUZZ = [
            globals=MARCH_GLOBALS, watch=('MarchEdgeHit',), domains=dict(DOMAINS, type=(0x80,))),
     Target('frame_pod50', 'RunTypeHandler', _pod50_seed, REGION, LOOP, types=(0x50,),
            globals=('SfxEnabled',), domains=dict(DOMAINS, type=(0x50,))),
-    Target('frame_timers', 'UpdateRefuelTimersAndScore', _timers_seed, REGION, LOOP, globals=TIMER_GLOBALS,
+    Target('frame_timers', 'UpdateRefuelTimersAndScore', _timers_seed, REGION, LOOP,
+           outputs=('ES',), globals=TIMER_GLOBALS,
            watch=('Fuel', 'SwayReversals'), domains={**DOMAINS, 'sprite': range(5), 'RefuelActive': (0, 1, 2)}),
     # StepHatchRampFrame through its caller, the type 28h/2Ah hatch (sprite base 1Ch).
     Target('frame_hatch', 'RunTypeHandler', _hatch_seed, REGION, LOOP, globals=('FrameDivider4',),

@@ -13,14 +13,19 @@ quirks a faithful port must keep are written into the source.
 original binary
       | byte exact (tools/verify.py)
 semantic ASM oracle (this source)
-      | behavioural equivalence (later phase)
+      | behavioural equivalence (tools/difftest.py)
 DOS C implementation
 ```
 
-The ASM is the permanent executable specification of the original DOS game. A later C
+The ASM is the permanent executable specification of the original DOS game. The DOS C
 translation is validated against it, one region at a time, on the original DOS
 platform model; the ASM is not reshaped to make that translation easier. It stays
 useful after the C version is complete, as the reference for any behavioural question.
+
+The reusable game and resource logic now lives in `c/`, including presentation and
+startup configuration. The runnable DOS hybrid keeps the original hardware backend;
+the next phase replaces that boundary and the DOS address representation for SDL3.
+See [docs/dos-hybrid.md](docs/dos-hybrid.md) for building, running and verification limits.
 
 ```powershell
 python tools/verify.py

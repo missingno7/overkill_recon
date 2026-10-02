@@ -193,6 +193,25 @@ def quirks(rng, pair):
     w = demo_world(rng, pair, step=0x0F)
     w.word('DemoStepTimer', 1)
     yield Case('RunDemoScriptFrame', {'BP': s('PrimaryRecord')}, w.writes(), DEMO, name='step 10h stale BP spawn')
+    # Step 1 calls the native front-pod constructor after the step's upgrade display.
+    # Pin a free slot and the ship's arrival point so its returned record is observable.
+    w = demo_world(rng, pair, step=0)
+    w.word('DemoStepTimer', 1).byte('SfxEnabled', 1)
+    w.record('PrimaryRecord', 0).set(y=0x60)
+    w.record('PoolA', K.POOL_A_COUNT - 1).free()
+    def front_pod_step(m, regs):
+        pod = m.word(s('FrontPodRecord'))
+        check(pod != 0xFFFF, 'demo step 1 assigns FrontPodRecord')
+        check(m.word(pod + K.REC_KIND) == K.KIND_ENEMY
+              and m.word(pod + K.REC_TYPE) == 0x50
+              and m.word(pod + K.REC_SPRITE) == 0x0F,
+              'demo step 1 constructs the front pod as a type 50h enemy')
+        check(m.word(pod + K.REC_SAVED_X) == (m.word(s('PrimaryRecord') + K.REC_X) + 8) & 0xFFFF
+              and m.word(pod + K.REC_SAVED_Y) == (m.word(s('PrimaryRecord') + K.REC_Y) - 8) & 0xFFFF,
+              'demo step 1 saves the player-relative arrival point')
+        check(m.read(s('SfxRequest'), 1)[0] == 0x1E, 'demo step 1 requests its launch sound')
+    yield Case('RunDemoScriptFrame', {'BP': s('PrimaryRecord')}, w.writes(), DEMO,
+               expect=front_pod_step, name='step 1 native front-pod spawn')
 
 def cases(rng, scale, pair):
     s = pair.sym
@@ -259,6 +278,7 @@ MUTANTS = [
     ('weapons.c', 'TargetSearchCursor = (word)(r + 1);', 'TargetSearchCursor = (word)r;'),
     ('weapons.c', 'bp = draw_demo_caption(DrawDemoCaption, DemoScript[DemoStep * 3], bp);', 'draw_demo_caption(DrawDemoCaption, DemoScript[DemoStep * 3], bp);'),
     ('weapons.c', 'case 10: case 12: case 13: case 14: case 15: ++WeaponMode; break;', 'case 10: case 12: case 13: case 14: ++WeaponMode; break;'),
+    ('weapons.c', 'case 16: demo_step_spawn_path_enemy51(bp); break;', 'case 16: demo_step_spawn_path_enemy51(PRIMARY); break;'),
     ('weapons.asm', 'FindMissileTarget:\r\n    push ax\r\n', 'FindMissileTarget:\r\n'),
 ]
 

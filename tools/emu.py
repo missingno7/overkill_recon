@@ -12,7 +12,7 @@ stops the call as a failure.
 """
 from common import *
 from extract import mz
-from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_16, UC_HOOK_INTR, UC_HOOK_INSN
+from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_16, UC_HOOK_INTR, UC_HOOK_INSN, UC_HOOK_CODE
 from unicorn.x86_const import *
 import re, struct
 
@@ -41,6 +41,12 @@ class Machine:
         self.image = bytes(image)
         assert LOAD * 16 + len(image) <= HEAP * 16, 'image overlaps the test heap'
         self.symbols = read_map(exe.with_suffix('.MAP'))
+        # The next segment's first public is beyond linker alignment padding.
+        # Coverage ranges must end at the current segment's actual length.
+        map_text = exe.with_suffix('.MAP').read_text(errors='replace')
+        self.segment_ends = {int(m[1], 16) >> 4: LOAD * 16 + int(m[1], 16) + int(m[2], 16)
+                             for m in re.finditer(r'^\s*([0-9A-F]+)H\s+[0-9A-F]+H\s+([0-9A-F]+)H\s+\w+',
+                                                  map_text, re.M)}
         self.u = Uc(UC_ARCH_X86, UC_MODE_16)
         self.u.mem_map(0, 0x100000)
         self.u.mem_write(LOAD * 16, self.image)
@@ -111,10 +117,19 @@ class Machine:
         self.u.reg_write(REG['CS'], cs); self.u.reg_write(REG['SP'], sp)
         self.u.reg_write(REG['FLAGS'], flags)
         self.fault = None; self.ports = []
+        # A MAIN near-return address can physically alias code in the hybrid's
+        # far C segment. Stop on the actual return context, not that linear
+        # address while executing a different CS or an active callee frame.
+        def returned(u, address, size, _):
+            if u.reg_read(REG['CS']) == cs and u.reg_read(REG['SP']) == sp + 2:
+                u.emu_stop()
+        done = self.u.hook_add(UC_HOOK_CODE, returned, None, sentinel, sentinel)
         try:
-            self.u.emu_start(cs * 16 + off, sentinel, count=limit)
+            self.u.emu_start(cs * 16 + off, 0, count=limit)
         except UcError as e:
             raise AssertionError(f'{name}: CPU fault {e} at {self.u.reg_read(REG["CS"]):04X}:{self.u.reg_read(REG["IP"]):04X}')
+        finally:
+            self.u.hook_del(done)
         ip = self.u.reg_read(REG['CS']) * 16 + self.u.reg_read(REG['IP'])
         if self.fault: raise AssertionError(f'{name}: {self.fault} at linear {ip:05X}')
         if ip != sentinel: raise AssertionError(f'{name}: did not return within {limit} instructions')
@@ -122,8 +137,8 @@ class Machine:
 
     def sentinel(self, cs):
         """Return address for the test call: cs:FFFEh. Emulation stops when execution reaches
-        it (nothing is written there), so it only has to be an address the routine under test
-        never executes itself."""
+        it in the caller's CS after unwinding the call. The same linear address may
+        alias executable code in another real-mode segment; it remains runnable."""
         return cs * 16 + 0xFFFE
 
     def start_runtime(self, adapter=2):

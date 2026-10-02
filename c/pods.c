@@ -7,13 +7,11 @@
    Same state, same results; the oracle comments at each routine hold the original
    contracts and quirks.
 
-   Stays ASM: DrawUpgradeSlot/DrawUpgradeSlots and InitUpgradeSlots (HUD drawing and the
-   slots' screen offsets, platform), ReturnNear (the shared bare ret of many tables) and
-   ReturnNoHit (a dead `clc / ret` after KindHandlers once its users are C).
-
-   The upgrade lists (DATA.ASM) hold MAIN code addresses of their condition and apply
-   routines: C calls every entry through FarCallMainNearViaAX, and the bridge keeps a
-   MAIN label for each of them (all owned here; entry 0 and the list ends apply ReturnNear).
+   Stays ASM: ReturnNear (the shared bare ret of many tables) and ReturnNoHit (a dead
+   `clc / ret` after KindHandlers once its users are C). The slot pixel rendering is in
+   c/render.c. Upgrade lists still contain MAIN code-address tokens; known frozen tokens
+   select the existing C conditions/actions, while unknown injected tokens retain the raw
+   trampoline call.
 
    SEGMENT: CGAME
    OWNS: UpgradeNeverAvailable UpgradeAlwaysAvailable MissilesAvailable FrontPodAvailable
@@ -37,10 +35,11 @@
    OWNS: CountLeftPod CountRightPod AdjustRecordXFromCounts SidePodBalanceCases
    OWNS: NudgeShipRightHalf NudgeShipRight NudgeShipLeftHalf NudgeShipLeft PlaceSidePods
    OWNS: PlaceRecordFromOffsetPair DecRecordXTwice DecRecordXUnlessZero IncRecordXTwice
-   OWNS: IncRecordXBelowMax DemoStepNextShipForm
+   OWNS: IncRecordXBelowMax DemoStepNextShipForm PickupEnergy InitUpgradeSlots InitUpgradeSlotAtRow
 */
 #include "pods.h"
 #include "hits.h"
+#include "player.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 #define NO_SLOT 0xFFFF              /* empty pod slot, no selected upgrade slot */
@@ -77,27 +76,63 @@ STATIC_CHECK(pods_entry_size, sizeof(UpgradeEntry) == 6);
 extern volatile word __far SaveBufferCursor;
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
-extern void DrawUpgradeSlots(void);     /* platform: the four HUD slots; keeps BP, leaves SI */
-extern void InitUpgradeSlots(void);     /* HUD layout: icon 24h, index 0, screen offsets; BP out */
-extern void PlaceAtPlayerOffset(void);  /* BP = record, DX = (Y, X) table by ship form */
-extern void PickupEnergy(void);         /* pickup items 2..4, BP = PrimaryRecord */
 void smart_bomb_all(void);              /* c/frame.c */
-extern void PickupFuel(void);
 
-/* DrawUpgradeSlots: SI comes back as the blitter leaves it (RemoveRecord passes it on). */
-word pods_call_main_si(main_routine target);
-#pragma aux pods_call_main_si "FarCallMainNearViaAX" far parm [ax] value [si] modify exact [ax bx cx dx si di es]
 /* An upgrade list apply routine (a bridge label of this region, or ReturnNear). */
 void pods_call_main(main_routine target);
 #pragma aux pods_call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
 /* BP = r around the far call: the near thunk CALL_MAIN_BP of c/shots.asm (DX passes). */
 void pods_call_main_bp(main_routine target, Record *r);
 #pragma aux pods_call_main_bp "CALL_MAIN_BP" parm [ax] [si] modify exact [ax bx cx dx si di es]
-void pods_call_main_bp_dx(main_routine target, Record *r, word *table);
-#pragma aux pods_call_main_bp_dx "CALL_MAIN_BP" parm [ax] [si] [dx] modify exact [ax bx cx dx si di es]
 /* An upgrade list condition routine: 1 when it returns NZ (thunk in c/pods.asm). */
 word pods_call_condition(word routine);
 #pragma aux pods_call_condition "PODS_CALL_CONDITION" parm [ax] value [ax] modify exact [ax]
+
+word pods_upgrade_condition(word routine);
+void pods_apply_upgrade(word routine);
+
+/* This caller needs only the result ABI, not render.h's pixel request declarations. */
+dword render_draw_upgrade_slots(void);
+#pragma aux render_draw_upgrade_slots value [dx ax] modify exact [ax dx]
+
+extern void RedrawEnergyGauge(void);
+
+/* Fixed screen-row/8-pixel-column mapper, retained as adapter code in MAIN. */
+word pods_screen_offset(word row_column);
+#pragma aux pods_screen_offset "PODS_SCREEN_OFFSET" parm [si] value [ax] \
+    modify exact [ax bx cx dx si di es]
+
+/* Item 2. The equality loop deliberately wraps a 16-bit energy bar before reaching 18h. */
+void pickup_energy(void)
+{
+    if (SfxEnabled != 0) SfxRequest = 0x1C;
+    if (EnergyTanks == 3) {
+        while (EnergyPoints != 0x18) EnergyPoints++;
+    } else {
+        EnergyTanks++;
+    }
+    pods_call_main(RedrawEnergyGauge);
+}
+
+/* Reset four data-backed slots. The returned word is the BP value left by the oracle:
+   the offset just past UpgradeSlot3. The platform helper still selects CGA/EGA/Tandy. */
+word init_upgrade_slots(void)
+{
+    UpgradeSlot *slot = (UpgradeSlot *)UpgradeSlot0;
+    word row = 0x87;
+    word n;
+
+    SelectedUpgradeSlot = 0xFFFF;
+    for (n = 0; n != 4; n++) {
+        word screen = pods_screen_offset((row << 8) | 0x1C);
+        slot->icon = 0x24;
+        slot->screen = screen;
+        slot->index = 0;
+        slot++;
+        row += 0x10;
+    }
+    return (word)slot;
+}
 
 /* ---- score ------------------------------------------------------------------------ */
 
@@ -159,7 +194,7 @@ void advance_to_available_upgrade(void)
             slot->index = 0;
             continue;
         }
-        if (pods_call_condition(entry->condition)) {
+        if (pods_upgrade_condition(entry->condition)) {
             slot->icon = entry->icon;
             return;
         }
@@ -175,7 +210,7 @@ void advance_to_available_upgrade(void)
 word refresh_upgrade_display(void)
 {
     advance_to_available_upgrade();
-    return pods_call_main_si(DrawUpgradeSlots);
+    return (word)render_draw_upgrade_slots();
 }
 
 /* Secondary button (held past MAP_INTRO_END_POS, every frame): the selected slot's entry
@@ -189,12 +224,12 @@ void apply_selected_upgrade(void)
 
     if (selected == NO_SLOT) return;
     slot = pods_selected_slot();
-    pods_call_main((main_routine)((UpgradeEntry *)slot->list + slot->index)->apply);
+    pods_apply_upgrade(((UpgradeEntry *)slot->list + slot->index)->apply);
     SavedUpgradeSlot = SelectedUpgradeSlot;
     SelectedUpgradeSlot = selected;
     advance_to_available_upgrade();
     SelectedUpgradeSlot = SavedUpgradeSlot;
-    pods_call_main_si(DrawUpgradeSlots);
+    (void)render_draw_upgrade_slots();
     if (SelectedUpgradeSlot == NO_SLOT && SfxEnabled) SfxRequest = 9;
 }
 
@@ -451,6 +486,77 @@ void apply_trailing_pods(void)
     finish_upgrade();
 }
 
+/* UpgradeList0..3 keep their MAIN offsets so the frozen DS tables need no shadow copy.
+   Compare those address tokens here and run their already translated logic in C. The
+   fallback keeps support for injected/unknown entries used by callers that extend a list
+   at runtime; ReturnNear is the table's ordinary no-op apply. */
+extern void UpgradeNeverAvailable(void);
+extern void SingleShotAvailable(void);
+extern void HeavyShotAvailable(void);
+extern void ForkShotAvailable(void);
+extern void TwinRising3Available(void);
+extern void TwinRising16Available(void);
+extern void BeamAvailable(void);
+extern void SideShotsAvailable(void);
+extern void MissilesAvailable(void);
+extern void FrontPodAvailable(void);
+extern void SidePodsAvailable(void);
+extern void TrailingPodsAvailable(void);
+extern void ShipForm1Available(void);
+extern void ShipForm2Available(void);
+extern void ReturnNear(void);
+extern void ApplySingleShot(void);
+extern void ApplyHeavyShot(void);
+extern void ApplyForkShot(void);
+extern void ApplyTwinRising3(void);
+extern void ApplyTwinRising16(void);
+extern void ApplyBeam(void);
+extern void ApplySideShots(void);
+extern void ApplyMissiles(void);
+extern void ApplyFrontPod(void);
+extern void ApplySidePods(void);
+extern void ApplyTrailingPods(void);
+extern void ApplyShipForm1(void);
+extern void ApplyShipForm2(void);
+
+word pods_upgrade_condition(word routine)
+{
+    if (routine == (word)(main_routine)UpgradeNeverAvailable) return upgrade_never_available();
+    if (routine == (word)(main_routine)SingleShotAvailable) return single_shot_available();
+    if (routine == (word)(main_routine)HeavyShotAvailable) return heavy_shot_available();
+    if (routine == (word)(main_routine)ForkShotAvailable) return fork_shot_available();
+    if (routine == (word)(main_routine)TwinRising3Available) return twin_rising3_available();
+    if (routine == (word)(main_routine)TwinRising16Available) return twin_rising16_available();
+    if (routine == (word)(main_routine)BeamAvailable) return beam_available();
+    if (routine == (word)(main_routine)SideShotsAvailable) return side_shots_available();
+    if (routine == (word)(main_routine)MissilesAvailable) return missiles_available();
+    if (routine == (word)(main_routine)FrontPodAvailable) return front_pod_available();
+    if (routine == (word)(main_routine)SidePodsAvailable) return side_pods_available();
+    if (routine == (word)(main_routine)TrailingPodsAvailable) return trailing_pods_available();
+    if (routine == (word)(main_routine)ShipForm1Available) return ship_form1_available();
+    if (routine == (word)(main_routine)ShipForm2Available) return ship_form2_available();
+    return pods_call_condition(routine);
+}
+
+void pods_apply_upgrade(word routine)
+{
+    if (routine == (word)(main_routine)ReturnNear) return;
+    if (routine == (word)(main_routine)ApplySingleShot) { apply_single_shot(); return; }
+    if (routine == (word)(main_routine)ApplyHeavyShot) { apply_heavy_shot(); return; }
+    if (routine == (word)(main_routine)ApplyForkShot) { apply_fork_shot(); return; }
+    if (routine == (word)(main_routine)ApplyTwinRising3) { apply_twin_rising3(); return; }
+    if (routine == (word)(main_routine)ApplyTwinRising16) { apply_twin_rising16(); return; }
+    if (routine == (word)(main_routine)ApplyBeam) { apply_beam(); return; }
+    if (routine == (word)(main_routine)ApplySideShots) { apply_side_shots(); return; }
+    if (routine == (word)(main_routine)ApplyMissiles) { apply_missiles(); return; }
+    if (routine == (word)(main_routine)ApplyFrontPod) { apply_front_pod(); return; }
+    if (routine == (word)(main_routine)ApplySidePods) { apply_side_pods(); return; }
+    if (routine == (word)(main_routine)ApplyTrailingPods) { apply_trailing_pods(); return; }
+    if (routine == (word)(main_routine)ApplyShipForm1) { apply_ship_form1(); return; }
+    if (routine == (word)(main_routine)ApplyShipForm2) { apply_ship_form2(); return; }
+    pods_call_main((main_routine)routine);
+}
+
 /* ---- placing the side pods and nudging the ship ------------------------------------------ */
 
 /* PlaceRecordFromOffsetPair: pod (NO_RECORD: nothing) = anchor + table[anchor REC_SPRITE]
@@ -669,7 +775,7 @@ void pods_update_front_pod(Record *pod)
     Record *enemy;
 
     if (PRIMARY->sprite < 3) {
-        pods_call_main_bp_dx(PlaceAtPlayerOffset, pod, FrontPodOffsets);
+        place_at_player_offset(pod, FrontPodOffsets);
         if (!pod_terrain_hit(pod)) {
             enemy = pod_collide_records(pod);
             if (enemy == 0) return;
@@ -811,9 +917,9 @@ void collect_pickup(Record *pickup)
     add_score_bcd(0x20);
     switch (pickup->item_index) {
     case 1: pickup_upgrade_selector(); break;
-    case 2: pods_call_main_bp(PickupEnergy, PRIMARY); break;
+    case 2: pickup_energy(); break;
     case 3: smart_bomb_all(); break;
-    case 4: pods_call_main_bp(PickupFuel, PRIMARY); break;
+    case 4: pickup_fuel(); break;
     /* 0: nothing (ReturnNear) */
     }
     remove_record(pickup);
@@ -852,8 +958,8 @@ void reset_pool_a_and_upgrades(void)
     SidePodRightOuter = NO_SLOT;
     FrontPodRecord = NO_SLOT;
     PRIMARY->sprite = 0;
-    pods_call_main_bp(InitUpgradeSlots, PRIMARY);      /* its BP result is dropped */
-    pods_call_main_si(DrawUpgradeSlots);
+    (void)init_upgrade_slots();
+    (void)render_draw_upgrade_slots();
 }
 
 /* ---- attract demo steps ------------------------------------------------------------ */

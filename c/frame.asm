@@ -3,19 +3,28 @@
 ; calls the C function that owns it (c/game.h convention: SI, DI in; AX out; all else
 ; preserved). Only labels the remaining ASM still reaches need a stub.
 locals
+extrn INIT_STARS:near
+extrn MOVE_STARS:near
 extrn UPDATE_ALL_RECORDS:near
 extrn TICK_FRAME_TIMERS:near
 extrn TICK_REFUEL:near
-extrn UPDATE_REFUEL_TIMERS_AND_SCORE:near
+extrn FRAME_UPDATE_REFUEL_TIMERS_AND_SCORE:near
 extrn SCROLL_FORWARD_AND_CHECK_LEVEL_END:near
 extrn SCROLL_MAP_TO_LEVEL_START:near
 extrn RESTART_AT_CHECKPOINT:near
 extrn SMART_BOMB_ALL:near
-extrn RequestModuleMusic:near
 extrn FarCallMainNearViaAX:far
 extrn FarCallMainNearViaBP:far
 MAIN segment byte public 'CODE'
 assume cs:MAIN, ds:nothing, ss:nothing, es:nothing
+
+public InitStars, MoveStars
+InitStars:
+    call INIT_STARS
+    ret
+MoveStars:
+    call MOVE_STARS
+    retf
 
 public UpdateAllRecords
 ; The record pass. Leaves BP as the oracle does (the last pool B pointer, or what that
@@ -26,18 +35,26 @@ UpdateAllRecords:
     ret
 
 public TickFrameTimers, TickRefuel, UpdateRefuelTimersAndScore, SmartBombAll
-; No register inputs; clobber AX (the oracle clobbers more; TickRefuel and SmartBombAll keep
-; BP).
+; TickFrameTimers, TickRefuel and SmartBombAll take no register inputs; TickRefuel and
+; SmartBombAll keep BP. The score entry below instead uses the saved BP/ES pair.
 TickFrameTimers:
     call TICK_FRAME_TIMERS
     ret
 TickRefuel:
     call TICK_REFUEL
     ret
-; BP = ScoreBcd as DrawScore leaves it (the oracle's exit BP).
+; BP/ES in the saved words are a writable DosRegisters pair. The native coordinator
+; carries the gauge's real ES into score text and returns the resulting BP/ES pair.
 UpdateRefuelTimersAndScore:
-    call UPDATE_REFUEL_TIMERS_AND_SCORE
-    mov bp, ax
+    push es
+    push bp
+    push si
+    mov si, sp
+    add si, 2
+    call FRAME_UPDATE_REFUEL_TIMERS_AND_SCORE
+    pop si
+    pop bp
+    pop es
     ret
 SmartBombAll:
     call SMART_BOMB_ALL

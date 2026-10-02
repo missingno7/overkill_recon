@@ -20,10 +20,12 @@ before it and block sizes sum to the segment sizes. A block whose first statemen
 instruction is code, one whose first statement is db/dw/dd is data, and a label directly
 followed by another label is an alias of the block that follows.
 
-A *routine* is a code block plus the data blocks it owns: a data block that contains
-instructions (a dispatch table followed by the cases it names), or a table of code
-offsets referenced only by that routine and placed after it (so C ownership of a routine
-means ownership of its tables, as in c/*.c OWNS lines). Its bytes split into code
+A *routine* is a code block plus its embedded code blocks and owned tables: a data block
+that contains instructions (a dispatch table followed by the cases it names), or a table
+of code offsets referenced only by that routine and placed after it. For C-owned routines,
+an adjacent offset table is part of the C routine only when the C `OWNS:` list names it;
+unlisted tables can be platform dispatch tables or CS data used through the original
+memory interface. Its bytes split into code
 (instruction lines) and embedded data (tables, variables and fill inside it). Every other
 data block in a code segment is *CS data* (CS-resident variables, buffers, shared
 tables): it is not migratable (C owns no data), its bytes are counted separately, and
@@ -350,7 +352,17 @@ def build_model():
             if b.kind == 'code':
                 cur = b; b.members = [b]; M.routines[key] = b; M.owner[key] = key; continue
             users = set().union(*(refs.get(n.upper(), set()) for n in [b.name] + b.aliases))
-            if cur is not None and (b.has_ins or (code_targets(M, key) and users <= {cur.name.upper()})):
+            # C's OWNS list is also the hybrid's exact cut boundary. Do not absorb an
+            # adjacent, unlisted code-pointer table into a C-owned routine just because
+            # the oracle routine was its only ASM reference: the C owner may read that
+            # table to select an unowned platform blitter, and C may access other such
+            # CS tables directly. Embedded case code still belongs to the routine.
+            cur_c_owner = M.owned.get(cur.name.upper()) if cur is not None else None
+            explicitly_owned_table = cur_c_owner is not None and any(
+                M.owned.get(n.upper()) == cur_c_owner for n in [b.name] + b.aliases)
+            table_belongs = (code_targets(M, key) and users <= {cur.name.upper()}
+                             and (cur_c_owner is None or explicitly_owned_table)) if cur is not None else False
+            if cur is not None and (b.has_ins or table_belongs):
                 cur.members.append(b); M.owner[key] = cur.name.upper()
             else:
                 b.csdata = True
@@ -358,7 +370,7 @@ def build_model():
     for k, b in M.label_block.items():
         if b.name.upper() in M.owner: M.owner[k] = M.owner[b.name.upper()]
     M.csdata = {b.name.upper(): b for b in blocks if b.csdata}
-    for label, cfile in M.owned.items():       # C owns whole routines, tables included
+    for label, cfile in M.owned.items():       # C owns listed routines and explicitly listed tables
         k = M.owner.get(label)
         if k is None: M.problems.append(f'{cfile}: OWNS {label}, which is no routine or routine table'); continue
         r = M.routines[k]

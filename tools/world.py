@@ -9,7 +9,7 @@ and constants come from include/*.INC (the same source as the C header).
     w.plausible()                         # counters, level, difficulty, player, scroll
     r = w.record('PoolA', 3).live(kind=K.KIND_ENEMY, type=0x12)
     r.set(saved_x=0x40); w.fill('PoolB', 34)       # a full pool B
-    Case('Type12WaypointPathFollower', {'BP': r.at}, w.writes(), ...)
+    Case('RunTypeHandler', {'BP': r.at}, w.writes(), ...)
 """
 from common import *
 import re, struct

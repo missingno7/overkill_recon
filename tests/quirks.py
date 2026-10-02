@@ -42,7 +42,7 @@ def cases(rng, scale, pair):
 
     # Type 8Fh at FrameCount64 phase 3, throttled: BX is still its sprite C1h, so word 44h
     # lands at DS:C9h inside BossKeyScreen.
-    yield Case('Type8FAnimFireBurstB', {'BP': a0},
+    yield Case('RunTypeHandler', {'BP': a0},
                [(s('PrimaryRecord'), player), (s('DifficultySetting'), W(0)), (s('ChildSpawnThrottle'), b'\0'),
                 (s('FrameCount64'), W(24)),
                 (a0, rec(status=1, y=0x40, x=0x80, kind=4, type=0x8F, size_class=1, slot_index=0xFFFF))],
@@ -78,11 +78,19 @@ def cases(rng, scale, pair):
     yield Case('AddScoreBcd', {'BX': 0x0001}, [(s('ScoreBcd'), b'\x99\x99\x99\x99')], name='BCD wrap',
                expect=lambda m, r: check(m.read(s('ScoreBcd'), 4) == bytes(4), 'score wraps to 0'))
 
-    # Equality guards, not clamps: Y below SHIP_Y_MIN keeps decrementing; at it, stays.
-    for y, after in ((0x1F, 0x1E), (0x20, 0x20), (0x21, 0x20)):
-        yield Case('DecRecordYUnlessAtMin', {'BP': s('PrimaryRecord')}, [(s('PrimaryRecord'), rec(y=y))],
-                   name=f'equality guard Y={y:X}',
-                   expect=lambda m, r, after=after: check(m.word(s('PrimaryRecord') + 2) == after, 'equality-only guard'))
+    # Equality guards, not clamps: the real player frame decrements twice below
+    # SHIP_Y_MIN, but stops at equality. Enter through the actual C caller.
+    for y, after in ((0x1F, 0x1D), (0x20, 0x20), (0x21, 0x20)):
+        keys = bytearray(0x80); keys[0x48] = 1  # SCAN_UP
+        setup = [(s('PrimaryRecord'), rec(status=1, y=y, x=0x60, kind=3, size_class=1)),
+                 (s('KeyDownTable'), keys), (s('InputDeviceMode'), W(0)),
+                 (s('LevelEndPhase'), W(0)), (s('Fuel'), W(0x58)), (s('EnergyTanks'), W(3)),
+                 (s('EncounterLiveCount'), W(1)), (s('MapScrollPos'), W(0)),
+                 (s('ByteAttributeTable'), bytes(256))]
+        yield [Case('InitPositionHistory', {}, setup, ('SP', 'DS', 'SS')),
+               Case('UpdatePlayerFrame', {}, (), ('SP', 'DS', 'SS'), name=f'equality guard Y={y:X}',
+                    expect=lambda m, r, after=after: check(m.word(s('PrimaryRecord') + 2) == after,
+                                                          'equality-only guard'))]
 
     # The "random" source is a fixed 16-word cycle; the cursor wraps after the last word.
     base = s('CreditRandomWords')

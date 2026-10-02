@@ -352,8 +352,8 @@ def quirks(pair):
 MUTANTS = [
     ('spawn.c', 'word n = POOL_A_COUNT;', 'word n = POOL_A_COUNT - 1;'),
     ('spawn.c', 'if ((sword)y > 0) {', 'if (y > 0) {'),
-    ('spawn.c', 'case 0xF9: return call_fuel_pickup((main_routine)SpawnCellFuelPickup, here, off);',
-                'case 0xF9: call_fuel_pickup((main_routine)SpawnCellFuelPickup, here, off); break;'),
+    ('spawn.c', 'case 0xF9: return spawn_cell_fuel_pickup(here, off);',
+                'case 0xF9: spawn_cell_fuel_pickup(here, off); break;'),
     ('spawn.c', 'if (r->draw_pass != 1 && r->size_class == 1) snap_to_clear_column(r);',
                 'if (r->size_class == 1) snap_to_clear_column(r);'),
     ('spawn.c', 'if (r->type == 0x21) start_leader_script(r, LevelIndex + 1);',

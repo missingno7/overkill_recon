@@ -34,13 +34,11 @@ void step_along_delta(Record *r);
    inline `call far ptr` with another copy and drops its segment fixup (it corrupted the
    second RemoveRecord call of shot_bounds_check, since moved to C: c/pods.c). */
 extern void RedrawEnergyGauge(void);     /* platform: the energy gauge (keeps BP) */
-extern void FindMissileTarget(void);     /* BX out, clobbers CX */
+Record *find_missile_target(void);
 void call_main(main_routine target);
 #pragma aux call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
 void call_main_bp(main_routine target, Record *r);
 #pragma aux call_main_bp "CALL_MAIN_BP" parm [ax] [si] modify exact [ax bx cx dx si di es]
-word call_main_bx(main_routine target);
-#pragma aux call_main_bx "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx cx]
 
 /* The level map: MAP_ROW_BYTES cells per row in the segment held by the CS word
    LevelMapSegment (MAIN). Cell offsets are 16-bit and unchecked, as in the oracle. */
@@ -316,7 +314,7 @@ void type0a_homing_missile(Record *m)
     steer_toward_target(m);
     if (SteerArrived != 0) {
         if (MissilesLive != 0) MissilesLive--;
-        found = call_main_bx(FindMissileTarget);
+        found = (word)find_missile_target();
         if (found == 0xFFFF) {
             expire_shot(m);
             return;

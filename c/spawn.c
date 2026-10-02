@@ -37,10 +37,11 @@
    OWNS: SpawnEnemyHereQuiet SpawnEnemyHere InitEnemyRecordHere
    OWNS: Type13FormationLeader Type13FormationLeaderBody Type21LeaderPathBody ResetType21Path
    OWNS: DrawIncomingMapRow DemoStepSpawnPathEnemy51 DemoStepLaunchFrontPod
-   OWNS: AllocGroupSlot StartLeaderScript ResetMarchState
+   OWNS: AllocGroupSlot StartLeaderScript ResetMarchState SpawnCellFuelPickup
 */
 #include "game.h"
 #include "enemies.h"
+#include "hits.h"
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -52,15 +53,6 @@ extern word __far Type21PathCursor;    /* far segment: next Type21Path waypoint 
 #define MAP_AT(off) (((__segment)LevelMapSegment) :> ((byte __based(void) *)(off)))
 
 void steer_toward_target(Record *r);           /* c/movement.c */
-
-/* Remaining ASM reached through the oracle's trampoline (see c/game.h). */
-/* SpawnCellFuelPickup (level 0 map byte F9h, not this region): SI = the map cell, BP = the
-   spawn origin; returns SI: unchanged when pool A is full, else DropKind + 46h (the scratch
-   use of SI in its InitPickupRecord). */
-extern void SpawnCellFuelPickup(void);
-word call_fuel_pickup(main_routine target, Record *here, word off);
-#pragma aux call_fuel_pickup = "push bp" "mov bp, di" "call far ptr FarCallMainNearViaAX" "pop bp" \
-    parm [ax] [di] [si] value [si] modify exact [ax bx cx si]
 
 /* Level0..5MapCell bridge entry: AH = level, AL = cell byte. */
 #pragma aux level_map_cell parm [si] [di] [ax] value [ax] modify exact [ax]
@@ -429,6 +421,15 @@ void spawn_cell_crawler5f(Record *here, word off)
 }
 /* ---- per-level map cell handlers ------------------------------------------------------ */
 
+word spawn_cell_fuel_pickup(Record *here, word off)
+{
+    Record *pickup = spawn_map_enemy(here, off);
+
+    if (pickup == NO_RECORD) return off;
+    DropKind = 4;
+    return init_pickup_record(pickup);
+}
+
 /* Level 0: BCh left of / at the centre column, BBh right of it; E1h..F9h grouped. The
    range check also admits FAh and FBh, whose oracle table slots are code bytes (those
    map bytes never occur): here they only allocate the group slot. Returns the map offset
@@ -473,7 +474,7 @@ word level0_map_cell(Record *here, word off, byte cell)
     case 0xF6: set_type(spawn_map_enemy(here, off), 0x4F); break;                      /* Faller4F */
     case 0xF7: spawn_cell_aimed_descender72(off); break;
     case 0xF8: spawn_cell_spread_shooter75(off); break;
-    case 0xF9: return call_fuel_pickup((main_routine)SpawnCellFuelPickup, here, off);
+    case 0xF9: return spawn_cell_fuel_pickup(here, off);
     }
     return off;
 }

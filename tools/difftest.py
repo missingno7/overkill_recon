@@ -25,9 +25,14 @@ below the entry SP; the game's stack is STACK_BYTES, shared with interrupts).
 """
 from common import *
 from build import main_sources
-from emu import Machine, FLAG, LOAD
+from emu import Machine, FLAG, LOAD, REG
 from unicorn import UC_HOOK_MEM_WRITE
 import bisect, importlib, itertools, random, re, shutil, sys, time
+
+# Suites import this module to register far state fields and use the shared Case/Side
+# types. The CLI must expose that same module, rather than loading a second copy.
+if __name__ == '__main__':
+    sys.modules['difftest'] = sys.modules[__name__]
 
 STATE_BYTES = 0xD330
 ALL_REGS = ('AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS')
@@ -39,7 +44,16 @@ ALL_REGS = ('AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'ES', 'SP', 'DS', 'SS')
 MAP_SEGMENT = 0x9000
 # Game state a case may place outside the state segment: the level map window and
 # CS-resident variables by image label. A write key far(label, offset) = (index + 1) << 16 | offset.
-FAR_LABELS = ('SlotBuffer', 'Type21PathCursor')
+# CS offset mailboxes move with MAIN. Derive their allowed symbolic values from the
+# oracle's immediate offset stores; retain unknown values as numbers so bad pointers
+# still fail. This canonicalizes pointer identity without masking writes or their order.
+OFFSET_STORES = {}
+for source in main_sources():
+    for field, target in re.findall(r'mov\s+word ptr cs:\[(\w+)\],\s*offset (\w+)',
+                                    source.read_bytes().decode('latin-1'), re.I):
+        OFFSET_STORES.setdefault(field.upper() + '+0', set()).add(target.upper())
+
+FAR_LABELS = ('SlotBuffer', 'Type21PathCursor', 'SoundModuleSlot')
 def far(label, offset=0): return (FAR_LABELS.index(label) + 1) << 16 | offset
 
 class OracleFault(AssertionError):
@@ -57,6 +71,7 @@ class Case:
 class Side:
     def __init__(self, exe):
         self.m = Machine(exe)
+        self.linked_state = self.m.state()
         self.m.start_runtime()
         self.m.poke('LevelMapSegment', MAP_SEGMENT)
         self.map = bytes(0x10000); self.m.u.mem_write(MAP_SEGMENT * 16, self.map)
@@ -72,9 +87,21 @@ class Side:
         self.low, self.depth = 0x10000, 0
         def write(u, access, address, size, value, _):
             if not (base <= address and address + size <= end):
-                self.outside.append((self.where(address), size, value & ((1 << 8 * size) - 1)))
+                where = self.where(address)
+                stored = value & ((1 << 8 * size) - 1)
+                if size == 2:
+                    for target in sorted(OFFSET_STORES.get(where, ())):
+                        if target in self.m.symbols and self.m.symbols[target][1] == stored:
+                            stored = target
+                            break
+                self.outside.append((where, size, stored))
                 self.undo.append((address, bytes(u.mem_read(address, size))))
-            elif stack_low <= address < stack_high and address - base < self.low:
+            # Fixtures may pass a mailbox in otherwise unused StackArea bytes.
+            # Count active stack writes, not stores through those test pointers.
+            # A far CALL can write four bytes below the pre-instruction SP.
+            elif (stack_low <= address < stack_high and
+                  address >= base + u.reg_read(REG['SP']) - 4 and
+                  address - base < self.low):
                 self.low = address - base
         self.m.u.hook_add(UC_HOOK_MEM_WRITE, write)
 
@@ -125,7 +152,7 @@ class Side:
 class Pair:
     def __init__(self, oracle=ROOT/'build/oracle-sym/OVERKILL.EXE', hybrid=ROOT/'build/hybrid/OVERKILL.EXE'):
         self.a, self.b = Side(oracle), Side(hybrid)
-        pa, pb = self.a.pristine[:STATE_BYTES], self.b.pristine[:STATE_BYTES]
+        pa, pb = self.a.linked_state[:STATE_BYTES], self.b.linked_state[:STATE_BYTES]
         # Static tables of code offsets differ between the two links; nothing else may.
         self.mask = bytes(1 if pa[i] != pb[i] else 0 for i in range(STATE_BYTES))
         self.stack_area = self.a.m.offset('StackArea')
@@ -169,12 +196,20 @@ class Pair:
         if self.a.m.ports != self.b.m.ports:
             raise AssertionError(f'{where}: port traffic differs\n  oracle {self.a.m.ports[:6]}\n  hybrid {self.b.m.ports[:6]}')
         if self.a.outside != self.b.outside:
-            raise AssertionError(f'{where}: writes outside the state segment differ\n  oracle {self.a.outside[:6]}\n  hybrid {self.b.outside[:6]}')
+            missing = object()
+            at = next(i for i, (a, b) in enumerate(itertools.zip_longest(
+                self.a.outside, self.b.outside, fillvalue=missing)) if a != b)
+            lo, hi = max(0, at - 1), at + 3
+            raise AssertionError(f'{where}: writes outside the state segment differ at write {at} '
+                                 f'(counts {len(self.a.outside)}/{len(self.b.outside)})'
+                                 f'\n  oracle {self.a.outside[lo:hi]}\n  hybrid {self.b.outside[lo:hi]}')
         # Segment values are compared relative to each image's state segment frame.
         for regs, side in ((ra, self.a), (rb, self.b)):
             for r in ('DS', 'SS', 'ES'):
                 if r == 'ES' and 'ES' in case.regs and regs[r] == side.entry['ES']: regs[r] = 'unchanged'
                 elif regs[r] == side.m.data_frame: regs[r] = 'state segment'
+                elif r == 'ES' and regs[r] == LOAD + side.m.symbols['SOUNDMODULESLOT'][0]:
+                    regs[r] = 'sound module segment'
         # Preserved registers must come back as the oracle leaves them (its contract);
         # outputs must agree; other registers are scratch for this routine.
         for r in set(case.preserve) | set(case.outputs):
@@ -199,13 +234,21 @@ def run_suites(names=None, scale=1, seed=0x0F67C9B, pair=None, quiet=False):
         pair.set_map(getattr(module, 'MAP', None))
         rng = random.Random(seed); t = time.time(); n = 0
         pair.max_depth = {'oracle': (0, ''), 'hybrid': (0, '')}
-        cases = module.cases(rng, scale, pair) if hasattr(module, 'cases') else ()
+        primary_cases = module.cases(rng, scale, pair) if hasattr(module, 'cases') else ()
+        cases = primary_cases
         if getattr(module, 'FUZZ', ()):
             from fuzz import corpus_cases   # saved fuzz corpora replay as regression cases
             cases = itertools.chain(cases, *(corpus_cases(t) for t in module.FUZZ))
-        for case in cases:
-            if isinstance(case, list): pair.sequence(case); n += len(case)
-            else: pair.compare(case); n += 1
+        try:
+            for case in cases:
+                if isinstance(case, list): pair.sequence(case); n += len(case)
+                else: pair.compare(case); n += 1
+        finally:
+            # Failure may leave a case generator suspended with emulator hooks
+            # and temporary comparison state. Close it while its Pair is alive,
+            # rather than letting cyclic GC clean up after the emulator is freed.
+            close = getattr(primary_cases, 'close', None)
+            if close: close()
         if not quiet:
             (da, wa), (db, wb) = pair.max_depth['oracle'], pair.max_depth['hybrid']
             print(f'PASS {name}: {n} cases in {time.time() - t:.1f} s; stack below entry SP: '
@@ -224,12 +267,12 @@ def run_mutants(names=None):
     for name in names or suite_names():
         module = importlib.import_module(name)
         for path, old, new in getattr(module, 'MUTANTS', ()):
-            cdir = ROOT/'build/mutant/c'; shutil.rmtree(cdir, ignore_errors=True); shutil.copytree(ROOT/'c', cdir)
-            text = (cdir/path).read_bytes().decode('latin-1')
-            if '\r\n' in text: old, new = (x.replace('\r\n', '\n').replace('\n', '\r\n') for x in (old, new))
+            cdir = ROOT/'build/mutant'/name/'c'; shutil.rmtree(cdir, ignore_errors=True); shutil.copytree(ROOT/'c', cdir)
+            text = (cdir/path).read_bytes().decode('latin-1').replace('\r\n', '\n')
+            old, new = (x.replace('\r\n', '\n') for x in (old, new))
             if text.count(old) != 1: raise ValueError(f'mutant {old!r} must match once in {path}')
             (cdir/path).write_bytes(text.replace(old, new).encode('latin-1'))
-            exe, _ = hybrid.build(ROOT/'build/mutant/hybrid', c_dir=cdir)
+            exe, _ = hybrid.build(ROOT/'build/mutant'/name/'hybrid', c_dir=cdir)
             try:
                 run_suites([name], 1, pair=Pair(hybrid=exe), quiet=True)
             except AssertionError as e:
@@ -238,8 +281,8 @@ def run_mutants(names=None):
     return killed
 
 def coverage(names=None, scale=1):
-    """Run the suites while recording which instructions of the oracle's C-owned code the
-    oracle side executed; every instruction should be reached."""
+    """Record executed instructions in the oracle's C-owned ranges. Misses need a
+    fixture or a static explanation (unused routines and unreachable tails remain)."""
     import hybrid
     from unicorn import UC_HOOK_CODE
     pair = Pair(); m = pair.a.m
@@ -249,12 +292,16 @@ def coverage(names=None, scale=1):
     hit = set()
     lo = min(min(v) for v in code.values() if v); hi = max(max(v) for v in code.values() if v)   # table-only labels have none
     m.u.hook_add(UC_HOOK_CODE, lambda u, address, size, _: hit.add(address), None, lo, hi)
-    run_suites(names, scale, pair=pair)
+    cases = run_suites(names, scale, pair=pair)
     missed = 0
     for name, addresses in sorted(code.items()):
         gone = [a for a in addresses if a not in hit]; missed += len(gone)
         print(f'{name}: {len(addresses) - len(gone)}/{len(addresses)} instructions'
               + (' MISSED ' + ' '.join(f'{a:05X}' for a in gone) if gone else ''))
+    instructions = set().union(*code.values())
+    print(f'PASS comparison replay: {cases} cases; oracle instruction coverage '
+          f'{len(instructions & hit)}/{len(instructions)}; '
+          f'{len(instructions - hit)} missed instructions require classification')
     return missed
 
 if __name__ == '__main__':

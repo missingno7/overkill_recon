@@ -3,8 +3,8 @@
    (asm-semantic-oracle-v1): PlayerShotsHitRecord, ShotHitsRecord and its hit kinds,
    DestroyRecord, ReleaseEncounterMember, SpawnItemDrop, SmartBombRecord, ClampRecordX and
    the type 22h/35h/36h descend-then-burst handlers. Same state, same results; the oracle
-   comments at each routine hold the original contracts. SpawnCellFuelPickup (a level 0
-   map-cell handler taking ES:SI) stays ASM and reaches InitPickupRecord through the bridge.
+   comments at each routine hold the original contracts. SpawnCellFuelPickup is the
+   C level-0 map-cell handler; its legacy entry still returns the pickup sprite in SI.
 
    SEGMENT: CGAME
    OWNS: SmartBombRecord PlayerShotsHitRecord PlayerShotsMissed SpawnItemDrop InitPickupRecord
@@ -17,11 +17,7 @@
 #include "enemies.h"
 #include "pods.h"
 
-/* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
-extern void FindFreeRecordPoolA(void);   /* BX = free record (cursor saved) or FFFFh; clobbers CX */
-
-Record *call_main_find_free(main_routine finder);
-#pragma aux call_main_find_free "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx cx]
+Record *find_free_record_pool_a(void);
 
 #define NO_RECORD ((Record *)0xFFFF)
 
@@ -48,7 +44,7 @@ word init_pickup_record(Record *pickup)
    being destroyed or released when it is already free (RemoveRecord's leader drop). */
 void spawn_item_drop(void)
 {
-    Record *pickup = call_main_find_free(FindFreeRecordPoolA);
+    Record *pickup = find_free_record_pool_a();
     word x;
 
     if (pickup == NO_RECORD) return;

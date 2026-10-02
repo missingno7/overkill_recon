@@ -80,14 +80,14 @@ def cases(rng, scale, pair):
         rec = live(rng, 4, 0x81)
         put(rec, 6, rng.choice((2, 6))); put(rec, 0x32, rng.randrange(0, 0xC1)); put(rec, 0x34, rng.randrange(0x10, 0x60))
         if rng.randrange(3) == 0: rec[2:6] = rec[0x34:0x36] + rec[0x32:0x34]
-        yield Case('Type81SweeperEnterSteer', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'far ZF #{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'sweeper entry #{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolA', rng.randrange(35))
         rec = live(rng, 4, 0x12)
         path = s(rng.choice(PATHS)) + 4 * rng.randrange(4)
         put(rec, 0x36, path)
-        yield Case('Type12WaypointPathFollower', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'#{i}')
+        yield Case('RunTypeHandler', regs(rng, BP=at), w + [(at, rec)], LOOP, name=f'path follower #{i}')
     for i in range(n):
         w = world(rng, pair)
         at = slot(pair, 'PoolA', rng.randrange(35))

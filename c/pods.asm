@@ -5,6 +5,8 @@
 ; the addresses of the condition and apply routines, so those keep a MAIN label each.
 locals
 extrn FarCallMainNearViaAX:far
+extrn FarCallMainNearViaBP:far
+extrn DrawOffsetFromScreenRow:near
 extrn UPDATE_POD:near
 extrn REMOVE_RECORD:near
 extrn POD_TERRAIN_HIT:near
@@ -243,7 +245,15 @@ MAIN ends
 ; pods_call_condition in c/pods.c.
 CGAME segment byte public 'CODE'
 assume cs:CGAME
-public PODS_CALL_CONDITION
+public PODS_CALL_CONDITION, PODS_SCREEN_OFFSET
+PODS_SCREEN_OFFSET:
+    push bp
+    mov bp, offset DrawOffsetFromScreenRow
+    mov ax, si
+    call far ptr FarCallMainNearViaBP
+    mov ax, di
+    pop bp
+    ret
 PODS_CALL_CONDITION:
     call far ptr FarCallMainNearViaAX
     mov ax, 0

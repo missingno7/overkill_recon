@@ -1,0 +1,254 @@
+/* Level, shared-graphics and page-load coordination over the oracle state.
+   File/cache services and adapter decoders remain MAIN ASM interfaces.
+
+   SEGMENT: CGAME
+   OWNS: LoadLevelMap InitializeByteAttributes ReadAttributePatchIndex AttributePatchesDone
+   OWNS: LoadGraphicsRecordImages LoadGraphicsPlain LoadGraphicsMasked
+   OWNS: LoadGraphicsFile LoadCommonGraphics LoadLevelGraphics LoadAndShowPage
+*/
+#include "levels.h"
+#include "cache.h"
+#include "input_normalize.h"
+#include "system.h"
+
+extern void ClearWorkspace(void);
+extern void BlitPackedToScreen(void);
+
+/* MAIN-resident words used to configure the retained graphics loader. */
+extern word __far LevelMapSegment;
+extern word __far WorkspaceSegment;
+extern word __far LevelBlocksSegment;
+extern word __far LevelSpritesSegment;
+extern word __far Sprites1x1Segment;
+extern word __far Sprites2x2Segment;
+extern word __far Sprites2x2CSegment;
+extern word __far ManExplSegment;
+extern word __far TheEndSegment;
+extern word __far PanelSegment;
+extern word __far PlaqueSegment;
+extern word __far BlueBitsSegment;
+extern word __far ShipSegment;
+extern volatile word __far VideoAdapter;
+extern word __far LoadNamePtr;
+extern word __far LoadDestOffset;
+extern word __far LoadDestSegment;
+extern word __far LoadImageSlot;
+extern word __far LoadMakeMask;
+extern word __far LoadRecordImages;
+extern byte __far PerFileFlagsEnabled;
+extern word __far ScreenImageOffset;
+extern word __far PanelImageOffsets[];
+extern word __far BlueBitsImageOffsets[];
+extern word __far PlaqueImageOffset;
+
+#define LEVELS_MAP_AT(off) \
+    (((__segment)LevelMapSegment) :> ((byte __based(void) *)(off)))
+#define LEVELS_PANEL_AT(off) \
+    (((__segment)PanelSegment) :> ((byte __based(void) *)(off)))
+
+/* These narrow assembly adapters set the decoder/blitter's register-only inputs,
+   call the retained MAIN implementation, update BP/ES in DosRegisters, and return
+   with DS restored to the game data segment. */
+extern void LevelsDecodeGraphics(void);
+extern void LevelsBlitPage(void);
+void levels_decode_graphics(main_routine adapter, DosRegisters *registers, word flags);
+#pragma aux levels_decode_graphics "FarCallMainNearViaAX" far parm [ax] [si] [di] \
+    modify exact [ax bx cx dx si di es]
+void levels_blit_page(main_routine adapter, DosRegisters *registers);
+#pragma aux levels_blit_page "FarCallMainNearViaAX" far parm [ax] [si] \
+    modify exact [ax bx cx dx si di es]
+
+void initialize_level_byte_attributes(void)
+{
+    word i;
+    word patch_cursor;
+    byte index, value;
+
+    for (i = 0; i < BYTE_ATTRIBUTE_COUNT; i++) ByteAttributeTable[i] = 1;
+
+    /* LevelIndex is an unchecked word index. Both the shift and address addition
+       wrap at 16 bits, matching the original DS table access. */
+    patch_cursor = *(word *)(word)((word)AttributePatchPointers +
+                                   (word)((word)LevelIndex << 1));
+    for (;;) {
+        index = *(byte *)(word)patch_cursor;
+        patch_cursor = (word)(patch_cursor + 1);
+        if (index == ATTRIBUTE_PATCH_END) break;
+        value = *(byte *)(word)patch_cursor;
+        patch_cursor = (word)(patch_cursor + 1);
+        ByteAttributeTable[index] = value;
+    }
+
+    for (i = 0; i < 2 * MAP_ROW_BYTES; i++) *LEVELS_MAP_AT(i) = 1;
+    for (i = 0; i < 5 * MAP_ROW_BYTES; i++)
+        *LEVELS_MAP_AT((word)(MAP_END_ROWS_POS + i)) = LevelEndMapRows[i];
+}
+
+void load_level_map(DosRegisters *registers)
+{
+    word map_file_offset;
+
+    /* Every load restarts all six script streams, including streams for the other
+       levels; this also runs during checkpoint restart. */
+    LevelScriptCursors[0] = (word)LevelScript0;
+    LevelScriptCursors[1] = (word)LevelScript1;
+    LevelScriptCursors[2] = (word)LevelScript2;
+    LevelScriptCursors[3] = (word)LevelScript3;
+    LevelScriptCursors[4] = (word)LevelScript4;
+    LevelScriptCursors[5] = (word)LevelScript5;
+
+    map_file_offset = (word)((word)LevelMapFiles + (word)((word)LevelIndex << 1));
+    FileNamePtr = *(word *)(word)map_file_offset;
+    FileBufferSegment = LevelMapSegment;
+    FileBufferOffset = 0;
+    for (;;) {
+        load_resource_file(registers);
+        if (FileStatus == FILE_STATUS_OK) break;
+        system_prompt_load_error_wait_fire(registers);
+    }
+
+    initialize_level_byte_attributes();
+    /* The native clear API returns no register mailbox; the old service leaves ES=0. */
+    clear_key_down_table();
+    registers->es = 0;
+}
+
+void load_graphics_file(DosRegisters *registers)
+{
+    word name, flags, flag_word;
+
+    dos_service(ClearWorkspace, registers);
+    FileBufferSegment = WorkspaceSegment;
+    FileBufferOffset = 0;
+    name = LoadNamePtr;
+    FileNamePtr = name;
+    for (;;) {
+        load_resource_file(registers);
+        if (FileStatus == FILE_STATUS_OK) break;
+        system_prompt_load_error_wait_fire(registers);
+    }
+
+    /* The per-file flag word immediately precedes the name. Only the exact value
+       1 enables it; ordinary files pass FFFFh to the adapter decoder. */
+    flags = 0xFFFF;
+    if (PerFileFlagsEnabled == 1) {
+        flag_word = (word)(name - 2);
+        flags = *(word *)(word)flag_word;
+    }
+    levels_decode_graphics((main_routine)LevelsDecodeGraphics, registers, flags);
+}
+
+/* The three public entry selectors only choose these two MAIN words before they
+   enter the shared retry/decode path. ASM callers retain the recorded-image bridge. */
+void load_graphics_record_images(DosRegisters *registers)
+{
+    LoadMakeMask = 0;
+    LoadRecordImages = 1;
+    load_graphics_file(registers);
+}
+
+void load_graphics_plain(DosRegisters *registers)
+{
+    LoadMakeMask = 0;
+    LoadRecordImages = 0;
+    load_graphics_file(registers);
+}
+
+void load_graphics_masked(DosRegisters *registers)
+{
+    LoadMakeMask = 1;
+    LoadRecordImages = 0;
+    load_graphics_file(registers);
+}
+
+void load_common_graphics(DosRegisters *registers)
+{
+    word i, patch_bytes;
+
+    LoadNamePtr = (word)File_1X1_BIC;
+    LoadDestSegment = Sprites1x1Segment;
+    load_graphics_masked(registers);
+
+    LoadNamePtr = (word)File_2X2_BIC;
+    LoadDestSegment = Sprites2x2Segment;
+    load_graphics_masked(registers);
+
+    LoadNamePtr = (word)File_2X2C_BIC;
+    LoadDestSegment = Sprites2x2CSegment;
+    load_graphics_masked(registers);
+
+    LoadNamePtr = (word)File_MANEXPL_BIC;
+    LoadDestSegment = ManExplSegment;
+    load_graphics_masked(registers);
+
+    LoadNamePtr = (word)File_THEND_BIC;
+    LoadDestSegment = TheEndSegment;
+    LoadImageSlot = (word)PanelImageOffsets;
+    load_graphics_record_images(registers);
+
+    LoadNamePtr = (word)File_PANEL_ENC;
+    LoadDestSegment = PanelSegment;
+    LoadImageSlot = (word)PanelImageOffsets;
+    LoadIsEnc = 1;
+    load_graphics_record_images(registers);
+    LoadIsEnc = 0;
+
+    if (VideoAdapter == VIDEO_CGA) {
+        patch_bytes = (word)(15 * PanelImageBytes[1]);
+        for (i = 0; i < patch_bytes; i++) *LEVELS_PANEL_AT(i) = CgaPanelPatch[i];
+    }
+
+    LoadNamePtr = (word)File_BLUEBITS_BIC;
+    LoadDestSegment = BlueBitsSegment;
+    LoadImageSlot = (word)BlueBitsImageOffsets;
+    load_graphics_record_images(registers);
+
+    LoadNamePtr = (word)File_SHIP_BIC;
+    LoadDestSegment = ShipSegment;
+    load_graphics_plain(registers);
+}
+
+void load_level_graphics(DosRegisters *registers)
+{
+    word bank_offset, plaque_offset;
+
+    FileBufferSegment = LevelBlocksSegment;
+    FileBufferOffset = 0;
+    bank_offset = (word)((word)LevelBankFiles + (word)((word)LevelIndex << 2));
+    PendingSpriteFile = *(word *)(word)bank_offset;
+    FileNamePtr = *(word *)(word)(bank_offset + 2);
+    LoadNamePtr = FileNamePtr;
+    LoadDestSegment = LevelBlocksSegment;
+    load_graphics_plain(registers);
+
+    LoadNamePtr = PendingSpriteFile;
+    LoadDestSegment = LevelSpritesSegment;
+    load_graphics_masked(registers);
+
+    plaque_offset = (word)((word)PlaqueFiles + (word)((word)LevelIndex << 1));
+    LoadNamePtr = *(word *)(word)plaque_offset;
+    LoadDestSegment = PlaqueSegment;
+    LoadImageSlot = (word)&PlaqueImageOffset;
+    LoadIsEnc = 1;
+    load_graphics_record_images(registers);
+    LoadIsEnc = 0;
+    /* Preserve ClearKeyDownTable's physical ES=0 result in the live caller pair. */
+    clear_key_down_table();
+    registers->es = 0;
+}
+
+void load_and_show_page(DosRegisters *registers)
+{
+    word page_file_offset;
+
+    page_file_offset = (word)((word)PageListPtr + (word)((word)PageIndex << 1));
+    LoadNamePtr = *(word *)(word)page_file_offset;
+    LoadDestSegment = WorkspaceSegment;
+    LoadDestOffset = 0x8000;
+    LoadImageSlot = (word)&ScreenImageOffset;
+    LoadIsEnc = 1;
+    load_graphics_record_images(registers);
+    LoadIsEnc = 0;
+    LoadDestOffset = 0;
+    levels_blit_page((main_routine)LevelsBlitPage, registers);
+}

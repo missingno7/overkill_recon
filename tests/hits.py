@@ -3,7 +3,7 @@ explosions, encounter bookkeeping, smart bomb and the descend-then-burst handler
 
 Entries are the oracle labels the remaining ASM reaches (the bridge c/hits.asm) and their
 real ASM callers (FinishRecordUpdate, CheckRecordHitsPlayer, DestroyRecordAtBX, RemoveRecord,
-SmartBombAll, SpawnCellFuelPickup, the type handlers). Register contracts are the oracle's:
+SmartBombAll, Level0MapCell, the type handlers). Register contracts are the oracle's:
 the registers listed are the ones it keeps; the rest are scratch for that routine.
 """
 from difftest import Case, ALL_REGS
@@ -111,7 +111,7 @@ def cases(rng, scale, pair):
         if rng.randrange(3) == 0: w.fill('PoolA', K.POOL_A_COUNT)
         w.word('MapCellX', rng.randrange(0, 0xD0, 0x10))
         regs = {'ES': 'LevelMapSegment', 'SI': rng.randrange(0x100, 0x1000), 'AX': 0xF9}
-        yield Case('SpawnCellFuelPickup', regs, w.writes(), ('DI', 'BP', 'SP', 'DS', 'SS'), outputs=('SI',), name=f'#{i}')
+        yield Case('Level0MapCell', regs, w.writes(), ('DI', 'BP', 'SP', 'DS', 'SS'), outputs=('SI',), name=f'#{i}')
     for i in range(n):
         w = world(rng, pair)
         t = rng.choice((0x22, 0x35, 0x36))
@@ -241,7 +241,7 @@ def quirks(pair):
 
     # InitPickupRecord leaves SI = DropKind + 46h; through SpawnCellFuelPickup that becomes
     # SpawnFromMapRow's map cursor, so the rest of the row is read from ES:004Bh on.
-    yield Case('SpawnCellFuelPickup', {'ES': 'LevelMapSegment', 'SI': 0x0123, 'AX': 0xF9},
+    yield Case('Level0MapCell', {'ES': 'LevelMapSegment', 'SI': 0x0123, 'AX': 0xF9},
                [(s('MapCellX'), W(0x40)), (s('PoolACursor'), W(a0))], ('DI', 'BP', 'SP', 'DS', 'SS'), outputs=('SI',),
                name='fuel pickup moves the map cursor',
                expect=lambda m, r: check(r['SI'] == 0x4A and m.word(a0 + 0x16) == K.KIND_PICKUP, 'SI = 4Ah after the pickup'))
@@ -264,7 +264,8 @@ MUTANTS = [
     ('hits.c', '((shot->x & 7) != 0 && dx == 0xFFF8)', '(dx == 0xFFF8)'),                          # hit box
     ('hits.c', 'r->type != 0x78 && r->type != 0x79', 'r->type != 0x78'),                           # boss rows
     ('hits.c', 'group[GROUP_LIVE] != 0 && --group[GROUP_LIVE] == 0', '--group[GROUP_LIVE] == 0'),  # wrap of a 0 group
-    ('hits.c', 'call_main_find_free(FindFreeRecordPoolA)', 'find_free_record_pool_b()'),  # wrong pool for drops
+    ('hits.c', 'Record *pickup = find_free_record_pool_a();',
+     'Record *pickup = find_free_record_pool_b();'),  # wrong pool for drops
     ('hits.c', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        break;', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        return;'),
     ('hits.c', 'if (x > PLAYFIELD_MAX_X) x', 'if ((sword)x > PLAYFIELD_MAX_X) x'),                  # unsigned drop X
     ('hits.asm', 'InitPickupRecord:\r\n    push ax\r\n    mov si, bx\r\n    call INIT_PICKUP_RECORD\r\n    mov si, ax\r\n',

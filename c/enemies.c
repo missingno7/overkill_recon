@@ -9,9 +9,8 @@
 
    Handlers are written in the oracle's order of reads and writes: a spawned record may be
    the firing record itself when the fuzzer (or a freed slot) makes that possible.
-   Handlers that stay ASM are called from the dispatch through FarCallMainNearViaAX with
-   BP = the record (CALL_MAIN_BP in c/shots.asm) and end in this region's tails through
-   the bridge c/enemies.asm.
+   Every type dispatch target is now C, with direct calls across the gameplay regions.
+   Remaining ASM callers reach this region through c/enemies.asm.
 
    Stale BX: SpawnThrottledChild returns BX unchanged when throttled, and several firers
    then write through it (see spawn_throttled_child); the C functions take and return
@@ -58,6 +57,10 @@
 #include "enemies.h"
 #include "hits.h"
 #include "pods.h"
+#include "paths.h"
+#include "patrol.h"
+#include "flyers.h"
+#include "firers.h"
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -94,60 +97,6 @@ void smart_bomb_all(void);
 /* c/hits.c (hits.h): the burst descenders end in the scroll tail */
 void type36_fall_then_burst(Record *r);
 void type22_descend_then_burst(Record *r);
-
-/* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). Routines with
-   BP input go through the near thunk CALL_MAIN_BP (c/shots.asm): BP = SI around the far
-   call; every register but BP comes back clobbered. */
-void enemies_call_bp(main_routine target, Record *r);
-#pragma aux enemies_call_bp "CALL_MAIN_BP" parm [ax] [si] modify exact [ax bx cx dx si di es]
-
-/* Handlers of other regions that stay ASM (RunTypeHandler's table). */
-extern void Type10StartPathFollowerA(void);
-extern void Type11StartPathFollowerB(void);
-extern void Type12WaypointPathFollower(void);
-extern void Type1AWallPatrolA(void);
-extern void Type1BWallPatrolB(void);
-extern void Type29EmergeThenDart(void);
-extern void Type2BAimedDart(void);
-extern void Type2DHoverFireThenPlunge(void);
-extern void Type32DescendThenBounce(void);
-extern void Type33TerrainBouncer(void);
-extern void Type3CDescendThenBounceAlt(void);
-extern void Type3DAnimatedTerrainBouncer(void);
-extern void Type3EDropThenAimedDash(void);
-extern void Type3FFlyAlongAimLine(void);
-extern void Type40JitterFallShooter(void);
-extern void Type41FollowPathType41(void);
-extern void Type43FollowPathType43(void);
-extern void Type44FollowPathType44(void);
-extern void Type45FollowPathType45(void);
-extern void Type46HoverShootThenDive(void);
-extern void Type47PatrolShootDown32B(void);
-extern void Type4AFollowPathType4A(void);
-extern void Type4BDescendThenBounceUpRight(void);
-extern void Type4EAnimDescendThenBounce(void);
-extern void Type51FollowType51Path(void);
-extern void Type5BScrollPastY_B0ThenType5C(void);
-extern void Type5CRiseFast4(void);
-extern void Type60FlyAlongAimLine(void);
-extern void Type66FollowPathType66(void);
-extern void Type67FollowPathType67(void);
-extern void Type68JitterDescendFiring(void);
-extern void Type71FireThenDiveBelow60(void);
-extern void Type7AAimLineFlyer(void);
-extern void Type7BDropThenAim(void);
-extern void Type7CAimLineFlyerAlt(void);
-extern void Type7FMarchEnterSteer(void);
-extern void Type81SweeperEnterSteer(void);
-extern void Type84LurkUntilAligned(void);
-extern void Type87AnimFireBurstA(void);
-extern void Type89PatrolShootDown32(void);
-extern void Type8APatrolShootDown32Alt(void);
-extern void Type8BClimbWalkerA(void);
-extern void Type8CClimbWalkerAFlipped(void);
-extern void Type8DClimbWalkerB(void);
-extern void Type8EClimbWalkerBFlipped(void);
-extern void Type8FAnimFireBurstB(void);
 
 #define REC(bx) ((Record *)(bx))
 /* PingPongFrames4 read at a byte offset (the oracle's `and bx, -2` forms). */
@@ -1861,9 +1810,8 @@ void type93_sweep_descend_climb(Record *r)
 /* ---- the dispatch --------------------------------------------------------------------- */
 
 /* RunTypeHandler (REC_KIND 2 and 4): DispatchRecordX/Y = the record's position, then its
-   REC_TYPE handler (TypeHandlers, 0..94h: the oracle's table is unchecked). Handlers of
-   other regions: C ones called directly with their shared tail where the oracle's bridge
-   continued in one; ASM ones through CALL_MAIN_BP. */
+   REC_TYPE handler (TypeHandlers, 0..94h: the oracle's table is unchecked). All
+   handlers call their C helpers and shared tails directly. */
 void run_type_handler(Record *r)
 {
     DispatchRecordX = r->x;
@@ -1883,9 +1831,9 @@ void run_type_handler(Record *r)
     case 0x0B: type0b_aimed_enemy_shot(r); break;
     case 0x0C: type0c_timed_turn_up_shot(r); break;
     case 0x0F: type0f_timed_shot2(r); break;
-    case 0x10: enemies_call_bp(Type10StartPathFollowerA, r); break;
-    case 0x11: enemies_call_bp(Type11StartPathFollowerB, r); break;
-    case 0x12: enemies_call_bp(Type12WaypointPathFollower, r); break;
+    case 0x10: start_path_follower(r, (word)SteerPath10); break;
+    case 0x11: start_path_follower(r, (word)SteerPath11); break;
+    case 0x12: update_path_follower(r); break;
     case 0x13: case 0x15: case 0x1C: case 0x1F: case 0x7D: case 0x7E:
         type13_formation_leader(r);
         finish_record_update(r);
@@ -1894,8 +1842,8 @@ void run_type_handler(Record *r)
     case 0x16: case 0x17: type16_sweep_lead_in(r); break;
     case 0x18: type18_sweep_path_looper(r); break;
     case 0x19: type19_wall_patrol_shooter(r); break;
-    case 0x1A: enemies_call_bp(Type1AWallPatrolA, r); break;
-    case 0x1B: enemies_call_bp(Type1BWallPatrolB, r); break;
+    case 0x1A: wall_patrol(r, 0x24); break;
+    case 0x1B: wall_patrol(r, 0x27); break;
     case 0x1D: type1d_slot_bob_then_chase(r); break;
     case 0x1E: type1e_shuttle_shooter(r); break;
     case 0x20: type20_slot_hopper_dropper(r); break;
@@ -1910,16 +1858,16 @@ void run_type_handler(Record *r)
     case 0x26: type26_turret_remnant(r); break;
     case 0x27: type27_slow_descender(r); break;
     case 0x28: case 0x2A: type28_enemy_hatch(r); break;
-    case 0x29: enemies_call_bp(Type29EmergeThenDart, r); break;
-    case 0x2B: enemies_call_bp(Type2BAimedDart, r); break;
+    case 0x29: type29_emerge_then_dart(r); break;
+    case 0x2B: animated_aim_line_flyer(r, SlowCount4 + 0xA5); break;
     case 0x2C: type2c_aimed_drifter(r); break;
-    case 0x2D: enemies_call_bp(Type2DHoverFireThenPlunge, r); break;
+    case 0x2D: hover_fire_plunge(r, SlowCount4 + 0x93); break;
     case 0x2E: type2e_plunge_at_player_column(r); break;
     case 0x2F: type2f_scrolling_shuttle(r); break;
     case 0x30: type30_animated_shooter(r); break;
     case 0x31: type31_fall_fast3(r); break;
-    case 0x32: enemies_call_bp(Type32DescendThenBounce, r); break;
-    case 0x33: enemies_call_bp(Type33TerrainBouncer, r); break;
+    case 0x32: type32_descend_then_bounce(r); break;
+    case 0x33: type33_terrain_bouncer(r); break;
     case 0x34: type34_side_firing_turret(r); break;
     case 0x36:
         type36_fall_then_burst(r);
@@ -1930,28 +1878,28 @@ void run_type_handler(Record *r)
     case 0x39: type39_dash_right_at_row80(r); break;
     case 0x3A: type3a_home_on_player_below80(r); break;
     case 0x3B: type3b_fall_random_flicker(r); break;
-    case 0x3C: enemies_call_bp(Type3CDescendThenBounceAlt, r); break;
-    case 0x3D: enemies_call_bp(Type3DAnimatedTerrainBouncer, r); break;
-    case 0x3E: enemies_call_bp(Type3EDropThenAimedDash, r); break;
-    case 0x3F: enemies_call_bp(Type3FFlyAlongAimLine, r); break;
-    case 0x40: enemies_call_bp(Type40JitterFallShooter, r); break;
-    case 0x41: enemies_call_bp(Type41FollowPathType41, r); break;
+    case 0x3C: type3c_descend_then_bounce(r); break;
+    case 0x3D: type3d_animated_bouncer(r); break;
+    case 0x3E: type3e_drop_then_dash(r); break;
+    case 0x3F: fly_along_aim_line(r); break;
+    case 0x40: jitter_fall_shooter(r, 0xCF); break;
+    case 0x41: start_path_follower(r, (word)Type41Path); break;
     case 0x42: type42_descend_sway(r); break;
-    case 0x43: enemies_call_bp(Type43FollowPathType43, r); break;
-    case 0x44: enemies_call_bp(Type44FollowPathType44, r); break;
-    case 0x45: enemies_call_bp(Type45FollowPathType45, r); break;
-    case 0x46: enemies_call_bp(Type46HoverShootThenDive, r); break;
-    case 0x47: enemies_call_bp(Type47PatrolShootDown32B, r); break;
+    case 0x43: start_path_follower(r, (word)Type43Path); break;
+    case 0x44: start_path_follower(r, (word)Type44Path); break;
+    case 0x45: start_path_follower(r, (word)Type45Path); break;
+    case 0x46: hover_fire_plunge(r, SlowCount6 + 0x4B); break;
+    case 0x47: patrol_shoot_down32(r, SlowCount6 + 0x51); break;
     case 0x48: type48_descend_aimed_fire(r); break;
     case 0x49: type49_radial_burst_faller(r); break;
-    case 0x4A: enemies_call_bp(Type4AFollowPathType4A, r); break;
-    case 0x4B: enemies_call_bp(Type4BDescendThenBounceUpRight, r); break;
+    case 0x4A: start_path_follower(r, (word)Type4APath); break;
+    case 0x4B: type4b_descend_then_bounce(r); break;
     case 0x4C: type4c_sink_then_rise(r); break;
     case 0x4D: type4d_sink_rise_then_dash(r); break;
-    case 0x4E: enemies_call_bp(Type4EAnimDescendThenBounce, r); break;
+    case 0x4E: type4e_animated_descender(r); break;
     case 0x4F: type4f_fall_fast4_flicker(r); break;
     case 0x50: type50_steer_home(r); break;          /* no finish tail */
-    case 0x51: enemies_call_bp(Type51FollowType51Path, r); break;
+    case 0x51: start_path_follower(r, (word)Type51Path); break;
     case 0x52: scroll_record_then_finish(r); break;   /* Type52ScrollOnly */
     case 0x53: type53_animate_from_sprite_base(r); break;
     case 0x54: type54_scroll_until_y_b0_then_type56(r); break;
@@ -1960,20 +1908,20 @@ void run_type_handler(Record *r)
     case 0x57: case 0x58: type57_scroll_to_y80_then_crawl(r); break;
     case 0x59: type59_scroll_then_animate_then_type5a(r); break;
     case 0x5A: type5a_crawl_mirror_diagonal(r); break;
-    case 0x5B: enemies_call_bp(Type5BScrollPastY_B0ThenType5C, r); break;
-    case 0x5C: enemies_call_bp(Type5CRiseFast4, r); break;
+    case 0x5B: type5b_scroll_then_rise(r); break;
+    case 0x5C: type5c_rise_fast4(r); break;
     case 0x5D: type5d_drop_fast8(r); break;
     case 0x5E: type5e_crawl_turn_down_to_left(r); break;
     case 0x5F: type5f_crawl_turn_diagonal_down(r); break;
-    case 0x60: enemies_call_bp(Type60FlyAlongAimLine, r); break;
+    case 0x60: fly_along_aim_line(r); break;
     case 0x61: type61_invader_steer_to_slot(r); break;
     case 0x62: type62_invader_march(r); break;
     case 0x63: type63_scripted_slide_then_drop(r); break;
     case 0x64: type64_drop4(r); break;
     case 0x65: type65_invader_dive_firing(r); break;
-    case 0x66: enemies_call_bp(Type66FollowPathType66, r); break;
-    case 0x67: enemies_call_bp(Type67FollowPathType67, r); break;
-    case 0x68: enemies_call_bp(Type68JitterDescendFiring, r); break;
+    case 0x66: start_path_follower(r, (word)PathType66); break;
+    case 0x67: start_path_follower(r, (word)PathType67); break;
+    case 0x68: jitter_fall_shooter(r, LevelIndex == 4 ? 0x24 : LevelIndex == 5 ? 0xA1 : 0x100); break;
     case 0x69: type69_jitter_below_y18(r); break;
     case 0x6A: type6a_scroll_until_y50_then_type56(r); break;
     case 0x6B: type6b_descend_to_x50(r); break;
@@ -1982,7 +1930,7 @@ void run_type_handler(Record *r)
     case 0x6E: type6e_crawl_staircase(r); break;
     case 0x6F: type6f_wait_then_type70(r); break;
     case 0x70: type70_cruise_firing(r); break;
-    case 0x71: enemies_call_bp(Type71FireThenDiveBelow60, r); break;
+    case 0x71: hover_fire_plunge(r, SlowCount8 + 0x12B); break;
     case 0x72: type72_descend_firing_aimed(r); break;
     case 0x73: type73_wait_then_run_right(r); break;
     case 0x74: type74_wait_then_run_left(r); break;
@@ -1991,28 +1939,25 @@ void run_type_handler(Record *r)
         seg_boss_part(r, r->type - 0x76);
         scroll_record_then_finish(r);
         break;
-    case 0x7A: enemies_call_bp(Type7AAimLineFlyer, r); break;
-    case 0x7B: enemies_call_bp(Type7BDropThenAim, r); break;
-    case 0x7C: enemies_call_bp(Type7CAimLineFlyerAlt, r); break;
-    case 0x7F: enemies_call_bp(Type7FMarchEnterSteer, r); break;
+    case 0x7A: animated_aim_line_flyer(r, FrameCount4 + 0x20); break;
+    case 0x7B: type7b_drop_then_aim(r); break;
+    case 0x7C: animated_aim_line_flyer(r, FrameCount4 + 0x15C); break;
+    case 0x7F: enter_march_slot(r); break;
     case 0x80:
         type80_march_member(r);
         finish_record_update(r);
         break;
-    case 0x81: enemies_call_bp(Type81SweeperEnterSteer, r); break;
+    case 0x81: enter_sweeper_slot(r); break;
     case 0x83: type83_patrol_shoot_down64(r); break;
-    case 0x84: enemies_call_bp(Type84LurkUntilAligned, r); break;
+    case 0x84: type84_lurk_until_aligned(r); break;
     case 0x85: type85_charge_until_blocked(r); break;
     case 0x86: type86_launch_aimed_enemy(r); break;
-    case 0x87: enemies_call_bp(Type87AnimFireBurstA, r); break;
+    case 0x87: animated_fire_burst(r, 0xDD); break;
     case 0x88: type88_wait_then_fire_burst(r); break;
-    case 0x89: enemies_call_bp(Type89PatrolShootDown32, r); break;
-    case 0x8A: enemies_call_bp(Type8APatrolShootDown32Alt, r); break;
-    case 0x8B: enemies_call_bp(Type8BClimbWalkerA, r); break;
-    case 0x8C: enemies_call_bp(Type8CClimbWalkerAFlipped, r); break;
-    case 0x8D: enemies_call_bp(Type8DClimbWalkerB, r); break;
-    case 0x8E: enemies_call_bp(Type8EClimbWalkerBFlipped, r); break;
-    case 0x8F: enemies_call_bp(Type8FAnimFireBurstB, r); break;
+    case 0x89: patrol_shoot_down32(r, SlowCount4 + 0x1C); break;
+    case 0x8A: patrol_shoot_down32(r, SlowCount4 + 0x9D); break;
+    case 0x8B: case 0x8C: case 0x8D: case 0x8E: climbing_walker(r, r->type); break;
+    case 0x8F: animated_fire_burst(r, 0xBF); break;
     case 0x90: type90_turret_volley(r); break;
     case 0x91: type91_turret_volley_alt(r); break;
     case 0x92: type92_fire_when_player_on_row(r); break;

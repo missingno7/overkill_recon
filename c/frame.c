@@ -7,12 +7,11 @@
    scroll, SmartBombAll). Same state, same results; see the oracle comments at each
    routine for the original contracts.
 
-   Platform code stays ASM and is called through the trampolines: the score and fuel
-   gauge drawing (DrawScore, DrawFuelGauge), the map row drawing into the scroll band
-   (DrawMapRowIntoScrollBand; its spawn part is C in c/spawn.c), the starfield (MoveStars),
-   SetDacColor6, the music request and the level map load. The REC_KIND handlers are C
-   (c/enemies.c, c/pods.c) and called directly, except UpdateExhaust (ASM), which is
-   entered by label with BP = record, as the oracle's KindHandlers table does.
+   Platform code stays ASM and is called through the trampolines: text leaves used by the
+   native score coordinator, map row drawing into the scroll band (DrawMapRowIntoScrollBand;
+   its spawn part is C in c/spawn.c), SetDacColor6 and music requests. Fuel-gauge drawing
+   is native C in c/render.c, and checkpoint map loading is native C in c/levels.c. All
+   REC_KIND handlers are C and called directly (c/enemies.c, c/pods.c, c/player.c).
 
    The scroll geometry words (ScrollBandBytes...), LevelMapSegment and the MapResetList
    tables are CS-resident in MAIN and are read in place through far references.
@@ -27,11 +26,17 @@
    OWNS: EnterNextMapRowForward ScrollBackwardOneLine EnterPreviousMapRowBackward WrapScrollWindowBackward
    OWNS: ReadCheckpoint RestartAtCheckpoint ScrollToCheckpoint ScrollMapToLevelStart SmartBombAll
    OWNS: ResetMapBeforeView ResetMapScanByte SetMapTile28 SetMapTile1 ResetMapNextByte
+   OWNS: InitStars InitNextStar InitStarCases InitStarCga InitStarEga InitStarTandy InitStarNext MoveStars MoveStarLayer
 */
 #include "game.h"
 #include "hits.h"
 #include "enemies.h"
 #include "pods.h"
+#include "player.h"
+#include "frame.h"
+#include "display.h"
+#include "render.h"
+#include "levels.h"
 
 #define FRAME_NO_RECORD ((Record *)0xFFFF)
 
@@ -57,18 +62,89 @@ word frame_call_bp(main_routine target, Record *r);
 /* RequestModuleMusic (AL = tune; takes its input in AX, so through FarCallMainNearViaBP). */
 void frame_request_music(word tune);
 #pragma aux frame_request_music "FRAME_REQUEST_MUSIC" parm [ax] modify exact [ax bx es]
-/* MoveStars (far, FAR0F7F): the starfield step, platform. */
-void frame_move_stars(void);
-#pragma aux frame_move_stars "MoveStars" far modify exact [ax cx si]
-
-extern void UpdateExhaust(void);              /* the record handler still in ASM */
-extern void DrawScore(void);                  /* platform: text output */
-extern void DrawFuelGauge(void);              /* platform: gauge drawing */
 extern void DrawMapRowIntoScrollBand(void);   /* BP = spawn origin (DrawIncomingMapRow) */
 extern void SetDacColor6(void);               /* SI = RGB triple */
-extern void LoadLevelMap(void);
 extern void SetMapTile28(void);               /* MapResetList targets (bridge labels) */
 extern void SetMapTile1(void);
+
+#define STAR_COUNT 40
+#define STAR_LAYER_ONE_COUNT 20
+#define STAR_LAYER_TWO_COUNT 10
+#define STAR_LAYER_THREE_COUNT 10
+
+typedef struct StarEntry {
+    word y;
+    word x;
+    word mask;
+} StarEntry;
+STATIC_CHECK(frame_star_entry_size, sizeof(StarEntry) == 6);
+
+extern volatile word __far VideoAdapter;
+
+/* Startup-only transform of the oracle's in-place {Y, X, mask} table. The word mask
+   load intentionally begins at the selected byte, matching the original unscaled lookup. */
+void init_stars(void)
+{
+    StarEntry *star = (StarEntry *)Stars;
+    word adapter = VideoAdapter;
+    word n;
+
+    for (n = 0; n != STAR_COUNT; n++, star++) {
+        word pixels = star->x;
+        switch (adapter) {
+        case VIDEO_CGA:
+            star->x = pixels >> 2;
+            star->mask = *(word *)(StarMasksCga + (pixels & 3));
+            break;
+        case VIDEO_EGA:
+            star->x = pixels >> 3;
+            star->mask = *(word *)(StarMasksEga + (pixels & 7));
+            break;
+        case VIDEO_TANDY:
+            star->x = pixels >> 1;
+            star->mask = *(word *)(StarMasksTandy + (pixels & 1));
+            if (StarBrightCount != 0) {
+                StarBrightCount--;
+                if (StarBrightCount == 0) {
+                    StarMasksTandy[0] &= 7;
+                    StarMasksTandy[1] &= 0x70;
+                }
+            }
+            break;
+        }
+    }
+}
+
+void frame_move_star_layer(StarEntry *star, word count)
+{
+    word n;
+
+    for (n = 0; n != count; n++, star++) {
+        star->y++;
+        if (star->y == 0xC0) star->y = 0;
+    }
+}
+
+void move_stars(void)
+{
+    if (EnergyTanks == 0xFFFF) return;
+    StarLayerTick1++;
+    StarLayerTick1 &= 1;
+    if (StarLayerTick1 != 0) return;
+
+    frame_move_star_layer((StarEntry *)Stars, STAR_LAYER_ONE_COUNT);
+    StarLayerTick2++;
+    StarLayerTick2 &= 1;
+    if (StarLayerTick2 != 0) return;
+
+    frame_move_star_layer((StarEntry *)Stars + STAR_LAYER_ONE_COUNT, STAR_LAYER_TWO_COUNT);
+    StarLayerTick3++;
+    StarLayerTick3 &= 1;
+    if (StarLayerTick3 != 0) return;
+
+    frame_move_star_layer((StarEntry *)Stars + STAR_LAYER_ONE_COUNT + STAR_LAYER_TWO_COUNT,
+                          STAR_LAYER_THREE_COUNT);
+}
 
 /* ---- the record pass ------------------------------------------------------------------- */
 
@@ -123,8 +199,7 @@ void steer_seg_boss_along_path(void)
 
 /* KindHandlers: the record's REC_KIND handler (0..6; the oracle's table is unchecked and
    no other kind is ever stored). Returns the BP the handler leaves: the record itself for
-   every handler but UpdateExhaust (ASM), which may leave another (KIND_PLAYER is a bare
-   ret). */
+   every handler (KIND_PLAYER is a bare ret). */
 word frame_update_record_by_kind(Record *r)
 {
     switch (r->kind) {
@@ -133,7 +208,7 @@ word frame_update_record_by_kind(Record *r)
     case KIND_TYPED:
     case KIND_ENEMY:   run_type_handler(r); break;
     case KIND_PICKUP:  update_pickup(r); break;
-    case KIND_EXHAUST: return frame_call_bp((main_routine)UpdateExhaust, r);
+    case KIND_EXHAUST: update_exhaust(r); break;
     }
     return (word)r;
 }
@@ -198,7 +273,7 @@ word update_all_records(void)
         bp = (word)r;
         if (r->status != 0) bp = frame_update_record_by_kind(r);
     }
-    frame_move_stars();
+    move_stars();
     return bp;
 }
 
@@ -329,7 +404,7 @@ void drain_fuel_unit(void)
             if (SfxEnabled != 0) SfxRequest = 0x19;
         }
     }
-    frame_call_bp((main_routine)DrawFuelGauge, PRIMARY);
+    render_draw_fuel_gauge();
 }
 
 /* One Fuel unit every 64 frames (DifficultySetting above 1) or every 128; in ship form 2
@@ -401,16 +476,17 @@ void tick_refuel(void)
         return;
     }
     Fuel++;
-    frame_call_bp((main_routine)DrawFuelGauge, PRIMARY);
+    render_draw_fuel_gauge();
 }
 
-/* Refuel, timers, then the score text; returns the BP DrawScore leaves (ScoreBcd, the
-   oracle's exit BP). */
-word update_refuel_timers_and_score(void)
+/* Refuel and timers precede score text. PrintTextChar establishes the main data segment
+   and screen ES before consuming those renderer inputs, so the incoming BP/ES are dead;
+   the native display coordinator writes its actual text results back into this pair. */
+void frame_update_refuel_timers_and_score(DosRegisters *registers)
 {
     tick_refuel();
     tick_frame_timers();
-    return frame_call_bp((main_routine)DrawScore, PRIMARY);
+    display_draw_score(registers);
 }
 
 /* Types 28h/2Ah (the hatch ramp): every 4th frame (FrameDivider4 0) REC_DIRECTION steps
@@ -579,16 +655,21 @@ void reset_map_before_view(void)
    level's LevelScriptCursors entry. */
 void restart_at_checkpoint(Record *here)
 {
+    DosRegisters map_registers;
     word *checkpoint = (word *)LevelCheckpointPtrs[LevelIndex];
     word n, position, clock, saved;
 
+    /* BP was the record passed to the old MAIN call. ES is dead input here: the loader
+       sets its buffer segment before any DOS service, and this routine returns no pair. */
+    map_registers.bp = (word)here;
+    map_registers.es = 0;
     for (n = 3; n != 0; n--, checkpoint += 4)
         if (MapScrollPos < checkpoint[3]) break;
     position = checkpoint[0];
     clock = checkpoint[1];
     CheckpointScriptCursor = checkpoint[2];
     saved = LevelScriptClock;
-    frame_call_bp((main_routine)LoadLevelMap, here);
+    load_level_map(&map_registers);
     LevelScriptClock = saved;
     MapScrollPos = position;
     reset_map_before_view();

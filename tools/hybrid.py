@@ -68,7 +68,9 @@ def derive(text, owned):
                 # Fall-through into the removed range: continue at the C side explicitly.
                 # The comment block in front of a removed label belongs to it.
                 while out and out[-1].startswith(';'): out.pop()
-                prev = next((l for l in reversed(out) if code(l).strip()), '')
+                # Declarations at a segment's start cannot fall through into code.
+                prev = next((l for l in reversed(out) if code(l).strip()
+                             and not re.match(r'^\s*(extrn|public)\b', code(l), re.I)), '')
                 # (Nothing falls through from a segment start or from a data table.)
                 if not UNCONDITIONAL.match(prev) and not SEGMENT_LINE.match(code(prev)) \
                         and not DATA_LINE.match(code(prev)):
@@ -281,7 +283,12 @@ def build(out=ROOT/'build/hybrid', with_c=True, c_dir=ROOT/'c'):
         oracle = read_json(ROOT/'metadata/oracle.json')
         if image != extract()[0] or sorted(relocations) != sorted(oracle['relocations']):
             raise ValueError('symbol-complete oracle build differs from the exact oracle')
-    if with_c: check_far_calls(out/'OVERKILL.EXE')
+    if with_c:
+        map_text = (out/'OVERKILL.MAP').read_text(errors='replace')
+        for match in re.finditer(r'^\s+[0-9A-F]+H\s+[0-9A-F]+H\s+([0-9A-F]+)H\s+(MAIN|CGAME)\b', map_text, re.M):
+            if int(match[1], 16) > 0x10000:
+                raise ValueError(f'{match[2]} exceeds the 16-bit code segment: {match[1]}h bytes')
+        check_far_calls(out/'OVERKILL.EXE')
     return out/'OVERKILL.EXE', removed_all
 
 def check_far_calls(exe):
@@ -294,7 +301,8 @@ def check_far_calls(exe):
     text = exe.with_suffix('.MAP').read_text(errors='replace')
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16); md.detail = True
     count, relocated = 0, set(relocations)
-    publics = [(int(s, 16) * 16 + int(o, 16)) for s, o in re.findall(r'^ ([0-9A-F]{4}):([0-9A-F]{4})\s+\w+', text, re.M)]
+    publics = sorted({int(s, 16) * 16 + int(o, 16) for s, o in
+                      re.findall(r'^ ([0-9A-F]{4}):([0-9A-F]{4})\s+\w+', text, re.M)})
     for m in re.finditer(r'^([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=\w+ S=\w+ .*M=CISLAND\b', text, re.M):
         seg = int(m[1], 16) * 16; begin = seg + int(m[2], 16); end = begin + int(m[3], 16)
         # Recursive descent from every public entry: Watcom keeps switch tables in the code
@@ -318,7 +326,11 @@ def check_far_calls(exe):
                     elif ops and ops[0].type == capstone.x86.X86_OP_MEM and ins.mnemonic == 'jmp' \
                             and ins.reg_name(ops[0].mem.segment) == 'cs':
                         t = seg + (ops[0].mem.disp & 0xFFFF)          # a switch table: follow its words
-                        while begin <= t < end - 1 and begin <= seg + int.from_bytes(image[t:t + 2], 'little') < end:
+                        # Watcom places these tables before the public routine's prologue.
+                        # Code bytes after the table can coincidentally look like valid
+                        # offsets; never consume a public entry as another table word.
+                        table_end = next((p for p in publics if p > t), end)
+                        while begin <= t < min(end, table_end) - 1 and begin <= seg + int.from_bytes(image[t:t + 2], 'little') < end:
                             todo.append(seg + int.from_bytes(image[t:t + 2], 'little')); t += 2
                 if ins.mnemonic in ('ret', 'retf', 'iret', 'jmp', 'ljmp'): break
                 at += ins.size

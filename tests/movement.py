@@ -140,8 +140,8 @@ FUZZ = [
     Target('slotbob', 'RunTypeHandler', _slot_seed, REGION, types=(0x1D,),
            globals=('EncounterTicks', 'EncounterLiveCount', 'SteerSpeed', 'FrameCount8', 'RecordTickCounter'),
            domains=dict(DOMAINS, type=(0x1D,))),
-    Target('pathfollow', 'Type12WaypointPathFollower', _path_seed, REGION,
+    Target('pathfollow', 'RunTypeHandler', _path_seed, REGION, ('BP', 'SP', 'DS', 'SS'),
            globals=('LevelIndex', 'DemoActive', 'MapScrollPos'),
            # REC_PATH only ever points at a waypoint of the Type41..Type51 path tables.
-           domains=dict(DOMAINS, field_36=lambda pair: range(pair.sym('Type41Path'), pair.sym('AutoMoveExtraRecord'), 4))),
+           domains=dict(DOMAINS, type=(0x12,), field_36=lambda pair: range(pair.sym('Type41Path'), pair.sym('AutoMoveExtraRecord'), 4))),
 ]

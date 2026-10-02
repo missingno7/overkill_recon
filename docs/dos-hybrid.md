@@ -1,212 +1,128 @@
-# DOS hybrid: the oracle with gameplay moving to C
+# DOS C implementation and oracle boundary
 
-```
+```text
 original binary
-      | byte exact            python tools/verify.py
-frozen ASM oracle (tag asm-semantic-oracle-v1, src/ + include/)
-      | behavioural equivalence   python tools/difftest.py
-DOS hybrid: the same program with C-owned routines (c/)
+      | byte exact: tools/verify.py
+frozen ASM oracle (asm-semantic-oracle-v1, src/ + include/)
+      | behavioural equivalence: tools/difftest.py
+DOS C implementation (c/) with the original DOS hardware backend
 ```
 
-One executable, one state. The hybrid is the oracle's own sources, linked with C objects
-that replace some of its routines. There is one PrimaryRecord, one pool A and B, one map,
-one renderer and one sound system; C reads and writes the same DS bytes as the ASM.
-Platform code (blitters, interrupts, PC speaker, AdLib/Roland, DOS and EMS glue) may stay
-ASM indefinitely.
+The frozen ASM remains the executable specification. The C implementation reads and
+writes the original state, records, tables, buffers and code-segment variables; it owns
+no persistent data. Game logic and reusable coordination belong in C. DOS/BIOS calls,
+interrupt entry, hardware polling, adapter raster operations and sound-module drivers
+remain the platform backend until the SDL3 phase.
+
+C regions cover record/type dispatch, movement, collision, enemies, weapons, upgrades,
+player input, frame/session control, levels, options, calibration, title/intro/demo,
+pages and high scores, text controls/formatting, rendering decisions, sound requests,
+settings, launcher configuration, startup/shutdown policy, archive lookup, resource
+cache and packed/ENC codecs.
+Animation choreography is separated from its capture/scaling/pixel services. The
+uncalled payment viewer also has C file/navigation control. Uncalled historical/debug
+paths can remain in the oracle-derived backend; they are not part of the game's active
+SDL runtime.
+
+C-to-C calls are native. Legacy register adapters remain where ASM enters C or where a
+bounded differential test still enters an old routine. Explicit stack-local metadata
+carries live BP/ES/DI and decoder cursor/status outputs at those boundaries. Those words
+are outputs, not shadow game state. Compiler-temporary physical registers must never
+serve as implicit C state.
 
 ## Build and run
 
 ```powershell
-python tools/verify.py        # the oracle: must stay exact
-python tools/hybrid.py        # build/oracle-sym, build/hybrid, build/run/{oracle,hybrid}
-python tools/difftest.py      # all suites (tests/*.py); a number scales the case count
-python tools/difftest.py --mutants    # every listed mutant must be detected
-python tools/difftest.py --coverage   # oracle instructions of C-owned code reached
-python tools/graph.py         # migration graph + ranked candidate C regions: build/graph/report.md, graph.json
+python tools/verify.py
+python tools/hybrid.py
+python tools/difftest.py
+python tools/difftest.py --mutants
+python tools/difftest.py --coverage
+python tools/stackcheck.py
+python tools/graph.py
 ```
 
-`build/run/hybrid` (and `build/run/oracle`) hold a runnable `OVERKILL`: the linked EXE,
-the original resource container and a recomputed integrity checksum (tools/package.py),
-next to the original launcher. Run `OVERKILL.EXE /T /A` there (Tandy + AdLib; `/C`, `/E`,
-`/R` as in OVERKILL.DOC), e.g. in DOSBox-X with `machine=tandy`.
+The build produces `build/oracle-sym`, `build/hybrid` and runnable packages under
+`build/run/{oracle,hybrid}`. Run `OVERKILL.EXE /T /A` from `build/run/hybrid` in DOSBox
+with Tandy hardware for the current priority configuration. The launcher EXE is still
+the original launcher. The rebuilt executable image, resource container and recomputed
+integrity checksum are in the extensionless `OVERKILL` file.
 
-## How the hybrid is made
+`hybrid.py` takes no CLI output-directory argument. An isolated experiment calls its
+Python `build(out, c_dir=...)` API with a private copy of `c/`; it must not rebuild the
+shared output concurrently. `difftest.py` accepts suite names and a trailing case scale.
+Mutation builds have separate output directories per suite.
 
-- `c/*.c` state what they replace with `OWNS:` lines: entry labels plus every label and
-  jump table inside the replaced code.
-- tools/hybrid.py copies the oracle sources into build/hybrid, cuts each owned range (from
-  an owned label to the next label that is not owned), turns fall-through into it into a
-  `jmp`, short and conditional jumps into near jumps, `public` into `extrn`, and makes every
-  label public (no bytes change). The oracle files are never edited.
-- `c/<region>.asm` (one bridge per region, next to `c/<region>.c`) defines the owned labels the remaining ASM still reaches: a few
-  instructions each that adapt the oracle's register contract (BP = record, results in
-  flags, registers the oracle preserves) to the C convention. Calls between C functions do
-  not pass through it.
-- `build/hybrid/GAME_GEN.H` is generated from include/*.INC and src/DATA.ASM: every
-  constant, the 38h-byte `Record` (size and each field offset checked at compile time),
-  role aliases, and an `extern` for every state-segment label. Nothing is kept by hand.
-- All C regions compile as one unit (build/hybrid/ISLAND.C includes every c/*.c, module
-  CISLAND) and all bridges assemble as one module (BRIDGES.ASM): TLINK 2.0 under the DOS
-  player keeps every object open and hangs past 13 objects when it writes a map, so the
-  object count must not grow with the regions. File-scope C names and bridge labels are
-  therefore unique across regions.
-- TLINK links the derived objects, the bridge and the C objects in the oracle's order.
-- After linking, every far call in the C code must carry a relocation (tools/hybrid.py
-  decodes CISLAND recursively, following switch tables): Watcom -ox cross-jumping once split
-  an inline `call far ptr FarCallMainNearViaAX` sequence and dropped its segment fixup.
-- The same tool builds `build/oracle-sym`, the oracle with every label public, and
-  refuses it unless its image and relocations equal the exact oracle.
+## Compiler and memory model
 
-## Compiler: Watcom C16 10.0a
+Watcom C16 10.0a is pinned by `metadata/c-toolchain-lock.json`. Its Win32 loader and
+16-bit compiler are local private inputs. TASM 1.0 and TLINK 2.0 run under the local
+MS-DOS Players, independently of neighboring projects.
 
-Chosen after controlled experiments with Turbo C 2.0, Microsoft C 5.10 and 6.00A, and
-Watcom C16 10.0a (9.5b has no usable 16-bit compiler here). All four produce OMF that
-TLINK 2.0 links with TASM 1.0 objects, can place code in segment MAIN and reach the
-game's DATA symbols with DS = SS. Watcom was chosen because:
+All C files compile as one `ISLAND.C` unit in `CGAME`; all ASM adapters assemble as one
+`BRIDGES.ASM` module. Near calls connect C regions. MAIN and CGAME each have a checked
+64-KiB limit. The unity build requires globally unique file-scope helper names and
+consistent declarations; a label defined by one bridge must not also be declared
+external by another bridge in the same module.
 
-- `#pragma aux` gives C functions a register convention with an exact clobber list, so C
-  preserves every register but AX and the bridge is a `mov si, bp`; C can call ASM
-  routines that take register inputs directly (the others clobber AX-DX and ES and need a
-  save/restore thunk per edge; Turbo C and MSC 5.10 cannot call BP-input routines without one);
-- it runs natively on Windows (no DOS player) and is deterministic; its 8086 code is
-  clean (16-bit wrap, signed/unsigned compares, switch tables in CS, no helper calls
-  except 32-bit multiply/divide);
-- its external data fixups use the target's own frame, so no group or glue is needed.
-
-Pinned by metadata/c-toolchain-lock.json: `toolchain/watcom/BINNT/WCC.EXE` (Win32 loader)
-and `toolchain/watcom/BINB/WCC.EXE` (the compiler), copied from C:\tools\watcom-10.0a;
-private like TASM/TLINK. Options: `-ms -0 -s -zl -zld -zq -ox -w4 -we -nc=CODE` and
-`-nt=MAIN` (or `-nt=<far segment>`, see "Growing the C region").
-
-## ABI and rules for C code
-
-| Item | Rule |
+| Item | Contract |
 |---|---|
-| Names | `#pragma aux default "^"`: upper-cased C names, matching TASM's case-insensitive publics; use snake_case so C names never equal ASM labels |
-| Arguments / result | SI, then DI; result in AX |
-| Preserved | everything but AX (`modify exact [ax]`); flags are scratch |
-| Segments | DS = SS = the game state segment, DF = 0 (the game keeps both); ES never assumed |
-| Code | segment MAIN (near calls both ways; `python tools/hybrid.py` prints its size, now F799h of 64 KiB), or a far segment the region opts into |
-| Data | C owns none: no statics, no string literals, no tentative definitions; tools/hybrid.py rejects C objects with data or local/communal symbols (TLINK 2.0 cannot link LPUBDEF/COMDEF) |
-| Arithmetic | 16-bit types from GAME_GEN.H (`word` unsigned, casts to `sword` where the oracle compares signed); no 32-bit multiply/divide (runtime helpers) |
-| Behaviour | the oracle's, including its bugs: comment deliberate quirks as intentional |
+| Names | `#pragma aux default "^"`: upper-case linker names; C names use snake_case |
+| Default call | SI, then DI; result AX; preserve all registers except AX; flags scratch |
+| Segments | DS = SS = original state frame; DF = 0; ES is explicit when consumed |
+| Data | No C statics, literals, tentative definitions or duplicate records/state |
+| Arithmetic | Original 16-bit wrap and explicit signed casts; preserve original bugs |
+| CS data | Far declarations or an explicit MAIN service; CGAME has a different CS |
 
-## Differential tests
+`GAME_GEN.H` is generated from `include/*.INC` and `src/DATA.ASM`. It supplies constants,
+state declarations and the 38h-byte Record with checked field offsets. The C object is
+rejected if it owns data or requires unsupported local/communal symbols.
 
-tools/emu.py loads a linked EXE as DOS would (Unicorn, real mode) and runs the game's own
-AllocateBuffers, BuildRowTables and InitStars (Tandy) under a DOS stub that only
-allocates memory. tools/difftest.py runs build/oracle-sym and build/hybrid side by side:
-each case writes the same state into both, enters the same oracle label with the same
-registers, and compares the whole state segment (except the four static tables of code
-addresses and stack scratch below SP), the registers and flags the contract keeps or
-returns, every write outside the state segment (by symbol or address), and port traffic.
+The SDL3 phase must supply a host memory/address adapter as well as video, input, time,
+file and audio services. These DOS C sources deliberately still use 16-bit offsets and
+Watcom far-pointer syntax; they are not yet a drop-in native-host build. Preserve the
+verified C decisions while replacing that platform representation.
 
-Building blocks, reused by every region:
+## Derived hybrid, unchanged oracle
 
-- `tools/world.py`: memory-state builders (World, Record, pools, player, counters,
-  plausible mid-game worlds, stale slots, full pools); field names and constants come
-  from include/*.INC. They only place values; no game behaviour is modelled.
-- Sequences: a suite may yield a list of cases; each step continues from the state the
-  previous one left on each side and both sides are compared after every step.
-- `tools/fuzz.py`: coverage-guided differential fuzzing. A suite declares
-  `FUZZ = [Target(...)]` (entry label, seed builder, the region's oracle labels, register
-  contract, record types and globals worth mutating, and `domains`: value sets of fields
-  or globals whose range is an oracle precondition, e.g. an unchecked jump-table index or
-  a pointer that only ever holds table addresses). Features come from the oracle run:
-  branch edges in the region, entry-record type/kind/status transitions, pool occupancy
-  changes, watched globals; `cmp` operands are logged and a mutation copies one operand
-  into state words holding the other (reaches exact-equality branches). Every candidate
-  is compared on both sides; a state on which the ORACLE crashes is discarded as
-  unreachable, any other difference fails. `--save` stores the corpus in tests/corpus/,
-  which difftest replays as regression cases.
+`OWNS:` lines identify each replaced oracle range, including its internal labels and
+owned dispatch tables. `hybrid.py` copies the frozen ASM into generated output, replaces
+those ranges with external C entries, expands jumps where needed and publishes symbols
+for tests. It never changes `src/` or `include/`.
 
-Suites: `tests/movement.py` (entries, fuzz targets), `tests/movement_callers.py` (the real
-ASM callers: tail jumps, fall-through, far trampoline, ZF consumers), `tests/sequences.py`
-(UpdateAllRecords / TickFrameTimers sequences over populated worlds), `tests/quirks.py`
-(documented original bugs asserted on the oracle, then compared).
+A MAIN adapter converts the original register contract to the C call convention.
+Generated CGAME far entries make the segment crossing explicit. Remaining MAIN services
+are reached by relocation-bearing far calls; the build checks every C far-call fixup.
+The trampoline's AX carries its target, so an AX input needs a different adapter.
 
-A region is ready to merge when its fuzz targets and sequences reach every reachable
-oracle instruction of the region (`python tools/fuzz.py <suite>` prints the union
-coverage), its suites, the corpus and all older suites pass, and a few representative
-mutants (signedness, off-by-one, wrong transition, omitted side effect, wrong allocation
-path, bridge preservation) are caught. As C regions merge, prefer higher entry points
-(a handler, UpdateRecordByKind, UpdateAllRecords) over more direct entries.
+The symbol-complete oracle must still have exactly the original image and relocation
+set. Hybrid packaging then combines the new linked image with the original container
+and a new integrity checksum. Original assets and their metadata are never rewritten.
 
-Each C region is proven on its own, through its entry labels and its real ASM callers;
-whole-game runs are a manual play check, not a test method (no set of runs covers all
-states and levels). The level map: both sides read one common window (difftest
-MAP_SEGMENT) as LevelMapSegment, restored before every case to a baseline of zeros or the
-suite's `MAP` bytes; cases write rows with `far('SlotBuffer', offset)`, and routines that take
-the map segment in ES get ES = 'LevelMapSegment' (a register given as a label name is that
-image word on each side). Limits of the cases: graphics files are not loaded (allocated
-buffers hold a fixed pattern) and no interrupt runs inside a case.
+## Verification and limits
 
-Stack: each PASS line reports the deepest stack use seen in the suite on each side (bytes
-below the entry SP, from the lowest StackArea word written). The C island uses several
-times the oracle's depth (Watcom frames, far trampolines, bridge pushes); the game's whole
-stack is STACK_BYTES (200h), shared with the interrupt handlers, so watch the hybrid figure
-as regions grow.
+Differential cases use the exact oracle and C hybrid in the same emulated DOS model.
+They compare the state segment, contract registers/flags, ordered writes outside state
+and hardware port traffic. Link-dependent code pointers and segment identities are
+compared symbolically. Stack scratch below the caller's SP is excluded; active state
+must never be excluded because a mutant changed startup initialization.
 
-## Growing the C region
+Cases cover bounded routines and controlled service sequences. File fixtures hook DOS
+responses, codecs also decode every shipped BIC/ENC asset, and rendering fixtures use
+distinct data so wrong image selection changes observable pixels. Saved differential
+fuzz corpora replay as regressions. Mutation tests require deliberate mistakes to be
+detected. Coverage lists missed instructions explicitly; unreachable or out-of-domain
+branches require a static explanation, not a fabricated execution.
 
-Move coherent regions, not single routines: the goal is a C island with a small, stable
-ASM boundary. Bridge stubs exist only where remaining ASM enters C; as callers move to C
-they disappear. If bridge code grows with C coverage, stop and redraw the boundary.
-MAIN has 64 KiB: C code replaces the ASM it owns, so space grows only by the size
-difference; if C outgrows it, the island moves to its own code segment behind far entries.
+The ordinary PASS line records the lowest active stack write below entry SP.
+`stackcheck.py` additionally observes SP per opcode, verifies the actual AdLib/Roland
+modules and measures their timer handlers. Its combined 512-byte stack model includes
+the test caller reserve and the largest measured IRQ increment. It excludes the BIOS
+chained timer phase and arbitrary interrupt timing, so it is bounded evidence rather
+than a universal whole-session proof.
 
-### Far code segment (opt-in per region)
-
-A line `SEGMENT: CGAME` in `c/<region>.c` (next to `OWNS:`) compiles the region with
-`-nt=CGAME`; without it the region stays in MAIN. Same memory model and convention (small
-model: near C-to-C calls, DS = SS = the state segment, data fixups in DATA's frame, no
-runtime library). What changes, all done by tools/hybrid.py:
-
-- Placement: TLINK orders segments by first appearance, and the image the game keeps
-  (it shrinks its DOS block to `seg ImageEnd`) ends with DATA and IMAGE_END, so far C
-  objects are linked just before DATA.OBJ: MAIN, FAR0F7F, SLOT1022, SEG1534, SEG153A,
-  CGAME, DATA, IMAGE_END. Every segment behind MAIN only moves (its references are
-  relocated); nothing depends on its paragraph.
-- Entry: the bridge `c/<region>.asm` is written once, in the near form above, and stays in
-  MAIN (the oracle labels keep their near contracts, flag results and tails). Its
-  `call <c function>` become `call far ptr <C FUNCTION>_FAR`, and a generated
-  `<C FUNCTION>_FAR: call <c function> / retf` is placed in CGAME: +2 bytes of MAIN,
-  4 bytes of CGAME and one relocation per C function the bridge calls. A bridge `jmp`
-  into far C is rejected.
-- ASM from far C: near calls cannot cross segments (TLINK reports "Fixup overflow",
-  it cannot silently mislink). Far C reaches a MAIN routine the way the oracle's far code
-  does, through `FarCallMainNearViaAX` (AX = near target, all other registers and the
-  flags pass through), with one pragma per register contract, e.g.
-
-  ```c
-  typedef void (__near *main_routine)(void);
-  extern void __far FarCallMainNearViaAX(void);
-  extern void NextRandomWord(void);          /* BX out */
-  word call_main_bx(main_routine target);
-  #pragma aux call_main_bx "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx]
-  /* BP-input routines: Watcom cannot pass BP, so load it inline. */
-  void call_main_si_bp(main_routine target, Record *r);
-  #pragma aux call_main_si_bp = "push bp" "mov bp, si" "call far ptr FarCallMainNearViaAX" \
-      "pop bp" parm [ax] [si] modify exact [ax bx cx dx di es]
-  ```
-
-  `call_main_bx(NextRandomWord)` is `mov ax, offset NextRandomWord / call far ptr
-  FarCallMainNearViaAX`: 8 bytes and one relocation per call, no MAIN bytes, and it works
-  in either placement. The callee must not take input in AX.
-- Tails: the oracle's shared tails (`jmp ScrollRecordThenFinish`, `jmp FinishRecordUpdate`)
-  stay in the bridge, after the far call returns, exactly like the oracle's own far bodies
-  (`call far ptr Type80MarchMemberBody / jmp FinishRecordUpdate`); a conditional tail is a
-  result the bridge tests. Calling a tail from C and returning also works for tails that
-  return normally, but it leaves the tail's register and flag results to the C epilogue.
-- Regions that call each other directly must share a segment.
-
-Measured on the movement region (`SEGMENT: CGAME`; not the committed default): MAIN
-F799h -> F5FEh (-411 bytes: the C code, 1A7h, leaves; the bridge grows 50h -> 5Ch), CGAME
-1BFh (C 1A7h + six far entries 18h), relocations 123 -> 129, all suites and the movement
-mutants pass. A spike region (Type3BFallRandomFlicker in CGAME: NextRandomWord through
-the trampoline, bridge tail to ScrollRecordThenFinish; also the call-and-return tail
-through `call_main_si_bp`) passed 3000 cases against the oracle.
-
-Rule: every C region is in CGAME (`SEGMENT: CGAME`), movement included, so the C island is
-one segment: calls between regions are near C calls, MAIN keeps only bridge stubs, and C
-reaches remaining ASM through the trampoline pragmas (patterns in c/game.h).
+`graph.py` derives a migration view from the oracle and C ownership declarations.
+Its original call edges include bodies already replaced by C; read the actual C callers
+before declaring a residual ASM routine active. Automatic gameplay/mixed classifications
+are investigation aids, not a completion percentage. The source contracts and current
+tests remain the behavioral authority.
