@@ -55,6 +55,9 @@ python tests/host/input.py --no-build
 python tests/host/rendering.py --no-build
 python tests/host/video_services.py --no-build
 python tests/host/graphics_decode.py
+python tests/host/checkpoints.py --no-build
+python tests/host/ui_flows.py --no-build
+python tests/host/runtime.py
 python tests/host/adlib_sequence.py
 python tests/host/roland_sequence.py
 ```
@@ -82,10 +85,20 @@ writing a save; normal quit and Alt+X use the game's shutdown/save policy.
 
 Integration checks have exercised all six level selections and gameplay, all three
 video adapters, pause/cheat-driven traversal of all six level-completion transitions,
-AdLib and Roland startup, and Alt+X save/exit. These do not establish exhaustive native
-parity for every boss, checkpoint, ending and interactive high-score path. A separate
-audio-backend regression suite is pending explicit approval after automatic approval
-review rejected its creation. Full native parity remains the completion bar.
+AdLib and Roland startup, and Alt+X save/exit. The maintained runtime suite also
+verifies Esc/Y returning through game over to the options menu, all six redefined
+keys and SoundOption surviving save/reload, and one-sided launcher overrides.
+Bounded native comparisons
+cover all 24 actual checkpoint entries and segmented-boss placement, fire phases
+and path wrapping. A ten-minute virtual gameplay soak completed without a runtime
+failure and advanced to level two without F4 skips, with cheat flags enabled.
+Live UI checks cover high-score name editing and keypad input, both quit answers,
+boss-key restoration and cooperative timer delivery. Controller calibration uses
+the shipped page and panel images with injected low/high/center gamepad samples;
+the tests check its thresholds, overlay frames, release waits and Escape abort.
+These checks do not establish exhaustive parity for every gameplay state. A dedicated
+audio-backend regression gate remains to be added and validated. Full native parity
+remains the completion bar.
 
 The tested build uses Windows x86-64 MinGW GCC and the official SDL3 SDK pinned in
 `metadata/sdl3.json`, downloaded only into ignored `build/deps`. A pkg-config compiler

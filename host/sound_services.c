@@ -29,7 +29,8 @@
 #define SOUND_CALLBACK_FRAMES 512
 #define NS_PER_SECOND 1000000000ull
 #define PIT_CLOCK_HZ 1193182.0
-#define TANDY_PSG_CLOCK_HZ 223721.0
+/* External SN76496 clock; tone/noise divisors below include its prescaler. */
+#define TANDY_PSG_CLOCK_HZ 3579545.0
 #define MIDI_SYSEX_CAPACITY 4096u
 
 #if defined(_WIN32)
@@ -62,7 +63,7 @@ static uint8_t offline_mode;
 static uint8_t opl_backend_ready;
 static uint32_t sound_sample_rate = SOUND_RATE;
 static uint64_t sound_timeline_origin_ns;
-static uint16_t speaker_divisor;
+static uint32_t speaker_divisor;
 static double speaker_phase;
 static uint16_t psg_tone_period[3];
 static uint8_t psg_volume[4];
@@ -358,6 +359,8 @@ static void apply_event(const SoundEvent *event)
     switch (event->kind) {
     case SOUND_EVENT_SPEAKER_ON:
         speaker_divisor = (uint16_t)(event->address | ((uint16_t)event->value << 8));
+        /* A zero binary PIT reload counts 65536 clocks; OFF is a separate event. */
+        if (speaker_divisor == 0) speaker_divisor = 65536u;
         speaker_phase = 0.0;
         break;
     case SOUND_EVENT_SPEAKER_OFF:
