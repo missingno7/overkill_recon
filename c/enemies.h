@@ -3,13 +3,13 @@
 #ifndef ENEMIES_H
 #define ENEMIES_H
 #include "game.h"
+#include "terrain.h"
 
 word next_random_word(void);
 Record *find_free_record_pool_b(void);
 Record *spawn_aimed_shot(Record *r);
 word spawn_throttled_child(Record *r, word bx);
 word spawn_shot_down(Record *r, word bx);
-word try_terrain_step(Record *r);
 void horizontal_terrain_patrol(Record *r);
 void set_plunge_target_below_player(Record *r);
 void scroll_record_then_finish(Record *r);

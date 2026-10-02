@@ -17,8 +17,6 @@
 #include "patrol.h"
 #include "enemies.h"
 
-word climb_walker_step(Record *r);
-
 void wall_patrol(Record *r, word base)
 {
     r->sprite = (SlowCount6 >> 1) + base;

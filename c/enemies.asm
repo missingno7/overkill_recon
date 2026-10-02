@@ -1,4 +1,4 @@
-; ASM -> C entry stubs of the enemies region (c/enemies.c) for the DOS hybrid. Each stub
+; ASM -> C entry stubs for enemies and shared pool/terrain helpers. Each stub
 ; keeps an oracle label and its register contract (see the oracle routine's comment) and
 ; calls the C function that owns it (c/game.h convention: SI, DI in; AX out; all else
 ; preserved). Only labels the remaining ASM still reaches need a stub.

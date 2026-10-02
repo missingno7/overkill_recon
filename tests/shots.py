@@ -15,7 +15,7 @@ from fuzz import Target
 import random
 import hybrid as _hybrid
 
-REGION = [n for n, f in _hybrid.owned_labels().items() if f == 'shots.c']
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('shots.c', 'terrain.c')]
 LOOP = ('BP', 'SP', 'DS', 'SS')
 MAP_SEGMENT = 0x9000          # free in both machines (the test heap ends below 9000h)
 HANDLERS = {2: 'Type02TimedStraightShot', 3: 'Type02TimedStraightShot', 4: 'Type04StraightShot',
@@ -255,14 +255,14 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants shots).
 MUTANTS = [
-    ('shots.c', 'if ((sword)GridYSum < 0) return 0xFFFF;', 'if (GridYSum > 0x7FFF) return 0;'),
-    ('shots.c', 'rows = (GridYSum & 0x0F) > 0x0A ? 2 : 1;', 'rows = (GridYSum & 0x0F) >= 0x0A ? 2 : 1;'),
+    ('terrain.c', 'if ((sword)GridYSum < 0) return 0xFFFF;', 'if (GridYSum > 0x7FFF) return 0;'),
+    ('terrain.c', 'rows = (GridYSum & 0x0F) > 0x0A ? 2 : 1;', 'rows = (GridYSum & 0x0F) >= 0x0A ? 2 : 1;'),
     ('shots.c', 'if ((sword)s->y >= (sword)top && (sword)s->y <= (sword)(top + 0x14)', 'if (s->y >= top && s->y <= top + 0x14'),
     ('shots.c', '        EasyHitToggle = (EasyHitToggle + 1) & 1;\r\n        if (EasyHitToggle) return;', '        if (EasyHitToggle) return;'),
     ('shots.c', '        if (MissilesLive != 0) MissilesLive--;\r\n', ''),
-    ('shots.c', 'if ((r->x & 0x0F) == 0x0F) cell--;', 'if ((r->x & 0x0F) == 0) cell--;'),
-    ('shots.c', 'if (r->save_buffer == w->save_buffer) continue;', ''),
-    ('shots.c', 'case DIR_DOWN_LEFT:  terrain_step_left(r, terrain_step_down(r, cell)); break;',
+    ('terrain.c', 'if ((r->x & 0x0F) == 0x0F) cell--;', 'if ((r->x & 0x0F) == 0) cell--;'),
+    ('terrain.c', 'if (r->save_buffer == w->save_buffer) continue;', ''),
+    ('terrain.c', 'case DIR_DOWN_LEFT:  terrain_step_left(r, terrain_step_down(r, cell)); break;',
                 'case DIR_DOWN_LEFT:  terrain_step_down(r, terrain_step_left(r, cell)); break;'),
     ('shots.asm', 'ClimbWalkerStep:\r\n    push si\r\n    mov si, bp\r\n    call CLIMB_WALKER_STEP\r\n    pop si\r\n    cmp ax, 1\r\n',
                   'ClimbWalkerStep:\r\n    push si\r\n    mov si, bp\r\n    call CLIMB_WALKER_STEP\r\n    pop si\r\n    cmp ax, 0\r\n'),

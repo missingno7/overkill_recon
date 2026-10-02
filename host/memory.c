@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 static unsigned char *state_window;
+static unsigned char *level_map_window;
 
 int overkill_bind_state(void *state, size_t bytes)
 {
@@ -28,4 +29,17 @@ uint16_t overkill_ds_offset(const void *pointer)
         abort();
     /* One-past DS is permitted for end markers and wraps like a DOS offset. */
     return (uint16_t)(address - base);
+}
+
+int overkill_bind_level_map(void *map, size_t bytes)
+{
+    if (map == NULL || bytes < 0x10000) return 0;
+    level_map_window = map;
+    return 1;
+}
+
+void *overkill_level_map_address(uint16_t offset)
+{
+    if (level_map_window == NULL) abort();
+    return level_map_window + offset;
 }

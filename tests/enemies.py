@@ -1,7 +1,7 @@
 """Enemy region (c/enemies.c): RunTypeHandler and the REC_TYPE handlers it owns, the shared
 scroll/bounds/collision tail, the pickup update, the encounter director, the formation
-members, the throttled child shot and the terrain step. Shared random/pool helpers are in
-c/pools.c.
+members and the throttled child shot. Shared random/pool helpers are in c/pools.c; map and
+terrain movement are in c/terrain.c.
 
 Entries: RunTypeHandler (every REC_TYPE 0..94h, now dispatched directly to C),
 UpdatePickup, and the shared bridge entries (ScrollRecordThenFinish,
@@ -16,7 +16,7 @@ from shots import MAP, install_map, terrain, walkers
 import itertools, struct
 
 import hybrid as _hybrid
-REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('enemies.c', 'pools.c')]
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('enemies.c', 'pools.c', 'terrain.c')]
 LOOP = ('BP', 'SP', 'DS', 'SS')
 W = lambda v: struct.pack('<H', v & 0xFFFF)
 

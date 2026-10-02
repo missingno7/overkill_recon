@@ -40,12 +40,11 @@
 #include "pods.h"
 #include "hits.h"
 #include "player.h"
+#include "terrain.h"
 
 #define NO_SLOT 0xFFFF              /* empty pod slot, no selected upgrade slot */
 
-/* c/shots.c, c/spawn.c */
-word map_attribute(word cell);
-word compute_record_grid_offset(Record *r);
+/* c/shots.c, c/pools.c */
 void lose_player_energy_tank(void);
 Record *find_free_record_pool_a(void);
 

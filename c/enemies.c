@@ -3,9 +3,9 @@
    (ScrollRecordThenFinish, FinishRecordUpdate), the pickup update, the enemy handlers of
    the turrets, hatches, descenders, bouncers, crawlers, shooters, the formation members
    and the encounter director (types 14h..93h listed in the OWNS lines), and their helpers:
-   aimed shots, the throttled child shot with
-   its per-firer effects, and the terrain step (TryTerrainStep). Same state, same results;
-   the oracle comments at each routine hold the original contracts.
+   aimed shots and the throttled child shot with its per-firer effects. Terrain movement
+   is shared in c/terrain.c. Same state, same results; the oracle comments at each
+   routine hold the original contracts.
 
    Handlers are written in the oracle's order of reads and writes: a spawned record may be
    the firing record itself when the fuzzer (or a freed slot) makes that possible.
@@ -32,7 +32,7 @@
    OWNS: Type49RadialBurstFaller Type4CSinkThenRise Type4DSinkRiseThenDash Type4FFallFast4Flicker
    OWNS: Type52ScrollOnly Type53AnimateFromSpriteBase Type48DescendAimedFire
    OWNS: Type93SweepDescendClimb Type21LeaderPath Type48CreeperBody Type93SweepBody
-   OWNS: Type93BlockedTurnUp UpdatePickup TryTerrainStep CountLiveEnemies EncounterInvaderLevel
+   OWNS: Type93BlockedTurnUp UpdatePickup CountLiveEnemies EncounterInvaderLevel
    OWNS: EncounterSegBossLevel Type21EncounterDirector FormationComplete EncounterSpawnInvader
    OWNS: EncounterSpawnFaller AssignNextFallerColumn Type23ColumnFaller Type2CAimedDrifter
    OWNS: Type20SlotHopperDropper Type20Cases Type20MoveAbovePlayer Type20StartDrop Type20Drop
@@ -61,6 +61,7 @@
 #include "patrol.h"
 #include "flyers.h"
 #include "firers.h"
+#include "terrain.h"
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -69,8 +70,7 @@ word steer_to_saved(Record *r);
 void set_delta_toward(Record *self, Record *target);
 void aim_at_player(Record *r);
 void step_along_delta(Record *r);
-/* c/shots.c: the terrain step body and the shot handlers (each with its own tail) */
-void terrain_step_in_direction(Record *r);
+/* c/shots.c: the shot handlers (each with its own tail) */
 void type02_timed_straight_shot(Record *s);
 void type04_straight_shot(Record *s);
 void type05_side_shot_up_left(Record *s);
@@ -228,24 +228,6 @@ word spawn_shot_down(Record *r, word bx)
     bx = spawn_throttled_child(r, bx);
     r->direction = direction;
     return bx;
-}
-
-/* TryTerrainStep: one pixel along REC_DIRECTION unless the map (or a walker) blocks it;
-   returns TerrainBlocked (the bridge turns it into the oracle's ZF). The step works on the
-   16x16 box at (X, Y + ScrollDeltaY - 10h); Y is moved back afterwards, keeping any step. */
-word try_terrain_step(Record *r)
-{
-    TerrainBlocked = 0;
-    TerrainStartY = r->y;
-    TerrainProbeY = r->y;
-    TerrainStartX = r->x;
-    TerrainProbeX = r->x;
-    r->y += ScrollDeltaY;
-    r->y -= 0x10;
-    terrain_step_in_direction(r);
-    r->y += 0x10;
-    r->y -= ScrollDeltaY;
-    return TerrainBlocked;
 }
 
 /* ---- the shared tail ------------------------------------------------------------------ */
