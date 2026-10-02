@@ -10,7 +10,9 @@ python tools/host.py
 .\build\host\OVERKILL_SDL3.exe
 ```
 
-The default is Tandy video with AdLib music and the original keyboard controls.
+The first-run default is Tandy video with AdLib music and the original keyboard controls.
+Later runs restore saved settings; explicit video or sound flags override their
+respective saved choices using the original launcher policy.
 `--video cga|ega|tandy` selects another original raster path. `--sound adlib|roland|off`
 selects the music module; `off` leaves the original speaker effects setting intact.
 Roland output uses Windows MIDI and needs a compatible synthesizer. The supplied
@@ -62,7 +64,9 @@ enemy paths, player/frame/weapon logic, file services and timer deadlines. Oracl
 comparisons are bounded routine calls, not a boot of the original beyond gameplay
 entry. CGA/Tandy pixel fixtures compare the arena against ASM; EGA plane fixtures use
 independent plane expectations because the flat oracle emulator does not model EGA
-hardware. Both optional music sequencers compare state and ordered chip/MIDI writes.
+hardware. Graphics decoding compares 50 shipped image assets across all three
+adapters, including screen pages, panels and every level's sprite/block banks.
+Both optional music sequencers compare state and ordered chip/MIDI writes.
 
 Headless runs advance virtual time through the game's waits and input loops:
 

@@ -43,6 +43,32 @@ static void queue_key_character(const SDL_KeyboardEvent *key, int scan)
         queue_character((uint8_t)scan);
         return;
     }
+    /* SDL keypad symbols are outside ASCII. BIOS character input supplies
+       arithmetic keys directly and toggles keypad digits with Num Lock/Shift. */
+    switch (key->scancode) {
+    case SDL_SCANCODE_KP_ENTER: queue_character(13); return;
+    case SDL_SCANCODE_KP_MULTIPLY: queue_character('*'); return;
+    case SDL_SCANCODE_KP_DIVIDE: queue_character('/'); return;
+    case SDL_SCANCODE_KP_MINUS: queue_character('-'); return;
+    case SDL_SCANCODE_KP_PLUS: queue_character('+'); return;
+    default: break;
+    }
+    if (((key->mod & SDL_KMOD_NUM) != 0) != shift) {
+        if (key->scancode >= SDL_SCANCODE_KP_1 &&
+            key->scancode <= SDL_SCANCODE_KP_9) {
+            queue_character((uint8_t)('1' + key->scancode - SDL_SCANCODE_KP_1));
+            return;
+        }
+        if (key->scancode == SDL_SCANCODE_KP_0) {
+            queue_character('0');
+            return;
+        }
+        if (key->scancode == SDL_SCANCODE_KP_PERIOD ||
+            key->scancode == SDL_SCANCODE_KP_COMMA) {
+            queue_character(key->scancode == SDL_SCANCODE_KP_PERIOD ? '.' : ',');
+            return;
+        }
+    }
     if (symbol >= 'a' && symbol <= 'z') {
         if ((key->mod & SDL_KMOD_CTRL) != 0) symbol -= 'a' - 1;
         else if (shift != caps) symbol -= 'a' - 'A';
@@ -57,7 +83,6 @@ static void queue_key_character(const SDL_KeyboardEvent *key, int scan)
             }
     }
     if (symbol > 0 && symbol < 128) queue_character((uint8_t)symbol);
-    else if (key->scancode == SDL_SCANCODE_KP_ENTER) queue_character(13);
     else if (scan != 0) {
         queue_character(0);
         queue_character((uint8_t)scan);

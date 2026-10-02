@@ -24,8 +24,11 @@ DOS_MEMORY_BYTES = 0x100000
 WORD_MASK = 0xFFFF
 
 sys.path.insert(0, str(TOOLS))
+sys.path.insert(0, str(ROOT / "tests"))
 from unicorn import UC_HOOK_CODE  # noqa: E402
 from emu import LOAD, Machine, REG, WORD_REGS  # noqa: E402
+from resources import decode_enc, resources  # noqa: E402
+from resource_codecs import _packed_reference  # noqa: E402
 
 
 class HostRegisters(ctypes.Structure):
@@ -93,7 +96,8 @@ def _make_stream() -> bytes:
 
 
 def _oracle_call(machine: Machine, registers: HostRegisters,
-                 workspace_segment: int) -> dict[str, int]:
+                 workspace_segment: int,
+                 instruction_limit: int = 1_000_000) -> dict[str, int]:
     seg, off = machine.symbols["DECODEGRAPHICSIMAGES"]
     cs = LOAD + seg
     sentinel = machine.sentinel(cs)
@@ -116,7 +120,7 @@ def _oracle_call(machine: Machine, registers: HostRegisters,
 
     hook = machine.u.hook_add(UC_HOOK_CODE, returned, None, sentinel, sentinel)
     try:
-        machine.u.emu_start(cs * 16 + off, 0, count=1_000_000)
+        machine.u.emu_start(cs * 16 + off, 0, count=instruction_limit)
     finally:
         machine.u.hook_del(hook)
     ip = machine.u.reg_read(REG["CS"]) * 16 + machine.u.reg_read(REG["IP"])
@@ -127,7 +131,7 @@ def _oracle_call(machine: Machine, registers: HostRegisters,
         registers_now = {name: machine.u.reg_read(REG[name])
                          for name in ("AX", "BX", "CX", "DX", "SI", "DI", "BP")}
         raise AssertionError(
-            f"DecodeGraphicsImages did not return within 1M instructions; "
+            f"DecodeGraphicsImages did not return within {instruction_limit:,} instructions; "
             f"stopped at {position[0]:04X}:{position[1]:04X}, regs={registers_now}")
     return {name: machine.u.reg_read(REG[name]) for name in WORD_REGS}
 
@@ -205,6 +209,236 @@ def _fixture(lib, adapter: int, make_mask: int, record: int,
     return 1
 
 
+def _graphics_assets() -> list[dict[str, object]]:
+    """Decode the pinned SHADOW graphics payloads to the bytes the image leaf sees."""
+    archive, rows = resources()
+    assets: list[dict[str, object]] = []
+    for row in rows:
+        name = row["name"].upper()
+        if name.endswith(".BIC"):
+            if name.endswith("MAP.BIC"):
+                # Level maps are loaded into the map buffer and are not image lists.
+                continue
+            destination_segment_add = 0
+            payload = archive[row["offset"]:row["offset"] + row["size"]]
+            mode, writes, _consumed = _packed_reference(payload)
+            image_bytes = bytearray(max(offset for offset, _ in writes) + 1)
+            for offset, value in writes:
+                image_bytes[offset] = value
+            stream = bytes(image_bytes)
+            basename = name[:-4]
+            if basename in ("1X1", "2X2", "2X2C", "MANEXPL"):
+                mask, record = 1, 0
+                destination, destination_offset, slot = {
+                    "1X1": ("Sprites1x1Segment", 0, None),
+                    "2X2": ("Sprites2x2Segment", 0, None),
+                    "2X2C": ("Sprites2x2CSegment", 0, None),
+                    "MANEXPL": ("ManExplSegment", 0, None),
+                }[basename]
+            elif basename.startswith("G") and basename[1:].isdigit():
+                mask, record = 1, 0
+                destination, destination_offset, slot = "LevelSpritesSegment", 0, None
+            elif basename.startswith("LEV") and basename.endswith("BLX"):
+                mask, record = 0, 0
+                destination, destination_offset, slot = "LevelBlocksSegment", 0, None
+            elif basename == "THEND":
+                mask, record = 0, 1
+                destination, destination_offset, slot = "TheEndSegment", 0, "PanelImageOffsets"
+            elif basename == "BLUEBITS":
+                mask, record = 0, 1
+                destination, destination_offset, slot = "BlueBitsSegment", 0, "BlueBitsImageOffsets"
+            elif basename == "WINDOW":
+                mask, record = 0, 1
+                destination, destination_offset, slot = "WorkspaceSegment", 0, "PlaqueImageOffset"
+                # Startup captures the launcher image one paragraph beyond the 200-row page.
+                destination_segment_add = 0x07D1
+            elif basename == "SHIP":
+                mask, record = 0, 0
+                destination, destination_offset, slot = "ShipSegment", 0, None
+            else:
+                # LOGO.BIC is a shipped valid stream, but the frozen data notes it is
+                # never loaded. Exercise its decoder bytes in an isolated scratch span.
+                mask, record = 0, 0
+                destination, destination_offset, slot = 0x7200, 0, None
+            assets.append({
+                "name": name,
+                "stream": stream,
+                "mask": mask,
+                "record": record,
+                "destination": destination,
+                "destination_offset": destination_offset,
+                "destination_segment_add": destination_segment_add,
+                "slot": slot,
+                "file_label": "FILE_" + basename + "_BIC",
+                "mode": mode,
+            })
+            continue
+
+        if not name.endswith(".ENC") or name in ("ADLIB.ENC", "ROLAND.ENC"):
+            continue
+        payload = archive[row["offset"]:row["offset"] + row["size"]]
+        stream, _consumed = decode_enc(payload)
+        basename = name[:-4]
+        if basename == "PANEL":
+            destination, destination_offset, slot = "PanelSegment", 0, "PanelImageOffsets"
+        elif basename == "LEVSCR":
+            destination, destination_offset, slot = "WorkspaceSegment", 0x8000, "ScreenImageOffset"
+        elif basename == "CHOOSE":
+            destination, destination_offset, slot = "WorkspaceSegment", 0x4000, "ChooseImageOffsets"
+        elif basename.startswith("PLAQ") and basename[4:].isdigit():
+            destination, destination_offset, slot = "PlaqueSegment", 0, "PlaqueImageOffset"
+        else:
+            # OPAGE/IPAGE and the menu/configuration pages use LoadAndShowPage.
+            destination, destination_offset, slot = "WorkspaceSegment", 0x8000, "ScreenImageOffset"
+        assets.append({
+            "name": name,
+            "stream": stream,
+            "mask": 0,
+            "record": 1,
+            "destination": destination,
+            "destination_offset": destination_offset,
+            "destination_segment_add": 0,
+            "slot": slot,
+            "file_label": "FILE_" + basename + "_ENC",
+            "mode": "ENC",
+        })
+    if not assets:
+        raise AssertionError("pinned SHADOW archive has no graphics image streams")
+    return assets
+
+
+def _image_stream_budget(stream: bytes) -> int:
+    """Bound the direct oracle leaf using the decoded image dimensions."""
+    position = 0
+    pixels = 0
+    while position + 4 <= len(stream):
+        rows, row_bytes = struct.unpack_from("<HH", stream, position)
+        position += 4
+        if rows == 0 and row_bytes == 0:
+            break
+        if rows == 0 or row_bytes == 0:
+            raise AssertionError(f"invalid image header at decoded offset {position - 4:04X}")
+        payload_bytes = rows * row_bytes * 4
+        if position + payload_bytes > 0x10000:
+            raise AssertionError("decoded graphics stream exceeds the cleared 64 KiB workspace")
+        pixels += rows * row_bytes * 8
+        position += payload_bytes
+    else:
+        # ClearWorkspace supplies the zero header following streams that end exactly
+        # after their final plane data.
+        if position != len(stream):
+            raise AssertionError("graphics stream ends in a partial image header")
+    # EGA spends substantially more instructions per pixel than the CGA/Tandy paths.
+    # The hard ceiling keeps malformed or unexpected assets from becoming unbounded.
+    return min(30_000_000, max(1_000_000, pixels * 180 + 500_000))
+
+
+def _write_linear_wrapped(machine: Machine, segment: int, offset: int,
+                          data: bytes) -> None:
+    address = ((segment << 4) + offset) & 0xFFFFF
+    first = min(len(data), DOS_MEMORY_BYTES - address)
+    if first:
+        machine.u.mem_write(address, data[:first])
+    if first < len(data):
+        machine.u.mem_write(0, data[first:])
+
+
+class _RealAssetRunner:
+    def __init__(self, lib, adapter: int):
+        self.lib = lib
+        self.adapter = adapter
+        self.machine = Machine(ORACLE_EXE)
+        self.machine.start_runtime(adapter)
+        self.workspace = self.machine.peek("WorkspaceSegment")
+        self.baseline = bytes(self.machine.u.mem_read(0, DOS_MEMORY_BYTES))
+        self.backing, self.base = _native_arena(lib, self.machine)
+        self.stack_begin = (self.machine.data_frame * 16 +
+                            self.machine.offset("StackArea"))
+        self.stack_end = self.machine.data_frame * 16 + self.machine.stack_top
+
+    def _file_flag_word(self, asset: dict[str, object]) -> int:
+        name_offset = _macro("HOST_TOKEN_" + str(asset["file_label"]))
+        return self.machine.word((name_offset - 2) & WORD_MASK)
+
+    def run(self, asset: dict[str, object]) -> None:
+        machine = self.machine
+        machine.u.mem_write(0, self.baseline)
+        stream = bytes(asset["stream"])
+        # The real loader clears WorkspaceSegment, then writes the BIC-expanded or
+        # ENC-decoded resource at offset zero. The cleared tail supplies image-list EOS.
+        _write_linear_wrapped(machine, self.workspace, 0, bytes(0x10000))
+        _write_linear_wrapped(machine, self.workspace, 0, stream)
+
+        make_mask = int(asset["mask"])
+        record = int(asset["record"])
+        slot = asset["slot"]
+        slot_offset = (machine.symbols[str(slot).upper()][1] if slot else 0)
+        destination = asset["destination"]
+        destination_segment = (machine.peek(destination) if isinstance(destination, str)
+                               else int(destination))
+        destination_segment = (destination_segment +
+                               int(asset["destination_segment_add"])) & WORD_MASK
+        destination_offset = int(asset["destination_offset"])
+        per_file_enabled = int(self.adapter == 1)
+        flag_word = self._file_flag_word(asset) if per_file_enabled else WORD_MASK
+
+        machine.poke("LoadMakeMask", make_mask)
+        machine.poke("LoadRecordImages", record)
+        machine.poke("LoadImageSlot", slot_offset)
+        machine.u.mem_write(machine.linear("PerFileFlagsEnabled"),
+                            bytes((per_file_enabled,)))
+        if self.adapter == 0 and str(asset["name"]) == "LEVSCR.ENC":
+            # run_choose_screen temporarily maps source color 7 to CGA black.
+            cga_map = machine.linear("CgaColorMap")
+            machine.u.mem_write(cga_map + 7, b"\0")
+
+        before = bytes(machine.u.mem_read(0, DOS_MEMORY_BYTES))
+        ctypes.memmove(self.base, before, DOS_MEMORY_BYTES)
+        initial_regs = HostRegisters(0xA1A1, 0xB2B2, 0xC3C3, 0xD4D4,
+                                    0, destination_offset, flag_word,
+                                    destination_segment)
+        native_regs = HostRegisters.from_buffer_copy(bytes(initial_regs))
+        native_result = self.lib.overkill_graphics_service(
+            _macro("HOST_TOKEN_DECODEGRAPHICSIMAGES"), ctypes.byref(native_regs))
+        if native_result != 1:
+            raise AssertionError(f"{asset['name']}: native service did not accept decoder token")
+        native_after = ctypes.string_at(self.base, DOS_MEMORY_BYTES)
+
+        oracle_regs = HostRegisters.from_buffer_copy(bytes(initial_regs))
+        machine.u.mem_write(0, before)
+        expected_registers = _oracle_call(
+            machine, oracle_regs, self.workspace, _image_stream_budget(stream))
+        oracle_after = bytes(machine.u.mem_read(0, DOS_MEMORY_BYTES))
+        if native_after != oracle_after:
+            for address, (got, expected) in enumerate(zip(native_after, oracle_after)):
+                if self.stack_begin <= address < self.stack_end:
+                    continue
+                if got != expected:
+                    raise AssertionError(
+                        f"{asset['name']} adapter={self.adapter} mode={asset['mode']} "
+                        f"mask={make_mask} record={record}: {address:05X} "
+                        f"native={got:02X} ASM={expected:02X}")
+        for name in ("ax", "cx", "si", "di", "bp", "es"):
+            actual = getattr(native_regs, name)
+            expected = expected_registers[name.upper()]
+            if actual != expected:
+                raise AssertionError(
+                    f"{asset['name']} adapter={self.adapter} {name.upper()} "
+                    f"native={actual:04X} ASM={expected:04X}")
+
+
+def _asset_fixtures(lib, adapters: tuple[int, ...]) -> int:
+    assets = _graphics_assets()
+    checks = 0
+    for adapter in adapters:
+        runner = _RealAssetRunner(lib, adapter)
+        for asset in assets:
+            runner.run(asset)
+            checks += 1
+        del runner
+    return checks
+
+
 def run(adapter_filter: int | None = None) -> int:
     if not HOST_HEADER.is_file() or not ORACLE_EXE.is_file():
         raise FileNotFoundError("generate the host header and exact oracle before testing")
@@ -227,12 +461,15 @@ def run(adapter_filter: int | None = None) -> int:
                 for make_mask, record in ((0, 0), (1, 0), (1, 1)):
                     checks += _fixture(lib, adapter, make_mask, record, False, False)
                 checks += _fixture(lib, adapter, 1, 1, True, True)
+            asset_checks = _asset_fixtures(lib, adapters)
+            checks += asset_checks
         finally:
             if os.name == "nt":
                 from _ctypes import FreeLibrary  # pylint: disable=import-outside-toplevel
                 FreeLibrary(lib._handle)
                 del lib
-    print(f"PASS native graphics decoder: {checks} full-arena oracle fixtures")
+    print(f"PASS native graphics decoder: {checks} full-arena oracle fixtures "
+          f"({asset_checks} shipped graphics asset cases)")
     return checks
 
 

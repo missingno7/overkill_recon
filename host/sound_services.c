@@ -133,24 +133,34 @@ static int midi_send_sysex(const uint8_t *bytes, size_t length)
     unsigned i;
     MidiSysExSlot *slot = NULL;
     MMRESULT result;
+    uint64_t wait_started;
 
     if (midi_output == NULL || length == 0 || length > MIDI_SYSEX_CAPACITY) return 0;
-    for (i = 0; i != MIDI_SYSEX_SLOTS; ++i) {
-        MidiSysExSlot *candidate = &midi_sysex_slots[i];
-        if (InterlockedCompareExchange(&candidate->busy, 1, 0) != 0) continue;
-        if (candidate->prepared) {
-            result = midiOutUnprepareHeader(midi_output, &candidate->header,
-                                             sizeof(candidate->header));
-            if (result != MMSYSERR_NOERROR) {
-                InterlockedExchange(&candidate->busy, 0);
-                continue;
+    wait_started = SDL_GetTicks();
+    while (slot == NULL) {
+        for (i = 0; i != MIDI_SYSEX_SLOTS; ++i) {
+            MidiSysExSlot *candidate = &midi_sysex_slots[i];
+            if (InterlockedCompareExchange(&candidate->busy, 1, 0) != 0) continue;
+            if (candidate->prepared) {
+                result = midiOutUnprepareHeader(midi_output, &candidate->header,
+                                                 sizeof(candidate->header));
+                if (result != MMSYSERR_NOERROR) {
+                    InterlockedExchange(&candidate->busy, 0);
+                    return 0;
+                }
+                candidate->prepared = 0;
             }
-            candidate->prepared = 0;
+            slot = candidate;
+            break;
         }
-        slot = candidate;
-        break;
+        if (slot == NULL) {
+            /* Initialization sends more messages than there are buffers.
+               MOM_DONE releases them asynchronously; queue pressure is not a
+               missing MIDI device. Bound the wait if a driver stops replying. */
+            if (SDL_GetTicks() - wait_started >= 5000) return 0;
+            SDL_Delay(1);
+        }
     }
-    if (slot == NULL) return 0;
 
     memset(&slot->header, 0, sizeof(slot->header));
     memcpy(slot->bytes, bytes, length);

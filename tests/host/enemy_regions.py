@@ -48,7 +48,7 @@ def _bind_signatures(h) -> None:
             "type7b_drop_then_aim", "animated_aim_line_flyer",
             "hover_fire_plunge", "type32_descend_then_bounce",
             "type84_lurk_until_aligned", "type5b_scroll_then_rise",
-            "type5c_rise_fast4"):
+            "type5c_rise_fast4", "type14_formation_sway_diver"):
         fn = getattr(h.lib, name)
         fn.argtypes = (pointer,)
         fn.restype = None
@@ -512,6 +512,44 @@ def _patrol_fire_cases(h) -> int:
     return len(cases)
 
 
+def _formation_sway_cases(h) -> int:
+    actor = h.offset("PoolA")
+    leader_end = h.offset("LeaderScript13End")
+    cases = (
+        # A left sway is -1 as a 16-bit word. Before the low-byte dive tick, both
+        # current and saved X move left together and must still be recognized in-slot.
+        (0x50, 0x50, 0x60, 0x60, 0xFFFF, 0, 0x00FE, 1,
+         "left sway, one tick before dive"),
+        # At FFh the same slot dives; the gate must still be reached after wrap-safe
+        # in-slot detection, and the counter advances as the original does.
+        (0x50, 0x50, 0x60, 0x60, 0xFFFF, 0, 0x00FF, 1,
+         "left sway, dive tick"),
+        # Right sway from FFFFh wraps both X values to zero. This is also in-slot,
+        # rather than a return-to-slot steering step caused by promoted C arithmetic.
+        (0xFFFF, 0xFFFF, 0x60, 0x60, 1, 0, 0x00FE, 1,
+         "right sway, X wraps at FFFF"),
+        # The saved row resets from D1h to 20h before the in-slot comparison.
+        (0x50, 0x50, 0x20, 0xD0, 0xFFFF, 1, 0x0010, 0,
+         "left sway, saved Y resets at D0"),
+    )
+    for x, saved_x, y, saved_y, sway_x, sway_y, tick, live, label in cases:
+        writes = _environment(h, actor, actor_fields={
+            "type": 0x14, "x": x, "saved_x": saved_x,
+            "y": y, "saved_y": saved_y,
+        }, player_fields={"x": 0x80, "y": 0x40}, words={
+            "LeaderScriptCursor": leader_end,
+            "SwayDirX": sway_x,
+            "SwayDropY": sway_y,
+            "RecordTickCounter": tick,
+            "EncounterLiveCount": live,
+            "DifficultySetting": 1,
+        })
+        _run_case(h, "type14_formation_sway_diver",
+                  "Type14FormationSwayDiver", actor, writes,
+                  f"Type14FormationSwayDiver {label}")
+    return len(cases)
+
+
 def _full_pool_wrap_cases(h) -> int:
     actor = h.offset("PoolA")
     primary = h.offset("PrimaryRecord")
@@ -607,6 +645,7 @@ def run(no_build: bool = False) -> int:
         "jitter and child spawn": _jitter_cases(h),
         "patrol alignment and rise": _patrol_cases(h),
         "patrol down-shot phase": _patrol_fire_cases(h),
+        "formation sway slot and tick": _formation_sway_cases(h),
         "full-pool wrapped writes": _full_pool_wrap_cases(h),
     }
     h.check_canaries()

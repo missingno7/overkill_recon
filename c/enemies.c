@@ -1626,7 +1626,7 @@ void type14_formation_sway_diver(Record *r)
         r->saved_x += SwayDirX;
         r->saved_y += SwayDropY;
         if (r->saved_y > 0xD0) r->saved_y = 0x20;
-        if (r->x + SwayDirX != r->saved_x || r->y != r->saved_y) {
+        if ((word)(r->x + SwayDirX) != r->saved_x || r->y != r->saved_y) {
             if (r->y <= r->saved_y) {
                 SteerTargetX = r->saved_x & 0xFFFE;
                 r->x &= 0xFFFE;

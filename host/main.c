@@ -33,6 +33,7 @@ static jmp_buf return_to_host;
 static uint8_t *arena;
 static InputEvent *script;
 static size_t script_count, script_cursor;
+static SDL_Keymod script_modifiers;
 static FILE *trace;
 static const char *screenshot_path;
 static int headless, exit_status;
@@ -95,6 +96,27 @@ static void idle_game(void)
         SDL_Event event = {0};
         event.type = input->pressed ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
         event.key.scancode = input->scan;
+        {
+            SDL_Keymod modifier = SDL_KMOD_NONE;
+            switch (input->scan) {
+            case SDL_SCANCODE_LSHIFT: modifier = SDL_KMOD_LSHIFT; break;
+            case SDL_SCANCODE_RSHIFT: modifier = SDL_KMOD_RSHIFT; break;
+            case SDL_SCANCODE_LCTRL: modifier = SDL_KMOD_LCTRL; break;
+            case SDL_SCANCODE_RCTRL: modifier = SDL_KMOD_RCTRL; break;
+            case SDL_SCANCODE_LALT: modifier = SDL_KMOD_LALT; break;
+            case SDL_SCANCODE_RALT: modifier = SDL_KMOD_RALT; break;
+            case SDL_SCANCODE_CAPSLOCK:
+                if (input->pressed) script_modifiers ^= SDL_KMOD_CAPS;
+                break;
+            case SDL_SCANCODE_NUMLOCKCLEAR:
+                if (input->pressed) script_modifiers ^= SDL_KMOD_NUM;
+                break;
+            default: break;
+            }
+            if (input->pressed) script_modifiers |= modifier;
+            else script_modifiers &= ~modifier;
+            event.key.mod = script_modifiers;
+        }
         event.key.key = SDL_GetKeyFromScancode(input->scan, SDL_KMOD_NONE, false);
         event.key.down = input->pressed != 0;
         if (overkill_sdl_apply_event(&event)) {
@@ -179,6 +201,7 @@ int main(int argc, char **argv)
     char asset_path[2048], save_path[2048];
     volatile word adapter = VIDEO_TANDY;
     volatile byte sound = SOUND_SELECT_ADLIB;
+    volatile byte override_mask = 0;
     int i;
     DosRegisters registers = {0};
     for (i = 1; i < argc; ++i) {
@@ -199,12 +222,14 @@ int main(int argc, char **argv)
             else if (!strcmp(mode, "cga")) adapter = VIDEO_CGA;
             else if (!strcmp(mode, "ega")) adapter = VIDEO_EGA;
             else return 2;
+            override_mask |= LAUNCHER_OVERRIDE_VIDEO;
         } else if (!strcmp(argv[i], "--sound") && i + 1 < argc) {
             const char *mode = argv[++i];
             if (!strcmp(mode, "adlib")) sound = SOUND_SELECT_ADLIB;
             else if (!strcmp(mode, "roland")) sound = SOUND_SELECT_ROLAND;
             else if (!strcmp(mode, "off")) sound = 0;
             else return 2;
+            override_mask |= LAUNCHER_OVERRIDE_SOUND;
         } else {
             fprintf(stderr, "Usage: %s [--video tandy|cga|ega] [--sound adlib|roland|off]\n"
                     "  [--headless --milliseconds N --input-script FILE --trace FILE]\n"
@@ -251,7 +276,7 @@ int main(int argc, char **argv)
     if (setjmp(return_to_host) == 0) {
         uint8_t *tail = overkill_segment_address(HOST_LOAD_SEGMENT - 0x10, PSP_COMMAND_TAIL);
         tail[0] = 3;
-        tail[1] = LAUNCHER_OVERRIDE_BOTH;
+        tail[1] = override_mask;
         tail[2] = (byte)adapter;
         tail[3] = sound;
         *(word *)overkill_segment_address(HOST_SEGMENT_ENTRYESPSP, HOST_OFFSET_ENTRYESPSP) =
@@ -266,6 +291,8 @@ int main(int argc, char **argv)
         launcher_after_prologue(HOST_LOAD_SEGMENT - 0x10, &registers);
     }
     if (trace) {
+        fprintf(trace, "settings,%04X,%02X,%04X,%04X\n",
+                VideoAdapter, SoundModuleSelect, InputDeviceMode, SoundOption);
         fprintf(trace, "state,%04X,%04X,%04X,%04X,%04X,%04X,%04X,%04X\n",
                 LevelIndex, MapScrollPos, LevelIntroFrames, Fuel,
                 PRIMARY->x, PRIMARY->y, PRIMARY->status, LivesLeft);
