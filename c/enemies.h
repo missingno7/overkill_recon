@@ -4,9 +4,8 @@
 #define ENEMIES_H
 #include "game.h"
 #include "terrain.h"
+#include "pools.h"
 
-word next_random_word(void);
-Record *find_free_record_pool_b(void);
 Record *spawn_aimed_shot(Record *r);
 word spawn_throttled_child(Record *r, word bx);
 word spawn_shot_down(Record *r, word bx);

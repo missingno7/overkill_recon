@@ -1,4 +1,4 @@
-"""Shot-hit region (c/hits.c): player shots hitting records, damage, DestroyRecord, drops,
+"""Shot-hit region (c/hits.c, c/combat.c): player shots hitting records, damage, DestroyRecord, drops,
 explosions, encounter bookkeeping, smart bomb and the descend-then-burst handlers.
 
 Entries are the oracle labels the remaining ASM reaches (the bridge c/hits.asm) and their
@@ -258,16 +258,16 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants).
 MUTANTS = [
-    ('hits.c', 'if (--r->hit_points == 0) destroy_record(r);\r\n    else damage_one(r);',
+    ('combat.c', 'if (--r->hit_points == 0) destroy_record(r);\r\n    else damage_one(r);',
                'if (--r->hit_points == 0) destroy_record(r);'),                                   # omitted step
     ('hits.c', '(sword)r->y < 0x20', 'r->y < 0x20'),                                               # signedness
     ('hits.c', '((shot->x & 7) != 0 && dx == 0xFFF8)', '(dx == 0xFFF8)'),                          # hit box
     ('hits.c', 'r->type != 0x78 && r->type != 0x79', 'r->type != 0x78'),                           # boss rows
-    ('hits.c', 'group[GROUP_LIVE] != 0 && --group[GROUP_LIVE] == 0', '--group[GROUP_LIVE] == 0'),  # wrap of a 0 group
-    ('hits.c', 'Record *pickup = find_free_record_pool_a();',
+    ('combat.c', 'group[GROUP_LIVE] != 0 && --group[GROUP_LIVE] == 0', '--group[GROUP_LIVE] == 0'),  # wrap of a 0 group
+    ('combat.c', 'Record *pickup = find_free_record_pool_a();',
      'Record *pickup = find_free_record_pool_b();'),  # wrong pool for drops
-    ('hits.c', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        break;', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        return;'),
-    ('hits.c', 'if (x > PLAYFIELD_MAX_X) x', 'if ((sword)x > PLAYFIELD_MAX_X) x'),                  # unsigned drop X
+    ('combat.c', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        break;', '    case 0x93:\r\n        Type93KilledLatch = 1;\r\n        return;'),
+    ('combat.c', 'if (x > PLAYFIELD_MAX_X) x', 'if ((sword)x > PLAYFIELD_MAX_X) x'),                  # unsigned drop X
     ('hits.asm', 'InitPickupRecord:\r\n    push ax\r\n    mov si, bx\r\n    call INIT_PICKUP_RECORD\r\n    mov si, ax\r\n',
                  'InitPickupRecord:\r\n    push ax\r\n    push si\r\n    mov si, bx\r\n    call INIT_PICKUP_RECORD\r\n    pop si\r\n'),
 ]
@@ -275,7 +275,7 @@ MUTANTS = [
 # Coverage-guided differential fuzzing (python tools/fuzz.py hits N).
 from fuzz import Target
 import hybrid as _hybrid
-REGION = [n for n, f in _hybrid.owned_labels().items() if f == 'hits.c']
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('hits.c', 'combat.c')]
 
 def _shothit_seed(w):
     """Every pool B slot a live player shot; most miss on one axis (so the scan goes deep),

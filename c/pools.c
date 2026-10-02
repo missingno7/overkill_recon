@@ -4,7 +4,7 @@
    SEGMENT: CGAME
    OWNS: NextRandomWord FindFreeRecordPoolA FindFreeRecordPoolB
 */
-#include "game.h"
+#include "pools.h"
 
 /* The next word of the fixed 16-word CreditRandomWords cycle (the credit text read as
    words): the cursor steps by 2 and wraps at CreditRandomWords + 31. */

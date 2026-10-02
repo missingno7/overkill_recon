@@ -3,13 +3,12 @@
 #ifndef PODS_H
 #define PODS_H
 #include "game.h"
+#include "combat.h"
 
-void add_score_bcd(word points);
 void remove_record(Record *r);
 word remove_record_si(Record *r, word si);
 Record *alloc_record_evicting(void);
 void check_record_hits_player(Record *r);
-word small_record_hits_player(Record *r);
 void collect_pickup(Record *pickup);
 void update_pod(Record *pod);
 word animate_explosion16(Record *r);

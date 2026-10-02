@@ -1,9 +1,9 @@
-/* Pods, the upgrade selector, pickups and the player hit tests, translated from the frozen
+/* Pods, the upgrade selector and pickups, translated from the frozen
    oracle (asm-semantic-oracle-v1): the front, side and trailing pods (adding, placing,
    updating, collisions, terrain, loss), the four-slot upgrade selector with its condition
    and apply routines, RemoveRecord and the pool A allocator that evicts through it, the
-   explosion animations, pickups (collection and the player hit tests), the BCD score, the
-   ship's X nudges toward the side with fewer pods, and the demo steps that launch pods.
+   explosion animations and pickups, the ship's X nudges toward the side with fewer pods,
+   and the demo steps that launch pods. Score and hit boxes are shared in c/combat.c.
    Same state, same results; the oracle comments at each routine hold the original
    contracts and quirks.
 
@@ -29,8 +29,8 @@
    OWNS: AnimateExplosion16 StoreRecordSavedPosition Explosion16Frame AnimateExplosion32
    OWNS: ResetPoolAAndUpgrades DemoStepLaunchTrailingPodNear DemoStepLaunchTrailingPodFar
    OWNS: DemoLaunchTrailingPod DemoStepLaunchInnerSidePods DemoStepLaunchOuterSidePods DemoLaunchPod
-   OWNS: ReturnCarrySet AddScoreBcd RecordNearPlayerHitPoint SmallRecordHitsPlayer
-   OWNS: LargeRecordHitsPlayer CollectPickup PodTerrainHit PodProbeTerrain ReturnPodNotHit
+   OWNS: ReturnCarrySet
+   OWNS: CollectPickup PodTerrainHit PodProbeTerrain ReturnPodNotHit
    OWNS: PodTakeHit PodTakeHitSilent PodLoseHitPoint PodCollideRecords CheckRecordHitsPlayer
    OWNS: CountLeftPod CountRightPod AdjustRecordXFromCounts SidePodBalanceCases
    OWNS: NudgeShipRightHalf NudgeShipRight NudgeShipLeftHalf NudgeShipLeft PlaceSidePods
@@ -130,41 +130,6 @@ word init_upgrade_slots(void)
         row += 0x10;
     }
     return (word)slot;
-}
-
-/* ---- score ------------------------------------------------------------------------ */
-
-/* One byte of the score: ADC then DAA exactly as the CPU does them, also for non-BCD
-   bytes. Returns the carry in bit 8. */
-word pods_add_bcd_byte(word a, word b, word carry)
-{
-    word sum = a + b + carry;
-    word al = sum & 0xFF;
-    word adjust_low = ((a & 0x0F) + (b & 0x0F) + carry) > 0x0F;   /* AF of the add */
-
-    carry = sum >> 8;
-    if ((al & 0x0F) > 9 || adjust_low) al = (al + 6) & 0xFF;
-    if ((sum & 0xFF) > 0x99 || carry) {
-        al = (al + 0x60) & 0xFF;
-        carry = 1;
-    }
-    return carry << 8 | al;
-}
-
-/* AddScoreBcd: `points` (4 packed BCD digits) added to the 8-digit ScoreBcd; the carry
-   out of the top byte is lost (99999999 wraps). */
-void add_score_bcd(word points)
-{
-    word c;
-
-    c = pods_add_bcd_byte(ScoreBcd[0], points & 0xFF, 0);
-    ScoreBcd[0] = (byte)c;
-    c = pods_add_bcd_byte(ScoreBcd[1], points >> 8, c >> 8);
-    ScoreBcd[1] = (byte)c;
-    c = pods_add_bcd_byte(ScoreBcd[2], 0, c >> 8);
-    ScoreBcd[2] = (byte)c;
-    c = pods_add_bcd_byte(ScoreBcd[3], 0, c >> 8);
-    ScoreBcd[3] = (byte)c;
 }
 
 /* ---- the upgrade selector ------------------------------------------------------------ */
@@ -850,45 +815,6 @@ word animate_explosion32(Record *r)
 }
 
 /* ---- pickups and the player hit tests ------------------------------------------------------ */
-
-/* 1 (the oracle's CF) when |REC_Y - PlayerHitY| <= 10h and |REC_X - PlayerHitX| <= 10h,
-   signed and inclusive, with 16-bit bounds. */
-word record_near_player_hit_point(Record *r)
-{
-    return (sword)r->y <= (sword)(PlayerHitY + 0x10) && (sword)r->y >= (sword)(PlayerHitY - 0x10)
-        && (sword)r->x <= (sword)(PlayerHitX + 0x10) && (sword)r->x >= (sword)(PlayerHitX - 0x10);
-}
-
-/* Size 1 record: within 10h of the ship's hit point (PlayerHitOffsets by form, stored in
-   PlayerHitY/X). Never above the playfield (REC_Y < 0) or for a destroyed ship (form 3+). */
-word small_record_hits_player(Record *r)
-{
-    word *hit;
-
-    if ((sword)r->y < 0 || PRIMARY->sprite >= 3) return 0;
-    hit = &PlayerHitOffsets[PRIMARY->sprite * 2];
-    PlayerHitY = hit[0] + PRIMARY->y;
-    PlayerHitX = hit[1] + PRIMARY->x;
-    return record_near_player_hit_point(r);
-}
-
-/* Size 2 record: recX-14h <= ship X <= recX+18h (signed) and recY-14h <= ship Y <= recY+18h
-   (unsigned; recY-4..recY+8 while SegBossActive). Never for REC_Y < 0; no ship-form test. */
-word large_record_hits_player(Record *r)
-{
-    word low, high;
-
-    if ((sword)r->y < 0) return 0;
-    if ((sword)(r->x + 0x18) < (sword)PRIMARY->x || (sword)(r->x - 0x14) > (sword)PRIMARY->x) return 0;
-    if (SegBossActive == 1) {
-        high = r->y + 8;
-        low = r->y - 4;
-    } else {
-        high = r->y + 0x18;
-        low = r->y - 0x14;
-    }
-    return high >= PRIMARY->y && low <= PRIMARY->y;
-}
 
 /* Body contact of a live record (not a pickup, not type 0/1; size 1 or 2) with the ship:
    the record is destroyed (not during a segmented boss) and a tank is lost. */

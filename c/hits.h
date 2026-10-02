@@ -1,16 +1,11 @@
-/* Player-shot hits, damage and destruction (c/hits.c): the functions other C regions may
-   call directly (all in segment CGAME; c/game.h convention). */
+/* Player-shot hits and bursts (c/hits.c), with shared damage in c/combat.c.
+   All use the CGAME calling convention in c/game.h. */
 #ifndef HITS_H
 #define HITS_H
 #include "game.h"
+#include "combat.h"
 
 void player_shots_hit_record(Record *r);
-void smart_bomb_record(Record *r);
-void destroy_record(Record *r);
-void release_encounter_member(Record *r);
-void clamp_record_x(Record *r);
-void spawn_item_drop(void);
-word init_pickup_record(Record *pickup);
 void spawn_eight_way_burst(Record *r);
 
 #endif

@@ -1,4 +1,4 @@
-"""Pods region (c/pods.c): the front, side and trailing pods, the upgrade selector with its
+"""Pods region (c/pods.c, c/combat.c): the front, side and trailing pods, the upgrade selector with its
 condition and apply routines, RemoveRecord and the evicting pool A allocator, the explosion
 steps, pickups, the player hit tests, the BCD score, the ship's pod-balance nudges and the
 demo steps that launch pods.
@@ -21,7 +21,7 @@ import weapons as WP
 import random, struct
 import hybrid as _hybrid
 
-REGION = [n for n, f in _hybrid.owned_labels().items() if f == 'pods.c']
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('pods.c', 'combat.c')]
 LOOP = ('BP', 'SP', 'DS', 'SS')
 FREE = ('SP', 'DS', 'SS')
 SIDE = ('SidePodLeftInner', 'SidePodRightInner', 'SidePodLeftOuter', 'SidePodRightOuter')
@@ -457,7 +457,7 @@ MUTANTS = [
     ('pods.c', '    if (r->kind == KIND_POD) {\r\n        r->kind = KIND_TYPED;', '    if (r->kind == KIND_POD) {\r\n        r->kind = KIND_ENEMY;'),  # transition
     ('pods.c', '        pod->x = PLAYFIELD_MAX_X;\r\n        ClampXHighSeen = 1;', '        pod->x = PLAYFIELD_MAX_X;'),  # omitted side effect
     ('pods.c', 'if (r->kind != KIND_EXHAUST && r->kind != KIND_POD) break;', 'if (r->kind != KIND_POD) break;'),  # allocation
-    ('pods.c', 'if ((sum & 0xFF) > 0x99 || carry) {', 'if (al > 0x99 || carry) {'),                    # DAA
+    ('combat.c', 'if ((sum & 0xFF) > 0x99 || carry) {', 'if (al > 0x99 || carry) {'),                    # DAA
     ('pods.c', '            FrontPodRecord = NO_SLOT;\r\n            destroy_record(enemy);\r\n            explode_pod(pod);',
                '            destroy_record(enemy);\r\n            explode_pod(pod);'),                   # slot kept
     # the CF result of a bridge (SmallRecordHitsPlayer's stub is gone: c/enemies.c calls it)

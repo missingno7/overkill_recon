@@ -2,9 +2,9 @@
 
 The DOS C baseline is committed at `5c475b7`. The SDL3 phase now builds the shared
 keyboard/joystick input policy, record movement, allocation, random-word cycle and
-terrain probes as a native library. This is a core integration milestone; a native
-game executable, graphics, timing, files and audio are still to come. The DOS hybrid and exact ASM
-oracle remain independent build targets.
+terrain probes, damage, destruction and collision boxes as a native library. This is a
+core integration milestone; a native game executable, graphics, timing, files and audio
+are still to come. The DOS hybrid and exact ASM oracle remain independent build targets.
 
 ```powershell
 python tools/host.py
@@ -12,6 +12,7 @@ python tests/host/input.py --no-build
 python tests/host/movement.py --no-build
 python tests/host/pools.py --no-build
 python tests/host/terrain.py --no-build
+python tests/host/combat.py --no-build
 python tools/hybrid.py
 python tools/difftest.py
 python tools/verify.py
@@ -35,7 +36,7 @@ names are views into that window; there are no globals per label or synchronized
 records. The caller owns its lifetime. `GAME_PTR` and `GAME_OFFSET` convert stored DS
 offsets at the point of access; allocation cursors and record links retain their
 original word representation, including the FFFFh no-record sentinel. These conversions
-are used by the shared pool and random-cycle helpers. Remaining DOS pointer casts,
+are used by the shared pools and boss bookkeeping. Remaining DOS pointer casts,
 CS data, code-pointer dispatch, far addresses and C16 integer promotions in other
 regions need explicit adaptation and validation before they can be compiled for a
 host. Movement accepts native pointers into the same DS window and keeps its
@@ -48,6 +49,13 @@ lifetime. Map offsets remain words, so lookup arithmetic keeps the original wrap
 Grid probes, terrain steps, ship collision and climbing walkers share one C body across
 both targets. Map loading itself is still pending in the native backend.
 
+`c/combat.c` shares damage and destruction, encounter departures, segmented-boss
+part links, pool A item drops, packed-BCD scoring and the player's signed hit boxes.
+Boss links and leader-script cursors retain the original DS offsets; the same pool
+allocator can reuse a departing record's slot. Score arithmetic preserves the original
+ADC/DAA behavior for invalid BCD digits and overflow. Shot-hit dispatch and pod updates
+still need their remaining native dependencies.
+
 `host/sdl_input.c` translates physical SDL scancodes into the game's existing set-1 key
 state, including make/release events and typematic repeats. The shared C poll applies
 configured bindings and fixed controls. Focus loss releases held keys; Alt+X and SDL
@@ -57,6 +65,6 @@ adapter. Raw joystick samples have an injection boundary; native gamepad samplin
 calibration are not implemented yet.
 
 Native tests compare complete DS snapshots against bounded original ASM input,
-movement, pool and terrain calls, excluding only the DOS stack scratch. SDL event
+movement, pool, terrain and combat calls, excluding only the DOS stack scratch. SDL event
 checks use the real SDK event queue.
 No whole-game replay or native gameplay claim is implied by this gate.

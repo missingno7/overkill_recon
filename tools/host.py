@@ -1,4 +1,4 @@
-"""Build native input, movement, pools and terrain from the DOS hybrid's shared C.
+"""Build native input, movement, pools, terrain and combat from the shared DOS C.
 
 The platform state view is generated from the exact ASM oracle, not a second set of
 globals. Windows uses the official pinned SDL3 MinGW SDK under ignored build/deps.
@@ -80,7 +80,7 @@ def build():
                '-I' + str(ROOT / 'host')]
     if os.name != 'nt':
         command += ['-fPIC']
-    command += [str(ROOT / p) for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'c/terrain.c', 'host/memory.c',
+    command += [str(ROOT / p) for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'c/terrain.c', 'c/combat.c', 'host/memory.c',
                 'host/input_services.c', 'host/sdl_input.c')]
     flags = sdl_flags()
     library = out / ('OVERKILL_CORE.dll' if os.name == 'nt' else 'liboverkill_core.so')
