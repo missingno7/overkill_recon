@@ -4,6 +4,7 @@
 #define PODS_H
 #include "game.h"
 #include "combat.h"
+#include "pod_motion.h"
 
 void remove_record(Record *r);
 word remove_record_si(Record *r, word si);
@@ -13,14 +14,9 @@ void collect_pickup(Record *pickup);
 void update_pod(Record *pod);
 word animate_explosion16(Record *r);
 word animate_explosion32(Record *r);
-void place_side_pods(Record *anchor);
-void dec_record_x_twice(Record *r);
-void inc_record_x_twice(Record *r);
-void adjust_record_x_from_counts(Record *r);
 void apply_selected_upgrade(void);
 void pickup_upgrade_selector(void);
 word refresh_upgrade_display(void);
-void demo_step_next_ship_form(void);
 void demo_step_launch_inner_side_pods(void);
 void demo_step_launch_outer_side_pods(void);
 void demo_step_launch_trailing_pod_near(void);

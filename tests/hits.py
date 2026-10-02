@@ -258,6 +258,10 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants).
 MUTANTS = [
+    ('combat.c', 'word n, offset = r->size_class == 2 ? 0x0C : 4;',
+                 'word n, offset = r->size_class == 2 ? 4 : 0x0C;'),  # burst origin by size
+    ('combat.c', 'shot->direction = n - 1;',
+                 'shot->direction = n & 7;'),  # descending burst order
     ('combat.c', 'if (--r->hit_points == 0) destroy_record(r);\r\n    else damage_one(r);',
                'if (--r->hit_points == 0) destroy_record(r);'),                                   # omitted step
     ('hits.c', '(sword)r->y < 0x20', 'r->y < 0x20'),                                               # signedness

@@ -26,9 +26,14 @@
 word overkill_ds_offset(const void *pointer);
 #define GAME_PTR(type, offset) ((type *)overkill_ds_address((word)(offset)))
 #define GAME_OFFSET(pointer) overkill_ds_offset(pointer)
+/* A demo can address a pod through the unchecked FFFFh slot. Its nonzero field
+   offsets wrap into low DS rather than extending a native record past the window. */
+#define GAME_RECORD_FIELD(record, field) \
+    (*GAME_PTR(word, GAME_OFFSET(record) + offsetof(Record, field)))
 #else
 #define GAME_PTR(type, offset) ((type *)(word)(offset))
 #define GAME_OFFSET(pointer) ((word)(pointer))
+#define GAME_RECORD_FIELD(record, field) ((record)->field)
 #endif
 #define NO_RECORD GAME_PTR(Record, 0xFFFF)
 

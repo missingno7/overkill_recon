@@ -27,7 +27,7 @@ SEED = 0x434F4D42
 NO_RECORD = 0xFFFF
 
 sys.path.insert(0, str(TOOLS))
-from emu import FLAG  # noqa: E402
+from emu import FLAG, LOAD, REG  # noqa: E402
 from world import K  # noqa: E402
 
 
@@ -46,7 +46,9 @@ def _bind_signatures(h) -> None:
     for name in ("init_pickup_record", "clamp_record_x", "explode_record",
                  "release_encounter_member", "destroy_record", "damage_one",
                  "damage_two", "destroy_unless_seg_boss",
-                 "smart_bomb_record", "record_near_player_hit_point",
+                 "smart_bomb_record", "set_sway_sprite", "spawn_eight_way_burst",
+                 "descend_burst_tail", "type36_fall_then_burst",
+                 "type22_descend_then_burst", "record_near_player_hit_point",
                  "small_record_hits_player", "large_record_hits_player"):
         fn = getattr(h.lib, name)
         fn.argtypes = (pointer,)
@@ -183,6 +185,60 @@ def _run_void(h, native_name: str, oracle_name: str,
     _write(h, writes)
     h.m.call(oracle_name)
     getattr(h.lib, native_name)()
+    h.compare(label)
+
+
+def _oracle_until(h, oracle_name: str, registers: dict[str, int], stop_name: str) -> None:
+    """Enter an exact ASM leaf and stop immediately before its shared finish tail."""
+    from unicorn import UC_HOOK_CODE, UcError
+
+    m = h.m
+    seg, offset = m.symbols[oracle_name.upper()]
+    cs = LOAD + seg
+    stop_at = m.linear(stop_name)
+    sp = m.stack_top - 0x40 - 2
+    m.set_word(sp, m.sentinel(cs) - cs * 16)
+    values = dict(AX=0, BX=0, CX=0, DX=0, SI=0, DI=0, BP=0, ES=m.data_frame)
+    values.update(registers)
+    for name, value in values.items():
+        m.u.reg_write(REG[name], value & 0xFFFF)
+    for name in ("DS", "SS"):
+        m.u.reg_write(REG[name], m.data_frame)
+    m.u.reg_write(REG["CS"], cs)
+    m.u.reg_write(REG["SP"], sp)
+    m.u.reg_write(REG["FLAGS"], 0x0202)
+    m.fault = None
+    m.ports = []
+    stopped = False
+
+    def before_tail(u, address, _size, _):
+        nonlocal stopped
+        if address == stop_at:
+            stopped = True
+            u.emu_stop()
+
+    hook = m.u.hook_add(UC_HOOK_CODE, before_tail, None, stop_at, stop_at)
+    try:
+        m.u.emu_start(cs * 16 + offset, 0, count=5_000_000)
+    except UcError as exc:
+        raise AssertionError(
+            f"{oracle_name}: CPU fault before {stop_name}: {exc} at "
+            f"{m.u.reg_read(REG['CS']):04X}:{m.u.reg_read(REG['IP']):04X}") from exc
+    finally:
+        m.u.hook_del(hook)
+    if m.fault:
+        raise AssertionError(f"{oracle_name}: {m.fault} before {stop_name}")
+    if not stopped:
+        raise AssertionError(f"{oracle_name}: did not reach {stop_name}")
+
+
+def _run_pointer_until(h, native_name: str, oracle_name: str, record_at: int,
+                       writes: list[tuple[int, bytes]], label: str,
+                       stop_name: str = "ScrollRecordThenFinish") -> None:
+    h.reset()
+    _write(h, writes)
+    _oracle_until(h, oracle_name, {"BP": record_at}, stop_name)
+    getattr(h.lib, native_name)(_pointer(h, record_at))
     h.compare(label)
 
 
@@ -634,6 +690,229 @@ def _score_cases(h, rng: random.Random) -> int:
     return count
 
 
+def _pool_b_image(rng: random.Random, free_slots: set[int]) -> bytes:
+    """Pool B records retain old bytes when a burst claims a slot."""
+    data = bytearray(rng.randrange(256) for _ in range(K.POOL_B_COUNT * K.RECORD_SIZE))
+    for index in range(K.POOL_B_COUNT):
+        status = 0 if index in free_slots else 1
+        struct.pack_into("<H", data, index * K.RECORD_SIZE + K.REC_STATUS, status)
+    return bytes(data)
+
+
+def _burst_writes(h, rng: random.Random, *, x: int = 0x40, y: int = 0x50,
+                  size: int = 1, free_slots: set[int] | None = None,
+                  cursor_b: int | None = None, rtype: int = 0x36,
+                  slot: int = NO_RECORD, group_live: int = 0,
+                  level: int = 1, scroll: int = 0, sway: int = 1,
+                  sfx: int = 1) -> list[tuple[int, bytes]]:
+    pool_a = h.offset("PoolA")
+    pool_b = h.offset("PoolB")
+    if free_slots is None:
+        free_slots = set(range(K.POOL_B_COUNT))
+    if cursor_b is None:
+        cursor_b = pool_b
+    group = bytearray(32)
+    if slot != NO_RECORD:
+        group[slot * 2] = group_live & 0xFF
+        group[slot * 2 + 1] = 4
+    writes = _base_writes(h, live={0}, cursor=pool_a, level=level, scroll=scroll,
+                          sfx=sfx, drop_x=x, drop_y=y, drop_kind=2,
+                          group_table=bytes(group))
+    writes.extend((
+        (pool_b, _pool_b_image(rng, free_slots)),
+        _word("PoolBCursor", cursor_b, h),
+        _word("BurstOriginX", 0x1357, h),
+        _word("BurstOriginY", 0x2468, h),
+        _word("SwayDirX", sway, h),
+        (pool_a, _record(rng, status=1, kind=K.KIND_ENEMY, type=rtype,
+                         size_class=size, slot_index=slot, x=x, y=y,
+                         hit_points=5, anim_counter=0x1234, sprite=0x5678)),
+    ))
+    return writes
+
+
+def _run_burst_spawn(h, rng: random.Random, *, x: int, y: int, size: int,
+                     free_slots: set[int], cursor_b: int, label: str) -> None:
+    pool_b = h.offset("PoolB")
+    end_b = h.offset("PoolBEnd")
+    writes = _burst_writes(h, rng, x=x, y=y, size=size, free_slots=free_slots,
+                           cursor_b=cursor_b)
+    initial_pool = next(data for offset, data in writes if offset == pool_b)
+    h.reset()
+    _write(h, writes)
+    h.m.call("SpawnEightWayBurst", {"BP": h.offset("PoolA")})
+    h.lib.spawn_eight_way_burst(_pointer(h, h.offset("PoolA")))
+    h.compare(label)
+
+    start = 0 if cursor_b == end_b else (cursor_b - pool_b) // K.RECORD_SIZE
+    order = []
+    for step in range(K.POOL_B_COUNT):
+        index = (start + step) % K.POOL_B_COUNT
+        if index in free_slots:
+            order.append(index)
+            if len(order) == 8:
+                break
+    post = h.state_storage.snapshot()
+    origin = ((x + (0x0C if size == 2 else 4)) & 0xFFFF,
+              (y + (0x0C if size == 2 else 4)) & 0xFFFF)
+    changed = {K.REC_STATUS, K.REC_DIRECTION, K.REC_SPRITE, K.REC_X, K.REC_Y,
+               K.REC_PLAYER_SHOT, K.REC_DRAW_PASS, K.REC_SIZE_CLASS, K.REC_KIND,
+               K.REC_TYPE, K.REC_SHOT_TIMER}
+    for ordinal, index in enumerate(order):
+        at = pool_b + index * K.RECORD_SIZE
+        direction = 7 - ordinal
+        # Verify each written semantic field; untouched bytes below retain the old slot.
+        for offset, value in ((K.REC_STATUS, 1), (K.REC_Y, origin[1]),
+                              (K.REC_X, origin[0]), (K.REC_DIRECTION, direction),
+                              (K.REC_SPRITE, direction + 8),
+                              (K.REC_PLAYER_SHOT, 0), (K.REC_DRAW_PASS, 1),
+                              (K.REC_SIZE_CLASS, 0), (K.REC_KIND, K.KIND_TYPED),
+                              (K.REC_TYPE, 3), (K.REC_SHOT_TIMER, 0xFFFF)):
+            got = struct.unpack_from("<H", post, at + offset)[0]
+            if got != value:
+                raise AssertionError(
+                    f"{label}: PoolB[{index}] field {offset:02X}={got:04X}, expected {value:04X}")
+        before = initial_pool[index * K.RECORD_SIZE:(index + 1) * K.RECORD_SIZE]
+        after = post[at:at + K.RECORD_SIZE]
+        for byte in range(K.RECORD_SIZE):
+            if any(field <= byte < field + 2 for field in changed):
+                continue
+            if before[byte] != after[byte]:
+                raise AssertionError(
+                    f"{label}: PoolB[{index}] stale byte {byte:02X} changed")
+
+
+def _sway_sprite_cases(h, rng: random.Random) -> int:
+    count = 0
+    at = h.offset("PoolA")
+    for sway in (0, 1, 0xFFFF, 2, 0x7FFF, 0x8000, 0xFFFE, 0xFFFD):
+        writes = _base_writes(h) + [
+            (at, _record(rng, sprite=rng.randrange(0x10000))),
+            _word("SwayDirX", sway, h),
+        ]
+        _run_pointer(h, "set_sway_sprite", "SetSwaySprite", at, writes,
+                     f"SetSwaySprite SwayDirX={sway:04X}")
+        count += 1
+    for index in range(24):
+        sway = rng.randrange(0x10000)
+        writes = _base_writes(h) + [(at, _record(rng)), _word("SwayDirX", sway, h)]
+        _run_pointer(h, "set_sway_sprite", "SetSwaySprite", at, writes,
+                     f"SetSwaySprite seeded #{index}")
+        count += 1
+    return count
+
+
+def _spawn_burst_cases(h, rng: random.Random) -> int:
+    count = 0
+    pool_b = h.offset("PoolB")
+    end_b = h.offset("PoolBEnd")
+    cursors = (pool_b, pool_b + (K.POOL_B_COUNT - 1) * K.RECORD_SIZE, end_b)
+    for available in range(11):
+        for cursor_index, cursor in enumerate(cursors):
+            start = 0 if cursor == end_b else (cursor - pool_b) // K.RECORD_SIZE
+            free = {(start + i * 5) % K.POOL_B_COUNT for i in range(available)}
+            x, y = ((0xFFFF, 0xFFF8), (0xB0, 0x9F), (0xC0, 0xA0))[cursor_index]
+            size = (0, 1, 2)[(available + cursor_index) % 3]
+            _run_burst_spawn(h, rng, x=x, y=y, size=size, free_slots=free,
+                             cursor_b=cursor,
+                             label=f"SpawnEightWayBurst available={available} cursor={cursor:04X}")
+            count += 1
+    for index in range(96):
+        available = rng.randrange(K.POOL_B_COUNT + 1)
+        free = set(rng.sample(range(K.POOL_B_COUNT), available))
+        cursor_index = rng.randrange(K.POOL_B_COUNT)
+        cursor = pool_b + cursor_index * K.RECORD_SIZE
+        _run_burst_spawn(h, rng, x=rng.randrange(0x10000), y=rng.randrange(0x10000),
+                         size=rng.randrange(3), free_slots=free, cursor_b=cursor,
+                         label=f"SpawnEightWayBurst seeded #{index}")
+        count += 1
+    return count
+
+
+def _descend_burst_cases(h, rng: random.Random) -> int:
+    count = 0
+    pool_b = h.offset("PoolB")
+    for index in range(48):
+        available = (0, 1, 8, 9)[index % 4]
+        free = set(range(available))
+        cursor = (h.offset("PoolBEnd") if index % 3 == 0
+                  else pool_b + ((K.POOL_B_COUNT - 1) * K.RECORD_SIZE
+                                 if index % 3 == 1 else 0))
+        actor = h.offset("PoolA")
+        group_slot = index % 16 if index % 2 else NO_RECORD
+        group_live = 1 if group_slot != NO_RECORD else 0
+        rtype = (0x36, 0x14, 0x21, 0x22)[index % 4]
+        level = 4 if rtype == 0x21 and index & 1 else 1
+        writes = _burst_writes(
+            h, rng, x=(0xBF, 0xC1, 0xFFFF, 0x40)[index % 4],
+            y=(0x9F, 0xA0, 0xFFF0, 0x20)[index % 4],
+            size=index % 3, free_slots=free, cursor_b=cursor, rtype=rtype,
+            slot=group_slot, group_live=group_live, level=level,
+            scroll=(0, 1, 2, 0xFFFF)[index % 4], sfx=index & 1)
+        _run_pointer_until(h, "descend_burst_tail", "DescendBurstTail", actor, writes,
+                           f"DescendBurstTail seeded #{index}")
+        count += 1
+    return count
+
+
+def _type_burst_cases(h, rng: random.Random) -> int:
+    count = 0
+    actor = h.offset("PoolA")
+    pool_b = h.offset("PoolB")
+    sway_values = (0, 1, 0xFFFF, 0x7FFF)
+    y_values = (0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xFFFE, 0xFFFF)
+    for sway in sway_values:
+        for y in y_values:
+            for size in (1, 2):
+                available = (y + sway + size) % 10
+                free = set(range(available))
+                cursor = h.offset("PoolBEnd") if sway & 1 else pool_b + (K.POOL_B_COUNT - 1) * K.RECORD_SIZE
+                writes = _burst_writes(h, rng, x=(0x40, 0xC1, 0xFFFF)[size % 3],
+                                       y=y, size=size, free_slots=free,
+                                       cursor_b=cursor, sway=sway)
+                _run_pointer_until(h, "type36_fall_then_burst", "Type36FallThenBurst",
+                                   actor, writes,
+                                   f"Type36FallThenBurst Y={y:04X} sway={sway:04X} size={size}")
+                count += 1
+
+    # Type 22h falls by two only on level zero. The exact A0h edge and unsigned wrap
+    # separate the two paths; the common scroll tail is stopped before it mutates DS.
+    for level in (0, 1, 4, 0xFFFF):
+        for sway in (0, 1, 0xFFFF):
+            for y in y_values:
+                size = ((level + sway + y) & 1) + 1
+                available = (level + sway + y) % 10
+                free = set(range(available))
+                cursor = (pool_b + ((K.POOL_B_COUNT - 1) * K.RECORD_SIZE)
+                          if (level + sway) & 1 else h.offset("PoolBEnd"))
+                writes = _burst_writes(h, rng, x=0x40, y=y, size=size,
+                                       free_slots=free, cursor_b=cursor,
+                                       rtype=0x22, level=level, sway=sway)
+                _run_pointer_until(h, "type22_descend_then_burst", "Type22DescendThenBurst",
+                                   actor, writes,
+                                   f"Type22DescendThenBurst level={level:04X} Y={y:04X} sway={sway:04X}")
+                count += 1
+
+    for native_name, oracle_name, rtype in (
+            ("type36_fall_then_burst", "Type36FallThenBurst", 0x36),
+            ("type22_descend_then_burst", "Type22DescendThenBurst", 0x22)):
+        for index in range(48):
+            level = rng.choice((0, 1, 4, 0xFFFF))
+            available = rng.randrange(11)
+            free = set(rng.sample(range(K.POOL_B_COUNT), available))
+            cursor = (h.offset("PoolBEnd") if index & 1 else
+                      pool_b + rng.randrange(K.POOL_B_COUNT) * K.RECORD_SIZE)
+            writes = _burst_writes(
+                h, rng, x=rng.randrange(0x10000), y=rng.randrange(0x10000),
+                size=rng.randrange(3), free_slots=free, cursor_b=cursor,
+                rtype=rtype, level=level, sway=rng.randrange(0x10000),
+                scroll=rng.choice((0, 1, 2, 0xFFFF)), sfx=index & 1)
+            _run_pointer_until(h, native_name, oracle_name, actor, writes,
+                               f"{oracle_name} seeded #{index}")
+            count += 1
+    return count
+
+
 def _near_point_cases(h, rng: random.Random) -> int:
     count = 0
     pool = h.offset("PoolA")
@@ -796,6 +1075,10 @@ def run(no_build: bool = False) -> int:
         "near-point collision": _near_point_cases(h, rng),
         "small collision": _small_hit_cases(h, rng),
         "large collision": _large_hit_cases(h, rng),
+        "sway sprite": _sway_sprite_cases(h, rng),
+        "eight-way burst": _spawn_burst_cases(h, rng),
+        "descend burst tail": _descend_burst_cases(h, rng),
+        "falling bursts": _type_burst_cases(h, rng),
     }
     h.check_canaries()
     total = sum(counts.values())

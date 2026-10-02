@@ -2,8 +2,8 @@
 
 The DOS C baseline is committed at `5c475b7`. The SDL3 phase now builds the shared
 keyboard/joystick input policy, record movement, allocation, random-word cycle and
-terrain probes, damage, destruction and collision boxes as a native library. This is a
-core integration milestone; a native game executable, graphics, timing, files and audio
+terrain probes, damage, destruction, collision boxes and pod motion as a native library.
+This is a core integration milestone; a native game executable, graphics, timing, files and audio
 are still to come. The DOS hybrid and exact ASM oracle remain independent build targets.
 
 ```powershell
@@ -13,6 +13,7 @@ python tests/host/movement.py --no-build
 python tests/host/pools.py --no-build
 python tests/host/terrain.py --no-build
 python tests/host/combat.py --no-build
+python tests/host/pod_motion.py --no-build
 python tools/hybrid.py
 python tools/difftest.py
 python tools/verify.py
@@ -56,6 +57,20 @@ allocator can reuse a departing record's slot. Score arithmetic preserves the or
 ADC/DAA behavior for invalid BCD digits and overflow. Shot-hit dispatch and pod updates
 still need their remaining native dependencies.
 
+Enemy bursts also share their original descending direction order, pool B saturation
+and inherited record fields. Their native handler tests stop at the existing
+`ScrollRecordThenFinish` tail; DOS handler tests still exercise that complete tail.
+
+`c/pod_motion.c` shares side-pod placement, the ship's balancing nudges, pod hit points
+and terrain contact, saved positions and demo pod motion. Slots remain DS offsets and
+the FFFFh empty slot skips placement. Offset tables are read in place, including the
+adjacent-table read for ship form 3. Pod creation and collision updates still await
+native record removal and upgrade-display dependencies.
+
+Demo launches deliberately leave an empty slot unchecked. `GAME_RECORD_FIELD` wraps
+each accessed field offset into DS, preserving the original writes through FFFFh.
+The native tests compare these low-DS effects as well as ordinary pod records.
+
 `host/sdl_input.c` translates physical SDL scancodes into the game's existing set-1 key
 state, including make/release events and typematic repeats. The shared C poll applies
 configured bindings and fixed controls. Focus loss releases held keys; Alt+X and SDL
@@ -65,6 +80,6 @@ adapter. Raw joystick samples have an injection boundary; native gamepad samplin
 calibration are not implemented yet.
 
 Native tests compare complete DS snapshots against bounded original ASM input,
-movement, pool, terrain and combat calls, excluding only the DOS stack scratch. SDL event
+movement, pool, terrain, combat and pod-motion calls, excluding only the DOS stack scratch. SDL event
 checks use the real SDK event queue.
 No whole-game replay or native gameplay claim is implied by this gate.

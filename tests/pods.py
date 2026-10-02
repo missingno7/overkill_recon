@@ -1,4 +1,4 @@
-"""Pods region (c/pods.c, c/combat.c): the front, side and trailing pods, the upgrade selector with its
+"""Pods region (c/pods.c and shared combat/motion helpers): front, side and trailing pods, the upgrade selector with its
 condition and apply routines, RemoveRecord and the evicting pool A allocator, the explosion
 steps, pickups, the player hit tests, the BCD score, the ship's pod-balance nudges and the
 demo steps that launch pods.
@@ -21,7 +21,7 @@ import weapons as WP
 import random, struct
 import hybrid as _hybrid
 
-REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('pods.c', 'combat.c')]
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('pods.c', 'combat.c', 'pod_motion.c')]
 LOOP = ('BP', 'SP', 'DS', 'SS')
 FREE = ('SP', 'DS', 'SS')
 SIDE = ('SidePodLeftInner', 'SidePodRightInner', 'SidePodLeftOuter', 'SidePodRightOuter')
@@ -455,7 +455,11 @@ MUTANTS = [
                'if (y > r->y + 0x10 || y < r->y - 0x10) continue;'),                                  # signedness
     ('pods.c', 'if (++UpgradeTries >= 0x0A) break;', 'if (++UpgradeTries > 0x0A) break;'),            # off by one
     ('pods.c', '    if (r->kind == KIND_POD) {\r\n        r->kind = KIND_TYPED;', '    if (r->kind == KIND_POD) {\r\n        r->kind = KIND_ENEMY;'),  # transition
-    ('pods.c', '        pod->x = PLAYFIELD_MAX_X;\r\n        ClampXHighSeen = 1;', '        pod->x = PLAYFIELD_MAX_X;'),  # omitted side effect
+    ('pod_motion.c', '        pod->x = PLAYFIELD_MAX_X;\r\n        ClampXHighSeen = 1;', '        pod->x = PLAYFIELD_MAX_X;'),  # omitted side effect
+    ('pod_motion.c', 'if (r->x < SHIP_X_MAX) r->x++;',
+                     'if (r->x <= SHIP_X_MAX) r->x++;'),  # upper bound of a balance nudge
+    ('pod_motion.c', 'GAME_RECORD_FIELD(r, saved_y) = GAME_RECORD_FIELD(r, y);',
+                     'GAME_RECORD_FIELD(r, saved_y) = GAME_RECORD_FIELD(r, x);'),  # demo saved position
     ('pods.c', 'if (r->kind != KIND_EXHAUST && r->kind != KIND_POD) break;', 'if (r->kind != KIND_POD) break;'),  # allocation
     ('combat.c', 'if ((sum & 0xFF) > 0x99 || carry) {', 'if (al > 0x99 || carry) {'),                    # DAA
     ('pods.c', '            FrontPodRecord = NO_SLOT;\r\n            destroy_record(enemy);\r\n            explode_pod(pod);',

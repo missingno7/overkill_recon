@@ -1,10 +1,11 @@
-/* Damage, destruction, encounter bookkeeping, rewards and player hit boxes shared
+/* Damage, destruction, enemy bursts, rewards and player hit boxes shared
    by the DOS hybrid and native core. Stored boss links and script cursors keep their
    original DS offsets. Drops use the original pool A allocator and state directly.
    The frozen oracle holds the routine contracts, including repeated destruction,
    indestructible type 21h and signed collision bounds.
 
    SEGMENT: CGAME
+   OWNS: DescendBurstTail SetSwaySprite SpawnEightWayBurst Type22DescendThenBurst Type36FallThenBurst
    OWNS: BeamHit ClampRecordX DamageOne DamageTwo DestroyRecord ExplodeRecordAtBX ExplosionStartCases InitPickupRecord ReleaseEncounterMember SmartBombRecord SpawnItemDrop StartExplosion16 StartExplosion32
    OWNS: AddScoreBcd LargeRecordHitsPlayer RecordNearPlayerHitPoint SmallRecordHitsPlayer
 */
@@ -265,4 +266,61 @@ word large_record_hits_player(Record *r)
         low = r->y - 0x14;
     }
     return high >= PRIMARY->y && low <= PRIMARY->y;
+}
+
+/* REC_SPRITE 72h when SwayDirX = +1, else 71h (0 and -1 too). */
+void set_sway_sprite(Record *r)
+{
+    r->sprite = ((word)(SwayDirX + 1) >> 1) + 0x71;
+}
+
+/* Up to eight type 3 enemy shots (8x8, sprite 8 + direction, no timeout) from r's centre
+   (+4, or +0Ch for size class 2) in directions 7 down to 0, until pool B is full. */
+void spawn_eight_way_burst(Record *r)
+{
+    Record *shot;
+    word n, offset = r->size_class == 2 ? 0x0C : 4;
+
+    BurstOriginX = r->x + offset;
+    BurstOriginY = r->y + offset;
+    for (n = 8; n != 0; n--) {
+        shot = find_free_record_pool_b();
+        if (shot == NO_RECORD) return;
+        shot->direction = n - 1;
+        shot->sprite = n - 1 + 8;
+        shot->x = BurstOriginX;
+        shot->y = BurstOriginY;
+        shot->status = 1;
+        shot->player_shot = 0;
+        shot->draw_pass = 1;
+        shot->size_class = 0;
+        shot->kind = KIND_TYPED;
+        shot->type = 3;
+        shot->shot_timer = 0xFFFF;
+    }
+}
+
+/* At Y A0h or below (unsigned): destroyed, then the burst. */
+void descend_burst_tail(Record *r)
+{
+    destroy_record(r);
+    spawn_eight_way_burst(r);
+}
+
+/* Type 36h: SwayDirX-facing sprite, falls 2 px per frame to Y A0h, then bursts. The
+   bridge continues in ScrollRecordThenFinish either way (even after DestroyRecord). */
+void type36_fall_then_burst(Record *r)
+{
+    set_sway_sprite(r);
+    r->y += 2;
+    if (r->y >= 0xA0) descend_burst_tail(r);
+}
+
+/* Types 22h/35h: as type 36h, falling 1 px per frame (2 on level 0). */
+void type22_descend_then_burst(Record *r)
+{
+    set_sway_sprite(r);
+    r->y++;
+    if (LevelIndex == 0) r->y++;
+    if (r->y >= 0xA0) descend_burst_tail(r);
 }
