@@ -14,6 +14,7 @@
 #include "enemies.h"
 #include "pods.h"
 #include "input_normalize.h"
+#include "render.h"
 
 void update_beam(Record *r);
 void handle_fire_button(Record *r);
@@ -22,29 +23,31 @@ void restart_at_checkpoint(Record *r);
 void damage_player_on_terrain_contact(Record *r);
 Record *find_free_record_pool_a(void);
 
+#ifndef OVERKILL_HOST
 extern void RedrawEnergyGauge(void);
 void player_call_platform(main_routine target);
 #pragma aux player_call_platform "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
+#endif
 
 /* Initialization has the original +9 X bias; subsequent frame stores use +8. */
 void init_position_history(void)
 {
-    word *point = (word *)HistoryPairs;
+    word *point = GAME_PTR(word, GAME_OFFSET(HistoryPairs));
     word i;
 
     for (i = 0; i < HISTORY_PAIR_COUNT; i++, point += 2) {
         point[0] = PRIMARY->y + 8;
         point[1] = PRIMARY->x + 9;
     }
-    HistoryWriteCursor = (word)HistoryPairs;
-    HistoryReadCursor15 = (word)HistoryPairs + HISTORY_LAG15_START;
-    HistoryReadCursor31 = (word)HistoryPairs + HISTORY_LAG31_START;
-    HistoryCursor47 = (word)HistoryPairs + HISTORY_LAG47_START;
+    HistoryWriteCursor = GAME_OFFSET(HistoryPairs);
+    HistoryReadCursor15 = (word)(GAME_OFFSET(HistoryPairs) + HISTORY_LAG15_START);
+    HistoryReadCursor31 = (word)(GAME_OFFSET(HistoryPairs) + HISTORY_LAG31_START);
+    HistoryCursor47 = (word)(GAME_OFFSET(HistoryPairs) + HISTORY_LAG47_START);
 }
 
 void store_position_history(Record *r)
 {
-    word *point = (word *)HistoryWriteCursor;
+    word *point = GAME_PTR(word, HistoryWriteCursor);
 
     point[0] = r->y + 8;
     point[1] = r->x + 8;
@@ -57,14 +60,14 @@ void apply_position_history_to_records(void)
     word *point;
 
     if (TrailingPodNear != 0xFFFF) {
-        pod = (Record *)TrailingPodNear;
-        point = (word *)HistoryReadCursor15;
+        pod = GAME_PTR(Record, TrailingPodNear);
+        point = GAME_PTR(word, HistoryReadCursor15);
         pod->y = point[0];
         pod->x = point[1];
     }
     if (TrailingPodFar != 0xFFFF) {
-        pod = (Record *)TrailingPodFar;
-        point = (word *)HistoryReadCursor31;
+        pod = GAME_PTR(Record, TrailingPodFar);
+        point = GAME_PTR(word, HistoryReadCursor31);
         pod->y = point[0];
         pod->x = point[1];
     }
@@ -83,13 +86,13 @@ void advance_position_history_if_requested(void)
 {
     if ((InputBits & INPUT_MOVEMENT_MASK) == 0 && XAdjustPathTaken == 0) return;
     HistoryWriteCursor += HISTORY_PAIR_BYTES;
-    if (HistoryWriteCursor == (word)HistoryEnd) HistoryWriteCursor = (word)HistoryPairs;
+    if (HistoryWriteCursor == GAME_OFFSET(HistoryEnd)) HistoryWriteCursor = GAME_OFFSET(HistoryPairs);
     HistoryReadCursor15 += HISTORY_PAIR_BYTES;
-    if (HistoryReadCursor15 == (word)HistoryEnd) HistoryReadCursor15 = (word)HistoryPairs;
+    if (HistoryReadCursor15 == GAME_OFFSET(HistoryEnd)) HistoryReadCursor15 = GAME_OFFSET(HistoryPairs);
     HistoryReadCursor31 += HISTORY_PAIR_BYTES;
-    if (HistoryReadCursor31 == (word)HistoryEnd) HistoryReadCursor31 = (word)HistoryPairs;
+    if (HistoryReadCursor31 == GAME_OFFSET(HistoryEnd)) HistoryReadCursor31 = GAME_OFFSET(HistoryPairs);
     HistoryCursor47 += HISTORY_PAIR_BYTES;
-    if (HistoryCursor47 == (word)HistoryEnd) HistoryCursor47 = (word)HistoryPairs;
+    if (HistoryCursor47 == GAME_OFFSET(HistoryEnd)) HistoryCursor47 = GAME_OFFSET(HistoryPairs);
 }
 
 void pickup_fuel(void)
@@ -107,7 +110,11 @@ void add_energy_point(void)
         EnergyTanks++;
         EnergyPoints = 0;
     } else EnergyPoints++;
+#ifdef OVERKILL_HOST
+    render_draw_energy_gauge();
+#else
     player_call_platform(RedrawEnergyGauge);
+#endif
 }
 
 void steer_input_to_waypoint(word *point)
@@ -138,13 +145,13 @@ void run_level_end_sequence(void)
         InputBits = 0;
         switch (LevelEndPhase) {
         case LEVEL_END_TO_WAYPOINT_A:
-            steer_input_to_waypoint(AutopilotWaypointA);
+            steer_input_to_waypoint(GAME_PTR(word, GAME_OFFSET(AutopilotWaypointA)));
             break;
         case LEVEL_END_TO_WAYPOINT_B:
             spread = PRIMARY->sprite == 0 ? 8 : 0x0F;
             if (SidePodSpreadLeft != spread) SidePodSpreadLeft++;
             if (SidePodSpreadRight != (word)-spread) SidePodSpreadRight--;
-            steer_input_to_waypoint(AutopilotWaypointB);
+            steer_input_to_waypoint(GAME_PTR(word, GAME_OFFSET(AutopilotWaypointB)));
             break;
         case LEVEL_END_REFILL:
             InputBits = IN_YMINUS;
@@ -161,15 +168,15 @@ void run_level_end_sequence(void)
             SidePodSpreadRight = 0;
             SidePodSpreadLeft = 0;
             extra = find_free_record_pool_a();
-            extra->status = 1;
-            extra->kind = KIND_ENEMY;
-            extra->type = 0x52;
-            extra->size_class = 2;
-            extra->slot_index = 0xFFFF;
-            extra->sprite = 0x0F;
-            extra->y = 0x20;
-            extra->x = 0x58;
-            AutoMoveExtraRecord = (word)extra;
+            GAME_RECORD_FIELD(extra, status) = 1;
+            GAME_RECORD_FIELD(extra, kind) = KIND_ENEMY;
+            GAME_RECORD_FIELD(extra, type) = 0x52;
+            GAME_RECORD_FIELD(extra, size_class) = 2;
+            GAME_RECORD_FIELD(extra, slot_index) = 0xFFFF;
+            GAME_RECORD_FIELD(extra, sprite) = 0x0F;
+            GAME_RECORD_FIELD(extra, y) = 0x20;
+            GAME_RECORD_FIELD(extra, x) = 0x58;
+            AutoMoveExtraRecord = GAME_OFFSET(extra);
         }
     }
 }
@@ -230,7 +237,7 @@ word update_player_frame(word bp)
     update_beam(ship);
     if (EnergyTanks == 0xFFFF || Fuel == 0) {
         player_dying_tail(ship);
-        return (word)ship;
+        return GAME_OFFSET(ship);
     }
     if ((InputBits & IN_YMINUS) != 0) decrement_player_y(ship);
     if ((InputBits & IN_YPLUS) != 0) increment_player_y(ship);
@@ -249,17 +256,17 @@ word update_player_frame(word bp)
     }
     advance_position_history_if_requested();
     store_apply_history_and_placement(ship);
-    return (word)ship;
+    return GAME_OFFSET(ship);
 }
 
 /* Table indexing is the oracle's wrapping 16-bit offset, without a new clamp.
    Write Y before reading the player's X, including if the record is the player. */
 void place_at_player_offset(Record *r, word *table)
 {
-    word *point = (word *)((word)table + (word)(PRIMARY->sprite << 2));
+    word point_offset = (word)(GAME_OFFSET(table) + (word)(PRIMARY->sprite << 2));
 
-    r->y = point[0] + PRIMARY->y;
-    r->x = point[1] + PRIMARY->x;
+    r->y = (word)(*GAME_PTR(word, point_offset) + PRIMARY->y);
+    r->x = (word)(*GAME_PTR(word, (word)(point_offset + 2)) + PRIMARY->x);
 }
 
 void update_exhaust(Record *r)

@@ -23,7 +23,7 @@ void animated_fire_burst(Record *r, word base)
         r->sprite += 3;
     if (phase == 3) {
         bx = spawn_throttled_child(r, bx);
-        if (bx != 0xFFFF) ((Record *)bx)->sprite = 0x44;
+        if (bx != 0xFFFF) GAME_PTR(Record, bx)->sprite = 0x44;
     }
     scroll_record_then_finish(r);
 }
@@ -48,11 +48,11 @@ void jitter_fall_shooter(Record *r, word base)
 
     r->sprite = PingPongFrames4[SlowCount4] + base;
     index = next_random_word() & 1;
-    coordinate = (word *)((byte *)r + JitterAxisFields[index]);
+    coordinate = GAME_PTR(word, (word)(GAME_OFFSET(r) + JitterAxisFields[index]));
     *coordinate += (FrameCount64 & 1) ? 1 : 0xFFFF;
     if ((sword)r->y >= 0x80) {
         if (FrameCount32 == 0x1F)
-            spawn_throttled_child(r, (word)&JitterAxisFields[index]);
+            spawn_throttled_child(r, GAME_OFFSET(&JitterAxisFields[index]));
         r->y += 2;
     }
     scroll_record_then_finish(r);

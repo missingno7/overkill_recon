@@ -1,85 +1,89 @@
-# Native platform phase
+# Native SDL3 platform phase
 
-The DOS C baseline is committed at `5c475b7`. The SDL3 phase now builds the shared
-keyboard/joystick input policy, record movement, allocation, random-word cycle and
-terrain probes, damage, destruction, collision boxes and pod motion as a native library.
-This is a core integration milestone; a native game executable, graphics, timing, files and audio
-are still to come. The DOS hybrid and exact ASM oracle remain independent build targets.
+The DOS C baseline is complete. The native target compiles every `c/*.c` region and
+replaces DOS hardware services with `host/` implementations. It now runs startup,
+title, menus, level selection and gameplay through SDL3. The frozen ASM oracle and
+DOS hybrid remain separate targets.
 
 ```powershell
 python tools/host.py
-python tests/host/input.py --no-build
-python tests/host/movement.py --no-build
-python tests/host/pools.py --no-build
-python tests/host/terrain.py --no-build
-python tests/host/combat.py --no-build
-python tests/host/pod_motion.py --no-build
+.\build\host\OVERKILL_SDL3.exe
+```
+
+The default is Tandy video with AdLib music and the original keyboard controls.
+`--video cga|ega|tandy` selects another original raster path. `--sound adlib|roland|off`
+selects the music module; `off` leaves the original speaker effects setting intact.
+Roland output uses Windows MIDI and needs a compatible synthesizer. The supplied
+archive contains no Tandy music module. SDL gamepads supply the original calibration
+and joystick policy rather than replacing the game's input decisions.
+
+The executable, native core DLL, SDL3 DLL, source-generated initial image, original
+assets and dependency licenses are placed together in `build/host`. Settings and
+high scores go to `build/host/saves/HISCORE.DAT`; `--assets` and `--saves` override those
+directories. The original assets are hash checked and remain unchanged.
+
+## State and oracle boundary
+
+The native game executes C exclusively. It uses no CPU emulator, DOS executable
+runner or ASM routine at runtime. `HOST_IMAGE.BIN` is inert, relocated initialization
+and adjacent-data bytes derived from the source-built, hash-verified oracle. Offset
+identities in original dispatch tables are routed to C functions and native services.
+Unknown service identities fail explicitly.
+
+`GAME_GEN.H`, `HOST_GEN.H` and sound-driver offset headers are generated from the
+maintained ASM and its listings. One borrowed DS window and the same segment arena
+retain the original records, links, CS variables, wrapped offsets and unchecked
+sentinel accesses. No converted game records or synchronization copies are maintained.
+EGA video planes are hardware state outside the conventional-memory arena.
+
+Platform services provide archive/filesystem access, paragraph allocation and EMS,
+CGA/Tandy/EGA raster operations, palette and text modes, keyboard events and character
+reads, gamepad samples, and PIT timing. AdLib and Roland sequencers are C translations
+of the optional source-built sound modules. Timestamped writes drive pinned Nuked OPL3,
+speaker/PSG synthesis or MIDI output. Analog output levels and the compatible CP437
+font are host presentation choices, not claims of identical historical hardware.
+
+## Verification and deterministic runs
+
+```powershell
 python tools/hybrid.py
 python tools/difftest.py
 python tools/verify.py
+python tests/host/input.py --no-build
+python tests/host/rendering.py --no-build
+python tests/host/video_services.py --no-build
+python tests/host/graphics_decode.py
+python tests/host/adlib_sequence.py
+python tests/host/roland_sequence.py
 ```
 
-The Windows native build uses x86-64 MinGW GCC and the official SDL3 development SDK
-pinned by `metadata/sdl3.json`. The SDK is downloaded into ignored `build/deps` and its
-SHA256 is checked before extraction. Nothing is installed globally. The complete
-build is currently tested on Windows and requires the bundled Windows DOS-tool
-runners to regenerate the oracle. The native compiler branch also accepts
-GCC-compatible compilers with `pkg-config sdl3` on other hosts; the oracle-generation
-step still needs adaptation there.
+Other `tests/host` suites cover memory aliases, movement, pools, terrain, combat, pods,
+enemy paths, player/frame/weapon logic, file services and timer deadlines. Oracle
+comparisons are bounded routine calls, not a boot of the original beyond gameplay
+entry. CGA/Tandy pixel fixtures compare the arena against ASM; EGA plane fixtures use
+independent plane expectations because the flat oracle emulator does not model EGA
+hardware. Both optional music sequencers compare state and ordered chip/MIDI writes.
 
-`tools/host.py` builds a fresh symbol-complete oracle, checks its image against the
-pinned original hash, and derives native `GAME_GEN.H` and `STATE.BIN`. Types, record
-layout, constants and DS labels share the DOS generator. Native scalars have fixed
-widths and permit the unaligned word locations the original state contains.
+Headless runs advance virtual time through the game's waits and input loops:
 
-The platform lends one little-endian 64-KiB DS window to `overkill_bind_state`. Generated
-names are views into that window; there are no globals per label or synchronized
-records. The caller owns its lifetime. `GAME_PTR` and `GAME_OFFSET` convert stored DS
-offsets at the point of access; allocation cursors and record links retain their
-original word representation, including the FFFFh no-record sentinel. These conversions
-are used by the shared pools and boss bookkeeping. Remaining DOS pointer casts,
-CS data, code-pointer dispatch, far addresses and C16 integer promotions in other
-regions need explicit adaptation and validation before they can be compiled for a
-host. Movement accepts native pointers into the same DS window and keeps its
-original 16-bit record fields.
+```powershell
+.\build\host\OVERKILL_SDL3.exe --headless --milliseconds 48000 `
+  --input-script controls.input --trace run.csv --screenshot frame.bmp
+```
 
-The level loader lends a mutable 64-KiB map window through `overkill_bind_level_map`.
-`c/terrain.c` reads that buffer directly on the host; its DOS build still reads through
-the original CS `LevelMapSegment` word. The platform owns the map storage and its
-lifetime. Map offsets remain words, so lookup arithmetic keeps the original wrap.
-Grid probes, terrain steps, ship collision and climbing walkers share one C body across
-both targets. Map loading itself is still pending in the native backend.
+Input scripts contain sorted `milliseconds SDL_scancode pressed` rows, where pressed
+is 0 or 1. Traces report service identities, selected state, quantized PCM and MIDI
+hashes, and dropped audio events. The time budget stops the observation without
+writing a save; normal quit and Alt+X use the game's shutdown/save policy.
 
-`c/combat.c` shares damage and destruction, encounter departures, segmented-boss
-part links, pool A item drops, packed-BCD scoring and the player's signed hit boxes.
-Boss links and leader-script cursors retain the original DS offsets; the same pool
-allocator can reuse a departing record's slot. Score arithmetic preserves the original
-ADC/DAA behavior for invalid BCD digits and overflow. Shot-hit dispatch and pod updates
-still need their remaining native dependencies.
+Integration checks have exercised all six level selections and gameplay, all three
+video adapters, pause/cheat-driven traversal of all six level-completion transitions,
+AdLib and Roland startup, and Alt+X save/exit. These do not establish exhaustive native
+parity for every boss, checkpoint, ending and interactive high-score path. A separate
+audio-backend regression suite is pending explicit approval after automatic approval
+review rejected its creation. Full native parity remains the completion bar.
 
-Enemy bursts also share their original descending direction order, pool B saturation
-and inherited record fields. Their native handler tests stop at the existing
-`ScrollRecordThenFinish` tail; DOS handler tests still exercise that complete tail.
-
-`c/pod_motion.c` shares side-pod placement, the ship's balancing nudges, pod hit points
-and terrain contact, saved positions and demo pod motion. Slots remain DS offsets and
-the FFFFh empty slot skips placement. Offset tables are read in place, including the
-adjacent-table read for ship form 3. Pod creation and collision updates still await
-native record removal and upgrade-display dependencies.
-
-Demo launches deliberately leave an empty slot unchecked. `GAME_RECORD_FIELD` wraps
-each accessed field offset into DS, preserving the original writes through FFFFh.
-The native tests compare these low-DS effects as well as ordinary pod records.
-
-`host/sdl_input.c` translates physical SDL scancodes into the game's existing set-1 key
-state, including make/release events and typematic repeats. The shared C poll applies
-configured bindings and fixed controls. Focus loss releases held keys; Alt+X and SDL
-quit events request exit. This operates on SDL events, not PPI/PIC interrupt traffic.
-Compound Pause and transient PrintScreen fake-shift sequences are outside this first
-adapter. Raw joystick samples have an injection boundary; native gamepad sampling and
-calibration are not implemented yet.
-
-Native tests compare complete DS snapshots against bounded original ASM input,
-movement, pool, terrain, combat and pod-motion calls, excluding only the DOS stack scratch. SDL event
-checks use the real SDK event queue.
-No whole-game replay or native gameplay claim is implied by this gate.
+The tested build uses Windows x86-64 MinGW GCC and the official SDL3 SDK pinned in
+`metadata/sdl3.json`, downloaded only into ignored `build/deps`. A pkg-config compiler
+branch exists for other hosts, but regenerating the oracle still needs the bundled
+Windows DOS runners; an independent non-Windows build is not yet verified.

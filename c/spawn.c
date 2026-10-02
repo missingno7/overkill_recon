@@ -43,12 +43,22 @@
 #include "enemies.h"
 #include "hits.h"
 
+#ifdef OVERKILL_HOST
+#include "memory.h"
+#endif
+
 /* CS-resident words (outside the state segment). */
+#ifndef OVERKILL_HOST
 extern word __far LevelMapSegment;     /* MAIN: segment of the level map */
 extern word __far Type21PathCursor;    /* far segment: next Type21Path waypoint (DS offset) */
+#endif
 
 /* Byte `off` of the level map (16-bit offset arithmetic, as ES:SI in the oracle). */
+#ifdef OVERKILL_HOST
+#define MAP_AT(off) ((byte *)overkill_segment_address(LevelMapSegment, (word)(off)))
+#else
 #define MAP_AT(off) (((__segment)LevelMapSegment) :> ((byte __based(void) *)(off)))
+#endif
 
 void steer_toward_target(Record *r);           /* c/movement.c */
 Record *find_free_record_pool_a(void);          /* c/pools.c */
@@ -66,21 +76,21 @@ void init_enemy_record_here(Record *r, Record *here)
 {
     word v;
 
-    r->slot_index = 0xFFFF;
-    r->status = 1;
-    r->draw_pass = 1;
+    GAME_RECORD_FIELD(r, slot_index) = 0xFFFF;
+    GAME_RECORD_FIELD(r, status) = 1;
+    GAME_RECORD_FIELD(r, draw_pass) = 1;
     v = here->y;
-    r->y = v;
-    r->saved_y = v;
+    GAME_RECORD_FIELD(r, y) = v;
+    GAME_RECORD_FIELD(r, saved_y) = v;
     v = here->x;
-    r->x = v;
-    r->saved_x = v;
-    r->direction = DIR_DOWN;
-    r->size_class = 1;
-    r->kind = KIND_ENEMY;
-    r->type = 0x14;
-    r->hit_points = 4;
-    r->flash_timer = 0;
+    GAME_RECORD_FIELD(r, x) = v;
+    GAME_RECORD_FIELD(r, saved_x) = v;
+    GAME_RECORD_FIELD(r, direction) = DIR_DOWN;
+    GAME_RECORD_FIELD(r, size_class) = 1;
+    GAME_RECORD_FIELD(r, kind) = KIND_ENEMY;
+    GAME_RECORD_FIELD(r, type) = 0x14;
+    GAME_RECORD_FIELD(r, hit_points) = 4;
+    GAME_RECORD_FIELD(r, flash_timer) = 0;
 }
 
 Record *spawn_enemy_here_quiet(Record *here)
@@ -117,7 +127,7 @@ void alloc_group_slot(void)
         entry = GroupTable;
         for (n = 16; n != 0; n--) {
             if (entry[GROUP_LIVE] == 0) {
-                GroupSlotPtr = (word)entry;
+                GroupSlotPtr = GAME_OFFSET(entry);
                 return;
             }
             entry += 2;
@@ -135,7 +145,7 @@ Record *join_map_group(Record *r)
     byte *entry;
 
     if (GroupSlotPtr != 0xFFFF) {
-        entry = (byte *)GroupSlotPtr;
+        entry = GAME_PTR(byte, GroupSlotPtr);
         entry[GROUP_LIVE]++;
         entry[GROUP_DROP_KIND] = (byte)GroupDropKind;
         slot = GroupSlotIndex;
@@ -656,7 +666,7 @@ void reset_march_state(void)
 
 void reset_type21_path(void)
 {
-    Type21PathCursor = (word)Type21Path;
+    Type21PathCursor = GAME_OFFSET(Type21Path);
 }
 
 /* A new formation leader with its leader script: resets the encounter and sway state; the
@@ -664,7 +674,7 @@ void reset_type21_path(void)
 void start_leader_script(Record *leader, word script)
 {
     LeaderScriptCursor = script;
-    FormationSlotCursor = (word)FormationSlots;
+    FormationSlotCursor = GAME_OFFSET(FormationSlots);
     leader->hit_points = 0x14;
     EncounterLiveCount = 1;
     EncounterEndDelay = 0x64;
@@ -714,30 +724,36 @@ void snap_to_clear_column(Record *r)
    cursor advances before spawning, so a full pool A loses the rest of the formation. */
 void run_level_script_events(void)
 {
-    word *cursor, *event, *formation, *member;
+    word cursor_offset, event_offset, formation_offset, member_offset;
     word count, slot;
     Record *r;
 
     for (;;) {
-        cursor = (word *)LevelScriptCursorPtrs[LevelIndex];
-        event = (word *)*cursor;
-        EventTrigger = *event++;
+        cursor_offset = *GAME_PTR(word, (word)(GAME_OFFSET(LevelScriptCursorPtrs) +
+                                                (word)(LevelIndex * 2)));
+        event_offset = *GAME_PTR(word, cursor_offset);
+        EventTrigger = *GAME_PTR(word, event_offset);
+        event_offset = (word)(event_offset + 2);
         if (EventTrigger == 0xFFFF || EventTrigger != LevelScriptClock) return;
         EventMarkerFlag = 1;
-        formation = (word *)*event++;
-        if (formation == (word *)0xFFFF) {
+        formation_offset = *GAME_PTR(word, event_offset);
+        event_offset = (word)(event_offset + 2);
+        if (formation_offset == 0xFFFF) {
             EventMarkerFlag = 0;
-            formation = (word *)*event++;
+            formation_offset = *GAME_PTR(word, event_offset);
+            event_offset = (word)(event_offset + 2);
         }
-        EventX = *event++;
-        EventY = *event++;
+        EventX = *GAME_PTR(word, event_offset);
+        event_offset = (word)(event_offset + 2);
+        EventY = *GAME_PTR(word, event_offset);
+        event_offset = (word)(event_offset + 2);
         GroupDropKind = GroupDropKinds[EventTrigger & 0x3F];
-        *cursor = (word)event;
-        FormationSizeClass = formation[0];
-        FormationDrawPass = formation[1];
-        FormationType = formation[2];
-        count = formation[3];
-        member = formation + 4;
+        *GAME_PTR(word, cursor_offset) = event_offset;
+        FormationSizeClass = *GAME_PTR(word, formation_offset);
+        FormationDrawPass = *GAME_PTR(word, (word)(formation_offset + 2));
+        FormationType = *GAME_PTR(word, (word)(formation_offset + 4));
+        count = *GAME_PTR(word, (word)(formation_offset + 6));
+        member_offset = (word)(formation_offset + 8);
         alloc_group_slot();
         /* The count is a `loop` counter: 0 means 65536 members (until pool A is full). */
         do {
@@ -745,16 +761,16 @@ void run_level_script_events(void)
             if (r == NO_RECORD) break;
             slot = 0xFFFF;
             if (GroupSlotPtr != 0xFFFF) {
-                ((byte *)GroupSlotPtr)[GROUP_LIVE]++;
-                ((byte *)GroupSlotPtr)[GROUP_DROP_KIND] = (byte)GroupDropKind;
+                GAME_PTR(byte, (word)(GroupSlotPtr + GROUP_LIVE))[0]++;
+                GAME_PTR(byte, (word)(GroupSlotPtr + GROUP_DROP_KIND))[0] = (byte)GroupDropKind;
                 slot = GroupSlotIndex;
             }
             r->slot_index = slot;
             r->status = 1;
             r->draw_pass = FormationDrawPass;
             r->sprite = 0;
-            r->y = member[1] + EventY;
-            r->x = member[0] + EventX;
+            r->y = (word)(*GAME_PTR(word, (word)(member_offset + 2)) + EventY);
+            r->x = (word)(*GAME_PTR(word, member_offset) + EventX);
             r->saved_x = r->x;
             r->saved_y = 0;
             r->direction = DIR_DOWN;
@@ -768,13 +784,13 @@ void run_level_script_events(void)
             /* Type 21h starts its leader script with LevelIndex + 1 as the script pointer:
                the oracle's AX still holds it (type 21h follows Type21Path instead). */
             if (r->type == 0x21) start_leader_script(r, LevelIndex + 1);
-            if (r->type == 0x13) start_leader_script(r, (word)LeaderScript13);
-            if (r->type == 0x15) start_leader_script(r, (word)LeaderScript15);
-            if (r->type == 0x1C) start_leader_script(r, (word)LeaderScript1C);
-            if (r->type == 0x1F) start_leader_script(r, (word)LeaderScript1F);
-            if (r->type == 0x7D) start_leader_script(r, (word)LeaderScript7D);
-            if (r->type == 0x7E) start_leader_script(r, (word)LeaderScript7E);
-            member += 2;
+            if (r->type == 0x13) start_leader_script(r, GAME_OFFSET(LeaderScript13));
+            if (r->type == 0x15) start_leader_script(r, GAME_OFFSET(LeaderScript15));
+            if (r->type == 0x1C) start_leader_script(r, GAME_OFFSET(LeaderScript1C));
+            if (r->type == 0x1F) start_leader_script(r, GAME_OFFSET(LeaderScript1F));
+            if (r->type == 0x7D) start_leader_script(r, GAME_OFFSET(LeaderScript7D));
+            if (r->type == 0x7E) start_leader_script(r, GAME_OFFSET(LeaderScript7E));
+            member_offset = (word)(member_offset + 4);
         } while (--count != 0);
     }
 }
@@ -801,14 +817,14 @@ word draw_incoming_map_row(Record *here)
    7Fh). 15h, 7Dh and 7Eh stop at an FFFFh follower Y. Sprite = 3Bh + direction. */
 void type13_formation_leader(Record *r)
 {
-    word *point = (word *)LeaderScriptCursor;
-    word *slot;
+    word point_offset = LeaderScriptCursor;
+    word slot_offset;
     word n, x;
     Record *f;
 
-    SteerTargetY = point[0] + 0x20;
-    SteerTargetX = point[1];
-    point += 2;
+    SteerTargetY = (word)(*GAME_PTR(word, point_offset) + 0x20);
+    SteerTargetX = *GAME_PTR(word, (word)(point_offset + 2));
+    point_offset = (word)(point_offset + 4);
     SteerSpeed = 3;
     steer_toward_target(r);
     if (SteerArrived != 0) {
@@ -819,16 +835,16 @@ void type13_formation_leader(Record *r)
             break;
         case 0x15:
             LeaderScriptCursor += 8;
-            if (point[0] == 0xFFFF) break;
+            if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
-            f->saved_y = point[0] + 0x20;
-            f->saved_x = point[1];
+            f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+            f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
             f->type = 0x16;
-            f->path = (word)SweepPath;
+            f->path = GAME_OFFSET(SweepPath);
             if (r->y != 0x40) {
                 f->type = 0x17;
-                f->path = (word)SweepPathLeadIn;
+                f->path = GAME_OFFSET(SweepPathLeadIn);
             }
             f->entry_delay = 0x14;
             f->hit_points = 3;
@@ -838,8 +854,8 @@ void type13_formation_leader(Record *r)
             LeaderScriptCursor += 8;
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
-            f->saved_y = point[0] + 0x20;
-            f->saved_x = point[1];
+            f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+            f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
             f->type = 0x1D;
             if (r->x == 0) {
                 f->type = 0x1E;
@@ -852,11 +868,11 @@ void type13_formation_leader(Record *r)
             LeaderScriptCursor += 4;
             for (n = 5; n != 0; n--) {
                 f = spawn_enemy_here(r);
-                slot = (word *)FormationSlotCursor;
+                slot_offset = FormationSlotCursor;
                 FormationSlotCursor += 4;
                 if (f == NO_RECORD) continue;
-                f->saved_y = slot[0] + 0x20;
-                f->saved_x = slot[1];
+                f->saved_y = (word)(*GAME_PTR(word, slot_offset) + 0x20);
+                f->saved_x = *GAME_PTR(word, (word)(slot_offset + 2));
                 f->type = 0x20;
                 f->dive_phase = 0xFFFF;
                 EncounterLiveCount++;
@@ -864,11 +880,11 @@ void type13_formation_leader(Record *r)
             break;
         case 0x7D:
             LeaderScriptCursor += 8;
-            if (point[0] == 0xFFFF) break;
+            if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
-            f->saved_y = point[0] + 0x20;
-            x = point[1];
+            f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+            x = *GAME_PTR(word, (word)(point_offset + 2));
             f->saved_x = x;
             f->direction = DIR_RIGHT;
             if (x >> 4 & 1) f->direction = DIR_LEFT;
@@ -881,11 +897,11 @@ void type13_formation_leader(Record *r)
             break;
         default:
             LeaderScriptCursor += 8;
-            if (point[0] == 0xFFFF) break;
+            if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
-            f->saved_y = point[0] + 0x20;
-            f->saved_x = point[1];
+            f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+            f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
             f->type = 0x7F;
             f->entry_delay = 0x14;
             f->hit_points = 5;
@@ -901,16 +917,16 @@ void type13_formation_leader(Record *r)
    a type 64h child with REC_SAVED = its own position. Sprite = 3Bh + direction. */
 void type21_leader_path(Record *r)
 {
-    word *point;
+    word point_offset;
     Record *f;
 
     for (;;) {
-        point = (word *)Type21PathCursor;
-        if (point[0] != 0xFFFF) break;
+        point_offset = Type21PathCursor;
+        if (*GAME_PTR(word, point_offset) != 0xFFFF) break;
         reset_type21_path();
     }
-    SteerTargetY = point[0] + 0x20;
-    SteerTargetX = point[1];
+    SteerTargetY = (word)(*GAME_PTR(word, point_offset) + 0x20);
+    SteerTargetX = *GAME_PTR(word, (word)(point_offset + 2));
     SteerSpeed = 3;
     steer_toward_target(r);
     if (SteerArrived != 0) {
@@ -935,9 +951,9 @@ void demo_step_spawn_path_enemy51(Record *here)
 {
     Record *r = spawn_enemy_here(here);
 
-    r->x = PLAYFIELD_MAX_X;
-    r->y = 0xC8;
-    r->type = 0x51;
+    GAME_RECORD_FIELD(r, x) = PLAYFIELD_MAX_X;
+    GAME_RECORD_FIELD(r, y) = 0xC8;
+    GAME_RECORD_FIELD(r, type) = 0x51;
 }
 
 /* The front pod as a type 50h enemy flying to the player's (X + 8, Y - 8), sfx 1Eh;
@@ -948,12 +964,12 @@ Record *demo_step_launch_front_pod(void)
 
     if (SfxEnabled != 0) SfxRequest = 0x1E;
     r = find_free_record_pool_a();
-    FrontPodRecord = (word)r;
+    FrontPodRecord = GAME_OFFSET(r);
     init_enemy_record_here(r, PRIMARY);
-    r->y = 0;
-    r->sprite = 0x0F;
-    r->type = 0x50;
-    r->saved_x = PRIMARY->x + 8;
-    r->saved_y = PRIMARY->y - 8;
+    GAME_RECORD_FIELD(r, y) = 0;
+    GAME_RECORD_FIELD(r, sprite) = 0x0F;
+    GAME_RECORD_FIELD(r, type) = 0x50;
+    GAME_RECORD_FIELD(r, saved_x) = PRIMARY->x + 8;
+    GAME_RECORD_FIELD(r, saved_y) = PRIMARY->y - 8;
     return r;
 }

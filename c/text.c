@@ -6,15 +6,22 @@
    OWNS: UppercaseAsciiAL PrintTextChar PrintGraphicsCharCases
 */
 #include "text.h"
+#ifdef OVERKILL_HOST
+#include "presentation_services.h"
+#include <stdlib.h>
+#endif
 
+#ifndef OVERKILL_HOST
 extern void RawPrintTextChar(void);
 extern word __far MainDataSegment;
 extern volatile word __far VideoAdapter;
+extern word __far TextVideoSegment;
+#endif
 
 word text_read_stack_byte(word address)
 {
     /* The original operands are SS:BP-relative and wrap at 16 bits. DS = SS. */
-    return *(volatile byte *)(word)address;
+    return *GAME_PTR(volatile byte, address);
 }
 
 word text_apply_common_control(byte character, DosRegisters *registers)
@@ -34,7 +41,8 @@ word text_apply_common_control(byte character, DosRegisters *registers)
         if (graphics != 0 && adapter == VIDEO_CGA) {
             /* The CGA leaf masks the payload before indexing its fill table. */
             value = (byte)(value & 3);
-            value = *(volatile byte *)(word)((word)CgaColorFill + value);
+            value = *GAME_PTR(volatile byte,
+                              (word)(GAME_OFFSET(CgaColorFill) + value));
         }
         *(volatile byte *)&TextColor = value;
         registers->bp = (word)(bp + 1);
@@ -71,9 +79,20 @@ word text_apply_common_control(byte character, DosRegisters *registers)
    character, and BX points to local DI-output metadata. DX:AX returns ES:BP. */
 dword text_main_char_call(main_routine target, word bp, word es, word character,
                           word *rendered_di);
+#ifdef OVERKILL_HOST
+dword text_main_char_call(main_routine target, word bp, word es, word character,
+                          word *rendered_di)
+{
+    if (target != HOST_SERVICE_RAWPRINTTEXTCHAR) abort();
+    return presentation_raw_print_text_char(bp, es, character,
+                                            rendered_di != 0 ? *rendered_di : 0,
+                                            rendered_di);
+}
+#else
 #pragma aux text_main_char_call "TEXT_MAIN_CHAR_CALL" \
     parm [si] [di] [dx] [cx] [bx] value [dx ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void text_emit_character(byte character, DosRegisters *registers, word *rendered_di)
 {
@@ -94,7 +113,7 @@ void text_print_message(DosRegisters *registers)
     byte character;
 
     for (;;) {
-        character = *(volatile byte *)(word)cursor;
+        character = *GAME_PTR(volatile byte, cursor);
         if (character == 0) break;
 
         /* Shared control tokens update BP here; glyph/newline behavior comes from
@@ -135,10 +154,10 @@ void text_print_bcd_byte(word value, DosRegisters *registers)
 void text_print_bcd32(DosRegisters *registers)
 {
     word at = registers->bp;
-    text_print_bcd_byte(*(volatile byte *)(word)(at + 3), registers);
-    text_print_bcd_byte(*(volatile byte *)(word)(at + 2), registers);
-    text_print_bcd_byte(*(volatile byte *)(word)(at + 1), registers);
-    text_print_bcd_byte(*(volatile byte *)at, registers);
+    text_print_bcd_byte(*GAME_PTR(volatile byte, (word)(at + 3)), registers);
+    text_print_bcd_byte(*GAME_PTR(volatile byte, (word)(at + 2)), registers);
+    text_print_bcd_byte(*GAME_PTR(volatile byte, (word)(at + 1)), registers);
+    text_print_bcd_byte(*GAME_PTR(volatile byte, at), registers);
 }
 
 /* DX, DI, ES, BP also matches the register-record layout placed on MAIN's stack.
@@ -148,7 +167,7 @@ void text_output_decimal_byte(byte character, word buffered,
                               DosRegisters *renderer)
 {
     if (buffered != 0) {
-        *(byte *)(word)state->di = character;
+        *GAME_PTR(byte, state->di) = character;
         state->di = (word)(state->di + 1);
     } else {
         renderer->bp = state->bp;

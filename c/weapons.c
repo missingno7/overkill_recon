@@ -25,6 +25,18 @@
 #include "player.h"
 #include "render.h"
 
+#ifdef OVERKILL_HOST
+#include <stdlib.h>
+#endif
+
+#define WEAPON_DS_WORD_AT(offset) (*GAME_PTR(word, (word)(offset)))
+#ifdef OVERKILL_HOST
+#define WEAPON_RECORD_FIELD_AT(offset, field) \
+    (*GAME_PTR(volatile word, (word)((word)(offset) + offsetof(Record, field))))
+#else
+#define WEAPON_RECORD_FIELD_AT(offset, field) \
+    (GAME_PTR(volatile Record, offset)->field)
+#endif
 
 /* Player shot types (REC_TYPE of pool B records spawned here). */
 #define SHOT_STRAIGHT 2         /* single, heavy, fork, pod shots */
@@ -37,16 +49,42 @@
 #define SHOT_FRONT_POD 0x0C
 
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
+#ifndef OVERKILL_HOST
 extern void DrawDemoCaption(void);          /* platform thunk in c/weapons.asm */
+#endif
 extern Record *demo_step_launch_front_pod(void);
 extern void demo_step_spawn_path_enemy51(Record *here);
 
 
 /* DrawDemoCaption with SI = PanelSegment image and BP = bp: the result is BP as the
    blitter leaves it (its row width), which the oracle passes on as UpdateBeam's BP. */
+#ifdef OVERKILL_HOST
+word render_screen_offset(byte row, byte column);
+static Record *draw_demo_caption(main_routine target, word image, Record *bp)
+{
+    RenderPanelRequest request;
+    word image_offset;
+    word row_bytes;
+
+    (void)bp;
+    if (target != HOST_SERVICE_DRAWDEMOCAPTION) abort();
+    image_offset = PanelImageOffsets[image];
+    request.image_offset = image_offset;
+    request.screen_offset = render_screen_offset(0x18, 0x1F);
+    request.source_segment = PanelSegment;
+    request.state_segment = MainDataSegment;
+    render_platform_blit_panel(&request);
+    row_bytes = *(word *)overkill_segment_address(PanelSegment,
+                                                 (word)(image_offset + 2));
+    if (VideoAdapter == VIDEO_CGA) row_bytes = (word)(row_bytes * 2);
+    else if (VideoAdapter == VIDEO_TANDY) row_bytes = (word)(row_bytes * 4);
+    return GAME_PTR(Record, row_bytes);
+}
+#else
 Record *draw_demo_caption(main_routine target, word image, Record *bp);
 #pragma aux draw_demo_caption = "push bp" "mov bp, di" "call far ptr FarCallMainNearViaAX" \
     "mov ax, bp" "pop bp" parm [ax] [si] [di] value [ax] modify exact [ax bx cx dx si di es]
+#endif
 
 void handle_fire_button(Record *ship);
 
@@ -67,7 +105,7 @@ Record *alloc_pool_b_evicting(Record **si)
     for (r = POOL_B, n = POOL_B_COUNT; n != 0; ++r, --n)
         if (r->type != SHOT_BEAM_LINK && r->type != SHOT_MISSILE && r->kind != KIND_POD) break;
     if (n == 0) r = POOL_B;
-    *si = (Record *)remove_record_si(r, (word)*si);
+    *si = GAME_PTR(Record, remove_record_si(r, GAME_OFFSET(*si)));
     return r;
 }
 
@@ -100,10 +138,10 @@ Record *alloc_player_shot(void)
    3 entries long; larger sprites (the dying ship) read on into BeamList (16-bit wrap). */
 void place_shot_at_muzzle(Record *shot, Record *ship)
 {
-    word *muzzle = (word *)((word)MuzzleOffsets + (word)(ship->sprite << 2));
+    word muzzle = (word)(GAME_OFFSET(MuzzleOffsets) + (word)(ship->sprite << 2));
 
-    shot->y = muzzle[0] + ship->y;
-    shot->x = muzzle[1] + ship->x;
+    shot->y = (word)(WEAPON_DS_WORD_AT(muzzle) + ship->y);
+    shot->x = (word)(WEAPON_DS_WORD_AT((word)(muzzle + 2)) + ship->x);
 }
 
 Record *spawn_shot_at_muzzle(Record *ship)
@@ -158,7 +196,7 @@ Record *spawn_beam_link(Record *ship)
 
     ++ShotsLiveType9;
     link = alloc_player_shot();
-    *(word *)BeamListEnd = (word)link;
+    WEAPON_DS_WORD_AT(BeamListEnd) = GAME_OFFSET(link);
     BeamListEnd += 2;
     link->type = SHOT_BEAM_LINK;
     place_shot_at_muzzle(link, ship);
@@ -171,13 +209,15 @@ Record *spawn_beam_link(Record *ship)
    spawns the head (sprite 6Ah, 8 px left) and a second link. */
 void start_beam(Record *ship)
 {
-    word *entry;
+    word entry;
     Record *head;
 
     if (ShotsAtFireBeam != 0) return;
     if (SfxEnabled) SfxRequest = 0x11;
-    BeamListEnd = (word)BeamList;
-    for (entry = BeamList; entry != &BeamListTerminator; ++entry) *entry = 0xFFFF;
+    BeamListEnd = GAME_OFFSET(BeamList);
+    for (entry = GAME_OFFSET(BeamList); entry != GAME_OFFSET(&BeamListTerminator);
+         entry = (word)(entry + 2))
+        WEAPON_DS_WORD_AT(entry) = 0xFFFF;
     head = spawn_beam_link(ship);
     head->sprite = 0x6A;
     head->x -= 8;
@@ -194,37 +234,42 @@ void start_beam(Record *ship)
    and the end of the segment, so the stores stay in the oracle's order). */
 void update_beam(Record *ship)
 {
-    word *entry;
-    volatile Record *link;
+    word entry;
+    word link_offset;
     word x, y;
 
     if (ShotsLiveType9 == 0) return;
     if (FrameParity == 1) {
-        if (BeamListEnd == (word)&BeamListTerminator) return;
-        if (BeamList[0] == 0xFFFF) return;
-        if (((Record *)BeamList[0])->x != 0) {
+        if (BeamListEnd == GAME_OFFSET(&BeamListTerminator)) return;
+        if (WEAPON_DS_WORD_AT(GAME_OFFSET(BeamList)) == 0xFFFF) return;
+        link_offset = WEAPON_DS_WORD_AT(GAME_OFFSET(BeamList));
+        if (WEAPON_RECORD_FIELD_AT(link_offset, x) != 0) {
             spawn_beam_link(ship);
-            ((Record *)BeamList[0])->x -= 8;
-            if (((Record *)*(word *)(BeamListEnd - 4))->x == 0xC8) goto align;
+            link_offset = WEAPON_DS_WORD_AT(GAME_OFFSET(BeamList));
+            WEAPON_RECORD_FIELD_AT(link_offset, x) -= 8;
+            if (WEAPON_RECORD_FIELD_AT(WEAPON_DS_WORD_AT((word)(BeamListEnd - 4)), x) == 0xC8)
+                goto align;
         }
         spawn_beam_link(ship);
     }
 align:
-    entry = BeamList;
-    if (*entry == 0xFFFF) return;
-    link = (Record *)*entry++;
-    link->y -= 4;
-    x = link->x + 8;
-    y = link->y;
-    while (*entry != 0xFFFF) {
-        link = (Record *)*entry++;
-        link->x = x;
+    entry = GAME_OFFSET(BeamList);
+    if (WEAPON_DS_WORD_AT(entry) == 0xFFFF) return;
+    link_offset = WEAPON_DS_WORD_AT(entry);
+    entry = (word)(entry + 2);
+    WEAPON_RECORD_FIELD_AT(link_offset, y) -= 4;
+    x = WEAPON_RECORD_FIELD_AT(link_offset, x) + 8;
+    y = WEAPON_RECORD_FIELD_AT(link_offset, y);
+    while (WEAPON_DS_WORD_AT(entry) != 0xFFFF) {
+        link_offset = WEAPON_DS_WORD_AT(entry);
+        entry = (word)(entry + 2);
+        WEAPON_RECORD_FIELD_AT(link_offset, x) = x;
         x += 8;
-        link->y = y;
-        link->sprite = 0x6B;
+        WEAPON_RECORD_FIELD_AT(link_offset, y) = y;
+        WEAPON_RECORD_FIELD_AT(link_offset, sprite) = 0x6B;
     }
     /* The entry before the terminator: the tail, or the head of a one-link beam. */
-    ((Record *)entry[-1])->sprite = 0x6C;
+    WEAPON_RECORD_FIELD_AT(WEAPON_DS_WORD_AT((word)(entry - 2)), sprite) = 0x6C;
 }
 
 /* Two shots of the given rising type (7: sprite 37h, 8: sprite 35h) from the muzzle, the
@@ -355,16 +400,16 @@ void fire_side_pod_shots(void)
     Record *pod;
 
     PodShotDirection = DIR_UP_LEFT;
-    pod = (Record *)SidePodLeftInner;
+    pod = GAME_PTR(Record, SidePodLeftInner);
     fire_pod_weapon(&pod);
     PodShotDirection = DIR_UP_RIGHT;
-    pod = (Record *)SidePodRightInner;
+    pod = GAME_PTR(Record, SidePodRightInner);
     fire_pod_weapon(&pod);
     PodShotDirection = DIR_UP_LEFT;
-    pod = (Record *)SidePodLeftOuter;
+    pod = GAME_PTR(Record, SidePodLeftOuter);
     fire_pod_weapon(&pod);
     PodShotDirection = DIR_UP_RIGHT;
-    pod = (Record *)SidePodRightOuter;
+    pod = GAME_PTR(Record, SidePodRightOuter);
     fire_pod_weapon(&pod);
 }
 
@@ -375,10 +420,10 @@ void fire_trailing_pod_shots(void)
     Record *pod;
 
     PodShotDirection = 0xFFFF;
-    pod = (Record *)TrailingPodNear;
+    pod = GAME_PTR(Record, TrailingPodNear);
     fire_pod_weapon(&pod);
     fire_pod_side_shots(&pod);
-    pod = (Record *)TrailingPodFar;
+    pod = GAME_PTR(Record, TrailingPodFar);
     fire_pod_weapon(&pod);
     fire_pod_side_shots(&pod);
 }
@@ -403,18 +448,18 @@ void fire_front_pod_burst(void)
     if (SfxEnabled) SfxRequest = 0x18;
     ++ShotsLiveFrontPod;
     shot = alloc_front_pod_shot();
-    pod = (Record *)FrontPodRecord;
+    pod = GAME_PTR(Record, FrontPodRecord);
     shot->y = pod->y - 6;
     shot->x = pod->x + 4;
     ++ShotsLiveFrontPod;
     shot = alloc_front_pod_shot();
-    pod = (Record *)FrontPodRecord;
+    pod = GAME_PTR(Record, FrontPodRecord);
     shot->y = pod->y - 2;
     shot->x = pod->x - 4;
     shot->direction = DIR_UP_LEFT;
     ++ShotsLiveFrontPod;
     shot = alloc_front_pod_shot();
-    pod = (Record *)FrontPodRecord;
+    pod = GAME_PTR(Record, FrontPodRecord);
     shot->y = pod->y - 2;
     shot->x = pod->x + 0x0C;
     shot->direction = DIR_UP_RIGHT;
@@ -426,20 +471,22 @@ void fire_front_pod_burst(void)
 Record *find_missile_target(void)
 {
     word n = POOL_A_COUNT;
-    Record *r = (Record *)TargetSearchCursor;
+    word cursor = TargetSearchCursor;
+    Record *r;
 
     for (;;) {
-        if ((word)r >= (word)PoolAEnd) {
-            TargetSearchCursor = (word)PoolA;
-            r = POOL_A;
+        if (cursor >= GAME_OFFSET(PoolAEnd)) {
+            TargetSearchCursor = GAME_OFFSET(PoolA);
+            cursor = GAME_OFFSET(PoolA);
             continue;
         }
+        r = GAME_PTR(Record, cursor);
         if (r->status != 0 && r->type != 1 && r->type != 0x26 && r->type != 0x21 && r->type != 0x22
             && r->y <= 0xE0 && r->kind == KIND_ENEMY) {
-            TargetSearchCursor = (word)(r + 1);
+            TargetSearchCursor = (word)(cursor + RECORD_SIZE);
             return r;
         }
-        ++r;
+        cursor = (word)(cursor + RECORD_SIZE);
         if (--n == 0) return NO_RECORD;
     }
 }
@@ -465,7 +512,7 @@ void fire_missile(Record *ship)
     copy_position_plus10(missile, ship);
     target = find_missile_target();
     if (target == NO_RECORD) return;
-    missile->target = (word)target;
+    missile->target = GAME_OFFSET(target);
     missile->status = 1;
     missile->player_shot = 1;
     missile->size_class = 0;

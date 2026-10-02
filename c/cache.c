@@ -8,7 +8,13 @@
 #include "cache.h"
 #include "archive.h"
 #include "resource_codecs.h"
+#ifdef OVERKILL_HOST
+#include "resource_services.h"
+#include "memory.h"
+#include "platform_services.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern volatile word __far VideoAdapter;
 extern word __far MainDataSegment;
 extern volatile word __far EncFileHandle;
@@ -25,7 +31,53 @@ extern byte __far PackedReadBuffer[];
 extern void ProbeFloppyReady(void);
 extern void MapEmsPages(void);
 extern void ShutdownWithError(void);
+#endif
 /* Main-frame near routines run through a thunk that protects the C frame pointer. */
+#ifdef OVERKILL_HOST
+void cache_call_main(main_routine target)
+{
+    HostRegisters registers = { 0 };
+    overkill_platform_call(target, &registers);
+}
+
+word cache_probe(main_routine target)
+{
+    (void)target;
+    return (word)overkill_resource_probe_guest_path(MainDataSegment, FileNamePtr);
+}
+
+void cache_map_ems(main_routine target, word pages, word handle)
+{
+    (void)target;
+    (void)overkill_ems_map_pages(EmsPageFrame, pages, handle);
+}
+
+word cache_get_drive(void)
+{
+    return overkill_resource_current_drive();
+}
+
+void cache_close_file(word handle)
+{
+    (void)overkill_resource_close(handle);
+}
+
+dword cache_allocate_dos(word paragraphs)
+{
+    word segment = overkill_dos_allocate_paragraphs(paragraphs);
+    return segment == 0 ? 0x00010000UL : segment;
+}
+
+dword cache_allocate_ems(word pages)
+{
+    return overkill_ems_allocate_pages(pages);
+}
+
+void cache_free_ems(word handle)
+{
+    overkill_ems_free_pages(handle);
+}
+#else
 void cache_call_main(main_routine target);
 #pragma aux cache_call_main "CACHE_CALL_MAIN" far parm [ax] modify exact [ax bx cx dx si di es]
 
@@ -49,9 +101,15 @@ dword cache_allocate_ems(word pages);
 
 void cache_free_ems(word handle);
 #pragma aux cache_free_ems "CACHE_FREE_EMS" far parm [dx] modify exact [ax dx]
+#endif
 
+#ifdef OVERKILL_HOST
+#define CACHE_AT(segment, offset) \
+    (*(byte *)overkill_segment_address((word)(segment), (word)(offset)))
+#else
 #define CACHE_AT(segment, offset) \
     (*(byte __far *)((__segment)(segment) :> (void __near *)(offset)))
+#endif
 
 typedef struct CacheEntry {
     word name;
@@ -60,6 +118,8 @@ typedef struct CacheEntry {
     word ems_handle;
     word ems_pages;
 } CacheEntry;
+
+#define CACHE_ENTRY_AT(offset) GAME_PTR(CacheEntry, (word)(offset))
 
 /* FileNamePtr is a DS offset. Only A: and B: are candidates; presence means
    exactly 1. The increment deliberately changes the original case, then repeats
@@ -104,7 +164,7 @@ void cache_copy_segment(word source_segment, word source_offset,
    Its callers use only ZF, but retaining that AL value keeps the old boundary legible. */
 word copy_from_file_cache(void)
 {
-    CacheEntry *entry = (CacheEntry *)FileCache;
+    CacheEntry *entry = CACHE_ENTRY_AT(GAME_OFFSET(FileCache));
     word requested = FileNamePtr;
     word source_segment;
     word source_bytes;
@@ -116,7 +176,7 @@ word copy_from_file_cache(void)
             source_bytes = entry->bytes;
             if (source_segment == 0xFFFF) {
                 cache_map_ems((main_routine)MapEmsPages,
-                                       entry->ems_pages, entry->ems_handle);
+                              entry->ems_pages, entry->ems_handle);
                 source_segment = EmsPageFrame;
             }
             cache_copy_segment(source_segment, 0,
@@ -148,9 +208,9 @@ word cache_loaded_file(word es)
     CacheEntry *entry;
 
     if (VideoAdapter == VIDEO_TANDY) return es;
-    resident = (word)ResidentFiles;
+    resident = GAME_OFFSET(ResidentFiles);
     for (;;) {
-        word resident_name = *(word *)resident;
+        word resident_name = *GAME_PTR(word, resident);
         resident = (word)(resident + 2);
         if (resident_name == name) return es;
         if (resident_name == 0xFFFF) break;
@@ -165,7 +225,7 @@ word cache_loaded_file(word es)
         if ((word)(allocation >> 16) == 0) {
             word handle = (word)allocation;
             cursor = FileCacheEnd;
-            entry = (CacheEntry *)cursor;
+            entry = CACHE_ENTRY_AT(cursor);
             entry->name = name;
             entry->segment = 0xFFFF;
             entry->bytes = bytes;
@@ -185,7 +245,7 @@ word cache_loaded_file(word es)
     if ((word)(allocation >> 16) != 0) return es;
     destination_segment = (word)allocation;
     cursor = FileCacheEnd;
-    entry = (CacheEntry *)cursor;
+    entry = CACHE_ENTRY_AT(cursor);
     entry->name = name;
     entry->segment = destination_segment;
     entry->bytes = bytes;
@@ -202,7 +262,7 @@ void release_ems_cache(void)
 {
     CacheEntry *entry;
     if (EmsAvailable == 0) return;
-    entry = (CacheEntry *)FileCache;
+    entry = CACHE_ENTRY_AT(GAME_OFFSET(FileCache));
     while (entry->name != 0xFFFF) {
         if (entry->segment == 0xFFFF)
             cache_free_ems(entry->ems_handle);
@@ -254,7 +314,11 @@ retry_open:
         PackedDestOffset = FileBufferOffset;
         /* The former MAIN entry reset these CS words before entering C. */
         PackedOutputBytes = 0;
+#ifdef OVERKILL_HOST
+        PackedReadCursor = (word)(HOST_OFFSET_PACKEDREADBUFFER + 0x0200);
+#else
         PackedReadCursor = (word)(dword)PackedReadBuffer + 0x0200;
+#endif
         packed_load_file(&packed_result, handle);
         /* LoadResourceFile likewise ignores LoadPackedFile AX/CF/BX. Its cache
            policy uses the output counter and the decoder-entry ES convention. */

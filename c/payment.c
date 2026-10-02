@@ -8,7 +8,12 @@
 #include "payment.h"
 #include "archive.h"
 #include "resource_codecs.h"
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#include "presentation_services.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern volatile word __far TextScreenSegment;
 extern volatile word __far TextTopLine;
 extern volatile word __far TextLineCount;
@@ -16,32 +21,67 @@ extern volatile word __far EncFileHandle;
 extern volatile word __far EncDestOffset;
 extern volatile word __far EncDestSegment;
 extern word __far WorkspaceSegment;
+#endif
 
+#ifndef OVERKILL_HOST
 extern void PaymentSetTextModeAndHideCursor(void);
 extern void DrawPaymentTextPage(void);
 extern void WaitTextVerticalRetrace(void);
 extern void ProbeMonoHercules(void);
 extern void ShutdownWithError(void);
+extern void CACHE_GET_DRIVE(void);
+#endif
 
 word payment_current_drive(void);
+#ifdef OVERKILL_HOST
+word payment_current_drive(void)
+{
+    HostRegisters registers = { 0 };
+    overkill_platform_call(HOST_SERVICE_CACHE_GET_DRIVE, &registers);
+    return registers.ax;
+}
+#else
 #pragma aux payment_current_drive "CACHE_GET_DRIVE" far value [ax] modify exact [ax]
+#endif
 
 void payment_call_main(main_routine target);
+#ifdef OVERKILL_HOST
+void payment_call_main(main_routine target)
+{
+    HostRegisters registers = { 0 };
+    overkill_platform_call(target, &registers);
+}
+#else
 #pragma aux payment_call_main "CACHE_CALL_MAIN" far parm [ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 word payment_call_probe(main_routine target);
+#ifdef OVERKILL_HOST
+word payment_call_probe(main_routine target)
+{
+    HostRegisters registers = { 0 };
+    overkill_platform_call(target, &registers);
+    return registers.ax;
+}
+#else
 #pragma aux payment_call_probe "FarCallMainNearViaAX" far parm [ax] value [ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 typedef struct PaymentScrollRegisters {
     word ax;
     word cx;
 } PaymentScrollRegisters;
 
+#ifdef OVERKILL_HOST
+#define PAYMENT_ADDRESS(type, segment, offset) \
+    ((volatile type *)overkill_segment_address((word)(segment), (word)(offset)))
+#else
 #define PAYMENT_ADDRESS(type, segment, offset) \
     ((volatile type __far *)((__segment)(segment) :> \
                             ((type __based(void) *)(offset))))
+#endif
 
 void payment_scroll_up(void *opaque)
 {
@@ -69,7 +109,11 @@ void payment_scroll_down(void *opaque)
 void payment_wait_for_escape_release(void)
 {
     volatile byte *keys = (volatile byte *)KeyDownTable;
-    while (keys[SCAN_ESC] == KEY_STATE_DOWN) {}
+    while (keys[SCAN_ESC] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+    }
 }
 
 void payment_scan_line_count(void)
@@ -110,7 +154,7 @@ void payment_show_text(DosRegisters *registers)
     probe = payment_call_probe((main_routine)ProbeMonoHercules);
     if ((byte)probe != 0) TextScreenSegment = 0xB000;
 
-    FileNamePtr = (word)PaymentFileName;
+    FileNamePtr = GAME_OFFSET(PaymentFileName);
     for (;;) {
         opened = archive_open_by_name(FileNamePtr);
         if ((word)(opened >> 16) == 0) break;
@@ -133,6 +177,9 @@ void payment_show_text(DosRegisters *registers)
 redraw:
     payment_draw_page(registers);
 poll_keys:
+#ifdef OVERKILL_HOST
+    overkill_platform_idle();
+#endif
     if (keys[SCAN_ESC] == KEY_STATE_DOWN) {
         payment_wait_for_escape_release();
         return;

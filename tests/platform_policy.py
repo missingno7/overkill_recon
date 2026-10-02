@@ -383,8 +383,17 @@ def install_checksum_io(side, bag, stream, trace, entry_label, skip, bios_keys=(
     return cursor
 
 
-def checksum_case(pair, name, stream, skip=0, fatal=False, file_size=None):
+def checksum_final_cursor(length, entry_si):
+    if length == 0:
+        return entry_si
+    last_count = length % 0x1400 or 0x1400
+    return (0x42 + last_count) & 0xFFFF
+
+
+def checksum_case(pair, name, stream, skip=0, fatal=False, file_size=None,
+                  entry_si=0xA55A):
     bag, traces, cursors, final_states = [], [], [], []
+    final_cursor = checksum_final_cursor(len(stream), entry_si)
     for side in (pair.a, pair.b):
         trace = []; traces.append(trace)
         cursors.append(install_checksum_io(side, bag, stream, trace, 'ChecksumFileOrAbort', skip,
@@ -395,20 +404,27 @@ def checksum_case(pair, name, stream, skip=0, fatal=False, file_size=None):
                       captured.append((side.m.peek('IntegritySum'),
                                        side.m.peek('IntegrityBufferSegment'),
                                        struct.unpack('<H', bytes(u.mem_read(
-                                           side.m.peek('IntegrityBufferSegment') * 16 + 0x1440, 2)))[0])))
+                                           side.m.peek('IntegrityBufferSegment') * 16
+                                           + final_cursor - 2, 2)))[0])))
     filename = 'IntegrityFileExe' if name == 'exe' else 'IntegrityFileData'
     w = World(pair, random.Random(0xC5EC))
     for label in ('Codeword', 'NonAsciiCodeword', 'OldNonAsciiCodeword', 'Password'):
         w.put(label, bytes((i * 19 + 7) & 0xFF for i in range(16)))
     initial_regs = {'AX': 0xA55A, 'BX': 0x1234, 'CX': 0x5678, 'DX': pair.sym(filename),
-                    'SI': 0x1442, 'DI': 0x2468, 'BP': 0x369A, 'ES': 0xB800}
+                    'SI': entry_si, 'DI': 0x2468, 'BP': 0x369A, 'ES': 0xB800}
     def done(_m, _regs):
         check(traces[0] == traces[1], f'checksum DOS/BIOS operation sequence matches: {traces}')
+        if not fatal:
+            check(_regs['SI'] == ((final_cursor - 2) & 0xFFFF),
+                  'checksum returns SI at the final nonempty read-window trailer')
         for side, cursor, captured in zip((pair.a, pair.b), cursors, final_states):
-            check(captured and captured[0][0] == checksum_value(stream[:-2]),
-                  'checksum running algorithm and trailer subtraction')
-            check(captured[0][2] == struct.unpack('<H', stream[-2:])[0],
-                  'checksum compares the trailer at the last read-window position')
+            check(captured and captured[0][1] != 0,
+                  'checksum buffer segment is retained in CS state')
+            if len(stream) >= 2:
+                check(captured[0][0] == checksum_value(stream[:-2]),
+                      'checksum running algorithm and trailer subtraction')
+                check(captured[0][2] == struct.unpack('<H', stream[-2:])[0],
+                      'checksum compares the trailer at the last read-window position')
             if fatal:
                 check(cursor['exit'] == 1, 'corruption takes the nonlocal DOS exit with code 1')
                 names = [event[0] for event in traces[0]]
@@ -416,7 +432,6 @@ def checksum_case(pair, name, stream, skip=0, fatal=False, file_size=None):
                       'corruption prompt drains keys, reads a key, and exits')
             else:
                 check(cursor['exit'] is None, 'valid or skipped checksum returns to its caller')
-            check(captured[0][1] != 0, 'checksum buffer segment is retained in CS state')
         if name == 'exe' and skip != 1 and not fatal:
             source = stream[-66:-2]
             expected = bytes(value ^ 0xAA for value in source)
@@ -454,11 +469,15 @@ def cases(rng, scale, pair):
 
     yield from boss_case(pair)
 
-    for name, length in (('exe', 0x1400), ('data', 0x2800)):
+    for name, length, entry_si in (('exe', 0x1400, 0x7231),
+                                   ('data', 0x2800, 0xA731)):
         stream = checksum_fixture(length)
-        yield from checksum_case(pair, name, stream, file_size=length)
+        yield from checksum_case(pair, name, stream, file_size=length, entry_si=entry_si)
+    yield from checksum_case(pair, 'data', checksum_fixture(0x0802), entry_si=0xC246)
+    yield from checksum_case(pair, 'data', b'', skip=1, entry_si=0x1002)
     yield from checksum_case(pair, 'data', checksum_fixture(0x1400, trailer_ok=False), fatal=True)
-    yield from checksum_case(pair, 'exe', checksum_fixture(0x1400, trailer_ok=False), skip=1)
+    yield from checksum_case(pair, 'exe', checksum_fixture(0x1400, trailer_ok=False), skip=1,
+                             entry_si=0xD135)
 
 
 MUTANTS = [

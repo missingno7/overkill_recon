@@ -7,7 +7,11 @@
 #include "display.h"
 #include "render.h"
 #include "text.h"
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern volatile word __far VideoAdapter;
 extern void DrawPanelImageRow(void);
 extern void FlipEgaDrawPage(void);
@@ -17,6 +21,7 @@ extern void CgaSelectBrightPalette1(void);
 extern void DisplayCgaPaletteDispatch(void);
 extern void DisplayCallDacColor6(void);
 extern void DisplayDrawLivesRow(void);
+#endif
 
 typedef struct DisplayLivesRow {
     word image_index;
@@ -28,12 +33,42 @@ typedef struct DisplayLivesRow {
 } DisplayLivesRow;
 
 void display_call_dac_color6(main_routine target, DosRegisters *registers, word color_offset);
+#ifdef OVERKILL_HOST
+void display_call_dac_color6(main_routine target, DosRegisters *registers, word color_offset)
+{
+    HostRegisters host = { 0 };
+    host.bp = registers->bp;
+    host.es = registers->es;
+    host.di = color_offset;
+    overkill_platform_call(target, &host);
+    registers->bp = host.bp;
+    registers->es = host.es;
+}
+#else
 #pragma aux display_call_dac_color6 "FarCallMainNearViaAX" far parm [ax] [si] [di] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void display_call_lives_row(main_routine target, DisplayLivesRow *row);
+#ifdef OVERKILL_HOST
+void display_call_lives_row(main_routine target, DisplayLivesRow *row)
+{
+    HostRegisters host = { 0 };
+    host.ax = row->image_index;
+    host.bx = row->copies;
+    host.di = row->screen_offset;
+    host.bp = row->bp;
+    host.es = row->es;
+    host.cx = row->calculate_position;
+    overkill_platform_call(target, &host);
+    row->screen_offset = host.di;
+    row->bp = host.bp;
+    row->es = host.es;
+}
+#else
 #pragma aux display_call_lives_row "FarCallMainNearViaAX" far parm [ax] [si] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void display_service(DosRegisters *registers, main_routine target)
 {
@@ -77,16 +112,16 @@ void display_apply_level_palette(DosRegisters *registers)
     }
 
     color_offset = LevelIndex == 1
-        ? (word)DacColor6Level1 : (word)DacColor6Default;
+        ? GAME_OFFSET(DacColor6Level1) : GAME_OFFSET(DacColor6Default);
     display_call_dac_color6(DisplayCallDacColor6, registers, color_offset);
 }
 
 void display_draw_score(DosRegisters *registers)
 {
-    registers->bp = (word)ScoreMessagePrefix;
+    registers->bp = GAME_OFFSET(ScoreMessagePrefix);
     text_print_message(registers);
     /* DrawScore sets BP to ScoreBcd after printing the prefix and falls through. */
-    registers->bp = (word)ScoreBcd;
+    registers->bp = GAME_OFFSET(ScoreBcd);
     text_print_bcd32(registers);
 }
 
@@ -94,7 +129,7 @@ void display_draw_level_number(DosRegisters *registers)
 {
     byte character;
 
-    registers->bp = (word)LevelNumberPrefix;
+    registers->bp = GAME_OFFSET(LevelNumberPrefix);
     text_print_message(registers);
     /* XLAT consumes AL only; high LevelIndex bits do not extend the table index. */
     character = LevelDigitChars[(byte)LevelIndex];

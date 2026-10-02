@@ -37,7 +37,14 @@
 #include "pods.h"
 #include "hits.h"
 #include "player.h"
+#include "render.h"
 #include "terrain.h"
+
+#ifdef OVERKILL_HOST
+#include <stdlib.h>
+#include "platform_services.h"
+word render_screen_offset(byte row, byte column);
+#endif
 
 #define NO_SLOT 0xFFFF              /* empty pod slot, no selected upgrade slot */
 
@@ -59,20 +66,31 @@ typedef struct UpgradeEntry {
     word apply;         /* MAIN routine: buys it */
 } UpgradeEntry;
 STATIC_CHECK(pods_slot_size, sizeof(UpgradeSlot) == UPGRADE_SLOT_BYTES);
+#ifdef OVERKILL_HOST
+STATIC_CHECK(pods_slot_icon, offsetof(UpgradeSlot, icon) == UPGRADE_SLOT_ICON);
+STATIC_CHECK(pods_slot_screen, offsetof(UpgradeSlot, screen) == UPGRADE_SLOT_SCREEN);
+STATIC_CHECK(pods_slot_image, offsetof(UpgradeSlot, image) == UPGRADE_SLOT_IMAGE);
+STATIC_CHECK(pods_slot_list, offsetof(UpgradeSlot, list) == UPGRADE_SLOT_LIST);
+STATIC_CHECK(pods_slot_index, offsetof(UpgradeSlot, index) == UPGRADE_SLOT_INDEX);
+#else
 STATIC_CHECK(pods_slot_icon, (unsigned)&((UpgradeSlot *)0)->icon == UPGRADE_SLOT_ICON);
 STATIC_CHECK(pods_slot_screen, (unsigned)&((UpgradeSlot *)0)->screen == UPGRADE_SLOT_SCREEN);
 STATIC_CHECK(pods_slot_image, (unsigned)&((UpgradeSlot *)0)->image == UPGRADE_SLOT_IMAGE);
 STATIC_CHECK(pods_slot_list, (unsigned)&((UpgradeSlot *)0)->list == UPGRADE_SLOT_LIST);
 STATIC_CHECK(pods_slot_index, (unsigned)&((UpgradeSlot *)0)->index == UPGRADE_SLOT_INDEX);
+#endif
 STATIC_CHECK(pods_entry_size, sizeof(UpgradeEntry) == 6);
 
 /* CS-resident word of MAIN: the next pool A save buffer handed out (every write of it is
    observable, so each one is kept). */
+#ifndef OVERKILL_HOST
 extern volatile word __far SaveBufferCursor;
+#endif
 
-/* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). */
+/* ASM that stays in MAIN on the DOS build. */
 void smart_bomb_all(void);              /* c/frame.c */
 
+#ifndef OVERKILL_HOST
 /* An upgrade list apply routine (a bridge label of this region, or ReturnNear). */
 void pods_call_main(main_routine target);
 #pragma aux pods_call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
@@ -82,20 +100,21 @@ void pods_call_main_bp(main_routine target, Record *r);
 /* An upgrade list condition routine: 1 when it returns NZ (thunk in c/pods.asm). */
 word pods_call_condition(word routine);
 #pragma aux pods_call_condition "PODS_CALL_CONDITION" parm [ax] value [ax] modify exact [ax]
+#endif
 
 word pods_upgrade_condition(word routine);
 void pods_apply_upgrade(word routine);
 
-/* This caller needs only the result ABI, not render.h's pixel request declarations. */
-dword render_draw_upgrade_slots(void);
-#pragma aux render_draw_upgrade_slots value [dx ax] modify exact [ax dx]
-
-extern void RedrawEnergyGauge(void);
-
-/* Fixed screen-row/8-pixel-column mapper, retained as adapter code in MAIN. */
+/* Fixed screen-row/8-pixel-column mapper retained in MAIN for DOS. */
+#ifdef OVERKILL_HOST
+/* The native renderer already maps rows and columns using the selected adapter. */
+#define pods_screen_offset(row_column) \
+    render_screen_offset((byte)((row_column) >> 8), (byte)(row_column))
+#else
 word pods_screen_offset(word row_column);
 #pragma aux pods_screen_offset "PODS_SCREEN_OFFSET" parm [si] value [ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 /* Item 2. The equality loop deliberately wraps a 16-bit energy bar before reaching 18h. */
 void pickup_energy(void)
@@ -106,14 +125,18 @@ void pickup_energy(void)
     } else {
         EnergyTanks++;
     }
+#ifdef OVERKILL_HOST
+    (void)render_draw_energy_gauge();
+#else
     pods_call_main(RedrawEnergyGauge);
+#endif
 }
 
 /* Reset four data-backed slots. The returned word is the BP value left by the oracle:
    the offset just past UpgradeSlot3. The platform helper still selects CGA/EGA/Tandy. */
 word init_upgrade_slots(void)
 {
-    UpgradeSlot *slot = (UpgradeSlot *)UpgradeSlot0;
+    UpgradeSlot *slot = GAME_PTR(UpgradeSlot, GAME_OFFSET(UpgradeSlot0));
     word row = 0x87;
     word n;
 
@@ -126,14 +149,16 @@ word init_upgrade_slots(void)
         slot++;
         row += 0x10;
     }
-    return (word)slot;
+    return GAME_OFFSET(slot);
 }
 
 /* ---- the upgrade selector ------------------------------------------------------------ */
 
 UpgradeSlot *pods_selected_slot(void)
 {
-    return (UpgradeSlot *)UpgradeSlotPtrs[SelectedUpgradeSlot];
+    word *selected = GAME_PTR(word,
+        (word)(GAME_OFFSET(UpgradeSlotPtrs) + (word)(SelectedUpgradeSlot * sizeof(word))));
+    return GAME_PTR(UpgradeSlot, *selected);
 }
 
 /* Selected slot only (no-op without one): from its current index the first entry whose
@@ -149,7 +174,8 @@ void advance_to_available_upgrade(void)
     slot = pods_selected_slot();
     UpgradeTries = 0;
     for (;;) {
-        entry = (UpgradeEntry *)slot->list + slot->index;
+        entry = GAME_PTR(UpgradeEntry,
+            (word)(slot->list + (word)(slot->index * sizeof(UpgradeEntry))));
         if (entry->condition == 0xFFFF) {
             slot->index = 0;
             continue;
@@ -184,7 +210,8 @@ void apply_selected_upgrade(void)
 
     if (selected == NO_SLOT) return;
     slot = pods_selected_slot();
-    pods_apply_upgrade(((UpgradeEntry *)slot->list + slot->index)->apply);
+    pods_apply_upgrade(GAME_PTR(UpgradeEntry,
+        (word)(slot->list + (word)(slot->index * sizeof(UpgradeEntry))))->apply);
     SavedUpgradeSlot = SelectedUpgradeSlot;
     SelectedUpgradeSlot = selected;
     advance_to_available_upgrade();
@@ -200,8 +227,13 @@ void pickup_upgrade_selector(void)
 {
     volatile byte *key3 = &KeyDownTable[SCAN_3];
 
-    if (BonusKeysEnabled != 0)
-        while (*key3 == KEY_STATE_DOWN) ;
+    if (BonusKeysEnabled != 0) {
+        while (*key3 == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+            overkill_platform_idle();
+#endif
+        }
+    }
     SelectedUpgradeSlot = (SelectedUpgradeSlot + 1) & 3;
     refresh_upgrade_display();
 }
@@ -298,9 +330,10 @@ word remove_record_si(Record *r, word si)
     if (r->kind == KIND_ENEMY) {
         release_encounter_member(r);
         if (r->type == 1 || r->slot_index == 0xFFFF) return si;
-        group = GroupTable + (r->slot_index << 1);
+        group = GAME_PTR(byte,
+            (word)(GAME_OFFSET(GroupTable) + (word)(r->slot_index << 1)));
         group[GROUP_LIVE] = 0;
-        return (word)group;
+        return GAME_OFFSET(group);
     }
     if (r->kind == KIND_POD) {
         r->kind = KIND_TYPED;
@@ -313,10 +346,10 @@ word remove_record_si(Record *r, word si)
     case 9:
         if (ShotsLiveType9 == 0) break;
         for (beam = BeamList; *beam != 0xFFFF; beam++) {
-            ((Record *)*beam)->status = 0;
+            GAME_PTR(Record, *beam)->status = 0;
             ShotsLiveType9--;
         }
-        return (word)(beam + 1);
+        return GAME_OFFSET(beam + 1);
     case 6: case 5:
         if (ShotsLiveSide != 0) ShotsLiveSide--;
         break;
@@ -363,7 +396,7 @@ void add_front_pod(void)
 
     if (FrontPodRecord != NO_SLOT) return;
     pod = alloc_record_evicting();
-    FrontPodRecord = (word)pod;
+    FrontPodRecord = GAME_OFFSET(pod);
     pod->status = 1;
     pod->size_class = 1;
     pod->kind = KIND_POD;
@@ -378,10 +411,10 @@ void add_trailing_pod(void)
 
     if (TrailingPodNear == NO_SLOT) {
         pod = alloc_record_evicting();
-        TrailingPodNear = (word)pod;
+        TrailingPodNear = GAME_OFFSET(pod);
     } else if (TrailingPodFar == NO_SLOT) {
         pod = alloc_record_evicting();
-        TrailingPodFar = (word)pod;
+        TrailingPodFar = GAME_OFFSET(pod);
     } else {
         return;
     }
@@ -396,12 +429,12 @@ word fill_side_pod_slot_if_empty(word *slot)
     Record *pod;
 
     if (*slot != NO_SLOT) return 1;
-    SidePodSlotPtr = (word)slot;
+    SidePodSlotPtr = GAME_OFFSET(slot);
     pod = alloc_record_evicting();
     init_pod_record(pod);
     pod->sprite = 0x18;
     pod->draw_pass = 1;
-    *(word *)SidePodSlotPtr = (word)pod;
+    *GAME_PTR(word, SidePodSlotPtr) = GAME_OFFSET(pod);
     place_side_pods(PRIMARY);
     return --SidePodsToAdd != 0;
 }
@@ -436,9 +469,11 @@ void apply_trailing_pods(void)
 }
 
 /* UpgradeList0..3 keep their MAIN offsets so the frozen DS tables need no shadow copy.
-   Compare those address tokens here and run their already translated logic in C. The
-   fallback keeps support for injected/unknown entries used by callers that extend a list
-   at runtime; ReturnNear is the table's ordinary no-op apply. */
+   Compare those address tokens here and run their already translated logic in C. On DOS,
+   unknown entries still use the original trampoline; the native build fails explicitly
+   because an oracle offset is not a native function pointer. ReturnNear is the table's
+   ordinary no-op apply. */
+#ifndef OVERKILL_HOST
 extern void UpgradeNeverAvailable(void);
 extern void SingleShotAvailable(void);
 extern void HeavyShotAvailable(void);
@@ -467,9 +502,27 @@ extern void ApplySidePods(void);
 extern void ApplyTrailingPods(void);
 extern void ApplyShipForm1(void);
 extern void ApplyShipForm2(void);
+#endif
 
 word pods_upgrade_condition(word routine)
 {
+#ifdef OVERKILL_HOST
+    if (routine == HOST_TOKEN_UPGRADENEVERAVAILABLE) return upgrade_never_available();
+    if (routine == HOST_TOKEN_SINGLESHOTAVAILABLE) return single_shot_available();
+    if (routine == HOST_TOKEN_HEAVYSHOTAVAILABLE) return heavy_shot_available();
+    if (routine == HOST_TOKEN_FORKSHOTAVAILABLE) return fork_shot_available();
+    if (routine == HOST_TOKEN_TWINRISING3AVAILABLE) return twin_rising3_available();
+    if (routine == HOST_TOKEN_TWINRISING16AVAILABLE) return twin_rising16_available();
+    if (routine == HOST_TOKEN_BEAMAVAILABLE) return beam_available();
+    if (routine == HOST_TOKEN_SIDESHOTSAVAILABLE) return side_shots_available();
+    if (routine == HOST_TOKEN_MISSILESAVAILABLE) return missiles_available();
+    if (routine == HOST_TOKEN_FRONTPODAVAILABLE) return front_pod_available();
+    if (routine == HOST_TOKEN_SIDEPODSAVAILABLE) return side_pods_available();
+    if (routine == HOST_TOKEN_TRAILINGPODSAVAILABLE) return trailing_pods_available();
+    if (routine == HOST_TOKEN_SHIPFORM1AVAILABLE) return ship_form1_available();
+    if (routine == HOST_TOKEN_SHIPFORM2AVAILABLE) return ship_form2_available();
+    abort();
+#else
     if (routine == (word)(main_routine)UpgradeNeverAvailable) return upgrade_never_available();
     if (routine == (word)(main_routine)SingleShotAvailable) return single_shot_available();
     if (routine == (word)(main_routine)HeavyShotAvailable) return heavy_shot_available();
@@ -485,10 +538,28 @@ word pods_upgrade_condition(word routine)
     if (routine == (word)(main_routine)ShipForm1Available) return ship_form1_available();
     if (routine == (word)(main_routine)ShipForm2Available) return ship_form2_available();
     return pods_call_condition(routine);
+#endif
 }
 
 void pods_apply_upgrade(word routine)
 {
+#ifdef OVERKILL_HOST
+    if (routine == HOST_TOKEN_RETURNNEAR) return;
+    if (routine == HOST_TOKEN_APPLYSINGLESHOT) { apply_single_shot(); return; }
+    if (routine == HOST_TOKEN_APPLYHEAVYSHOT) { apply_heavy_shot(); return; }
+    if (routine == HOST_TOKEN_APPLYFORKSHOT) { apply_fork_shot(); return; }
+    if (routine == HOST_TOKEN_APPLYTWINRISING3) { apply_twin_rising3(); return; }
+    if (routine == HOST_TOKEN_APPLYTWINRISING16) { apply_twin_rising16(); return; }
+    if (routine == HOST_TOKEN_APPLYBEAM) { apply_beam(); return; }
+    if (routine == HOST_TOKEN_APPLYSIDESHOTS) { apply_side_shots(); return; }
+    if (routine == HOST_TOKEN_APPLYMISSILES) { apply_missiles(); return; }
+    if (routine == HOST_TOKEN_APPLYFRONTPOD) { apply_front_pod(); return; }
+    if (routine == HOST_TOKEN_APPLYSIDEPODS) { apply_side_pods(); return; }
+    if (routine == HOST_TOKEN_APPLYTRAILINGPODS) { apply_trailing_pods(); return; }
+    if (routine == HOST_TOKEN_APPLYSHIPFORM1) { apply_ship_form1(); return; }
+    if (routine == HOST_TOKEN_APPLYSHIPFORM2) { apply_ship_form2(); return; }
+    abort();
+#else
     if (routine == (word)(main_routine)ReturnNear) return;
     if (routine == (word)(main_routine)ApplySingleShot) { apply_single_shot(); return; }
     if (routine == (word)(main_routine)ApplyHeavyShot) { apply_heavy_shot(); return; }
@@ -504,6 +575,7 @@ void pods_apply_upgrade(word routine)
     if (routine == (word)(main_routine)ApplyShipForm1) { apply_ship_form1(); return; }
     if (routine == (word)(main_routine)ApplyShipForm2) { apply_ship_form2(); return; }
     pods_call_main((main_routine)routine);
+#endif
 }
 
 /* ---- pod updates -------------------------------------------------------------------- */
@@ -561,7 +633,7 @@ void pods_update_side_pod(Record *pod, word *slot)
 {
     Record *enemy;
 
-    CurrentSidePodSlot = (word)slot;
+    CurrentSidePodSlot = GAME_OFFSET(slot);
     if (PRIMARY->sprite < 3) {
         pod->sprite = SlowCount4 + 0x18;
         if (!pod_terrain_hit(pod)) {
@@ -570,7 +642,7 @@ void pods_update_side_pod(Record *pod, word *slot)
             destroy_record(enemy);
         }
     }
-    *(word *)CurrentSidePodSlot = NO_SLOT;
+    *GAME_PTR(word, CurrentSidePodSlot) = NO_SLOT;
     explode_pod(pod);
 }
 
@@ -579,14 +651,14 @@ void pods_update_trailing_pod(Record *pod, word *slot)
 {
     Record *enemy;
 
-    CurrentTrailingPodSlot = (word)slot;
+    CurrentTrailingPodSlot = GAME_OFFSET(slot);
     if (PRIMARY->sprite < 3) {
         pod->sprite = SlowCount4 + 0x14;
         enemy = pod_collide_records(pod);
         if (enemy == 0) return;
         destroy_record(enemy);
     }
-    *(word *)CurrentTrailingPodSlot = NO_SLOT;
+    *GAME_PTR(word, CurrentTrailingPodSlot) = NO_SLOT;
     explode_pod(pod);
 }
 
@@ -618,12 +690,12 @@ void update_pod(Record *pod)
 {
     if (DemoActive != 1 && MapScrollPos <= MAP_INTRO_END_POS) return;
     if (pod->sprite == 0x0F) pods_update_front_pod(pod);
-    else if ((word)pod == SidePodLeftInner) pods_update_side_pod(pod, &SidePodLeftInner);
-    else if ((word)pod == SidePodRightInner) pods_update_side_pod(pod, &SidePodRightInner);
-    else if ((word)pod == SidePodLeftOuter) pods_update_side_pod(pod, &SidePodLeftOuter);
-    else if ((word)pod == SidePodRightOuter) pods_update_side_pod(pod, &SidePodRightOuter);
-    else if ((word)pod == TrailingPodNear) pods_update_trailing_pod(pod, &TrailingPodNear);
-    else if ((word)pod == TrailingPodFar) pods_update_trailing_pod(pod, &TrailingPodFar);
+    else if (GAME_OFFSET(pod) == SidePodLeftInner) pods_update_side_pod(pod, &SidePodLeftInner);
+    else if (GAME_OFFSET(pod) == SidePodRightInner) pods_update_side_pod(pod, &SidePodRightInner);
+    else if (GAME_OFFSET(pod) == SidePodLeftOuter) pods_update_side_pod(pod, &SidePodLeftOuter);
+    else if (GAME_OFFSET(pod) == SidePodRightOuter) pods_update_side_pod(pod, &SidePodRightOuter);
+    else if (GAME_OFFSET(pod) == TrailingPodNear) pods_update_trailing_pod(pod, &TrailingPodNear);
+    else if (GAME_OFFSET(pod) == TrailingPodFar) pods_update_trailing_pod(pod, &TrailingPodFar);
 }
 
 /* Small explosion step (REC_ANIM_COUNTER already advanced): frame = counter, then 1 (the
@@ -710,9 +782,9 @@ void reset_pool_a_and_upgrades(void)
     Record *r;
     word n;
 
-    SaveBufferCursor = (word)PoolASaveBuffers;
+    SaveBufferCursor = GAME_OFFSET(PoolASaveBuffers);
     for (n = POOL_A_POINTER_COUNT; n != 0; n--) {
-        r = (Record *)PoolAPointers[n - 1];
+        r = GAME_PTR(Record, PoolAPointers[n - 1]);
         r->status = 0;
         r->step_error = 0;
         r->flash_timer = 0;
@@ -744,7 +816,7 @@ void demo_step_launch_trailing_pod_near(void)
 
     if (SfxEnabled) SfxRequest = 0x1E;
     add_trailing_pod();
-    pod = (Record *)TrailingPodNear;
+    pod = GAME_PTR(Record, TrailingPodNear);
     demo_launch_trailing_pod(pod);
     pod->x = 0;
 }
@@ -757,7 +829,7 @@ void demo_step_launch_trailing_pod_far(void)
 
     if (SfxEnabled) SfxRequest = 0x1E;
     add_trailing_pod();
-    pod = (Record *)TrailingPodFar;
+    pod = GAME_PTR(Record, TrailingPodFar);
     demo_launch_trailing_pod(pod);
     pod->saved_y += 0x14;
 }
@@ -769,10 +841,10 @@ void demo_step_launch_inner_side_pods(void)
 
     if (SfxEnabled) SfxRequest = 0x1E;
     add_side_pods();
-    left = (Record *)SidePodLeftInner;
+    left = GAME_PTR(Record, SidePodLeftInner);
     demo_launch_pod(left);
     left->x = 0;
-    demo_launch_pod((Record *)SidePodRightInner);
+    demo_launch_pod(GAME_PTR(Record, SidePodRightInner));
 }
 
 void demo_step_launch_outer_side_pods(void)
@@ -781,8 +853,8 @@ void demo_step_launch_outer_side_pods(void)
 
     if (SfxEnabled) SfxRequest = 0x1E;
     add_side_pods();
-    left = (Record *)SidePodLeftOuter;
+    left = GAME_PTR(Record, SidePodLeftOuter);
     demo_launch_pod(left);
     left->x = 0;
-    demo_launch_pod((Record *)SidePodRightOuter);
+    demo_launch_pod(GAME_PTR(Record, SidePodRightOuter));
 }

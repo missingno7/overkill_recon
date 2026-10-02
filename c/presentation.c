@@ -14,6 +14,9 @@
 #include "system.h"
 #include "render.h"
 #include "text.h"
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#endif
 
 extern word update_all_records(void);
 extern void tick_frame_timers(void);
@@ -21,6 +24,7 @@ extern void reset_pool_a_and_upgrades(void);
 extern void run_demo_script_frame(Record *bp);
 void move_stars(void);
 
+#ifndef OVERKILL_HOST
 extern void ClearTimerTick(void);
 extern void ClearWorkspace(void);
 extern void CopyWorkspaceToScreen(void);
@@ -35,8 +39,10 @@ extern void ResetPageAndClearScreen(void);
 extern void ShowEgaDrawPage(void);
 extern void WaitTimerTick(void);
 extern void WaitVerticalRetrace(void);
+#endif
 
 /* Loader state and render configuration live in the existing MAIN address frame. */
+#ifndef OVERKILL_HOST
 extern word __far LoadDestOffset;
 extern word __far LoadDestSegment;
 extern word __far LoadImageSlot;
@@ -47,13 +53,26 @@ extern word __far WorkspaceSegment;
 extern word __far PlaqueSegment;
 extern byte __far CgaColorMap[];
 extern volatile word __far VideoAdapter;
+#endif
 
 /* Carries SI into a MAIN service while keeping the same explicit BP/ES handoff as
    dos_service. The service leaves its resulting BP/ES in DX:AX. */
 dword presentation_call_si_registers(main_routine target, word value, word bp, word es);
+#ifdef OVERKILL_HOST
+dword presentation_call_si_registers(main_routine target, word value, word bp, word es)
+{
+    HostRegisters registers = { 0 };
+    registers.si = value;
+    registers.bp = bp;
+    registers.es = es;
+    overkill_platform_call(target, &registers);
+    return ((dword)registers.es << 16) | registers.bp;
+}
+#else
 #pragma aux presentation_call_si_registers "PRESENTATION_CALL_SI_REGISTERS" \
     parm [ax] [cx] [si] [di] value [dx ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void presentation_service_si(main_routine target, word value, DosRegisters *registers)
 {
@@ -68,9 +87,24 @@ void presentation_service_si(main_routine target, word value, DosRegisters *regi
    the other MAIN services; BP remains a real renderer result, not scratch C state. */
 dword presentation_call_image_registers(main_routine target, word position,
                                          word image, word source, word bp, word es);
+#ifdef OVERKILL_HOST
+dword presentation_call_image_registers(main_routine target, word position,
+                                         word image, word source, word bp, word es)
+{
+    HostRegisters registers = { 0 };
+    registers.cx = position;
+    registers.si = image;
+    registers.di = source;
+    registers.bp = bp;
+    registers.es = es;
+    overkill_platform_call(target, &registers);
+    return ((dword)registers.es << 16) | registers.bp;
+}
+#else
 #pragma aux presentation_call_image_registers "PRESENTATION_CALL_IMAGE_REGISTERS" \
     parm [ax] [cx] [si] [di] [bx] [dx] value [dx ax] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void presentation_draw_image(DosRegisters *registers, word position,
                              word image, word source)
@@ -117,7 +151,8 @@ void run_intro_pages_and_demo(void)
 
     for (item = 0; item < 4; item++) {
         presentation_service_si(PresentationDrawBonusPanel, item, &registers);
-        registers.bp = *(word *)(BonusIntroItems + item * 4 + 2);
+        registers.bp = *GAME_PTR(word,
+                         (word)(GAME_OFFSET(BonusIntroItems) + item * 4 + 2));
         text_print_message(&registers);
         for (frame = 0; frame < 100; frame++) {
             dos_service(WaitVerticalRetrace, &registers);
@@ -142,7 +177,7 @@ void run_intro_pages_and_demo(void)
     init_position_history();
     for (i = 0; i < BYTE_ATTRIBUTE_COUNT; i++) ByteAttributeTable[i] = 0;
     dos_service(DrawStatusPanel, &registers);
-    registers.bp = (word)PRIMARY;
+    registers.bp = GAME_OFFSET(PRIMARY);
     store_apply_history_and_placement(PRIMARY);
     registers.bp = update_all_records();
     DemoStep = 0;
@@ -157,7 +192,7 @@ void run_intro_pages_and_demo(void)
         dos_service(CopyWorkspaceToScreen, &registers);
         registers.bp = render_restore_record_backgrounds();
         registers.es = WorkspaceSegment;
-        run_demo_script_frame((Record *)registers.bp);
+        run_demo_script_frame(GAME_PTR(Record, registers.bp));
         registers.bp = update_all_records();
         tick_frame_timers();
         system_check_boss_key(&registers);
@@ -179,24 +214,35 @@ void run_choose_screen(DosRegisters *registers)
     word selected;
 
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while ((InputBits & IN_BUTTON_PRIMARY) != 0);
 
     dos_service(ResetEgaPages, registers);
 
     LoadIsEnc = 1;
-    LoadNamePtr = (word)File_LEVSCR_ENC;
+    LoadNamePtr = GAME_OFFSET(File_LEVSCR_ENC);
     LoadDestSegment = WorkspaceSegment;
     LoadDestOffset = 0x8000;
+#ifdef OVERKILL_HOST
+    LoadImageSlot = HOST_TOKEN_SCREENIMAGEOFFSET;
+#else
     LoadImageSlot = (word)&ScreenImageOffset;
+#endif
     CgaColorMap[7] = 0;
     load_graphics_record_images(registers);
     CgaColorMap[7] = 1;
 
-    LoadNamePtr = (word)File_CHOOSE_ENC;
+    LoadNamePtr = GAME_OFFSET(File_CHOOSE_ENC);
     LoadDestSegment = WorkspaceSegment;
     LoadDestOffset = 0x4000;
+#ifdef OVERKILL_HOST
+    LoadImageSlot = HOST_TOKEN_CHOOSEIMAGEOFFSETS;
+#else
     LoadImageSlot = (word)ChooseImageOffsets;
+#endif
     ClearWorkspaceHalfOnly = 1;
     load_graphics_record_images(registers);
     ClearWorkspaceHalfOnly = 0;
@@ -222,6 +268,9 @@ void run_choose_screen(DosRegisters *registers)
 void show_level_intro(DosRegisters *registers)
 {
     for (;;) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
         if ((InputBits & IN_BUTTON_PRIMARY) == 0) break;
     }
@@ -251,6 +300,9 @@ void show_level_intro(DosRegisters *registers)
     }
 
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while ((InputBits & IN_BUTTON_PRIMARY) != 0);
 }

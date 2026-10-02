@@ -1,8 +1,14 @@
 #include "memory.h"
+#include "game.h"
 #include <stdlib.h>
+
+#define DOS_MEMORY_BYTES 0x100000u
+#define DOS_PHYSICAL_MASK 0xFFFFFu
+#define DOS_SEGMENT_SHIFT 4u
 
 static unsigned char *state_window;
 static unsigned char *level_map_window;
+static unsigned char *real_memory;
 
 int overkill_bind_state(void *state, size_t bytes)
 {
@@ -29,6 +35,30 @@ uint16_t overkill_ds_offset(const void *pointer)
         abort();
     /* One-past DS is permitted for end markers and wraps like a DOS offset. */
     return (uint16_t)(address - base);
+}
+
+int overkill_bind_real_memory(void *memory, size_t bytes)
+{
+    if (memory == NULL || bytes < DOS_MEMORY_BYTES) return 0;
+    real_memory = memory;
+    return 1;
+}
+
+void *overkill_segment_address(uint16_t segment, uint16_t offset)
+{
+    uint32_t physical = (((uint32_t)segment << DOS_SEGMENT_SHIFT) + offset) &
+                        DOS_PHYSICAL_MASK;
+    uint32_t state_offset = (physical - (uint32_t)HOST_DATA_LINEAR) &
+                            DOS_PHYSICAL_MASK;
+
+    /* DOS segment aliases share the borrowed DS window when one is installed. */
+    if (state_offset < 0x10000u) {
+        if (state_window == NULL) abort();
+        return state_window + state_offset;
+    }
+
+    if (real_memory == NULL) abort();
+    return real_memory + physical;
 }
 
 int overkill_bind_level_map(void *map, size_t bytes)

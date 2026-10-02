@@ -10,6 +10,9 @@
 #include "calibration.h"
 #include "system.h"
 
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#else
 extern void DrawPanelAtPosition(void);
 extern void MenuRequestMusic(void);
 extern void MenuCallService(void);
@@ -17,17 +20,45 @@ extern void WaitVerticalRetrace(void);
 extern void ShowBossKeyScreen(void);
 extern void StopModuleMusic(void);
 extern void ShutdownGame(void);
+#endif
 
 /* Presentation and calibration may use BP internally; the adapter keeps it. */
+#ifndef OVERKILL_HOST
 void menu_call_service(main_routine adapter, main_routine target);
 #pragma aux menu_call_service "FarCallMainNearViaAX" far parm [ax] [dx] modify exact [ax bx cx dx si di es]
 void menu_draw_panel(main_routine target, word position, word image);
 #pragma aux menu_draw_panel "FarCallMainNearViaAX" far parm [ax] [dx] [si] modify exact [ax bx cx dx si di es]
+#else
+static void menu_draw_panel(main_routine target, word position, word image)
+{
+    HostRegisters registers = {0};
+    registers.ax = target;
+    registers.dx = position;
+    registers.si = image;
+    overkill_platform_call(target, &registers);
+}
+#endif
 
 void menu_call_platform(main_routine target)
 {
+#ifdef OVERKILL_HOST
+    HostRegisters registers = {0};
+    registers.ax = target;
+    overkill_platform_call(target, &registers);
+#else
     menu_call_service(MenuCallService, target);
+#endif
 }
+
+#ifdef OVERKILL_HOST
+void menu_call_si(main_routine target, word value)
+{
+    HostRegisters registers = {0};
+    registers.ax = target;
+    registers.si = value;
+    overkill_platform_call(target, &registers);
+}
+#endif
 
 void draw_options_selections(void)
 {
@@ -53,6 +84,9 @@ void prompt_and_capture_key_binding(word image, byte *binding)
     RedefPromptRow += 0x17;
     menu_draw_panel(DrawPanelAtPosition, ((word)row << 8) | 1, image);
     for (;;) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         if (*make == 0) continue;
         if (*make == SCAN_F9) continue;
         if (*make == SCAN_F10) continue;
@@ -62,7 +96,11 @@ void prompt_and_capture_key_binding(word image, byte *binding)
     if (SfxEnabled != 0) SfxRequest = 0x1C;
     scan = *make;
     *binding = scan;
-    while (keys[scan] != 0) {}
+    while (keys[scan] != 0) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+    }
 }
 
 void run_options_menu(void)
@@ -76,7 +114,7 @@ restart_menu:
 redraw_menu:
     if (MenuShowingHiscores == 0) {
         system_wait_all_keys_released();
-        show_pages((word)OkMenuPageList);
+        show_pages(GAME_OFFSET(OkMenuPageList));
         draw_options_selections();
     }
 redraw_page:
@@ -90,11 +128,11 @@ poll_menu_keys:
     if (keys[SCAN_R] == KEY_STATE_DOWN) goto redefine_keys;
     if (keys[SCAN_M] == KEY_STATE_DOWN) goto cycle_sound;
     if (keys[SCAN_O] == KEY_STATE_DOWN) {
-        show_pages((word)OPageList);
+        show_pages(GAME_OFFSET(OPageList));
         goto restart_menu;
     }
     if (keys[SCAN_I] == KEY_STATE_DOWN) {
-        show_pages((word)IPageList);
+        show_pages(GAME_OFFSET(IPageList));
         goto restart_menu;
     }
     if (keys[SCAN_ESC] == KEY_STATE_DOWN) {
@@ -151,7 +189,11 @@ cycle_sound:
     goto redraw_page;
 select_joystick:
     if (SfxEnabled != 0) SfxRequest = 0x1C;
-    while (keys[SCAN_J] == KEY_STATE_DOWN) {}
+    while (keys[SCAN_J] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+    }
     menu_call_platform(StopModuleMusic);
     /* The menu's frame pointer is incidental. Page loading does not read this
        input BP: its graphics decoder sets BP to the file flags before decode and
@@ -163,15 +205,28 @@ select_joystick:
     menu_call_si(MenuRequestMusic, ModuleSoundRequest);
     if (keys[SCAN_ESC] == KEY_STATE_DOWN) {
         if (SfxEnabled != 0) SfxRequest = 0x1C;
-        while (keys[SCAN_ESC] == KEY_STATE_DOWN) {}
+        while (keys[SCAN_ESC] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+            overkill_platform_idle();
+#endif
+        }
     } else {
-        do { poll_input_bits(); } while (InputBits == IN_BUTTON_PRIMARY);
+        do {
+#ifdef OVERKILL_HOST
+            overkill_platform_idle();
+#endif
+            poll_input_bits();
+        } while (InputBits == IN_BUTTON_PRIMARY);
     }
     goto restart_menu;
 redefine_keys:
     if (SfxEnabled != 0) SfxRequest = 0x1C;
-    while (keys[SCAN_R] == KEY_STATE_DOWN) {}
-    show_pages((word)RedefPageList);
+    while (keys[SCAN_R] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+    }
+    show_pages(GAME_OFFSET(RedefPageList));
     RedefPromptRow = 0x3F;
     prompt_and_capture_key_binding(0x50, KeyBitScancodesA + KEY_SLOT_YMINUS);
     prompt_and_capture_key_binding(0x51, KeyBitScancodesA + KEY_SLOT_YPLUS);
@@ -192,14 +247,26 @@ void read_choose_screen_input(void)
     volatile byte *keys = (volatile byte *)KeyDownTable;
     byte slot;
 
-    while (keys[SCAN_D] == KEY_STATE_DOWN) {}
-    do { poll_input_bits(); } while (InputBits != 0);
+    while (keys[SCAN_D] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+    }
+    do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
+        poll_input_bits();
+    } while (InputBits != 0);
     for (;;) {
         if (keys[SCAN_D] == KEY_STATE_DOWN) {
             DifficultySetting++;
             if (DifficultySetting >= 3) DifficultySetting = 0;
             return;
         }
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
         slot = ((byte *)&ChooseSlot)[0];
         if ((InputBits & IN_XPLUS) != 0) {

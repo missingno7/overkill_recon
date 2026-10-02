@@ -7,11 +7,18 @@
 #include "settings.h"
 #include "startup.h"
 
+#ifndef OVERKILL_HOST
 extern volatile word __far VideoAdapter;
 extern byte __far LauncherOverrideMask;
+#endif
 
+#ifdef OVERKILL_HOST
+#define LAUNCHER_PSP_AT(segment, offset) \
+    ((volatile byte *)overkill_segment_address((segment), (offset)))
+#else
 #define LAUNCHER_PSP_AT(segment, offset) \
     ((volatile byte __far *)((__segment)(segment) :> ((byte __based(void) *)(offset))))
+#endif
 
 void launcher_after_prologue(word psp_segment, DosRegisters *registers)
 {

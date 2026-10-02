@@ -367,17 +367,18 @@ PolicySoundModuleSegment:
     mov ax, seg SoundModuleSlot
     retf
 
-; Input DX is the original near-call filename offset. Preserve incoming SI separately because
-; the checksum and codeword windows are derived from the caller's SI after the read loop.
-; AX is the free-service result; outputs and skip-path flags match the old return path.
+; Input DX is the original near-call filename offset. C returns DX:AX as the final read
+; window cursor and free-service result; the zero-byte EOF read leaves SI at that cursor.
 ChecksumFileOrAbort:
     push di
     push si
     mov di, si
     mov si, dx
     call PLATFORM_POLICY_CHECKSUM_FILE
+    mov cx, dx
     pop si
     pop di
+    mov si, cx
     dec si
     dec si
     push ax

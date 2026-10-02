@@ -9,20 +9,52 @@
 #include "title_reveal.h"
 #include "title.h"
 #include "options.h"
+#ifdef OVERKILL_HOST
+#include "presentation_services.h"
+#include <stdlib.h>
+#endif
 
+#ifndef OVERKILL_HOST
 extern void TitleDrawLogoPiece(void);
 extern void TitleMergeRevealCell(void);
 extern void TitleFlashRevealCell(void);
 extern void TitleShowRevealCell(void);
 extern void WaitVerticalRetrace(void);
+#endif
 
 void title_call_main_piece(main_routine target, word row_column, word image_id);
+#ifdef OVERKILL_HOST
+void title_call_main_piece(main_routine target, word row_column, word image_id)
+{
+    if (target != HOST_SERVICE_TITLEDRAWLOGOPIECE) abort();
+    presentation_title_draw_logo_piece(row_column, image_id);
+}
+#else
 #pragma aux title_call_main_piece = "push bp" "call far ptr FarCallMainNearViaAX" "pop bp" \
     parm [ax] [si] [di] modify exact [ax bx cx dx si di es]
+#endif
 
 word title_call_main_result(main_routine target);
+#ifdef OVERKILL_HOST
+word title_call_main_result(main_routine target)
+{
+    switch (target) {
+    case HOST_SERVICE_TITLEMERGEREVEALCELL:
+        return presentation_title_merge_reveal_cell();
+    case HOST_SERVICE_TITLEFLASHREVEALCELL:
+        presentation_title_flash_reveal_cell();
+        return 0;
+    case HOST_SERVICE_TITLESHOWREVEALCELL:
+        presentation_title_show_reveal_cell();
+        return 0;
+    default:
+        abort();
+    }
+}
+#else
 #pragma aux title_call_main_result = "push bp" "call far ptr FarCallMainNearViaAX" "pop bp" \
     parm [ax] value [ax] modify exact [ax bx cx dx si di es]
+#endif
 
 /* Each call consumes exactly five three-byte tuples. Advance the DS cursor before
    entering the pixel leaf, matching the oracle's observable cursor on return. */
@@ -34,12 +66,12 @@ void stage_title_logo_pieces(void)
     byte column;
     byte image_id;
 
-    cursor = (byte *)TitleLogoPiecePtr;
+    cursor = GAME_PTR(byte, TitleLogoPiecePtr);
     for (piece = 0; piece < 5; piece++) {
         row = *cursor++;
         column = *cursor++;
         image_id = *cursor++;
-        TitleLogoPiecePtr = (word)cursor;
+        TitleLogoPiecePtr = GAME_OFFSET(cursor);
         title_call_main_piece(TitleDrawLogoPiece,
                               (word)(((word)row << 8) | column), image_id);
     }
@@ -89,8 +121,8 @@ void reveal_title_logo_cells(void)
     byte initial_column;
     byte *cursor;
 
-    cursor = (byte *)TitleRevealRects;
-    RevealRectPtr = (word)cursor;
+    cursor = GAME_PTR(byte, GAME_OFFSET(TitleRevealRects));
+    RevealRectPtr = GAME_OFFSET(cursor);
     for (rectangles_left = 5; rectangles_left != 0; rectangles_left--) {
         RevealRectsLeft = rectangles_left;
         RevealRow = *cursor++;
@@ -98,7 +130,7 @@ void reveal_title_logo_cells(void)
         rows = *cursor++;
         columns = *cursor++;
         RevealColumns = columns;
-        RevealRectPtr = (word)cursor;
+        RevealRectPtr = GAME_OFFSET(cursor);
         initial_column = RevealCol;
 
         for (row_index = rows; row_index != 0; row_index--) {

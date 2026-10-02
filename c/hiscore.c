@@ -11,13 +11,18 @@
 #include "settings.h"
 #include "options.h"
 
+#ifndef OVERKILL_HOST
 extern void HiscoreEntryHardware(void);
 extern void HiscoreReadNameKey(void);
 extern void BiosBeep(void);
 extern void ResetPageAndClearScreen(void);
+extern void ReadKeyThroughDos(void);
 extern word __far MainDataSegment;
 word hiscore_read_key(main_routine target);
 #pragma aux hiscore_read_key "FarCallMainNearViaAX" far parm [ax] value [ax] modify exact [ax bx cx dx si di es]
+#else
+#include "platform_services.h"
+#endif
 
 void hiscore_show_entry_prompt(DosRegisters *registers)
 {
@@ -28,9 +33,9 @@ void hiscore_show_entry_prompt(DosRegisters *registers)
        the platform leaf uses it for the panel, BIOS cursor and DOS blank line. */
     dos_service(HiscoreEntryHardware, registers);
     HiscoreRankPrefix[1] = HiscoreEntryRow;
-    registers->bp = (word)HiscoreRankPrefix;
+    registers->bp = GAME_OFFSET(HiscoreRankPrefix);
     text_print_message(registers);
-    registers->bp = (word)ScoreBcd;
+    registers->bp = GAME_OFFSET(ScoreBcd);
     text_print_bcd32(registers);
     /* The original prompt saves BP across the whole presentation. */
     registers->bp = entry_bp;
@@ -41,11 +46,19 @@ word hiscore_read_name_key(DosRegisters *registers)
     word entry_bp = registers->bp;
     word key;
 
-    registers->bp = (word)HiscoreNamePrefix;
+    registers->bp = GAME_OFFSET(HiscoreNamePrefix);
     text_print_message(registers);
-    registers->bp = (word)HiscoreNameBuffer;
+    registers->bp = GAME_OFFSET(HiscoreNameBuffer);
     text_print_message(registers);
+#ifdef OVERKILL_HOST
+    {
+        HostRegisters service = {0};
+        overkill_platform_call(ReadKeyThroughDos, &service);
+        key = (byte)service.ax;
+    }
+#else
     key = (byte)hiscore_read_key(HiscoreReadNameKey);
+#endif
     /* The ASM wrapper saved BP around both strings and the DOS key read. */
     registers->bp = entry_bp;
     return key;
@@ -54,23 +67,24 @@ word hiscore_read_name_key(DosRegisters *registers)
 void edit_hiscore_name(DosRegisters *registers)
 {
     word key;
+    word name_start = GAME_OFFSET(HiscoreNameBuffer);
     for (;;) {
         key = (byte)hiscore_read_name_key(registers);
         if (key == 8) {
-            if (HiscoreNameCursor == (word)HiscoreNameBuffer) menu_call_platform(BiosBeep);
+            if (HiscoreNameCursor == name_start) menu_call_platform(BiosBeep);
             else {
                 HiscoreNameCursor--;
-                *(byte *)HiscoreNameCursor = ' ';
+                *GAME_PTR(byte, HiscoreNameCursor) = ' ';
             }
         } else if (key == 13) break;
-        else if (HiscoreNameCursor == (word)HiscoreNameBuffer + 10) menu_call_platform(BiosBeep);
+        else if (HiscoreNameCursor == name_start + 10) menu_call_platform(BiosBeep);
         else if (key >= 0x20 && key <= 0x7A) {
-            *(byte *)HiscoreNameCursor = (byte)key;
+            *GAME_PTR(byte, HiscoreNameCursor) = (byte)key;
             HiscoreNameCursor++;
         }
     }
-    while (HiscoreNameCursor != (word)HiscoreNameBuffer + 10) {
-        *(byte *)HiscoreNameCursor = ' ';
+    while (HiscoreNameCursor != name_start + 10) {
+        *GAME_PTR(byte, HiscoreNameCursor) = ' ';
         HiscoreNameCursor++;
     }
 }
@@ -100,11 +114,11 @@ void insert_high_score(byte *score)
     /* InsertHighScore enters the page and panel path with BP = the compared
        score and ES = the game's data segment. Keep those inherited values in
        the same BP/ES metadata used by page and text services. */
-    registers.bp = (word)score;
+    registers.bp = GAME_OFFSET(score);
     registers.es = (word)MainDataSegment;
     hiscore_show_entry_prompt(&registers);
     HiscoreNamePrefix[1] = HiscoreEntryRow;
-    HiscoreNameCursor = (word)HiscoreNameBuffer;
+    HiscoreNameCursor = GAME_OFFSET(HiscoreNameBuffer);
     for (i = 0; i < 10; i++) HiscoreNameBuffer[i] = ' ';
     HiscoreNameBuffer[10] = 0;
     edit_hiscore_name(&registers);

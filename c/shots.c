@@ -15,6 +15,7 @@
 #include "game.h"
 #include "enemies.h"
 #include "pods.h"
+#include "render.h"
 #include "terrain.h"
 
 /* c/movement.c */
@@ -23,17 +24,19 @@ void steer_toward_target(Record *r);
 void set_delta_toward(Record *self, Record *target);
 void step_along_delta(Record *r);
 
+#ifndef OVERKILL_HOST
 /* ASM that stays in MAIN, reached through FarCallMainNearViaAX (c/game.h). BP-input
    routines go through the near thunk CALL_MAIN_BP in c/shots.asm (BP = SI around the far
    call), not an inline pragma: Watcom's cross-jump optimisation merges the tail of an
    inline `call far ptr` with another copy and drops its segment fixup (it corrupted the
    second RemoveRecord call of shot_bounds_check, since moved to C: c/pods.c). */
 extern void RedrawEnergyGauge(void);     /* platform: the energy gauge (keeps BP) */
-Record *find_missile_target(void);
 void call_main(main_routine target);
 #pragma aux call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
 void call_main_bp(main_routine target, Record *r);
 #pragma aux call_main_bp "CALL_MAIN_BP" parm [ax] [si] modify exact [ax bx cx dx si di es]
+#endif
+Record *find_missile_target(void);
 
 /* LosePlayerEnergyTank (also the tail of an emptied bar): ignored in
    LEVEL_END_TO_WAYPOINT_A or while dying; difficulty 0 ignores every second loss
@@ -57,7 +60,11 @@ void lose_player_energy_tank(void)
         PRIMARY->sprite = 3;
         if (SfxEnabled) SfxRequest = 0x19;
     }
+#ifdef OVERKILL_HOST
+    (void)render_draw_energy_gauge();
+#else
     call_main(RedrawEnergyGauge);
+#endif
 }
 
 /* One hit: ignored in LEVEL_END_TO_WAYPOINT_A, while dying or with no tank left (FFFFh);
@@ -73,7 +80,11 @@ void damage_player_energy(void)
         if (--EnergyPoints == 0) goto bar_empty;
     }
     if (--EnergyPoints != 0) {
+#ifdef OVERKILL_HOST
+        (void)render_draw_energy_gauge();
+#else
         call_main(RedrawEnergyGauge);
+#endif
         return;
     }
 bar_empty:
@@ -244,7 +255,7 @@ void type0a_homing_missile(Record *m)
 
     m->sprite = FrameCount8 + 0x6D;
     if (m->missile_locked == 1) {
-        t = (Record *)m->target;
+        t = GAME_PTR(Record, m->target);
         if (t->status == 0 || t->y > 0xDC || t->type == 1) {
             m->missile_locked = 0;
         } else {
@@ -262,7 +273,7 @@ void type0a_homing_missile(Record *m)
     steer_toward_target(m);
     if (SteerArrived != 0) {
         if (MissilesLive != 0) MissilesLive--;
-        found = (word)find_missile_target();
+        found = GAME_OFFSET(find_missile_target());
         if (found == 0xFFFF) {
             expire_shot(m);
             return;

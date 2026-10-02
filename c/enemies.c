@@ -98,9 +98,9 @@ void smart_bomb_all(void);
 void type36_fall_then_burst(Record *r);
 void type22_descend_then_burst(Record *r);
 
-#define REC(bx) ((Record *)(bx))
+#define REC(bx) GAME_PTR(Record, bx)
 /* PingPongFrames4 read at a byte offset (the oracle's `and bx, -2` forms). */
-#define PING_PONG4_AT(off) (*(word *)((byte *)PingPongFrames4 + (off)))
+#define PING_PONG4_AT(off) (*GAME_PTR(word, (word)(GAME_OFFSET(PingPongFrames4) + (word)(off))))
 
 /* ---- helpers ----------------------------------------------------------------------- */
 
@@ -216,7 +216,7 @@ word spawn_throttled_child(Record *parent, word bx)
     c = find_free_record_pool_b();
     if (c == NO_RECORD) return 0xFFFF;
     c->x = parent->x + 4;
-    return (word)init_child_record(parent, c, parent->y + 4);
+    return GAME_OFFSET(init_child_record(parent, c, parent->y + 4));
 }
 
 /* SpawnThrottledChild with REC_DIRECTION down for the call (restored after). */
@@ -439,7 +439,8 @@ void type86_launch_aimed_enemy(Record *r)
     word phase = (FrameCount64 >> 4) << 1;
     Record *c;
 
-    r->sprite = *(word *)((byte *)(r->direction == DIR_LEFT ? Type86FramesDir6 : Type86Frames) + phase);
+    r->sprite = *GAME_PTR(word, (word)(GAME_OFFSET(r->direction == DIR_LEFT
+            ? Type86FramesDir6 : Type86Frames) + phase));
     if (phase == 4 && FrameCount64 == 0x26) {
         c = spawn_enemy_here(r);
         if (c != NO_RECORD) {
@@ -458,7 +459,8 @@ void type88_wait_then_fire_burst(Record *r)
 
     if (r->y >= 0x80) {
         phase = (FrameCount64 >> 4) << 1;
-        sprite = *(word *)((byte *)(r->direction == DIR_LEFT ? Type88FramesDir6 : Type88Frames) + phase);
+        sprite = *GAME_PTR(word, (word)(GAME_OFFSET(r->direction == DIR_LEFT
+                ? Type88FramesDir6 : Type88Frames) + phase));
         r->sprite = sprite;
         if (phase == 4) spawn_throttled_child(r, sprite);
     }
@@ -689,7 +691,7 @@ void type69_jitter_below_y18(Record *r)
 
     r->sprite = (FrameCount16 >> 3) + (LevelIndex == 4 ? 0x178 : 0x103);
     axis = JitterAxisFields[next_random_word() & 1];
-    *(word *)((byte *)r + axis) += (((FrameCount64 & 1) << 1) - 1) << 2;
+    *GAME_PTR(word, (word)(GAME_OFFSET(r) + axis)) += (((FrameCount64 & 1) << 1) - 1) << 2;
     if ((sword)r->y <= 0x18) r->y += 8;
     scroll_record_then_finish(r);
 }
@@ -767,7 +769,7 @@ void type4d_sink_rise_then_dash(Record *r)
    RecordTickCounter) & 7 (the address adds PoolA & 7, the same for every slot). */
 void type4f_fall_fast4_flicker(Record *r)
 {
-    r->sprite = ((FrameCount8 + (word)r + RecordTickCounter) & 7) + 0x80;
+    r->sprite = ((FrameCount8 + GAME_OFFSET(r) + RecordTickCounter) & 7) + 0x80;
     r->y += 4;
     scroll_record_then_finish(r);
 }
@@ -1163,7 +1165,7 @@ void type62_invader_march(Record *r)
     if (r->x == edge) {
         InvaderNextMarchLeft = left;
         InvaderNextDropStep = 2;
-        bx = (word)spawn_aimed_shot(r);
+        bx = GAME_OFFSET(spawn_aimed_shot(r));
     }
     if (r->x == PRIMARY->x) {
         bx = next_random_word() & 0x1F;
@@ -1210,7 +1212,7 @@ word count_live_enemies(void)
     Record *r;
 
     for (n = POOL_A_COUNT; n != 0; n--) {
-        r = REC(PoolAPointers[n - 1]);
+        r = GAME_PTR(Record, PoolAPointers[n - 1]);
         if (r->status != 0 && r->kind == KIND_ENEMY) count++;
     }
     return count;
@@ -1255,15 +1257,15 @@ void encounter_spawn_invader(Record *r)
     Record *c;
 
     FramesSinceInvaderSpawn = 0;
-    if (InvaderSlotCursor == (word)InvaderFormationEnd) {
+    if (InvaderSlotCursor == GAME_OFFSET(InvaderFormationEnd)) {
         formation_complete(r);
         return;
     }
-    slot = (word *)InvaderSlotCursor;
+    slot = GAME_PTR(word, InvaderSlotCursor);
     c = spawn_enemy_here(r);
     if (c != NO_RECORD) {
-        c->saved_y = slot[0] + 0x20;
-        c->saved_x = slot[1];
+        c->saved_y = GAME_INDEX(word, slot, 0) + 0x20;
+        c->saved_x = GAME_INDEX(word, slot, 1);
         c->type = 0x61;
         c->sprite = 0xE7;
         EncounterLiveCount++;
@@ -1277,12 +1279,12 @@ void assign_next_faller_column(Record *c)
 {
     word at = FallerColumnCursor;
 
-    if (at >= (word)FallerColumnsEnd) {
-        FallerColumnCursor = (word)FallerColumns;
+    if (at >= GAME_OFFSET(FallerColumnsEnd)) {
+        FallerColumnCursor = GAME_OFFSET(FallerColumns);
         at = FallerColumnCursor;
     }
-    c->saved_x = *(word *)at;
-    FallerColumnCursor = at + 2;
+    c->saved_x = *GAME_PTR(word, at);
+    FallerColumnCursor = (word)(at + 2);
 }
 
 /* On FrameCount8 = 7 a quiet type 23h faller at the director (column top Y 10h): 1 HP on
@@ -1330,7 +1332,7 @@ void encounter_seg_boss_level(Record *r)
         SegBossX = 0;
         SegBossY = 0;
         SegBossActive = 1;
-        SegBossPathCursor = (word)BossPath;
+        SegBossPathCursor = GAME_OFFSET(BossPath);
         r->type = 0x78;
         r->sprite = 0x22;
         r->hit_points = 0xC8;
@@ -1338,27 +1340,27 @@ void encounter_seg_boss_level(Record *r)
         r->y = 0;
         r->size_class = 2;
         r->slot_index = 0xFFFF;
-        SegBossCore = (word)r;
+        SegBossCore = GAME_OFFSET(r);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
         init_seg_boss_part_record(b);
         b->type = 0x76;
         b->sprite = 0x20;
-        SegBossAnchor = (word)b;
+        SegBossAnchor = GAME_OFFSET(b);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
         init_seg_boss_part_record(b);
         b->type = 0x77;
         b->sprite = 0x21;
         b->x = 0x20;
-        SegBossPart77 = (word)b;
+        SegBossPart77 = GAME_OFFSET(b);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
         init_seg_boss_part_record(b);
         b->type = 0x79;
         b->sprite = 0x23;
         b->x = 0x20;
-        SegBossPart79 = (word)b;
+        SegBossPart79 = GAME_OFFSET(b);
     }
     finish_record_update(r);
     return;
@@ -1416,8 +1418,8 @@ void type23_column_faller(Record *r)
         shift = 1;
         base = 0x6D;
     }
-    variant = (word *)((byte *)variant + (r->faller_variant << 2));
-    r->sprite = (*(word *)variant[0] >> shift) + base;
+    variant = GAME_PTR(word, (word)(GAME_OFFSET(variant) + (r->faller_variant << 2)));
+    r->sprite = (*GAME_PTR(word, variant[0]) >> shift) + base;
     r->y += variant[1];
     r->saved_y += variant[1];
     finish_record_update(r);
@@ -1459,14 +1461,14 @@ void type20_slot_hopper(Record *r)
     if (RecordTickCounter < 5) goto target_player_x;
     if (FrameCount64 != 0x3F) goto finish;
     do {
-        slot = (word *)FormationSlotCursor;
-        if ((word)slot >= (word)FormationSlotsEnd) {
-            FormationSlotCursor = (word)FormationSlots;
-            slot = (word *)FormationSlotCursor;
+        slot = GAME_PTR(word, FormationSlotCursor);
+        if (FormationSlotCursor >= GAME_OFFSET(FormationSlotsEnd)) {
+            FormationSlotCursor = GAME_OFFSET(FormationSlots);
+            slot = GAME_PTR(word, FormationSlotCursor);
         }
-        r->saved_y = slot[0] + 0x20;
-        r->saved_x = slot[1];
-        FormationSlotCursor = (word)(slot + 2);
+        r->saved_y = GAME_INDEX(word, slot, 0) + 0x20;
+        r->saved_x = GAME_INDEX(word, slot, 1);
+        FormationSlotCursor = (word)(FormationSlotCursor + 4);
     } while (r->y == r->saved_y && r->x == r->saved_x);
     goto finish;
 target_player_x:
@@ -1586,18 +1588,18 @@ void type18_sweep_path_looper(Record *r)
             spawn_aimed_shot(r);
             RecordTickCounter++;
         }
-        path = (word *)r->path;
-        if (path[0] == 0xFFFF) {
-            r->path = path[1];
+        path = GAME_PTR(word, r->path);
+        if (GAME_INDEX(word, path, 0) == 0xFFFF) {
+            r->path = GAME_INDEX(word, path, 1);
             continue;
         }
-        SteerTargetY = path[0] + 0x20;
-        SteerTargetX = path[1];
+        SteerTargetY = GAME_INDEX(word, path, 0) + 0x20;
+        SteerTargetX = GAME_INDEX(word, path, 1);
         SteerSpeed = 3;
         steer_toward_target(r);
         r->sprite = r->direction + 0x10D;
         if (SteerArrived == 0) break;
-        r->path = (word)(path + 2);
+        r->path = (word)(r->path + 4);
         bx = next_random_word() & 7;
         if (bx != 2) continue;
         bx = spawn_throttled_child(r, bx);
@@ -1616,7 +1618,7 @@ void type14_formation_sway_diver(Record *r)
 {
     word tick;
 
-    if (LeaderScriptCursor == (word)LeaderScript13End) {
+    if (LeaderScriptCursor == GAME_OFFSET(LeaderScript13End)) {
         if (RecordTickCounter == 0x2EF) {
             spawn_aimed_shot(r);
             RecordTickCounter++;
@@ -1701,7 +1703,7 @@ void type93_sweep_body(Record *r)
 {
     word zf, direction;
 
-    if (LeaderScriptCursor != (word)LeaderScript7DEnd) goto check_dive_row;
+    if (LeaderScriptCursor != GAME_OFFSET(LeaderScript7DEnd)) goto check_dive_row;
     if (r->entry_delay != 0 && --r->entry_delay != 0) goto check_dive_row;
     direction = r->direction;
     if (direction == DIR_UP || direction == DIR_UP_RIGHT || direction == DIR_UP_LEFT) goto climb;
@@ -1786,8 +1788,8 @@ void run_type_handler(Record *r)
     case 0x0B: type0b_aimed_enemy_shot(r); break;
     case 0x0C: type0c_timed_turn_up_shot(r); break;
     case 0x0F: type0f_timed_shot2(r); break;
-    case 0x10: start_path_follower(r, (word)SteerPath10); break;
-    case 0x11: start_path_follower(r, (word)SteerPath11); break;
+    case 0x10: start_path_follower(r, GAME_OFFSET(SteerPath10)); break;
+    case 0x11: start_path_follower(r, GAME_OFFSET(SteerPath11)); break;
     case 0x12: update_path_follower(r); break;
     case 0x13: case 0x15: case 0x1C: case 0x1F: case 0x7D: case 0x7E:
         type13_formation_leader(r);
@@ -1838,23 +1840,23 @@ void run_type_handler(Record *r)
     case 0x3E: type3e_drop_then_dash(r); break;
     case 0x3F: fly_along_aim_line(r); break;
     case 0x40: jitter_fall_shooter(r, 0xCF); break;
-    case 0x41: start_path_follower(r, (word)Type41Path); break;
+    case 0x41: start_path_follower(r, GAME_OFFSET(Type41Path)); break;
     case 0x42: type42_descend_sway(r); break;
-    case 0x43: start_path_follower(r, (word)Type43Path); break;
-    case 0x44: start_path_follower(r, (word)Type44Path); break;
-    case 0x45: start_path_follower(r, (word)Type45Path); break;
+    case 0x43: start_path_follower(r, GAME_OFFSET(Type43Path)); break;
+    case 0x44: start_path_follower(r, GAME_OFFSET(Type44Path)); break;
+    case 0x45: start_path_follower(r, GAME_OFFSET(Type45Path)); break;
     case 0x46: hover_fire_plunge(r, SlowCount6 + 0x4B); break;
     case 0x47: patrol_shoot_down32(r, SlowCount6 + 0x51); break;
     case 0x48: type48_descend_aimed_fire(r); break;
     case 0x49: type49_radial_burst_faller(r); break;
-    case 0x4A: start_path_follower(r, (word)Type4APath); break;
+    case 0x4A: start_path_follower(r, GAME_OFFSET(Type4APath)); break;
     case 0x4B: type4b_descend_then_bounce(r); break;
     case 0x4C: type4c_sink_then_rise(r); break;
     case 0x4D: type4d_sink_rise_then_dash(r); break;
     case 0x4E: type4e_animated_descender(r); break;
     case 0x4F: type4f_fall_fast4_flicker(r); break;
     case 0x50: type50_steer_home(r); break;          /* no finish tail */
-    case 0x51: start_path_follower(r, (word)Type51Path); break;
+    case 0x51: start_path_follower(r, GAME_OFFSET(Type51Path)); break;
     case 0x52: scroll_record_then_finish(r); break;   /* Type52ScrollOnly */
     case 0x53: type53_animate_from_sprite_base(r); break;
     case 0x54: type54_scroll_until_y_b0_then_type56(r); break;
@@ -1874,8 +1876,8 @@ void run_type_handler(Record *r)
     case 0x63: type63_scripted_slide_then_drop(r); break;
     case 0x64: type64_drop4(r); break;
     case 0x65: type65_invader_dive_firing(r); break;
-    case 0x66: start_path_follower(r, (word)PathType66); break;
-    case 0x67: start_path_follower(r, (word)PathType67); break;
+    case 0x66: start_path_follower(r, GAME_OFFSET(PathType66)); break;
+    case 0x67: start_path_follower(r, GAME_OFFSET(PathType67)); break;
     case 0x68: jitter_fall_shooter(r, LevelIndex == 4 ? 0x24 : LevelIndex == 5 ? 0xA1 : 0x100); break;
     case 0x69: type69_jitter_below_y18(r); break;
     case 0x6A: type6a_scroll_until_y50_then_type56(r); break;

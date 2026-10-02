@@ -14,10 +14,20 @@
 #include "game.h"
 #include "archive.h"
 #include "resource_codecs.h"
+#ifdef OVERKILL_HOST
+#include "resource_services.h"
+#include "memory.h"
+#endif
 
+#ifdef OVERKILL_HOST
+#define CODEC_FAR_PTR(type, segment, offset) \
+    ((volatile type *)overkill_segment_address((word)(segment), (word)(offset)))
+#else
 #define CODEC_FAR_PTR(type, segment, offset) \
     ((volatile type __far *)((((dword)(word)(segment)) << 16) | (word)(offset)))
+#endif
 
+#ifndef OVERKILL_HOST
 extern volatile word __far PackedDestSegment;
 extern volatile word __far PackedDestOffset;
 extern volatile word __far PackedOutputBytes;
@@ -35,6 +45,7 @@ extern volatile word __far EncOutputBytes;
 extern volatile word __far EncOutputBytesHigh;
 extern volatile byte __far EncPushback;
 extern volatile byte __far EncPushedByte;
+extern byte __far EncReadBuffer[];
 
 extern void __near PackedReadByteService(void);
 extern void __near PackedReadWordService(void);
@@ -43,7 +54,30 @@ extern void __near PackedCloseService(void);
 extern void __near PackedCloseAfterFailureService(void);
 extern void __near EncInitialReadService(void);
 extern void __near EncCloseService(void);
+#endif
 
+#ifdef OVERKILL_HOST
+uint32_t codec_host_packed_byte(word bx_state, word output_offset,
+                                word ax_high);
+uint32_t codec_host_packed_word(word bx_state, word output_offset,
+                                word ax_high);
+uint32_t codec_host_packed_close(void);
+word codec_host_packed_close_after_failure(word error_ax);
+uint32_t codec_host_enc_initial_read(void);
+uint32_t codec_host_enc_close(void);
+word codec_host_enc_byte(word *input_position, word output_segment);
+#define CODEC_PACKED_BYTE(bx, output, ah) \
+    codec_host_packed_byte((bx), (output), (ah))
+#define CODEC_PACKED_WORD(bx, output, ah) \
+    codec_host_packed_word((bx), (output), (ah))
+#define CODEC_PACKED_CLOSE() codec_host_packed_close()
+#define CODEC_PACKED_CLOSE_AFTER_FAILURE(error) \
+    codec_host_packed_close_after_failure(error)
+#define CODEC_ENC_INITIAL_READ() codec_host_enc_initial_read()
+#define CODEC_ENC_CLOSE() codec_host_enc_close()
+#define CODEC_ENC_BYTE(position, segment) \
+    codec_host_enc_byte((position), (segment))
+#else
 dword codec_call_packed_byte(main_routine target, word bx_state,
                              word output_offset, word ax_high);
 #pragma aux codec_call_packed_byte "FarCallMainNearViaAX" far parm [ax] [bx] [di] [cx] value [dx ax] modify exact [ax dx es]
@@ -66,6 +100,19 @@ dword codec_call_enc_close(main_routine target);
 
 word codec_call_enc_byte(main_routine target, word *input_position, word output_segment);
 #pragma aux codec_call_enc_byte "FarCallMainNearViaAX" far parm [ax] [di] [cx] value [ax] modify exact [ax si es]
+#define CODEC_PACKED_BYTE(bx, output, ah) \
+    codec_call_packed_byte(PackedReadByteService, (bx), (output), (ah))
+#define CODEC_PACKED_WORD(bx, output, ah) \
+    codec_call_packed_word(PackedReadWordService, (bx), (output), (ah))
+#define CODEC_PACKED_CLOSE() codec_call_packed_close(PackedCloseService)
+#define CODEC_PACKED_CLOSE_AFTER_FAILURE(error) \
+    codec_call_packed_close_after_failure(PackedCloseAfterFailureService, (error))
+#define CODEC_ENC_INITIAL_READ() \
+    codec_call_enc_initial_read(EncInitialReadService)
+#define CODEC_ENC_CLOSE() codec_call_enc_close(EncCloseService)
+#define CODEC_ENC_BYTE(position, segment) \
+    codec_call_enc_byte(EncReadByteService, (position), (segment))
+#endif
 
 typedef struct PackedReadState {
     word bx;
@@ -79,18 +126,111 @@ typedef struct EncOutputCursor {
     word segment;
 } EncOutputCursor;
 
+#ifdef OVERKILL_HOST
+static byte *codec_enc_read_buffer(void)
+{
+    return (byte *)overkill_segment_address(HOST_SEGMENT_ENCREADBUFFER,
+                                            HOST_OFFSET_ENCREADBUFFER);
+}
+
+uint32_t codec_host_packed_byte(word bx_state, word output_offset,
+                                word ax_high)
+{
+    word cursor;
+    word returned_high = (word)(ax_high & 0x00FF);
+    word value;
+    uint32_t read_result;
+
+    (void)bx_state;
+    (void)output_offset;
+    cursor = PackedReadCursor;
+    if (cursor >= (word)(HOST_OFFSET_PACKEDREADBUFFER + 0x0200)) {
+        PackedReadCursor = HOST_OFFSET_PACKEDREADBUFFER;
+        read_result = overkill_resource_read_buffer(PackedFileHandle, 0x0200,
+                                                    PackedReadBuffer);
+        if ((word)(read_result >> 16) != 0) return read_result;
+        returned_high = (word)((word)read_result >> 8);
+        cursor = PackedReadCursor;
+    }
+    value = PackedReadBuffer[(word)(cursor - HOST_OFFSET_PACKEDREADBUFFER)];
+    PackedReadCursor = (word)(cursor + 1);
+    return ((uint32_t)returned_high << 8) | (byte)value;
+}
+
+uint32_t codec_host_packed_word(word bx_state, word output_offset,
+                                word ax_high)
+{
+    uint32_t low = codec_host_packed_byte(bx_state, output_offset, ax_high);
+    uint32_t high;
+    if ((word)(low >> 16) != 0) return low;
+    high = codec_host_packed_byte(bx_state, output_offset,
+                                  (word)((word)low >> 8));
+    if ((word)(high >> 16) != 0) return high;
+    return (word)(((word)high << 8) | ((word)low & 0x00FF));
+}
+
+uint32_t codec_host_packed_close(void)
+{
+    return overkill_resource_close_result(PackedFileHandle);
+}
+
+word codec_host_packed_close_after_failure(word error_ax)
+{
+    uint32_t closed;
+    do {
+        closed = overkill_resource_close_result(PackedFileHandle);
+        if ((word)(closed >> 16) != 0) error_ax = (word)closed;
+    } while ((word)(closed >> 16) != 0);
+    return error_ax;
+}
+
+uint32_t codec_host_enc_initial_read(void)
+{
+    return overkill_resource_read_buffer(EncFileHandle, 0x0400,
+                                         codec_enc_read_buffer());
+}
+
+uint32_t codec_host_enc_close(void)
+{
+    return overkill_resource_close_result(EncFileHandle);
+}
+
+word codec_host_enc_byte(word *input_position, word output_segment)
+{
+    byte *buffer = codec_enc_read_buffer();
+    word position;
+    byte value;
+
+    (void)output_segment;
+    if (EncPushback != 0) {
+        value = EncPushedByte;
+        EncPushback = 0;
+        return value;
+    }
+
+    position = (word)(*input_position & 0x03FF);
+    value = buffer[position];
+    position = (word)((position + 1) & 0x03FF);
+    *input_position = position;
+    if (position == 0)
+        (void)overkill_resource_read_buffer(EncFileHandle, 0x0400, buffer);
+    return value;
+}
+#endif
+
 void store_enc_byte(EncOutputCursor *cursor, word value);
 void push_back_enc_byte(word value);
 
 /* The tiny reader leaves receive physical BX and DI as the old decoder would. On a
    normal return, AH is also fed back into the next read; a DOS refill can replace it. */
 word codec_packed_byte(PackedReadState *state, word output_offset);
+#ifndef OVERKILL_HOST
 #pragma aux codec_packed_byte parm [si] [di] value [ax] modify exact [ax]
+#endif
 
 word codec_packed_byte(PackedReadState *state, word output_offset)
 {
-    dword result = codec_call_packed_byte(PackedReadByteService, state->bx,
-                                          output_offset, state->ax_high);
+    dword result = CODEC_PACKED_BYTE(state->bx, output_offset, state->ax_high);
     word value = (word)result;
     if ((word)(result >> 16) != 0) {
         state->failed = 1;
@@ -102,12 +242,13 @@ word codec_packed_byte(PackedReadState *state, word output_offset)
 }
 
 word codec_packed_word(PackedReadState *state, word output_offset);
+#ifndef OVERKILL_HOST
 #pragma aux codec_packed_word parm [si] [di] value [ax] modify exact [ax]
+#endif
 
 word codec_packed_word(PackedReadState *state, word output_offset)
 {
-    dword result = codec_call_packed_word(PackedReadWordService, state->bx,
-                                          output_offset, state->ax_high);
+    dword result = CODEC_PACKED_WORD(state->bx, output_offset, state->ax_high);
     word value = (word)result;
     if ((word)(result >> 16) != 0) {
         state->failed = 1;
@@ -184,13 +325,11 @@ void packed_load_file(PackedLoadResult *result, word entry_bx)
     input.ax_high = (word)(opened >> 8);
     input.failed = 0;
     input.error_ax = 0;
-    header = codec_call_packed_byte(PackedReadByteService, input.bx,
-                                    PackedDestOffset, input.ax_high);
+    header = CODEC_PACKED_BYTE(input.bx, PackedDestOffset, input.ax_high);
     if ((word)(header >> 16) != 0) {
         error_ax = (word)header;
         result->failed = 1;
-        result->ax = codec_call_packed_close_after_failure(
-            PackedCloseAfterFailureService, error_ax);
+        result->ax = CODEC_PACKED_CLOSE_AFTER_FAILURE(error_ax);
         result->bx = MainDataSegment;
         return;
     }
@@ -204,8 +343,7 @@ void packed_load_file(PackedLoadResult *result, word entry_bx)
     else if (mode == 4) packed_decode_column_packbits(&decoded_result, input.bx, entry_ax);
     else {
         result->failed = 1;
-        result->ax = codec_call_packed_close_after_failure(
-            PackedCloseAfterFailureService, 0xFFFF);
+        result->ax = CODEC_PACKED_CLOSE_AFTER_FAILURE(0xFFFF);
         result->bx = MainDataSegment;
         return;
     }
@@ -215,17 +353,15 @@ void packed_load_file(PackedLoadResult *result, word entry_bx)
     result->output_offset = output;
     if (decoded_result.failed) {
         error_ax = decoded_result.error_ax;
-        result->ax = codec_call_packed_close_after_failure(
-            PackedCloseAfterFailureService, error_ax);
+        result->ax = CODEC_PACKED_CLOSE_AFTER_FAILURE(error_ax);
         result->failed = 1;
         result->bx = MainDataSegment;
         return;
     }
 
-    closed = codec_call_packed_close(PackedCloseService);
+    closed = CODEC_PACKED_CLOSE();
     if ((word)(closed >> 16) != 0) {
-        result->ax = codec_call_packed_close_after_failure(
-            PackedCloseAfterFailureService, (word)closed);
+        result->ax = CODEC_PACKED_CLOSE_AFTER_FAILURE((word)closed);
         result->failed = 1;
         result->bx = MainDataSegment;
         return;
@@ -236,7 +372,7 @@ void packed_load_file(PackedLoadResult *result, word entry_bx)
 
 void enc_decode_file(EncFileResult *result)
 {
-    dword initial_read = codec_call_enc_initial_read(EncInitialReadService);
+    dword initial_read = CODEC_ENC_INITIAL_READ();
     dword cursor;
     dword closed;
     word ring_write;
@@ -256,7 +392,7 @@ void enc_decode_file(EncFileResult *result)
     result->si = (word)(cursor >> 16);
     result->di = (word)cursor;
     result->bp = ring_write;
-    closed = codec_call_enc_close(EncCloseService);
+    closed = CODEC_ENC_CLOSE();
     result->ax = (word)closed;
     /* DecodeEncFile ignores the close error but forces only CF clear. */
     result->flags = (word)(closed >> 16) & 0xFFFE;
@@ -513,7 +649,7 @@ word packed_decode_column_packbits(PackedDecodeResult *result, word entry_bx, wo
 
 word codec_enc_byte(word *input_position, word output_segment)
 {
-    return (byte)codec_call_enc_byte(EncReadByteService, input_position, output_segment);
+    return (byte)CODEC_ENC_BYTE(input_position, output_segment);
 }
 
 dword enc_decode_stream(word *ring_write_result)

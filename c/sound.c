@@ -10,30 +10,45 @@
 
    The SFX stream bytes, effect table, note divisors, voice records and mailboxes are
    all the oracle's existing DS storage.  No C-owned state is introduced.  The sound
-   module's own SoundModuleTickEntry, AdLib/Roland sequencers and hardware drivers remain
-   ASM. */
+   DOS builds retain the module's SoundModuleTickEntry and hardware driver leaves.
+   OVERKILL_HOST binds the optional music image to host sequencers and native devices. */
 #include "sound.h"
 
+#ifdef OVERKILL_HOST
+#include "../host/sound_services.h"
+#include "../host/memory.h"
+#else
 extern void SfxSpeakerPortOff(void);       /* MAIN; read PPI port B, mask, then write */
 extern void SfxSpeakerPortProgram(void);   /* MAIN; divisor is in BX */
 extern void WaitTimerInterruptIfModule(void); /* MAIN; waits for one observed timer phase */
-extern byte __far SoundModuleSlot[];       /* SLOT1022 module image and request header */
+extern byte __far SoundModuleSlot[];
+#endif
 
+#ifndef OVERKILL_HOST
 void sound_call_main(main_routine target);
 #pragma aux sound_call_main "FarCallMainNearViaAX" far parm [ax] modify exact [ax]
 void sound_call_main_bx(main_routine target, word value);
 #pragma aux sound_call_main_bx "FarCallMainNearViaAX" far parm [ax] [bx] modify exact [ax bx]
 word sound_call_main_result(main_routine target);
 #pragma aux sound_call_main_result "FarCallMainNearViaAX" far parm [ax] value [ax] modify exact [ax]
+#endif
 
 void sound_sfx_speaker_off(void)
 {
+#ifdef OVERKILL_HOST
+    sound_services_speaker_off();
+#else
     sound_call_main(SfxSpeakerPortOff);
+#endif
 }
 
 void sound_sfx_speaker_program(word divisor)
 {
+#ifdef OVERKILL_HOST
+    sound_services_speaker_program(divisor);
+#else
     sound_call_main_bx(SfxSpeakerPortProgram, divisor);
+#endif
 }
 
 word sound_sfx_word(byte *voice, byte field)
@@ -82,9 +97,9 @@ void sound_sfx_command_step_up(byte *voice, word cursor)
 
 void sound_sfx_command_slide(byte *voice, word cursor)
 {
-    sound_sfx_set_word(voice, SFX_VOICE_SLIDE_DELTA, *(word *)cursor);
+    sound_sfx_set_word(voice, SFX_VOICE_SLIDE_DELTA, *GAME_PTR(word, cursor));
     cursor = (word)(cursor + 2);
-    voice[SFX_VOICE_SLIDE_TICKS] = *(byte *)cursor;
+    voice[SFX_VOICE_SLIDE_TICKS] = *GAME_PTR(byte, cursor);
     cursor = (word)(cursor + 1);
     sound_sfx_stream_next_byte(voice, cursor);
 }
@@ -121,7 +136,7 @@ void sound_sfx_apply_slide(byte *voice)
 void sound_sfx_stream_next_byte(byte *voice, word cursor)
 {
     for (;;) {
-        byte value = *(byte *)cursor;
+        byte value = *GAME_PTR(byte, cursor);
         cursor = (word)(cursor + 1);
         if (value < SFX_STREAM_COMMAND) {
             voice[SFX_VOICE_NOTE] = value;
@@ -148,9 +163,10 @@ void sound_sfx_stream_next_byte(byte *voice, word cursor)
             voice[SFX_VOICE_NOTE_STEP] = 1;
             continue;
         case SFX_SLIDE:
-            sound_sfx_set_word(voice, SFX_VOICE_SLIDE_DELTA, *(word *)cursor);
+            sound_sfx_set_word(voice, SFX_VOICE_SLIDE_DELTA,
+                               *GAME_PTR(word, cursor));
             cursor = (word)(cursor + 2);
-            voice[SFX_VOICE_SLIDE_TICKS] = *(byte *)cursor;
+            voice[SFX_VOICE_SLIDE_TICKS] = *GAME_PTR(byte, cursor);
             cursor = (word)(cursor + 1);
             continue;
         case SFX_HOLD:
@@ -238,6 +254,9 @@ void sound_request_module_music(word input_ax)
     if (ModuleSoundEnabled == 0) return;
     if (SoundModuleSlot[MODULE_MUSIC_CURRENT] == tune) return;
     *request = (word)tune;
+#ifdef OVERKILL_HOST
+    sound_services_music_request(tune);
+#endif
 }
 
 /* Stop policy is game control; waiting for one timer phase is still the existing ASM
@@ -249,9 +268,17 @@ word sound_stop_module_music(word input_ax)
     word count;
     if (SoundModuleLoaded == 0) return input_ax;
     *(word __far *)(SoundModuleSlot + MODULE_MUSIC_REQUEST) = 0x00FF;
+#ifdef OVERKILL_HOST
+    sound_services_music_request(0xFF);
+#endif
     for (count = 0; count < 5; ++count) {
+#ifdef OVERKILL_HOST
+        sound_services_wait_ticks(1);
+        tick_result = (word)((input_ax & 0xFF00) | (tick_result & 0x00FF));
+#else
         tick_result = sound_call_main_result(WaitTimerInterruptIfModule);
         tick_result = (word)((input_ax & 0xFF00) | (tick_result & 0x00FF));
+#endif
     }
     return tick_result;
 }

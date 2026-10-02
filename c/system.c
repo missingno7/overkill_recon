@@ -9,9 +9,14 @@
 #include "display.h"
 #include "render.h"
 #include "text.h"
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern void ShowBossKeyScreen(void);
 extern void DrawStatusPanel(void);
+#endif
 
 void system_redraw_status_panel(DosRegisters *registers)
 {
@@ -45,17 +50,23 @@ void system_prompt_load_error_wait_fire(DosRegisters *registers)
 {
     volatile byte *input = (volatile byte *)&InputBits;
     word message = FileStatus == FILE_STATUS_OPEN_FAILED
-        ? (word)SwapDisksMessage : (word)ReadErrorMessage;
+        ? GAME_OFFSET(SwapDisksMessage) : GAME_OFFSET(ReadErrorMessage);
 
     registers->bp = message;
     text_print_message(registers);
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while (*input != IN_BUTTON_PRIMARY);
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while (*input == IN_BUTTON_PRIMARY);
-    registers->bp = (word)BlankMessage;
+    registers->bp = GAME_OFFSET(BlankMessage);
     text_print_message(registers);
 }
 
@@ -68,6 +79,9 @@ void system_wait_all_keys_released(void)
     do {
         any = 0;
         for (i = 0; i < KEY_DOWN_COUNT; i++) any |= keys[i];
+#ifdef OVERKILL_HOST
+        if (any != 0) overkill_platform_idle();
+#endif
     } while (any != 0);
 }
 
@@ -75,6 +89,9 @@ void system_wait_input_released(void)
 {
     volatile byte *input = (volatile byte *)&InputBits;
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while (*input != 0);
 }
@@ -83,6 +100,9 @@ void system_wait_input_pressed(void)
 {
     volatile byte *input = (volatile byte *)&InputBits;
     do {
+#ifdef OVERKILL_HOST
+        overkill_platform_idle();
+#endif
         poll_input_bits();
     } while (*input == 0);
 }

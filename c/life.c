@@ -3,12 +3,17 @@
    OWNS: ResetRecordsForLife ResetInvaderFormation RequestLifeStartMusic
 */
 #include "life.h"
+#include "sound.h"
 
+#ifndef OVERKILL_HOST
 extern volatile word __far SaveBufferCursor;
+#endif
 Record *find_free_record_pool_a(void);
 void pickup_fuel(void);
+#ifndef OVERKILL_HOST
 word life_request_music(word tune, word es);
 #pragma aux life_request_music "LIFE_REQUEST_MUSIC" parm [ax] [si] value [ax] modify exact [ax bx es]
+#endif
 
 /* Pointer-table order matters: buffers start at the last entry. Pods retain all
    their state except the draw pass and buffer; kind and the allocation cursor
@@ -18,18 +23,18 @@ void reset_records_for_life(void)
     word n;
     Record *r;
     for (n = 0; n < 16; n++) ((word *)GroupTable)[n] = 0;
-    SaveBufferCursor = (word)PoolBSaveBuffers;
+    SaveBufferCursor = GAME_OFFSET(PoolBSaveBuffers);
     for (n = POOL_B_COUNT; n != 0; n--) {
-        r = (Record *)PoolBPointers[n - 1];
+        r = GAME_PTR(Record, PoolBPointers[n - 1]);
         r->status = 0;
         r->step_error = 0;
         r->type = 0;
         r->save_buffer = SaveBufferCursor;
         SaveBufferCursor += POOL_B_SAVE_BYTES;
     }
-    SaveBufferCursor = (word)PoolASaveBuffers;
+    SaveBufferCursor = GAME_OFFSET(PoolASaveBuffers);
     for (n = POOL_A_POINTER_COUNT; n != 0; n--) {
-        r = (Record *)PoolAPointers[n - 1];
+        r = GAME_PTR(Record, PoolAPointers[n - 1]);
         r->draw_pass = 1;
         if (r->kind != KIND_POD) {
             r->status = 0;
@@ -66,7 +71,7 @@ void reset_records_for_life(void)
     AutoMoveExtraRecord = 0xFFFF;
     pickup_fuel();
     FireLatch = 0;
-    RandomWordCursor = (word)CreditRandomWords;
+    RandomWordCursor = GAME_OFFSET(CreditRandomWords);
     EncounterLiveCount = 0;
     EncounterEndDelay = 0;
     LevelEndPhase = LEVEL_END_OFF;
@@ -75,7 +80,7 @@ void reset_records_for_life(void)
 
 void reset_invader_formation(void)
 {
-    InvaderSlotCursor = (word)InvaderFormation;
+    InvaderSlotCursor = GAME_OFFSET(InvaderFormation);
     InvaderNextMarchLeft = 0;
     InvaderNextDropStep = 0;
 }
@@ -88,5 +93,10 @@ word request_life_start_music(word es)
     if (MapScrollPos == MAP_START_POS) tune = MUSIC_LEVEL_START;
     else if (MapScrollPos == MAP_END_POS) tune = MUSIC_LEVEL_END;
     else tune = LevelMusicTable[(byte)LevelIndex];
+#ifdef OVERKILL_HOST
+    sound_request_module_music(tune);
+    return es;
+#else
     return life_request_music(tune, es);
+#endif
 }

@@ -21,6 +21,7 @@
 #include "screen_animation.h"
 #include "screen_transition.h"
 
+#ifndef OVERKILL_HOST
 void reset_pool_a_and_upgrades(void);
 word update_all_records(void);
 void tick_refuel(void);
@@ -41,6 +42,14 @@ extern void FlushBiosKeyboardBuffer(void);
 extern void SessionDrawQuitPrompt(void);
 extern void WaitVerticalRetrace(void);
 extern void MenuRequestMusic(void);
+#else
+#include "platform_services.h"
+void reset_pool_a_and_upgrades(void);
+word update_all_records(void);
+void tick_refuel(void);
+void scroll_map_to_level_start(Record *here);
+void pause_game(void);
+#endif
 
 void run_game_session(word phase, word bp)
 {
@@ -87,24 +96,24 @@ void run_game_session(word phase, word bp)
             display_draw_hud(&registers);
             load_level_map(&registers);
             load_level_graphics(&registers);
-            scroll_map_to_level_start((Record *)registers.bp);
+            scroll_map_to_level_start(GAME_PTR(Record, registers.bp));
             phase = SESSION_START_LIFE;
             break;
         case SESSION_START_LIFE:
             if (LivesLeft == 0xFFFF) { phase = SESSION_GAME_OVER; break; }
             reset_records_for_life();
-            registers.bp = (word)PRIMARY;
+            registers.bp = GAME_OFFSET(PRIMARY);
             registers.es = MainDataSegment;
             tick_refuel();
             init_position_history();
-            registers.bp = (word)PRIMARY;
+            registers.bp = GAME_OFFSET(PRIMARY);
             registers.es = MainDataSegment;
             display_draw_hud(&registers);
-            registers.bp = (word)PRIMARY;
+            registers.bp = GAME_OFFSET(PRIMARY);
             store_apply_history_and_placement(PRIMARY);
             registers.es = MainDataSegment;
             registers.bp = update_all_records();
-            RandomWordCursor = (word)CreditRandomWords;
+            RandomWordCursor = GAME_OFFSET(CreditRandomWords);
             display_apply_level_palette(&registers);
             reset_invader_formation();
             SegBossActive = 0;
@@ -144,7 +153,11 @@ void run_game_session(word phase, word bp)
             break;
         case SESSION_QUIT_PROMPT:
             if (SfxEnabled != 0) SfxRequest = 0x1C;
-            while (keys[SCAN_ESC] == KEY_STATE_DOWN) {}
+            while (keys[SCAN_ESC] == KEY_STATE_DOWN) {
+#ifdef OVERKILL_HOST
+                overkill_platform_idle();
+#endif
+            }
             dos_service(FlushBiosKeyboardBuffer, &registers);
             dos_service(FlipEgaDrawPage, &registers);
             dos_service(SessionDrawQuitPrompt, &registers);
@@ -154,11 +167,18 @@ void run_game_session(word phase, word bp)
                 if (keys[SCAN_N] == KEY_STATE_DOWN) break;
                 QuitAnswer = 'Y';
                 if (keys[SCAN_Y] == KEY_STATE_DOWN) break;
+#ifdef OVERKILL_HOST
+                overkill_platform_idle();
+#endif
             }
             if (SfxEnabled != 0) SfxRequest = 0x1C;
             QuitAnswer &= 0xDF;
             if (QuitAnswer != 'Y') { phase = SESSION_RESUME_FRAME; break; }
-            if (SfxEnabled != 0) while (((volatile byte *)&SfxActive)[0] != 0) {}
+            if (SfxEnabled != 0) while (((volatile byte *)&SfxActive)[0] != 0) {
+#ifdef OVERKILL_HOST
+                overkill_platform_idle();
+#endif
+            }
             if (SfxEnabled != 0) SfxRequest = 1;
             phase = SESSION_GAME_OVER;
             break;
@@ -178,7 +198,11 @@ void run_game_session(word phase, word bp)
             reset_pool_a_and_upgrades();
             LivesLeft--;
             if (KeepLivesFlag != 0) LivesLeft++;
-            if (SfxEnabled != 0) while (((volatile byte *)&SfxActive)[0] != 0) {}
+            if (SfxEnabled != 0) while (((volatile byte *)&SfxActive)[0] != 0) {
+#ifdef OVERKILL_HOST
+                overkill_platform_idle();
+#endif
+            }
             if (SfxEnabled != 0) SfxRequest = 2;
             phase = SESSION_START_LIFE;
             break;

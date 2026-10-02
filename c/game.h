@@ -20,6 +20,10 @@
 #include "GAME_GEN.H"
 #pragma pack()
 
+#ifdef OVERKILL_HOST
+#include "HOST_GEN.H"
+#endif
+
 /* Stored DS links remain 16-bit offsets on both platforms. Convert only at the
    point of access; host pointers are never stored in original records or tables. */
 #ifdef OVERKILL_HOST
@@ -36,6 +40,8 @@ word overkill_ds_offset(const void *pointer);
 #define GAME_RECORD_FIELD(record, field) ((record)->field)
 #endif
 #define NO_RECORD GAME_PTR(Record, 0xFFFF)
+#define GAME_INDEX(type, pointer, index) \
+    (*GAME_PTR(type, GAME_OFFSET(pointer) + (word)((index) * sizeof(type))))
 
 /* Calls from C (segment CGAME) into ASM that stays in MAIN go through the oracle's own
    trampoline FarCallMainNearViaAX (AX = near target; every other register and the flags
@@ -47,8 +53,12 @@ word overkill_ds_offset(const void *pointer);
      #pragma aux call_main_bp = "push bp" "mov bp, si" "call far ptr FarCallMainNearViaAX" \
          "pop bp" parm [ax] [si] modify exact [ax bx cx dx di es]
    then call_main_bx(NextRandomWord). The callee must not take input in AX. */
+#ifdef OVERKILL_HOST
+typedef word main_routine;
+#else
 typedef void (__near *main_routine)(void);
 extern void __far FarCallMainNearViaAX(void);
+#endif
 
 /* Typed views of the record storage (declared as bytes in DATA.ASM). */
 #define PRIMARY ((Record *)PrimaryRecord)

@@ -12,6 +12,7 @@
 #include "screen_transition.h"
 #include "screen_animation.h"
 
+#ifndef OVERKILL_HOST
 extern void EnableFileFlagsIfVgaDac(void);
 extern void VerifyStartupChecksums(void);
 extern void StartupInstallTimerVector08(void);
@@ -33,6 +34,7 @@ extern word __far LoadNamePtr;
 extern word __far LoadDestSegment;
 extern word __far LoadImageSlot;
 extern word __far PlaqueImageOffset;
+#endif
 
 void startup_after_overrides(DosRegisters *registers)
 {
@@ -56,9 +58,13 @@ void startup_after_overrides(DosRegisters *registers)
 
     /* WINDOW.BIC is captured from the launcher's screen before mode selection.
        Its image offsets and destination remain the original loader mailboxes. */
-    LoadNamePtr = (word)File_WINDOW_BIC;
+    LoadNamePtr = GAME_OFFSET(File_WINDOW_BIC);
     LoadDestSegment = WorkspaceSegment + WIDE_PAGE_BYTES / 16 + 1;
+#ifdef OVERKILL_HOST
+    LoadImageSlot = HOST_TOKEN_PLAQUEIMAGEOFFSET;
+#else
     LoadImageSlot = (word)&PlaqueImageOffset;
+#endif
     load_graphics_record_images(registers);
     screen_transition_and_clear(registers);
     screen_animation_stretch_window(registers);

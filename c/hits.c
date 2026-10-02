@@ -42,7 +42,7 @@ void shot_hits_record(Record *r, Record *shot)
         destroy_unless_seg_boss(r);
         return;
     }
-    if (shot->target != (word)r) return;
+    if (shot->target != GAME_OFFSET(r)) return;
     shot->missile_locked = 0;
     destroy_unless_seg_boss(r);
 }

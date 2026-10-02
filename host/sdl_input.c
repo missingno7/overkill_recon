@@ -3,6 +3,67 @@
 #include "game.h"
 #include "input_normalize.h"
 
+static uint8_t character_queue[128];
+static unsigned character_read, character_write;
+static int character_mode;
+
+void overkill_sdl_character_mode(int enabled)
+{
+    character_mode = enabled != 0;
+}
+
+void overkill_sdl_flush_characters(void)
+{
+    character_read = character_write = 0;
+}
+
+int overkill_sdl_read_character(void)
+{
+    if (character_read == character_write) return -1;
+    return character_queue[character_read++ & 127];
+}
+
+static void queue_character(uint8_t character)
+{
+    /* The platform BIOS buffer also refuses new keys when it is full. */
+    if (character_write - character_read < 128)
+        character_queue[character_write++ & 127] = character;
+}
+
+static void queue_key_character(const SDL_KeyboardEvent *key, int scan)
+{
+    SDL_Keycode symbol = key->key;
+    int shift = (key->mod & SDL_KMOD_SHIFT) != 0;
+    int caps = (key->mod & SDL_KMOD_CAPS) != 0;
+    if (!character_mode) return;
+    if (scan == 0x1d || scan == 0x2a || scan == 0x36 || scan == 0x38 ||
+        scan == 0x3a || scan == 0x45 || scan == 0x46) return;
+    if ((key->mod & SDL_KMOD_ALT) != 0) {
+        queue_character(0);
+        queue_character((uint8_t)scan);
+        return;
+    }
+    if (symbol >= 'a' && symbol <= 'z') {
+        if ((key->mod & SDL_KMOD_CTRL) != 0) symbol -= 'a' - 1;
+        else if (shift != caps) symbol -= 'a' - 'A';
+    } else if (shift && symbol < 128) {
+        const char *normal = "1234567890-=[]\\;',./`";
+        const char *shifted = "!@#$%^&*()_+{}|:\"<>?~";
+        unsigned i;
+        for (i = 0; normal[i]; ++i)
+            if (symbol == (SDL_Keycode)(unsigned char)normal[i]) {
+                symbol = (SDL_Keycode)(unsigned char)shifted[i];
+                break;
+            }
+    }
+    if (symbol > 0 && symbol < 128) queue_character((uint8_t)symbol);
+    else if (key->scancode == SDL_SCANCODE_KP_ENTER) queue_character(13);
+    else if (scan != 0) {
+        queue_character(0);
+        queue_character((uint8_t)scan);
+    }
+}
+
 /* Convert SDL's physical PC-keyboard positions to the set-1 make code used by
    KeyDownTable. Codes that do not have a single set-1 key slot are ignored. */
 static int pc_set1_code(SDL_Scancode scancode)
@@ -141,6 +202,7 @@ int overkill_sdl_apply_event(const SDL_Event *event)
         keys = (volatile byte *)KeyDownTable;
         ((volatile byte *)&KeyLastMakeCode)[0] = (byte)scan;
         keys[scan] = KEY_STATE_DOWN;
+        queue_key_character(&event->key, scan);
         /* IRQ1 exits immediately on the X make when the shared Alt slot is set.
            Repeated SDL key-downs still perform the same make-code update. */
         if (scan == SCAN_X && keys[SCAN_ALT] == KEY_STATE_DOWN) return 1;

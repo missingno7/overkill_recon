@@ -6,17 +6,42 @@
 */
 #include "settings.h"
 
+#ifdef OVERKILL_HOST
+#include "platform_services.h"
+#include "memory.h"
+#include <stdint.h>
+#else
 extern volatile word __far VideoAdapter;
 extern word __far MainDataSegment;
 extern byte __far SoundModuleSlot[];
 extern byte __far SlotBuffer[];
 extern void LoadFileToBuffer(void);
 extern void SaveBufferToFile(void);
+#endif
 
 /* Carry ES through the file boundary, including failures before the checksum.
    The thunk saves C's frame pointer; DOS's enclosing-call error unwind stays ASM. */
+#ifdef OVERKILL_HOST
+static word settings_file_service(main_routine target, word es)
+{
+    HostRegisters registers = {0};
+    registers.ax = target;
+    registers.es = es;
+    overkill_platform_call(target, &registers);
+    return registers.es;
+}
+#else
 word settings_file_service(main_routine target, word es);
 #pragma aux settings_file_service "SETTINGS_FILE_SERVICE" parm [ax] [si] value [ax] modify exact [ax bx cx dx si di es]
+#endif
+
+#ifdef OVERKILL_HOST
+static word host_segment_of(const void *address)
+{
+    uintptr_t memory_base = (uintptr_t)overkill_segment_address(0, 0);
+    return (word)(((uintptr_t)address - memory_base) >> 4);
+}
+#endif
 
 void save_settings_to_hiscore_block(word video)
 {
@@ -40,7 +65,8 @@ word load_settings_from_hiscore_block(void)
     byte *p = SavedSettings;
     word n, flags, video;
     SoundOption = *(word *)p; p += 2;
-    flags = *(word *)(word)((word)SoundOptionFlags + (word)(SoundOption << 1));
+    flags = *GAME_PTR(word, (word)(GAME_OFFSET(SoundOptionFlags) +
+                                  (word)(SoundOption << 1)));
     SfxEnabled = (byte)(flags >> 8);
     ModuleSoundEnabled = (byte)flags;
     for (n = 0; n < JOY_THRESHOLD_WORDS; n++, p += 2)
@@ -74,9 +100,9 @@ void save_hiscore_file(void)
     save_settings_to_hiscore_block(VideoAdapter);
     HiscoreChecksum = xor_code_hiscore_block();
     FileBufferSegment = MainDataSegment;
-    FileBufferOffset = (word)HiscoreBlock;
+    FileBufferOffset = GAME_OFFSET(HiscoreBlock);
     FileByteCount = HISCORE_BLOCK_BYTES + 2;
-    FileNamePtr = (word)HiscoreFileName;
+    FileNamePtr = GAME_OFFSET(HiscoreFileName);
     settings_file_service(SaveBufferToFile, MainDataSegment);
     /* Decode even after a failed create/write/close, keeping the encoded-file
        checksum in the following word like the original. */
@@ -89,10 +115,14 @@ void save_hiscore_file(void)
 dword load_hiscore_file(word es)
 {
     word n, sum = 0;
+#ifdef OVERKILL_HOST
+    word buffer_segment = (word)(host_segment_of(SoundModuleSlot) + SLOT_BUFFER_PARAGRAPH);
+#else
     word buffer_segment = (word)((dword)SoundModuleSlot >> 16) + SLOT_BUFFER_PARAGRAPH;
+#endif
     FileBufferSegment = buffer_segment;
     FileBufferOffset = 0;
-    FileNamePtr = (word)HiscoreFileName;
+    FileNamePtr = GAME_OFFSET(HiscoreFileName);
     es = settings_file_service(LoadFileToBuffer, es);
     if (FileStatus != FILE_STATUS_OK) return (dword)es << 16;
     es = buffer_segment;

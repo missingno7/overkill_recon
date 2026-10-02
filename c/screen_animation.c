@@ -6,7 +6,11 @@
    OWNS: CaptureAndCollapseScreen CaptureRow CaptureScreenRowCases CaptureScreenRowCga CaptureScreenRowEga CaptureScreenRowTandy CaptureRowDone
    OWNS: StretchInWindowImage StretchInTheEndImage StretchInImage StretchInHudPanel */
 #include "screen_animation.h"
+#ifdef OVERKILL_HOST
+#include "presentation_services.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern volatile word __far VideoAdapter;
 extern word __far MainDataSegment;
 extern word __far WorkspaceSegment;
@@ -23,10 +27,13 @@ extern volatile word __far StretchRowBytes;
 extern volatile word __far StretchShownRows;
 extern volatile word __far StretchFlagA;
 extern volatile word __far StretchFlagB;
+#endif
 
+#ifndef OVERKILL_HOST
 extern void ResetPageAndClearScreen(void);
 extern void CopyEgaPage0ToPage1(void);
 extern void WaitVerticalRetrace(void);
+#endif
 
 typedef struct ScreenCaptureRowRequest {
     word screen_segment;
@@ -48,16 +55,81 @@ typedef struct ScreenAnimationDrawRequest {
 } ScreenAnimationDrawRequest;
 
 void __far screen_animation_platform_capture_row(ScreenCaptureRowRequest *request);
+#ifdef OVERKILL_HOST
+void screen_animation_platform_capture_row(ScreenCaptureRowRequest *request)
+{
+    presentation_capture_screen_row(request->screen_segment,
+                                    request->workspace_segment,
+                                    request->source_offset,
+                                    request->workspace_offset,
+                                    request->adapter);
+}
+#else
 #pragma aux screen_animation_platform_capture_row parm [si] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void __far screen_animation_platform_finish_capture(word adapter);
+#ifdef OVERKILL_HOST
+void screen_animation_platform_finish_capture(word adapter)
+{
+    presentation_finish_screen_capture(adapter);
+}
+#else
 #pragma aux screen_animation_platform_finish_capture parm [si] \
     modify exact [ax bx cx dx si di es]
+#endif
 
 void __far screen_animation_platform_draw(ScreenAnimationDrawRequest *request);
+#ifdef OVERKILL_HOST
+void screen_animation_platform_draw(ScreenAnimationDrawRequest *request)
+{
+    presentation_draw_stretch_frame(request->drawer,
+                                    request->source_segment,
+                                    request->screen_segment,
+                                    request->bp, request->state_segment,
+                                    &request->result_bp, &request->result_es);
+}
+#else
 #pragma aux screen_animation_platform_draw parm [si] \
     modify exact [ax bx cx dx si di es]
+#endif
+
+#ifdef OVERKILL_HOST
+static word screen_animation_read_segment_word(word segment, word offset)
+#else
+word screen_animation_read_segment_word(word segment, word offset)
+#endif
+{
+#ifdef OVERKILL_HOST
+    volatile byte *bytes = (volatile byte *)overkill_segment_address(segment, offset);
+    volatile byte *next = (volatile byte *)overkill_segment_address(segment,
+                                                        (word)(offset + 1));
+    return (word)(*bytes | ((word)*next << 8));
+#else
+    volatile word __far *value = (volatile word __far *)((__segment)segment :>
+                                      ((word __based(void) *)offset));
+    return *value;
+#endif
+}
+
+#ifdef OVERKILL_HOST
+static void screen_animation_write_segment_word(word segment, word offset,
+                                                word value)
+#else
+void screen_animation_write_segment_word(word segment, word offset, word value)
+#endif
+{
+#ifdef OVERKILL_HOST
+    *(volatile byte *)overkill_segment_address(segment, offset) = (byte)value;
+    *(volatile byte *)overkill_segment_address(segment, (word)(offset + 1)) =
+        (byte)(value >> 8);
+#else
+    volatile word __far *destination = (volatile word __far *)((__segment)segment :>
+                                          ((word __based(void) *)offset));
+    *destination = value;
+#endif
+}
 
 word screen_animation_screen_offset(word row, word column_8px)
 {
@@ -92,12 +164,11 @@ void screen_animation_draw_frame(word adapter, word source_segment,
    descriptor words persist between frames; StretchRowError remains pixel-backend scratch. */
 void screen_animation_stretch_raw(ScreenAnimationImage *image)
 {
-    volatile word __far *header =
-        (volatile word __far *)((__segment)(image->source_segment) :>
-                                ((word __based(void) *)(image->source_offset)));
     DosRegisters registers;
-    word rows = header[0];
-    word row_bytes = header[1];
+    word rows = screen_animation_read_segment_word(image->source_segment,
+                                                   image->source_offset);
+    word row_bytes = screen_animation_read_segment_word(image->source_segment,
+                                                (word)(image->source_offset + 2));
 
     StretchImageRows = rows;
     StretchRowBytes = row_bytes;
@@ -122,7 +193,6 @@ void screen_animation_stretch_raw(ScreenAnimationImage *image)
 void screen_animation_capture_collapse(DosRegisters *registers)
 {
     ScreenCaptureRowRequest request;
-    volatile word __far *header;
     word adapter = VideoAdapter;
     word source = 0;
     word destination = 4;
@@ -135,10 +205,8 @@ void screen_animation_capture_collapse(DosRegisters *registers)
     request.workspace_segment = WorkspaceSegment;
     request.adapter = adapter;
     request.state_segment = MainDataSegment;
-    header = (volatile word __far *)((__segment)(request.workspace_segment) :>
-                                     ((word __based(void) *)0));
-    header[0] = 0x00C8;
-    header[1] = 0x0028;
+    screen_animation_write_segment_word(request.workspace_segment, 0, 0x00C8);
+    screen_animation_write_segment_word(request.workspace_segment, 2, 0x0028);
 
     for (row = 0; row < 0x00C8; row++) {
         request.source_offset = source;
@@ -161,8 +229,8 @@ void screen_animation_capture_collapse(DosRegisters *registers)
 
     screen_animation_platform_finish_capture(adapter);
 
-    StretchImageRows = header[0];
-    StretchRowBytes = header[1];
+    StretchImageRows = screen_animation_read_segment_word(request.workspace_segment, 0);
+    StretchRowBytes = screen_animation_read_segment_word(request.workspace_segment, 2);
     StretchSource = 4;
     StretchDest = 0;
     StretchFlagA = 0;

@@ -37,6 +37,11 @@
 #include "display.h"
 #include "render.h"
 #include "levels.h"
+#include "sound.h"
+
+#ifdef OVERKILL_HOST
+#undef tick_frame_timers
+#endif
 
 #define FRAME_NO_RECORD NO_RECORD
 
@@ -44,6 +49,7 @@ void steer_toward_target(Record *r);           /* c/movement.c */
 Record *find_free_record_pool_a(void);         /* c/spawn.c */
 
 /* CS-resident words of MAIN. */
+#ifndef OVERKILL_HOST
 extern word __far LevelMapSegment;             /* segment of the level map */
 extern word __far ScrollBandBytes;             /* scroll geometry, set per video adapter */
 extern word __far ScrollWrapOffset;
@@ -51,12 +57,26 @@ extern word __far ScrollStartOffset;
 extern word __far PlayfieldRowBytes;
 /* The MapResetList tables are CS data of MAIN; MapResetLists (DS) holds their offsets. */
 extern word __far MapResetList0[];
-
 #define FRAME_MAP_AT(off) (((__segment)LevelMapSegment) :> ((byte __based(void) *)(off)))
+#define FRAME_MAIN_WORD(off) \
+    (*(((__segment)MapResetList0) :> ((word __based(void) *)(off))))
+#else
+extern void *overkill_level_map_address(word offset);
+extern void host_draw_map_row_into_scroll_band(word map_row_offset);
+extern void host_set_dac_color6(const byte rgb[3]);
+#define FRAME_MAP_AT(off) ((byte *)overkill_level_map_address((word)(off)))
+#define FRAME_MAIN_WORD(off) \
+    (*(word *)overkill_segment_address(HOST_LOAD_SEGMENT, (word)(off)))
+#endif
+
+#define FRAME_STATE_WORD(array, byte_offset) \
+    (*GAME_PTR(word, (word)(GAME_OFFSET(array) + (word)(byte_offset))))
+#define FRAME_DS_WORD(offset) (*GAME_PTR(word, (word)(offset)))
 
 /* Remaining ASM, entered through the thunks in c/frame.asm (CGAME): FRAME_CALL_BP calls
    the MAIN routine at AX with BP = SI (SI passes through too) and returns the BP the
    routine leaves; every register but BP is the routine's. */
+#ifndef OVERKILL_HOST
 word frame_call_bp(main_routine target, Record *r);
 #pragma aux frame_call_bp "FRAME_CALL_BP" parm [ax] [si] value [ax] modify exact [ax bx cx dx si di es]
 /* RequestModuleMusic (AL = tune; takes its input in AX, so through FarCallMainNearViaBP). */
@@ -66,6 +86,11 @@ extern void DrawMapRowIntoScrollBand(void);   /* BP = spawn origin (DrawIncoming
 extern void SetDacColor6(void);               /* SI = RGB triple */
 extern void SetMapTile28(void);               /* MapResetList targets (bridge labels) */
 extern void SetMapTile1(void);
+#else
+#define frame_request_music(tune) sound_request_module_music((word)(tune))
+#endif
+
+word draw_incoming_map_row(Record *here);
 
 #define STAR_COUNT 40
 #define STAR_LAYER_ONE_COUNT 20
@@ -79,7 +104,9 @@ typedef struct StarEntry {
 } StarEntry;
 STATIC_CHECK(frame_star_entry_size, sizeof(StarEntry) == 6);
 
+#ifndef OVERKILL_HOST
 extern volatile word __far VideoAdapter;
+#endif
 
 /* Startup-only transform of the oracle's in-place {Y, X, mask} table. The word mask
    load intentionally begins at the selected byte, matching the original unscaled lookup. */
@@ -94,15 +121,15 @@ void init_stars(void)
         switch (adapter) {
         case VIDEO_CGA:
             star->x = pixels >> 2;
-            star->mask = *(word *)(StarMasksCga + (pixels & 3));
+            star->mask = *GAME_PTR(word, (word)(GAME_OFFSET(StarMasksCga) + (pixels & 3)));
             break;
         case VIDEO_EGA:
             star->x = pixels >> 3;
-            star->mask = *(word *)(StarMasksEga + (pixels & 7));
+            star->mask = *GAME_PTR(word, (word)(GAME_OFFSET(StarMasksEga) + (pixels & 7)));
             break;
         case VIDEO_TANDY:
             star->x = pixels >> 1;
-            star->mask = *(word *)(StarMasksTandy + (pixels & 1));
+            star->mask = *GAME_PTR(word, (word)(GAME_OFFSET(StarMasksTandy) + (pixels & 1)));
             if (StarBrightCount != 0) {
                 StarBrightCount--;
                 if (StarBrightCount == 0) {
@@ -178,13 +205,13 @@ void steer_seg_boss_along_path(void)
     word *point;
 
     for (;;) {
-        anchor = (Record *)SegBossAnchor;
+        anchor = GAME_PTR(Record, SegBossAnchor);
         anchor->x = SegBossX;
         anchor->y = SegBossY;
         for (;;) {
-            point = (word *)SegBossPathCursor;
+            point = GAME_PTR(word, SegBossPathCursor);
             if (point[0] != 0xFFFF) break;
-            SegBossPathCursor = (word)BossPath;
+            SegBossPathCursor = GAME_OFFSET(BossPath);
         }
         SteerTargetY = point[0] + 0x20;
         SteerTargetX = point[1];
@@ -193,7 +220,7 @@ void steer_seg_boss_along_path(void)
         SegBossX = anchor->x;
         SegBossY = anchor->y;
         if (SteerArrived == 0) return;
-        SegBossPathCursor = (word)(point + 2);
+        SegBossPathCursor = (word)(SegBossPathCursor + 4);
     }
 }
 
@@ -210,7 +237,7 @@ word frame_update_record_by_kind(Record *r)
     case KIND_PICKUP:  update_pickup(r); break;
     case KIND_EXHAUST: update_exhaust(r); break;
     }
-    return (word)r;
+    return GAME_OFFSET(r);
 }
 
 /* Per frame: the invader march latches, on level 5 the march step / drop / fire delays,
@@ -263,14 +290,14 @@ word update_all_records(void)
     }
     if (SegBossActive == 1) steer_seg_boss_along_path();
     for (n = POOL_A_COUNT; n != 0; n--) {
-        r = (Record *)PoolAPointers[n - 1];
+        r = GAME_PTR(Record, PoolAPointers[n - 1]);
         if (++RecordTickCounter >= 0x5DC) RecordTickCounter = 0;
         if (r->status != 0) frame_update_record_by_kind(r);
     }
     SwayDropY = 0;
     for (n = POOL_B_COUNT; n != 0; n--) {
-        r = (Record *)PoolBPointers[n - 1];
-        bp = (word)r;
+        r = GAME_PTR(Record, PoolBPointers[n - 1]);
+        bp = GAME_OFFSET(r);
         if (r->status != 0) bp = frame_update_record_by_kind(r);
     }
     move_stars();
@@ -321,7 +348,7 @@ void type80_march_member(Record *r)
 {
     word sprite, x;
 
-    if (LeaderScriptCursor != (word)LeaderScript7EEnd) return;
+    if (LeaderScriptCursor != GAME_OFFSET(LeaderScript7EEnd)) return;
     if (r->entry_delay != 0 && --r->entry_delay != 0) return;
     if (MarchStepNow != 0) r->saved_x += MarchStepX;
     sprite = r->sprite;
@@ -499,7 +526,8 @@ void step_hatch_ramp_frame(Record *r, word base)
 
     if (FrameDivider4 == 0 && ++r->direction >= 0x18) r->direction = 0;
     direction = r->direction;
-    r->sprite = ((direction & 0xFF00) | Type28FrameRamp[direction & 0xFF]) + base;
+    r->sprite = (word)(((direction & 0xFF00) |
+        *GAME_PTR(byte, (word)(GAME_OFFSET(Type28FrameRamp) + (direction & 0xFF)))) + base);
 }
 
 /* ---- the map scroll ---------------------------------------------------------------------- */
@@ -509,7 +537,11 @@ void step_hatch_ramp_frame(Record *r, word base)
    clock reaches 4. */
 void enter_next_map_row_forward(Record *here)
 {
+#ifdef OVERKILL_HOST
+    host_draw_map_row_into_scroll_band(draw_incoming_map_row(here));
+#else
     frame_call_bp((main_routine)DrawMapRowIntoScrollBand, here);
+#endif
     if (MapScrollPos <= MAP_INTRO_END_POS && SfxEnabled != 0) SfxRequest = 7;
     MapScrollPos += MAP_ROW_BYTES;
     if (--LevelScriptClock == 4) frame_request_music(MUSIC_LEVEL_END);
@@ -537,7 +569,11 @@ void scroll_forward_one_line(Record *here)
    LevelScriptClock + 1. */
 void enter_previous_map_row_backward(Record *here)
 {
+#ifdef OVERKILL_HOST
+    host_draw_map_row_into_scroll_band(draw_incoming_map_row(here));
+#else
     frame_call_bp((main_routine)DrawMapRowIntoScrollBand, here);
+#endif
     MapScrollPos -= MAP_ROW_BYTES;
     LevelScriptClock++;
     LastTileStepBackward = 1;
@@ -568,7 +604,7 @@ void smart_bomb_all(void)
 
     if (SfxEnabled != 0) SfxRequest = 8;
     for (n = POOL_A_COUNT; n != 0; n--) {
-        r = (Record *)PoolAPointers[n - 1];
+        r = GAME_PTR(Record, PoolAPointers[n - 1]);
         if (r->status != 0) smart_bomb_record(r);
     }
 }
@@ -587,11 +623,17 @@ void scroll_forward_and_check_level_end(Record *here)
     if (EncounterLiveCount != 0 || EncounterEndDelay != 0) return;
     scroll_forward_one_line(here);
     if (ScrollSubRow != 0) return;
-    if (MapScrollPos == MAP_LAST_SPAWN_POS) frame_call_bp((main_routine)SetDacColor6, (Record *)DacColor6Default);
+    if (MapScrollPos == MAP_LAST_SPAWN_POS) {
+#ifdef OVERKILL_HOST
+        host_set_dac_color6(DacColor6Default);
+#else
+        frame_call_bp((main_routine)SetDacColor6, (Record *)DacColor6Default);
+#endif
+    }
     if (MapScrollPos != MAP_END_POS) return;
     LevelEndPhase = LEVEL_END_TO_WAYPOINT_A;
     smart_bomb_all();
-    spawn = Type53SpawnTable;
+    spawn = GAME_PTR(word, GAME_OFFSET(Type53SpawnTable));
     for (n = 4; n != 0; n--) {
         r = find_free_record_pool_a();
         if (r == FRAME_NO_RECORD) continue;
@@ -632,14 +674,18 @@ void scroll_map_to_level_start(Record *here)
 void reset_map_before_view(void)
 {
     word off = MapScrollPos, n = 0x9C;
-    word __far *entry;
+    word entry_offset;
 
     do {
         off--;
-        entry = (word __far *)(((__segment)MapResetList0) :> ((word __based(void) *)MapResetLists[LevelIndex]));
-        for (; *entry != 0xFFFF; entry += 2) {
-            if (*FRAME_MAP_AT(off) == *entry) {
-                *FRAME_MAP_AT(off) = entry[1] == (word)(main_routine)SetMapTile28 ? 0x28 : 1;
+        entry_offset = FRAME_STATE_WORD(MapResetLists, (word)(LevelIndex << 1));
+        for (;; entry_offset = (word)(entry_offset + 4)) {
+            word map_value = FRAME_MAIN_WORD(entry_offset);
+            word tile_handler;
+            if (map_value == 0xFFFF) break;
+            tile_handler = FRAME_MAIN_WORD((word)(entry_offset + 2));
+            if (*FRAME_MAP_AT(off) == map_value) {
+                *FRAME_MAP_AT(off) = tile_handler == (word)(main_routine)SetMapTile28 ? 0x28 : 1;
                 break;
             }
         }
@@ -656,18 +702,18 @@ void reset_map_before_view(void)
 void restart_at_checkpoint(Record *here)
 {
     DosRegisters map_registers;
-    word *checkpoint = (word *)LevelCheckpointPtrs[LevelIndex];
+    word checkpoint = FRAME_STATE_WORD(LevelCheckpointPtrs, (word)(LevelIndex << 1));
     word n, position, clock, saved;
 
     /* BP was the record passed to the old MAIN call. ES is dead input here: the loader
        sets its buffer segment before any DOS service, and this routine returns no pair. */
-    map_registers.bp = (word)here;
+    map_registers.bp = GAME_OFFSET(here);
     map_registers.es = 0;
-    for (n = 3; n != 0; n--, checkpoint += 4)
-        if (MapScrollPos < checkpoint[3]) break;
-    position = checkpoint[0];
-    clock = checkpoint[1];
-    CheckpointScriptCursor = checkpoint[2];
+    for (n = 3; n != 0; n--, checkpoint = (word)(checkpoint + 8))
+        if (MapScrollPos < FRAME_DS_WORD((word)(checkpoint + 6))) break;
+    position = FRAME_DS_WORD(checkpoint);
+    clock = FRAME_DS_WORD((word)(checkpoint + 2));
+    CheckpointScriptCursor = FRAME_DS_WORD((word)(checkpoint + 4));
     saved = LevelScriptClock;
     load_level_map(&map_registers);
     LevelScriptClock = saved;
@@ -678,5 +724,6 @@ void restart_at_checkpoint(Record *here)
         scroll_backward_one_line(here);
     } while (MapScrollPos > position || ScrollSubRow != 0);
     LevelScriptClock = clock;
-    *(word *)CheckpointCursorPtrs[LevelIndex] = CheckpointScriptCursor;
+    FRAME_DS_WORD(FRAME_STATE_WORD(CheckpointCursorPtrs, (word)(LevelIndex << 1))) =
+        CheckpointScriptCursor;
 }

@@ -7,6 +7,7 @@
 #include "cache.h"
 #include "settings.h"
 
+#ifndef OVERKILL_HOST
 extern void ResetEgaPages(void);
 extern void StopModuleMusic(void);
 extern void RestoreKeyboardVector09(void);
@@ -16,7 +17,9 @@ extern void ShutdownPrintDosStringAtBP(void);
 extern void ShutdownPresentExitOrderAndFlushKeys(void);
 extern void ShutdownRestoreAllocStrategy(void);
 extern void ShutdownExitToDos(void);
+extern void RestoreAllocStrategy(void);
 extern word __far MainDataSegment;
+#endif
 
 void shutdown_print_dos_string(DosRegisters *registers, word offset)
 {
@@ -42,19 +45,23 @@ void shutdown_game(DosRegisters *registers)
     if (ExitWithError != 0) {
         volatile byte *name;
         word print_name = FileNamePtr;
-        shutdown_print_dos_string(registers, (word)FileNotFoundMsgHead);
-        name = (volatile byte *)print_name;
+        shutdown_print_dos_string(registers, GAME_OFFSET(FileNotFoundMsgHead));
+        name = GAME_PTR(volatile byte, print_name);
         while (*name != 0) name++;
         *name = 0x24;
-        if (*((volatile byte *)(word)(print_name + 1)) == 0x3A)
+        if (*GAME_PTR(volatile byte, (word)(print_name + 1)) == 0x3A)
             print_name += 2;
         shutdown_print_dos_string(registers, print_name);
-        shutdown_print_dos_string(registers, (word)FileNotFoundMsgTail);
+        shutdown_print_dos_string(registers, GAME_OFFSET(FileNotFoundMsgTail));
     } else {
         dos_service(ShutdownPresentExitOrderAndFlushKeys, registers);
     }
 
     release_ems_cache();
+#ifdef OVERKILL_HOST
+    dos_service(RestoreAllocStrategy, registers);
+#else
     dos_service(ShutdownRestoreAllocStrategy, registers);
+#endif
     dos_service(ShutdownExitToDos, registers);
 }

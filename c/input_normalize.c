@@ -5,9 +5,11 @@
 */
 #include "input_normalize.h"
 
+#ifndef OVERKILL_HOST
 extern void ReadGamePortAAxisCounts(void);
 extern void ReadGamePortAButtonBits(void);
 extern void FlushBiosKeyboardBuffer(void);
+#endif
 
 word input_read_x_count(main_routine target);
 #pragma aux input_read_x_count "FarCallMainNearViaAX" far parm [ax] value [bx] modify exact [ax bx cx dx si]

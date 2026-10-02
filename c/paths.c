@@ -23,14 +23,14 @@ void update_path_follower(Record *r)
     word *point;
 
     for (;;) {
-        point = (word *)r->path;
-        SteerTargetY = point[0] + 0x20;
-        SteerTargetX = point[1];
+        point = GAME_PTR(word, r->path);
+        SteerTargetY = GAME_INDEX(word, point, 0) + 0x20;
+        SteerTargetX = GAME_INDEX(word, point, 1);
         SteerSpeed = 1;
         if (LevelIndex == 0 || DemoActive == 1) SteerSpeed = 2;
         steer_toward_target(r);
         if (SteerArrived == 0) break;
-        r->path = (word)(point + 2);
+        r->path = (word)(r->path + 4);
     }
 
     r->sprite = r->direction + 0x3B;

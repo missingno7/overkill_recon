@@ -8,7 +8,12 @@
    DOS open/read/seek/close are narrow assembly services so the search logic can be
    exercised without booting the game. */
 #include "archive.h"
+#ifdef OVERKILL_HOST
+#include "resource_services.h"
+#include "memory.h"
+#endif
 
+#ifndef OVERKILL_HOST
 extern word __far ResOptions;
 extern word __far ResCurArchive;
 extern word __far ResSearchStart;
@@ -23,22 +28,71 @@ extern byte __far ResEntryBuf[];
 extern dword __far ResArchiveBase;
 extern byte __far ResArchiveList[];
 extern word __far MainDataSegment;
+#endif
 
+#ifdef OVERKILL_HOST
+#define ARCHIVE_ADDRESS(type, segment, offset) \
+    ((type *)overkill_segment_address((word)(segment), (word)(offset)))
+#define ARCHIVE_ENTRY_SEGMENT HOST_SEGMENT_RESENTRYBUF
+#define ARCHIVE_ENTRY_OFFSET HOST_OFFSET_RESENTRYBUF
+#define ARCHIVE_LIST_SEGMENT HOST_SEGMENT_RESARCHIVELIST
+#define ARCHIVE_LIST_OFFSET HOST_OFFSET_RESARCHIVELIST
+#define ARCHIVE_LIST_AT(offset) \
+    ((byte *)overkill_segment_address(ARCHIVE_LIST_SEGMENT, (word)(offset)))
+#define ARCHIVE_ENTRY_AT(offset) \
+    ((byte *)overkill_segment_address(ARCHIVE_ENTRY_SEGMENT, (word)(offset)))
+#else
 #define ARCHIVE_ADDRESS(type, segment, offset) \
     ((type __far *)((__segment)(segment) :> ((type __based(void) *)(offset))))
 #define ARCHIVE_LABEL_SEGMENT(label) \
     ((word)((dword)(byte __far *)&(label) >> 16))
 #define ARCHIVE_LABEL_OFFSET(label) \
     ((word)(dword)(byte __far *)&(label))
+#define ARCHIVE_ENTRY_OFFSET ARCHIVE_LABEL_OFFSET(ResEntryBuf)
+#define ARCHIVE_LIST_OFFSET ARCHIVE_LABEL_OFFSET(ResArchiveList)
 #define ARCHIVE_LIST_AT(offset) \
     (((__segment)ARCHIVE_LABEL_SEGMENT(ResArchiveList)) :> \
      ((byte __based(void) *)(offset)))
 #define ARCHIVE_ENTRY_AT(offset) \
     (((__segment)ARCHIVE_LABEL_SEGMENT(ResEntryBuf)) :> \
      ((byte __based(void) *)(offset)))
+#endif
 
 /* DOS returns carry separately from AX. Seek also returns DX:AX and stores CF in
    the caller's stack word so both the full position and failure state survive. */
+#ifdef OVERKILL_HOST
+dword archive_dos_open(word path_segment, word path_offset)
+{
+    return overkill_resource_open_guest_path(path_segment, path_offset, 0);
+}
+
+dword archive_dos_open_current(word path_offset)
+{
+    return overkill_resource_open_path((const char *)ARCHIVE_LIST_AT(path_offset), 0);
+}
+
+dword archive_dos_read_header(word handle, word byte_count)
+{
+    return overkill_resource_read_buffer(handle, byte_count, &ResEntryCount);
+}
+
+dword archive_dos_read_entry(word handle, word byte_count)
+{
+    return overkill_resource_read_buffer(handle, byte_count, ResEntryBuf);
+}
+
+dword archive_dos_seek(word handle, word offset_low, word offset_high,
+                       word origin, word *carry_out)
+{
+    return overkill_resource_seek(handle, offset_low, offset_high, origin,
+                                  carry_out);
+}
+
+word archive_dos_close(word handle)
+{
+    return overkill_resource_close(handle);
+}
+#else
 dword archive_dos_open(word path_segment, word path_offset);
 #pragma aux archive_dos_open "ARCHIVE_DOS_OPEN" far parm [cx] [si] \
     value [dx ax] modify exact [ax bx cx dx si di es]
@@ -57,6 +111,38 @@ dword archive_dos_seek(word handle, word offset_low, word offset_high,
 word archive_dos_close(word handle);
 #pragma aux archive_dos_close "ARCHIVE_DOS_CLOSE" far parm [bx] \
     value [ax] modify exact [ax bx]
+
+dword archive_dos_open_current(word path_offset);
+#pragma aux archive_dos_open_current far parm [si] value [dx ax] \
+    modify exact [ax dx]
+
+dword archive_dos_read_header(word handle, word byte_count);
+#pragma aux archive_dos_read_header far parm [si] [di] value [dx ax] \
+    modify exact [ax dx]
+
+dword archive_dos_read_entry(word handle, word byte_count);
+#pragma aux archive_dos_read_entry far parm [si] [di] value [dx ax] \
+    modify exact [ax dx]
+
+dword archive_dos_open_current(word path_offset)
+{
+    return archive_dos_open(ARCHIVE_LABEL_SEGMENT(ResArchiveList), path_offset);
+}
+
+dword archive_dos_read_header(word handle, word byte_count)
+{
+    return archive_dos_read(handle, byte_count,
+                            ARCHIVE_LABEL_SEGMENT(ResEntryCount),
+                            ARCHIVE_LABEL_OFFSET(ResEntryCount));
+}
+
+dword archive_dos_read_entry(word handle, word byte_count)
+{
+    return archive_dos_read(handle, byte_count,
+                            ARCHIVE_LABEL_SEGMENT(ResEntryBuf),
+                            ARCHIVE_LABEL_OFFSET(ResEntryBuf));
+}
+#endif
 
 word archive_path_offset(word segment, word offset)
 {
@@ -109,27 +195,33 @@ word archive_name_matches(word name_segment, word name_offset,
 }
 
 void archive_set_result(word result_segment, word result_offset,
-                                 word status, word handle,
-                                 word length_low, word length_high)
+                        word status, word handle,
+                        word length_low, word length_high,
+                        ArchiveResult *host_result)
 {
+#ifdef OVERKILL_HOST
+    ArchiveResult *result = host_result;
+    (void)result_segment;
+    (void)result_offset;
+#else
     ArchiveResult __far *result = ARCHIVE_ADDRESS(ArchiveResult,
                                                    result_segment, result_offset);
+    (void)host_result;
+#endif
     result->status = status;
     result->handle = handle;
     result->length_low = length_low;
     result->length_high = length_high;
 }
 
-void open_resource_file(word name_offset, word name_segment,
-                                 word result_offset, word result_segment)
-#pragma aux open_resource_file parm [dx] [cx] [si] [di] \
-    modify exact [ax bx cx dx si di es]
+void open_resource_file_impl(word name_offset, word name_segment,
+                             word result_offset, word result_segment,
+                             ArchiveResult *host_result)
 {
     dword io;
     dword position;
     dword entry_offset;
     dword entry_length;
-    word archive_segment = ARCHIVE_LABEL_SEGMENT(ResArchiveList);
     word path_offset;
     word search_start;
     word cursor;
@@ -145,15 +237,13 @@ void open_resource_file(word name_offset, word name_segment,
     search_start = ResCurArchive;
     ResSearchStart = search_start;
     for (;;) {
-        io = archive_dos_open(archive_segment, ResCurArchive);
+        io = archive_dos_open_current(ResCurArchive);
         if ((word)(io >> 16) != 0) goto try_next_archive;
         ResHandle = (word)io;
         ResArchiveBase = 0;
 
         /* The original accepts successful short DOS reads; only CF rejects them. */
-        io = archive_dos_read(ResHandle, 12,
-                                       ARCHIVE_LABEL_SEGMENT(ResEntryCount),
-                                       ARCHIVE_LABEL_OFFSET(ResEntryCount));
+        io = archive_dos_read_header(ResHandle, 12);
         if ((word)(io >> 16) != 0) goto try_next_archive;
 
         if (ResEntryCount == 0x5A4D) {
@@ -168,9 +258,7 @@ void open_resource_file(word name_offset, word name_segment,
                                                  (word)(ResArchiveBase >> 16),
                                                  0, &read_failed);
             if (read_failed != 0) goto try_next_archive;
-            io = archive_dos_read(ResHandle, 12,
-                                           ARCHIVE_LABEL_SEGMENT(ResEntryCount),
-                                           ARCHIVE_LABEL_OFFSET(ResEntryCount));
+            io = archive_dos_read_header(ResHandle, 12);
             if ((word)(io >> 16) != 0) goto try_next_archive;
         }
 
@@ -181,16 +269,15 @@ void open_resource_file(word name_offset, word name_segment,
 
         path_offset = archive_path_offset(name_segment, name_offset);
         for (;;) {
-            io = archive_dos_read(ResHandle, ResEntrySize,
-                                           ARCHIVE_LABEL_SEGMENT(ResEntryBuf),
-                                           (word)ResEntryBuf);
+            io = archive_dos_read_entry(ResHandle, ResEntrySize);
             if ((word)(io >> 16) != 0) goto try_next_archive;
 
             low_key = (byte)ResKey;
             key_step = (byte)(ResKey >> 8);
             i = 0;
             do {
-                byte __far *entry_byte = ARCHIVE_ENTRY_AT((word)((word)ResEntryBuf + i));
+                byte __far *entry_byte = ARCHIVE_ENTRY_AT(
+                    (word)(ARCHIVE_ENTRY_OFFSET + i));
                 *entry_byte ^= (byte)low_key;
                 low_key = (byte)(low_key + key_step);
                 i++;
@@ -198,7 +285,7 @@ void open_resource_file(word name_offset, word name_segment,
             ResKey = (ResKey & 0xFF00) | low_key;
 
             if (archive_name_matches(name_segment, path_offset,
-                                              (word)ResEntryBuf)) {
+                                              ARCHIVE_ENTRY_OFFSET)) {
                 byte __far *entry = ResEntryBuf;
                 entry_offset = (dword)entry[5]
                              | ((dword)entry[6] << 8)
@@ -215,8 +302,8 @@ void open_resource_file(word name_offset, word name_segment,
                                                      0, &read_failed);
                 if (read_failed != 0) goto try_next_archive;
                 archive_set_result(result_segment, result_offset, 0,
-                                            ResHandle, (word)entry_length,
-                                            (word)(entry_length >> 16));
+                                   ResHandle, (word)entry_length,
+                                   (word)(entry_length >> 16), host_result);
                 return;
             }
 
@@ -231,7 +318,8 @@ try_next_archive:
         cursor = ResCurArchive;
         while (*ARCHIVE_LIST_AT(cursor) != 0) cursor++;
         cursor++;
-        if (*ARCHIVE_LIST_AT(cursor) == 0xFF) cursor = (word)ResArchiveList;
+        if (*ARCHIVE_LIST_AT(cursor) == 0xFF)
+            cursor = ARCHIVE_LIST_OFFSET;
         ResCurArchive = cursor;
         if (cursor == search_start) goto not_found;
     }
@@ -247,22 +335,58 @@ open_loose_file:
     if (archive_dos_seek(ResHandle, 0, 0, 0, &read_failed),
         read_failed != 0) goto not_found;
     archive_set_result(result_segment, result_offset, 0,
-                                ResHandle, (word)position,
-                                (word)(position >> 16));
+                       ResHandle, (word)position,
+                       (word)(position >> 16), host_result);
     return;
 
 not_found:
     if (ResHandle != 0) (void)archive_dos_close(ResHandle);
     archive_set_result(result_segment, result_offset, 1,
-                                ResHandle, 0, 0);
+                       ResHandle, 0, 0, host_result);
 }
+
+#ifndef OVERKILL_HOST
+void open_resource_file(word name_offset, word name_segment,
+                        word result_offset, word result_segment)
+#pragma aux open_resource_file parm [dx] [cx] [si] [di] \
+    modify exact [ax bx cx dx si di es]
+{
+    open_resource_file_impl(name_offset, name_segment,
+                            result_offset, result_segment, 0);
+}
+#endif
 
 dword archive_open_by_name(word name_offset)
 {
     ArchiveResult result;
 
+#ifdef OVERKILL_HOST
+    open_resource_file_impl(name_offset, MainDataSegment, 0, 0, &result);
+#else
     open_resource_file(name_offset, MainDataSegment,
                        (word)&result, MainDataSegment);
+#endif
     return ((dword)result.status << 16) |
            (result.status != 0 ? 2 : result.handle);
 }
+
+#ifdef OVERKILL_HOST
+void archive_setup_resource_library(void)
+{
+    word source = GAME_OFFSET(ResourceArchiveList);
+    word destination = HOST_OFFSET_RESARCHIVELIST;
+    byte value;
+
+    /* ResLibSetup(4000h) copies the caller's ASCIIZ path list through its FFh
+       terminator, leaving the option byte clear. Both offsets retain DOS wrap. */
+    ResOptions = 0;
+    do {
+        value = *GAME_PTR(byte, source);
+        source++;
+        *(byte *)overkill_segment_address(HOST_SEGMENT_RESARCHIVELIST,
+                                          destination) = value;
+        destination++;
+    } while (value != 0xFF);
+    ResCurArchive = HOST_OFFSET_RESARCHIVELIST;
+}
+#endif
