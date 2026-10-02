@@ -78,7 +78,7 @@ external by another bridge in the same module.
 state declarations and the 38h-byte Record with checked field offsets. The C object is
 rejected if it owns data or requires unsupported local/communal symbols.
 
-The SDL3 phase must supply a host memory/address adapter as well as video, input, time,
+The SDL3 phase ([host-port.md](host-port.md)) must supply a host memory/address adapter as well as video, input, time,
 file and audio services. These DOS C sources deliberately still use 16-bit offsets and
 Watcom far-pointer syntax; they are not yet a drop-in native-host build. Preserve the
 verified C decisions while replacing that platform representation.

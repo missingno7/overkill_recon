@@ -77,9 +77,11 @@ disassembly-dump look, no extra infrastructure needed to read it.
 
 - Preserve originals and metadata/inputs.json. Never modify overkill_forged,
   legacy/overkill_port or empires_reconstruction.
-- The DOS C translation is under way (docs/dos-hybrid.md): gameplay moves to C in the same
-  DOS executable, proven equivalent to the oracle by tools/difftest.py. No SDL or other
-  platform port in this phase; platform code may stay ASM.
+- The DOS C baseline is complete (docs/dos-hybrid.md). The user has started the SDL3
+  platform phase: host/ adapts the same c/ logic to native services and the original
+  state layout, with its own native-vs-oracle checks. Preserve the DOS hybrid and its
+  tools/difftest.py gate while adding host support; platform equivalence is a separate
+  question from the verified game logic.
 - Keep the build independent of neighboring projects: TASM 1.0 under the local nmlgc
   MS-DOS Player, TLINK 2.0 under the local i86 player.
 - Acceptance is exact identity: the linked EXE's load module equals a fresh extraction

@@ -1,7 +1,7 @@
 /* Reusable input policy over the original DOS state.
    Game-port timing and BIOS keyboard-buffer access stay as MAIN ASM leaves.
    SEGMENT: CGAME
-   OWNS: PollJoystickInputBits ClearKeyDownTable
+   OWNS: PollInputBits PollJoystickInputBits ClearKeyDownTable
 */
 #include "input_normalize.h"
 
@@ -17,6 +17,29 @@ word input_read_button_bits(main_routine target);
 #pragma aux input_read_button_bits "FarCallMainNearViaAX" far parm [ax] value [ax] modify exact [ax dx]
 void input_flush_bios_buffer(main_routine target);
 #pragma aux input_flush_bios_buffer "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
+
+/* The keyboard IRQ writes KeyDownTable. Read every binding live, including
+   repeated bindings; configured keys use bit 0, fixed keys use any nonzero byte. */
+void poll_input_bits(void)
+{
+    byte *table;
+    volatile byte *keys = (volatile byte *)KeyDownTable;
+    word i;
+
+    if (InputDeviceMode == INPUT_MODE_JOYSTICK) {
+        poll_joystick_input_bits();
+        return;
+    }
+    table = InputDeviceMode == INPUT_MODE_KEYS_B ? KeyBitScancodesB : KeyBitScancodesA;
+    for (i = 0; i < KEY_BIT_SCANCODE_COUNT; i++)
+        InputBits = (byte)((InputBits << 1) | (keys[table[i]] & 1));
+    if (keys[SCAN_TAB] != KEY_STATE_UP) InputBits |= IN_BUTTON_SECONDARY;
+    if (keys[SCAN_SPACE] != KEY_STATE_UP) InputBits |= IN_BUTTON_PRIMARY;
+    if (keys[SCAN_UP] != KEY_STATE_UP) InputBits |= IN_YMINUS;
+    if (keys[SCAN_DOWN] != KEY_STATE_UP) InputBits |= IN_YPLUS;
+    if (keys[SCAN_LEFT] != KEY_STATE_UP) InputBits |= IN_XMINUS;
+    if (keys[SCAN_RIGHT] != KEY_STATE_UP) InputBits |= IN_XPLUS;
+}
 
 /* Counts are unsigned words. The independent tests preserve the original behavior
    when corrupt/reversed thresholds make both directions true. */

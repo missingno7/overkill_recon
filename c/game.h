@@ -10,7 +10,12 @@
 #ifndef GAME_H
 #define GAME_H
 
+#ifdef OVERKILL_HOST
+#define __near
+#define __far
+#else
 #pragma aux default "^" parm [si] [di] value [ax] modify exact [ax]
+#endif
 #pragma pack(1)
 #include "GAME_GEN.H"
 #pragma pack()

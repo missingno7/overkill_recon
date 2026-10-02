@@ -1,8 +1,8 @@
-/* Player movement, input normalization, position history and exhaust.
-   Same DOS state; keyboard input is logic, joystick reads and drawing stay ASM.
+/* Player movement, position history and exhaust.
+   Same DOS state; input policy comes from input_normalize.h, drawing stays ASM.
 
    SEGMENT: CGAME
-   OWNS: PollInputBits InitPositionHistory RunLevelEndSequence LevelEndPhaseCases
+   OWNS: InitPositionHistory RunLevelEndSequence LevelEndPhaseCases
    OWNS: LevelEndRefill LevelEndFlyToWaypointB LevelEndFlyToWaypointA Steer SteerInputToWaypoint
    OWNS: PlayerDyingTail UpdatePlayerFrame StoreApplyHistoryAndConditionalPlacement
    OWNS: StorePositionHistory AdvancePositionHistoryIfRequested ApplyPositionHistoryToRecords
@@ -25,29 +25,6 @@ Record *find_free_record_pool_a(void);
 extern void RedrawEnergyGauge(void);
 void player_call_platform(main_routine target);
 #pragma aux player_call_platform "FarCallMainNearViaAX" far parm [ax] modify exact [ax bx cx dx si di es]
-
-/* The keyboard IRQ writes KeyDownTable. Read every binding live, including
-   repeated bindings; configured keys use bit 0, fixed keys use any nonzero byte. */
-void poll_input_bits(void)
-{
-    byte *table;
-    volatile byte *keys = (volatile byte *)KeyDownTable;
-    word i;
-
-    if (InputDeviceMode == INPUT_MODE_JOYSTICK) {
-        poll_joystick_input_bits();
-        return;
-    }
-    table = InputDeviceMode == INPUT_MODE_KEYS_B ? KeyBitScancodesB : KeyBitScancodesA;
-    for (i = 0; i < KEY_BIT_SCANCODE_COUNT; i++)
-        InputBits = (byte)((InputBits << 1) | (keys[table[i]] & 1));
-    if (keys[SCAN_TAB] != KEY_STATE_UP) InputBits |= IN_BUTTON_SECONDARY;
-    if (keys[SCAN_SPACE] != KEY_STATE_UP) InputBits |= IN_BUTTON_PRIMARY;
-    if (keys[SCAN_UP] != KEY_STATE_UP) InputBits |= IN_YMINUS;
-    if (keys[SCAN_DOWN] != KEY_STATE_UP) InputBits |= IN_YPLUS;
-    if (keys[SCAN_LEFT] != KEY_STATE_UP) InputBits |= IN_XMINUS;
-    if (keys[SCAN_RIGHT] != KEY_STATE_UP) InputBits |= IN_XPLUS;
-}
 
 /* Initialization has the original +9 X bias; subsequent frame stores use +8. */
 void init_position_history(void)

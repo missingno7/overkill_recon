@@ -244,7 +244,7 @@ def death_cases(rng, pair):
         yield frame(w, f'dying sprite {sprite} tick {tick} fuel {fuel}')
 
 MUTANTS = [
-    ('player.c', 'keys[table[i]] & 1', 'keys[table[i]] != 0'),
+    ('input_normalize.c', 'keys[table[i]] & 1', 'keys[table[i]] != 0'),
     ('player.c', 'point[1] = PRIMARY->x + 9;', 'point[1] = PRIMARY->x + 8;'),
     ('player.c', 'XAdjustPathTaken == 0', 'XAdjustPathTaken != 0'),
     ('player.c', 'if (r->y != SHIP_Y_MIN) r->y--;\n        if (r->y != SHIP_Y_MIN) r->y--;',

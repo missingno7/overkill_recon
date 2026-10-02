@@ -23,8 +23,10 @@ platform model; the ASM is not reshaped to make that translation easier. It stay
 useful after the C version is complete, as the reference for any behavioural question.
 
 The reusable game and resource logic now lives in `c/`, including presentation and
-startup configuration. The runnable DOS hybrid keeps the original hardware backend;
-the next phase replaces that boundary and the DOS address representation for SDL3.
+startup configuration. The runnable DOS hybrid keeps the original hardware backend.
+The SDL3 phase has started with a native build of shared input and movement policy and a
+generated view of the original state; [docs/host-port.md](docs/host-port.md) describes
+the native gate and the platform work still required.
 See [docs/dos-hybrid.md](docs/dos-hybrid.md) for building, running and verification limits.
 
 ```powershell
