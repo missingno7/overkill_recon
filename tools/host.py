@@ -1,8 +1,9 @@
-"""Build native input and movement from the same C policy as the DOS hybrid.
+"""Build native input, movement and pool logic from the DOS hybrid's shared C.
 
 The platform state view is generated from the exact ASM oracle, not a second set of
-globals. Windows uses the official pinned SDL3 MinGW SDK under ignored build/deps;
-other hosts use pkg-config sdl3. No machine-wide toolchain installation is changed.
+globals. Windows uses the official pinned SDL3 MinGW SDK under ignored build/deps.
+The non-Windows compiler branch uses pkg-config sdl3, but oracle generation still
+requires the bundled Windows DOS runners. No global installation is changed.
 """
 from common import ROOT, read_json, sha
 from pathlib import Path
@@ -79,7 +80,7 @@ def build():
                '-I' + str(ROOT / 'host')]
     if os.name != 'nt':
         command += ['-fPIC']
-    command += [str(ROOT / p) for p in ('c/input_normalize.c', 'c/movement.c', 'host/memory.c',
+    command += [str(ROOT / p) for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'host/memory.c',
                 'host/input_services.c', 'host/sdl_input.c')]
     flags = sdl_flags()
     library = out / ('OVERKILL_CORE.dll' if os.name == 'nt' else 'liboverkill_core.so')

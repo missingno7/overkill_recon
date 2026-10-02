@@ -3,7 +3,7 @@
    (ScrollRecordThenFinish, FinishRecordUpdate), the pickup update, the enemy handlers of
    the turrets, hatches, descenders, bouncers, crawlers, shooters, the formation members
    and the encounter director (types 14h..93h listed in the OWNS lines), and their helpers:
-   the random word cycle, pool B allocation, aimed shots, the throttled child shot with
+   aimed shots, the throttled child shot with
    its per-firer effects, and the terrain step (TryTerrainStep). Same state, same results;
    the oracle comments at each routine hold the original contracts.
 
@@ -21,7 +21,7 @@
    `jmp HorizontalTerrainPatrol` after Type57ScrollToY80ThenCrawl go with their ranges.
 
    SEGMENT: CGAME
-   OWNS: NextRandomWord SpawnAimedShot InitAimedShotRecord FindFreeRecordPoolB
+   OWNS: SpawnAimedShot InitAimedShotRecord
    OWNS: Type24TurretLeftFire32 Type25TurretRightFire32 Type90TurretVolley Type91TurretVolleyAlt
    OWNS: TurretVolleyAnimateTail TurretVolleyShotCases TurretVolleyFireLower TurretVolleyFireUpper
    OWNS: TurretRemnantFlickerTail Type26TurretRemnant Type27SlowDescender Type28EnemyHatch
@@ -103,33 +103,6 @@ void type22_descend_then_burst(Record *r);
 #define PING_PONG4_AT(off) (*(word *)((byte *)PingPongFrames4 + (off)))
 
 /* ---- helpers ----------------------------------------------------------------------- */
-
-/* The next word of the fixed 16-word CreditRandomWords cycle (the credit text read as
-   words): the cursor steps by 2 and wraps at CreditRandomWords + 31. */
-word next_random_word(void)
-{
-    RandomWordCursor += 2;
-    if (RandomWordCursor >= (word)(CreditRandomWords + 31)) RandomWordCursor = (word)CreditRandomWords;
-    return *(word *)RandomWordCursor;
-}
-
-/* Round robin from PoolBCursor for a free record, saved as the new cursor (not claimed);
-   NO_RECORD when all POOL_B_COUNT are busy (the cursor is then unchanged). The wrap to
-   PoolB is tested before each read, so a cursor equal to PoolBEnd is accepted. */
-Record *find_free_record_pool_b(void)
-{
-    word at = PoolBCursor, n = POOL_B_COUNT;
-
-    do {
-        if (at == (word)PoolBEnd) at = (word)PoolB;
-        if (REC(at)->status == 0) {
-            PoolBCursor = at;
-            return REC(at);
-        }
-        at += RECORD_SIZE;
-    } while (--n);
-    return NO_RECORD;
-}
 
 /* A live 8x8 KIND_TYPED type 0Bh shot, sprite 31h, no timeout. */
 void init_aimed_shot_record(Record *s)

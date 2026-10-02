@@ -2,9 +2,9 @@
    entering the playfield (DrawIncomingMapRow minus its drawing), the level map cell
    spawners (SpawnFromMapRow, Level0..5MapCell and the SpawnCell* routines), the level
    script (RunLevelScriptEvents / ProcessLevelScript: formations, group slots, formation
-   leaders), the leader bodies of types 13h/15h/1Ch/1Fh/7Dh/7Eh and 21h, the pool A
-   allocator and the shared enemy spawn (SpawnEnemyHere...). Same state, same results; see
-   the oracle comments at each routine for the original contracts.
+   leaders), the leader bodies of types 13h/15h/1Ch/1Fh/7Dh/7Eh and 21h, and the shared
+   enemy spawn (SpawnEnemyHere...). Pool allocation is shared in c/pools.c. Same state,
+   same results; see the oracle comments at each routine for the original contracts.
 
    The level map is the segment held by the CS word LevelMapSegment (a load buffer inside
    the image); C reaches it through a far pointer built from that word each time, so the
@@ -13,7 +13,7 @@
    scripts are DS tables, read in place.
 
    SEGMENT: CGAME
-   OWNS: RunLevelScriptEvents ProcessLevelScript FindFreeRecordPoolA SpawnFromMapRow
+   OWNS: RunLevelScriptEvents ProcessLevelScript SpawnFromMapRow
    OWNS: Level0MapCell Level0CellCases Level1MapCell Level2MapCell Level3MapCell Level3CellCases
    OWNS: Level4MapCell Level4CellCases Level5MapCell Level5CellCases
    OWNS: ClearMapCell ClearMapCellAlt Clear2x2MapCells InitMapLargeEnemy
@@ -43,8 +43,6 @@
 #include "enemies.h"
 #include "hits.h"
 
-#define NO_RECORD ((Record *)0xFFFF)
-
 /* CS-resident words (outside the state segment). */
 extern word __far LevelMapSegment;     /* MAIN: segment of the level map */
 extern word __far Type21PathCursor;    /* far segment: next Type21Path waypoint (DS offset) */
@@ -53,29 +51,12 @@ extern word __far Type21PathCursor;    /* far segment: next Type21Path waypoint 
 #define MAP_AT(off) (((__segment)LevelMapSegment) :> ((byte __based(void) *)(off)))
 
 void steer_toward_target(Record *r);           /* c/movement.c */
+Record *find_free_record_pool_a(void);          /* c/pools.c */
 
 /* Level0..5MapCell bridge entry: AH = level, AL = cell byte. */
 #pragma aux level_map_cell parm [si] [di] [ax] value [ax] modify exact [ax]
 
-/* ---- pool A and the shared enemy spawn ------------------------------------------------ */
-
-/* Round robin from PoolACursor for a free record (REC_STATUS 0); it becomes the new
-   PoolACursor but is not claimed. NO_RECORD when all POOL_A_COUNT records are busy. The
-   wrap test is equality with PoolAEnd, as in the oracle. */
-Record *find_free_record_pool_a(void)
-{
-    Record *r = (Record *)PoolACursor;
-    word n = POOL_A_COUNT;
-
-    do {
-        if (r->status == 0) {
-            PoolACursor = (word)r;
-            return r;
-        }
-        if (++r == (Record *)PoolAEnd) r = POOL_A;
-    } while (--n != 0);
-    return NO_RECORD;
-}
+/* ---- shared pool helpers and enemy spawning ------------------------------------------- */
 
 /* Shared body of SpawnEnemyHere/Quiet: a KIND_ENEMY type 14h with 4 hit points facing
    down at here's position, REC_SAVED = that position. Unchecked: NO_RECORD writes through

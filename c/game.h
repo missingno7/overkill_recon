@@ -20,6 +20,18 @@
 #include "GAME_GEN.H"
 #pragma pack()
 
+/* Stored DS links remain 16-bit offsets on both platforms. Convert only at the
+   point of access; host pointers are never stored in original records or tables. */
+#ifdef OVERKILL_HOST
+word overkill_ds_offset(const void *pointer);
+#define GAME_PTR(type, offset) ((type *)overkill_ds_address((word)(offset)))
+#define GAME_OFFSET(pointer) overkill_ds_offset(pointer)
+#else
+#define GAME_PTR(type, offset) ((type *)(word)(offset))
+#define GAME_OFFSET(pointer) ((word)(pointer))
+#endif
+#define NO_RECORD GAME_PTR(Record, 0xFFFF)
+
 /* Calls from C (segment CGAME) into ASM that stays in MAIN go through the oracle's own
    trampoline FarCallMainNearViaAX (AX = near target; every other register and the flags
    pass through). Declare one pragma per register contract, e.g.

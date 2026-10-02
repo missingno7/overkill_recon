@@ -38,7 +38,7 @@
 #include "render.h"
 #include "levels.h"
 
-#define FRAME_NO_RECORD ((Record *)0xFFFF)
+#define FRAME_NO_RECORD NO_RECORD
 
 void steer_toward_target(Record *r);           /* c/movement.c */
 Record *find_free_record_pool_a(void);         /* c/spawn.c */

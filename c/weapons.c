@@ -25,7 +25,6 @@
 #include "player.h"
 #include "render.h"
 
-#define NO_RECORD ((Record *)0xFFFF)
 
 /* Player shot types (REC_TYPE of pool B records spawned here). */
 #define SHOT_STRAIGHT 2         /* single, heavy, fork, pod shots */

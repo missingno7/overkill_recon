@@ -41,7 +41,6 @@
 #include "hits.h"
 #include "player.h"
 
-#define NO_RECORD ((Record *)0xFFFF)
 #define NO_SLOT 0xFFFF              /* empty pod slot, no selected upgrade slot */
 
 /* c/shots.c, c/spawn.c */

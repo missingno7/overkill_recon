@@ -4,8 +4,6 @@
 #define ENEMIES_H
 #include "game.h"
 
-#define NO_RECORD ((Record *)0xFFFF)
-
 word next_random_word(void);
 Record *find_free_record_pool_b(void);
 Record *spawn_aimed_shot(Record *r);

@@ -24,7 +24,7 @@ useful after the C version is complete, as the reference for any behavioural que
 
 The reusable game and resource logic now lives in `c/`, including presentation and
 startup configuration. The runnable DOS hybrid keeps the original hardware backend.
-The SDL3 phase has started with a native build of shared input and movement policy and a
+The SDL3 phase has started with a native build of shared input, movement and pool logic and a
 generated view of the original state; [docs/host-port.md](docs/host-port.md) describes
 the native gate and the platform work still required.
 See [docs/dos-hybrid.md](docs/dos-hybrid.md) for building, running and verification limits.

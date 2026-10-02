@@ -1,23 +1,28 @@
 # Native platform phase
 
 The DOS C baseline is committed at `5c475b7`. The SDL3 phase now builds the shared
-keyboard/joystick input policy and record movement as a native library. This is a core integration
-milestone; a native game executable, graphics, timing, files and audio are still to
-come. The DOS hybrid and exact ASM oracle remain independent build targets.
+keyboard/joystick input policy, record movement, allocation and random-word cycle as a
+native library. This is a core integration milestone; a native game executable,
+graphics, timing, files and audio are still to come. The DOS hybrid and exact ASM
+oracle remain independent build targets.
 
 ```powershell
 python tools/host.py
 python tests/host/input.py --no-build
 python tests/host/movement.py --no-build
+python tests/host/pools.py --no-build
 python tools/hybrid.py
-python tools/difftest.py input_normalize player options pause presentation system title
+python tools/difftest.py
 python tools/verify.py
 ```
 
 The Windows native build uses x86-64 MinGW GCC and the official SDL3 development SDK
 pinned by `metadata/sdl3.json`. The SDK is downloaded into ignored `build/deps` and its
-SHA256 is checked before extraction. Nothing is installed globally. Other hosts use
-GCC-compatible compilers and `pkg-config sdl3`.
+SHA256 is checked before extraction. Nothing is installed globally. The complete
+build is currently tested on Windows and requires the bundled Windows DOS-tool
+runners to regenerate the oracle. The native compiler branch also accepts
+GCC-compatible compilers with `pkg-config sdl3` on other hosts; the oracle-generation
+step still needs adaptation there.
 
 `tools/host.py` builds a fresh symbol-complete oracle, checks its image against the
 pinned original hash, and derives native `GAME_GEN.H` and `STATE.BIN`. Types, record
@@ -26,11 +31,14 @@ widths and permit the unaligned word locations the original state contains.
 
 The platform lends one little-endian 64-KiB DS window to `overkill_bind_state`. Generated
 names are views into that window; there are no globals per label or synchronized
-records. The caller owns its lifetime. This first build supports input and movement: existing
-DOS casts between record offsets and pointers, CS data, code-pointer dispatch, far
-addresses and C16 integer promotions in other regions need explicit adaptation and
-validation before those regions can be compiled for a host. Movement accepts native
-pointers into the same DS window and keeps its original 16-bit record fields.
+records. The caller owns its lifetime. `GAME_PTR` and `GAME_OFFSET` convert stored DS
+offsets at the point of access; allocation cursors and record links retain their
+original word representation, including the FFFFh no-record sentinel. These conversions
+are used by the shared pool and random-cycle helpers. Remaining DOS pointer casts,
+CS data, code-pointer dispatch, far addresses and C16 integer promotions in other
+regions need explicit adaptation and validation before they can be compiled for a
+host. Movement accepts native pointers into the same DS window and keeps its
+original 16-bit record fields.
 
 `host/sdl_input.c` translates physical SDL scancodes into the game's existing set-1 key
 state, including make/release events and typematic repeats. The shared C poll applies
@@ -40,6 +48,7 @@ Compound Pause and transient PrintScreen fake-shift sequences are outside this f
 adapter. Raw joystick samples have an injection boundary; native gamepad sampling and
 calibration are not implemented yet.
 
-Native tests compare complete DS snapshots against bounded original ASM input and movement calls,
-excluding only the DOS stack scratch. SDL event checks use the real SDK event queue.
+Native tests compare complete DS snapshots against bounded original ASM input,
+movement and pool calls, excluding only the DOS stack scratch. SDL event checks use
+the real SDK event queue.
 No whole-game replay or native gameplay claim is implied by this gate.

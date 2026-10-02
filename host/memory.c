@@ -19,3 +19,13 @@ void *overkill_ds_address(uint16_t offset)
     if (state_window == NULL) abort();
     return state_window + offset;
 }
+
+uint16_t overkill_ds_offset(const void *pointer)
+{
+    uintptr_t base = (uintptr_t)state_window;
+    uintptr_t address = (uintptr_t)pointer;
+    if (state_window == NULL || address < base || address - base > 0x10000)
+        abort();
+    /* One-past DS is permitted for end markers and wraps like a DOS offset. */
+    return (uint16_t)(address - base);
+}

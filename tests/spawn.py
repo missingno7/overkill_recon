@@ -1,4 +1,5 @@
-"""Spawn region (c/spawn.c): map row spawning, level script, formation leaders, pool A.
+"""Spawn region (c/spawn.c): map row spawning, level script and formation leaders.
+The shared pool A allocator is in c/pools.c.
 
 Entries: every bridge label (FindFreeRecordPoolA, SpawnMapEnemy, Level0..5MapCell,
 DrawIncomingMapRow, the two demo steps), the leader handlers (types 13h... and the level 4
@@ -350,7 +351,7 @@ def quirks(pair):
 
 # Plausible translation slips; each must make this suite fail (python tools/difftest.py --mutants spawn).
 MUTANTS = [
-    ('spawn.c', 'word n = POOL_A_COUNT;', 'word n = POOL_A_COUNT - 1;'),
+    ('pools.c', 'word n = POOL_A_COUNT;', 'word n = POOL_A_COUNT - 1;'),
     ('spawn.c', 'if ((sword)y > 0) {', 'if (y > 0) {'),
     ('spawn.c', 'case 0xF9: return spawn_cell_fuel_pickup(here, off);',
                 'case 0xF9: spawn_cell_fuel_pickup(here, off); break;'),
@@ -370,7 +371,7 @@ MUTANTS = [
 # Coverage-guided differential fuzzing (python tools/fuzz.py spawn N).
 from fuzz import Target
 import hybrid as _hybrid
-REGION = [n for n, f in _hybrid.owned_labels().items() if f == 'spawn.c']
+REGION = [n for n, f in _hybrid.owned_labels().items() if f in ('spawn.c', 'pools.c')]
 
 # Seeds are deterministic cycles over what 8 seeds must cover (levels, leader types, the
 # path end). The map is built for the seed's level, so LevelIndex is never mutated (another

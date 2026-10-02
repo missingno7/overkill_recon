@@ -6,4 +6,5 @@
 /* The platform supplies one aligned DS window; generated labels are views into it. */
 int overkill_bind_state(void *state, size_t bytes);
 void *overkill_ds_address(uint16_t offset);
+uint16_t overkill_ds_offset(const void *pointer);
 #endif

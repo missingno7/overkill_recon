@@ -19,8 +19,6 @@
 
 Record *find_free_record_pool_a(void);
 
-#define NO_RECORD ((Record *)0xFFFF)
-
 /* Pickup record for DropKind: 16x16 KIND_PICKUP, sprite 46h + kind, draw pass 0 (under
    pass-1 records). Returns the sprite: the oracle leaves it in SI, and SpawnCellFuelPickup's
    caller SpawnFromMapRow then continues its map cell scan from that offset (the bridge
