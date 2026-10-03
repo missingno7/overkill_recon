@@ -142,6 +142,44 @@ Only after those boundaries pass should the native game load full external level
 by default. Binding fixtures version the implemented slice; future sections must
 be justified by all six originals before joining the public format.
 
+## Level identity and episode progression
+
+The required endpoint is a complete level swap: moving a level to another place
+in an episode moves its map, resources, spawn rules, paths, encounters, enemy
+parameters, checkpoints, music and presentation together. Episode position must
+not implicitly select gameplay rules. For example, the original encounter HP
+formula based on `LevelIndex` must become an explicit level parameter, rather than
+change when the same level occupies a different episode position.
+
+A level definition owns content and the policies needed to interpret that content.
+An episode definition references levels in order and owns selection, starting
+position, progression and completion policy. The original campaign must be
+represented through this same mechanism, preserving its observed chooser order,
+wraparound and completion behavior. Start with ordered references; additional
+progression features need evidence or an explicit editing requirement.
+
+Neither episode loading nor complete swaps are implemented yet. The current
+adapter requires six definitions, binds them by original slot and retains shared
+storage/capacity constraints. Definitions are consumed during the native build;
+they are not yet loaded from arbitrary files when the executable starts.
+
+Remaining work toward this endpoint:
+
+1. Complete map recipes and drop rules, encounter/boss/invader data, reset rules
+   and the remaining level-dependent gameplay and presentation parameters.
+2. Separate level identity from episode position and introduce episode selection
+   and progression without changing the DOS/oracle coordinator.
+3. Replace the fixed original-storage adapter with validated runtime loading of
+   complete level and episode files, including custom resource references. Shared
+   original data must not make an edit to one custom level alter another.
+4. Add permutation regressions: with identical initial gameplay state, inputs and
+   RNG, a level in different episode positions must retain its gameplay behavior,
+   resources and restart behavior. Episode progression follows the authored order.
+   The original episode must continue to pass the original equivalence gates.
+5. Build the level/episode GUI only after the CLI loader, validator and original
+   definitions satisfy those contracts. A custom episode must launch in the same
+   executable without rebuilding it or selecting a separate original-game path.
+
 ## Comparison rules
 
 Use identical state, map, input and RNG. Compare the full DS window (except actual
