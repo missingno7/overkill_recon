@@ -5,6 +5,14 @@ replaces DOS hardware services with `host/` implementations. It now runs startup
 title, menus, level selection and gameplay through SDL3. The frozen ASM oracle and
 DOS hybrid remain separate targets.
 
+The `data-driven-levels` branch starts incremental level-data extraction with a
+native resource-binding `LevelDef`. See [engine-model.md](engine-model.md),
+[original-level-mapping.md](original-level-mapping.md) and
+[level-format.md](level-format.md) for the audited boundaries and remaining work.
+The six `.lvl` fixtures currently cover resources only. Run
+`python tests/host/level_def.py --no-build` for their native-vs-oracle binding and
+loader-order regression; external gameplay-level loading is still pending.
+
 ```powershell
 python tools/host.py
 .\build\host\OVERKILL_SDL3.exe

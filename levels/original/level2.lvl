@@ -1,0 +1,12 @@
+{
+  "format": "overkill-level",
+  "id": "original-level-2",
+  "profile": "resource-bindings",
+  "resources": {
+    "blocks": "LEV2BLX.BIC",
+    "map": "LEV2MAP.BIC",
+    "plaque": "plaq1.enc",
+    "sprites": "G2.BIC"
+  },
+  "version": 1
+}

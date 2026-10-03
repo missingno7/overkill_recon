@@ -13,6 +13,7 @@
 #ifdef OVERKILL_HOST
 #include "memory.h"
 #include "platform_services.h"
+#include "level_def.h"
 #endif
 
 #ifndef OVERKILL_HOST
@@ -126,7 +127,11 @@ void initialize_level_byte_attributes(void)
 
 void load_level_map(DosRegisters *registers)
 {
+#ifdef OVERKILL_HOST
+    LevelDef definition;
+#else
     word map_file_offset;
+#endif
 
     /* Every load restarts all six script streams, including streams for the other
        levels; this also runs during checkpoint restart. */
@@ -137,9 +142,14 @@ void load_level_map(DosRegisters *registers)
     LevelScriptCursors[4] = GAME_OFFSET(LevelScript4);
     LevelScriptCursors[5] = GAME_OFFSET(LevelScript5);
 
+#ifdef OVERKILL_HOST
+    overkill_level_def(LevelIndex, &definition);
+    FileNamePtr = overkill_level_resource_name(definition.map);
+#else
     map_file_offset = (word)(GAME_OFFSET(LevelMapFiles) +
                              (word)((word)LevelIndex << 1));
     FileNamePtr = *GAME_PTR(word, map_file_offset);
+#endif
     FileBufferSegment = LevelMapSegment;
     FileBufferOffset = 0;
     for (;;) {
@@ -267,14 +277,24 @@ void load_common_graphics(DosRegisters *registers)
 
 void load_level_graphics(DosRegisters *registers)
 {
+#ifdef OVERKILL_HOST
+    LevelDef definition;
+#else
     word bank_offset, plaque_offset;
+#endif
 
     FileBufferSegment = LevelBlocksSegment;
     FileBufferOffset = 0;
+#ifdef OVERKILL_HOST
+    overkill_level_def(LevelIndex, &definition);
+    PendingSpriteFile = overkill_level_resource_name(definition.sprites);
+    FileNamePtr = overkill_level_resource_name(definition.blocks);
+#else
     bank_offset = (word)(GAME_OFFSET(LevelBankFiles) +
                          (word)((word)LevelIndex << 2));
     PendingSpriteFile = *GAME_PTR(word, bank_offset);
     FileNamePtr = *GAME_PTR(word, (word)(bank_offset + 2));
+#endif
     LoadNamePtr = FileNamePtr;
     LoadDestSegment = LevelBlocksSegment;
     load_graphics_plain(registers);
@@ -283,9 +303,15 @@ void load_level_graphics(DosRegisters *registers)
     LoadDestSegment = LevelSpritesSegment;
     load_graphics_masked(registers);
 
+#ifdef OVERKILL_HOST
+    /* LevelIndex is read again here in the oracle, after both decodes. */
+    overkill_level_def(LevelIndex, &definition);
+    LoadNamePtr = overkill_level_resource_name(definition.plaque);
+#else
     plaque_offset = (word)(GAME_OFFSET(PlaqueFiles) +
                            (word)((word)LevelIndex << 1));
     LoadNamePtr = *GAME_PTR(word, plaque_offset);
+#endif
     LoadDestSegment = PlaqueSegment;
 #ifdef OVERKILL_HOST
     LoadImageSlot = HOST_OFFSET_PLAQUEIMAGEOFFSET;
