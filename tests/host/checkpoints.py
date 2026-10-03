@@ -167,9 +167,13 @@ def _restart_cases(h, arena: Arena, baseline_state: bytes,
         'map_row': 76, 'script_clock': 0xBEEF, 'resume_event': 2}
     h.m.set_state(baseline_state)
     edited_state = bind_level_documents(h.m, documents)
+    documents = [load(path) for path in original_paths()]
+    del documents[2]['timeline'][1]['compatibility']
+    shifted_state = bind_level_documents(h.m, documents)
     variants = [(level, level, baseline_state) for level in range(K.LEVEL_COUNT)]
     variants += [(level + 0x8000, level, baseline_state) for level in range(K.LEVEL_COUNT)]
     variants.append((0, 0, edited_state))
+    variants.append((2, 2, shifted_state))
     for level_index, level, level_state in variants:
         h.m.set_state(level_state)
         checkpoints = _word_at(h.m, h.offset("LevelCheckpointPtrs") + 2 * level)
@@ -219,7 +223,8 @@ def _restart_cases(h, arena: Arena, baseline_state: bytes,
 
             h.m.call("RestartAtCheckpoint", {"BP": player})
             oracle_after = bytes(h.m.u.mem_read(0, DOS_MEMORY_BYTES))
-            variant = 'edited' if level_state is edited_state else 'canonical'
+            variant = ('checkpoint-edited' if level_state is edited_state else
+                       'timeline-edited' if level_state is shifted_state else 'canonical')
             label = f"RestartAtCheckpoint {variant} level {level_index:04X} checkpoint {checkpoint_index}"
             h.compare(label)
             _compare_arena(native_after, oracle_after, stack_begin, stack_end, label)

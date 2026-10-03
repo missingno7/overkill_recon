@@ -11,6 +11,7 @@ typedef struct LevelDef {
     uint16_t plaque;
     uint16_t attribute_patches;
     uint16_t checkpoints;
+    uint16_t timeline_cursor;
 } LevelDef;
 
 typedef struct LevelCheckpoint {

@@ -27,7 +27,7 @@ from unicorn import UC_HOOK_CODE
 
 class Definition(ctypes.Structure):
     _fields_ = [(name, ctypes.c_uint16) for name in
-                ('map', 'sprites', 'blocks', 'plaque', 'attribute_patches', 'checkpoints')]
+                ('map', 'sprites', 'blocks', 'plaque', 'attribute_patches', 'checkpoints', 'timeline_cursor')]
 
 
 class Checkpoint(ctypes.Structure):
@@ -132,6 +132,8 @@ def import_checks(machine):
         document['profile'] = 'resource-bindings'
         del document['terrain']
         del document['checkpoints']
+        del document['formations']
+        del document['timeline']
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []
@@ -150,7 +152,7 @@ def import_checks(machine):
     bad.append((documents[:-1], 'six level definitions'))
     invalid_event = copy.deepcopy(documents)
     invalid_event[0]['checkpoints'][0]['resume_event'] = 65535
-    bad.append((invalid_event, 'no script boundary'))
+    bad.append((invalid_event, 'no timeline boundary'))
     for documents_, diagnostic in bad:
         try:
             bind_level_documents(machine, documents_)
@@ -290,10 +292,11 @@ def bindings(h):
     for level in range(0x10000):
         lib.overkill_level_def(level, ctypes.byref(definition))
         for field, table in (('attribute_patches', 'AttributePatchPointers'),
-                             ('checkpoints', 'LevelCheckpointPtrs')):
+                             ('checkpoints', 'LevelCheckpointPtrs'),
+                             ('timeline_cursor', 'LevelScriptCursorPtrs')):
             if getattr(definition, field) != (h.offset(table) + 2 * level) & 0xFFFF:
                 raise AssertionError(f'{level:04X}: {field} binding differs')
-    return 0x10000 * 6 + 4
+    return 0x10000 * 7 + 4
 
 
 def checkpoint_selection(h, imported):

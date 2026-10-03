@@ -1,13 +1,16 @@
 """Bind structured level definitions into the native initial DS image.
 
 The adapter derives original storage locations/capacities from the exact oracle.
-It retains source filename identities and shared patch streams. Longer streams or
-conflicting shared definitions fail explicitly; allocating new storage is a later
+It retains source filename identities, shared patch/formation storage and drop
+table aliases. Longer streams or conflicting shared definitions fail explicitly;
+allocating new storage is a later
 migration. No oracle source or DOS build artifact is modified.
 """
 from common import ROOT
 from level_format import load, original_paths, validate, encode_attribute_patches
-from export_original_levels import terrain_definition, script_event_boundaries
+from export_original_levels import (terrain_definition, script_event_boundaries,
+                                   source_formations, timeline_definition, checkpoint_definitions)
+from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS
 from emu import LOAD
 from world import K
 import argparse
@@ -32,6 +35,8 @@ def bind_level_documents(machine, documents):
                 raise ValueError(f'ambiguous source filename identity: {name}')
             filenames[name] = offset
     streams = {}
+    formation_bindings = source_formations(machine)
+    shared_formations, shared_drops = {}, {}
     for level, document in enumerate(documents):
         for role, table, displacement in (
                 ('map', 'LevelMapFiles', level * 2),
@@ -58,11 +63,49 @@ def bind_level_documents(machine, documents):
         # Keep unused trailing bytes intact: unchecked neighboring reads still
         # belong to the original memory model. Short streams stop at their new FF.
         state[cursor:cursor + len(payload)] = payload
-        if 'checkpoints' in document:
-            boundaries = script_event_boundaries(machine, level)
+        source_layouts, source_timeline = timeline_definition(machine, level)
+        formations = document.get('formations', source_layouts)
+        timeline = document.get('timeline', source_timeline)
+        for name, formation in formations.items():
+            if name not in formation_bindings:
+                raise ValueError(f'level {level}: formation has no original storage binding: {name}')
+            cursor, source = formation_bindings[name]
+            payload = struct.pack('<4H', SIZES[formation['size']], LAYERS[formation['layer']],
+                                  ARCHETYPES[formation['enemy']], len(formation['members']))
+            payload += b''.join(struct.pack('<hh', member['dx'], member['dy'])
+                                for member in formation['members'])
+            capacity = 8 + 4 * len(source['members'])
+            if len(payload) > capacity:
+                raise ValueError(f'level {level}: formation exceeds original storage capacity: {name}')
+            if cursor in shared_formations and shared_formations[cursor] != payload:
+                raise ValueError(f'level {level}: conflicting shared formation: {name}')
+            shared_formations[cursor] = payload
+            state[cursor:cursor + len(payload)] = payload
+        cursor = machine.offset(f'LevelScript{level}')
+        start = cursor
+        boundaries, payload = [], bytearray()
+        for event in timeline:
+            boundaries.append(start + len(payload))
+            payload += struct.pack('<H', event['clock'])
+            if 'compatibility' in event:
+                payload += b'\xff\xff'
+            payload += struct.pack('<Hhh', formation_bindings[event['formation']][0], event['x'], event['y'])
+            drop_index = event['clock'] & 0x3F
+            drop = DROPS[event['group']['drop']]
+            if drop_index in shared_drops and shared_drops[drop_index] != drop:
+                raise ValueError(f'level {level}: conflicting shared group drop binding')
+            shared_drops[drop_index] = drop
+            state[machine.offset('GroupDropKinds') + drop_index] = drop
+        boundaries.append(start + len(payload))
+        payload += b'\xff\xff'
+        capacity = script_event_boundaries(machine, level)[-1] - start + 2
+        if len(payload) > capacity:
+            raise ValueError(f'level {level}: timeline exceeds original storage capacity')
+        state[start:start + len(payload)] = payload
+        if 'checkpoints' in document or 'timeline' in document:
             slot = machine.offset('LevelCheckpointPtrs') + level * 2
             cursor = struct.unpack_from('<H', original, slot)[0]
-            checkpoints = document['checkpoints']
+            checkpoints = document.get('checkpoints', checkpoint_definitions(machine, level))
             for index, checkpoint in enumerate(checkpoints):
                 event = checkpoint['resume_event']
                 if event >= len(boundaries):

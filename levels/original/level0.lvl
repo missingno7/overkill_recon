@@ -22,6 +22,291 @@
     }
   ],
   "format": "overkill-level",
+  "formations": {
+    "encounter_director_single_1": {
+      "enemy": "encounter_director",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "fall_random_flicker_layout_4": {
+      "enemy": "fall_random_flicker",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 8,
+          "dy": 16
+        },
+        {
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "dx": 32,
+          "dy": 0
+        },
+        {
+          "dx": 40,
+          "dy": 16
+        }
+      ],
+      "size": "16x16"
+    },
+    "fast_fall_3_column_9": {
+      "enemy": "fast_fall_3",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        }
+      ],
+      "size": "16x16"
+    },
+    "hover_fire_plunge_a_layout_4": {
+      "enemy": "hover_fire_plunge_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": -16
+        },
+        {
+          "dx": 48,
+          "dy": -16
+        },
+        {
+          "dx": 64,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_a_column_6": {
+      "enemy": "path_follower_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_b_column_6": {
+      "enemy": "path_follower_b",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_left_column_12": {
+      "enemy": "path_follower_left",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        },
+        {
+          "dx": 0,
+          "dy": -144
+        },
+        {
+          "dx": 0,
+          "dy": -160
+        },
+        {
+          "dx": 0,
+          "dy": -176
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_right_column_12": {
+      "enemy": "path_follower_right",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        },
+        {
+          "dx": 0,
+          "dy": -144
+        },
+        {
+          "dx": 0,
+          "dy": -160
+        },
+        {
+          "dx": 0,
+          "dy": -176
+        }
+      ],
+      "size": "16x16"
+    },
+    "sweep_leader_single_1": {
+      "enemy": "sweep_leader",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    }
+  },
   "id": "original-level-0",
   "profile": "level-bindings",
   "resources": {
@@ -179,5 +464,142 @@
     ],
     "default": "wall"
   },
+  "timeline": [
+    {
+      "clock": 272,
+      "formation": "sweep_leader_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 192,
+      "y": -16
+    },
+    {
+      "clock": 189,
+      "formation": "path_follower_b_column_6",
+      "group": {
+        "drop": "none"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 189,
+      "formation": "path_follower_a_column_6",
+      "group": {
+        "drop": "none"
+      },
+      "x": 16,
+      "y": -16
+    },
+    {
+      "clock": 173,
+      "formation": "hover_fire_plunge_a_layout_4",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 64,
+      "y": -16
+    },
+    {
+      "clock": 108,
+      "formation": "fall_random_flicker_layout_4",
+      "group": {
+        "drop": "none"
+      },
+      "x": 80,
+      "y": -16
+    },
+    {
+      "clock": 107,
+      "formation": "fall_random_flicker_layout_4",
+      "group": {
+        "drop": "smart_bomb"
+      },
+      "x": 80,
+      "y": -16
+    },
+    {
+      "clock": 96,
+      "formation": "fall_random_flicker_layout_4",
+      "group": {
+        "drop": "energy"
+      },
+      "x": 128,
+      "y": -16
+    },
+    {
+      "clock": 95,
+      "formation": "fall_random_flicker_layout_4",
+      "group": {
+        "drop": "none"
+      },
+      "x": 128,
+      "y": -16
+    },
+    {
+      "clock": 87,
+      "formation": "path_follower_b_column_6",
+      "group": {
+        "drop": "none"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 87,
+      "formation": "path_follower_a_column_6",
+      "group": {
+        "drop": "none"
+      },
+      "x": 16,
+      "y": -16
+    },
+    {
+      "clock": 72,
+      "formation": "fast_fall_3_column_9",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 45,
+      "formation": "fast_fall_3_column_9",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 4,
+      "formation": "path_follower_left_column_12",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 4,
+      "formation": "path_follower_right_column_12",
+      "group": {
+        "drop": "none"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 4,
+      "formation": "encounter_director_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 112,
+      "y": 0
+    }
+  ],
   "version": 1
 }

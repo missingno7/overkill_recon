@@ -7,6 +7,7 @@ from common import ROOT, read_json, sha, write_json
 from extract import mz
 from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
+from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
 import argparse
 from pathlib import Path
 import struct
@@ -28,13 +29,65 @@ def resource_bindings(machine, level):
 
 
 def definitions(machine):
-    return [validate({
-        'format': 'overkill-level', 'version': 1,
-        'profile': 'level-bindings', 'id': f'original-level-{level}',
-        'resources': resource_bindings(machine, level),
-        'terrain': terrain_definition(machine, level),
-        'checkpoints': checkpoint_definitions(machine, level),
-    }) for level in range(6)]
+    documents = []
+    for level in range(6):
+        formations, timeline = timeline_definition(machine, level)
+        documents.append(validate({
+            'format': 'overkill-level', 'version': 1,
+            'profile': 'level-bindings', 'id': f'original-level-{level}',
+            'resources': resource_bindings(machine, level),
+            'terrain': terrain_definition(machine, level),
+            'checkpoints': checkpoint_definitions(machine, level),
+            'formations': formations, 'timeline': timeline,
+        }))
+    return documents
+
+
+def source_formations(machine):
+    """Named original storage identities and structured formation definitions."""
+    state = machine.state()
+    enemies = {value: name for name, value in ARCHETYPES.items()}
+    sizes = {value: name for name, value in SIZES.items()}
+    layers = {value: name for name, value in LAYERS.items()}
+    bindings = {}
+    for index in range(53):
+        cursor = machine.offset(f'Formation{index:02}')
+        size, layer, enemy, count = struct.unpack_from('<4H', state, cursor)
+        if size not in sizes or layer not in layers or enemy not in enemies or count == 0:
+            raise ValueError(f'Formation{index:02}: unmodeled header')
+        members = [{'dx': dx, 'dy': dy} for dx, dy in
+                   struct.iter_unpack('<hh', state[cursor + 8:cursor + 8 + count * 4])]
+        definition = {'enemy': enemies[enemy], 'size': sizes[size],
+                      'layer': layers[layer], 'members': members}
+        name = formation_id(definition)
+        if name in bindings:
+            raise ValueError('ambiguous original formation identity: ' + name)
+        bindings[name] = (cursor, definition)
+    return bindings
+
+
+def timeline_definition(machine, level):
+    state = machine.state()
+    bindings = source_formations(machine)
+    by_cursor = {cursor: name for name, (cursor, _) in bindings.items()}
+    drops = {value: name for name, value in DROPS.items()}
+    formations, timeline = {}, []
+    for cursor in script_event_boundaries(machine, level)[:-1]:
+        clock, formation = struct.unpack_from('<2H', state, cursor)
+        marker = formation == 0xFFFF
+        cursor += 2
+        if marker:
+            cursor += 2
+        formation, x, y = struct.unpack_from('<Hhh', state, cursor)
+        name = by_cursor[formation]
+        formations[name] = bindings[name][1]
+        drop = state[machine.offset('GroupDropKinds') + (clock & 0x3F)]
+        event = {'clock': clock, 'formation': name, 'x': x, 'y': y,
+                 'group': {'drop': drops[drop]}}
+        if marker:
+            event['compatibility'] = {'clear_event_marker': True}
+        timeline.append(event)
+    return formations, timeline
 
 
 def terrain_definition(machine, level):

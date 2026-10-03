@@ -13,6 +13,7 @@ void overkill_level_def(uint16_t level_index, LevelDef *definition)
     definition->plaque = (word)(GAME_OFFSET(PlaqueFiles) + pair_index);
     definition->attribute_patches = (word)(GAME_OFFSET(AttributePatchPointers) + pair_index);
     definition->checkpoints = (word)(GAME_OFFSET(LevelCheckpointPtrs) + pair_index);
+    definition->timeline_cursor = (word)(GAME_OFFSET(LevelScriptCursorPtrs) + pair_index);
 }
 
 uint16_t overkill_level_resource_name(uint16_t binding)

@@ -22,6 +22,381 @@
     }
   ],
   "format": "overkill-level",
+  "formations": {
+    "animated_shooter_single_1": {
+      "enemy": "animated_shooter",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "descend_bounce_a_row_3": {
+      "enemy": "descend_bounce_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "dx": 32,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "descend_burst_single_1": {
+      "enemy": "descend_burst",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "encounter_director_single_1": {
+      "enemy": "encounter_director",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "fall_burst_single_1": {
+      "enemy": "fall_burst",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "fast_fall_3_column_9": {
+      "enemy": "fast_fall_3",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        }
+      ],
+      "size": "16x16"
+    },
+    "hover_fire_plunge_a_layout_4": {
+      "enemy": "hover_fire_plunge_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": -16
+        },
+        {
+          "dx": 48,
+          "dy": -16
+        },
+        {
+          "dx": 64,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_a_column_6": {
+      "enemy": "path_follower_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_b_column_6": {
+      "enemy": "path_follower_b",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "patrol_shoot_down_64_single_1": {
+      "enemy": "patrol_shoot_down_64",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "patrol_shoot_down_b_layout_4": {
+      "enemy": "patrol_shoot_down_b",
+      "layer": "under_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 32,
+          "dy": 0
+        },
+        {
+          "dx": 32,
+          "dy": -32
+        }
+      ],
+      "size": "16x16"
+    },
+    "scrolling_shuttle_single_1": {
+      "enemy": "scrolling_shuttle",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "side_turret_single_1": {
+      "enemy": "side_turret",
+      "layer": "under_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "slot_hopper_leader_single_1": {
+      "enemy": "slot_hopper_leader",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "slow_descender_layout_8": {
+      "enemy": "slow_descender",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 16,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 16,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 16,
+          "dy": -48
+        }
+      ],
+      "size": "16x16"
+    },
+    "vertical_bouncer_shooter_row_5": {
+      "enemy": "vertical_bouncer_shooter",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": 0
+        },
+        {
+          "dx": 32,
+          "dy": 0
+        },
+        {
+          "dx": 48,
+          "dy": 0
+        },
+        {
+          "dx": 64,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "wall_bounce_descender_single_1": {
+      "enemy": "wall_bounce_descender",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "wall_patrol_a_column_3": {
+      "enemy": "wall_patrol_a",
+      "layer": "under_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        }
+      ],
+      "size": "16x16"
+    },
+    "wall_patrol_shooter_column_3": {
+      "enemy": "wall_patrol_shooter",
+      "layer": "under_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        }
+      ],
+      "size": "16x16"
+    }
+  },
   "id": "original-level-1",
   "profile": "level-bindings",
   "resources": {
@@ -99,5 +474,352 @@
     ],
     "default": "wall"
   },
+  "timeline": [
+    {
+      "clock": 272,
+      "formation": "slot_hopper_leader_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 192,
+      "y": 224
+    },
+    {
+      "clock": 266,
+      "formation": "wall_patrol_shooter_column_3",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 250,
+      "formation": "slow_descender_layout_8",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 112,
+      "y": -16
+    },
+    {
+      "clock": 237,
+      "formation": "wall_patrol_a_column_3",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 32,
+      "y": -16
+    },
+    {
+      "clock": 220,
+      "formation": "scrolling_shuttle_single_1",
+      "group": {
+        "drop": "smart_bomb"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 207,
+      "formation": "path_follower_b_column_6",
+      "group": {
+        "drop": "fuel"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 187,
+      "formation": "wall_patrol_a_column_3",
+      "group": {
+        "drop": "fuel"
+      },
+      "x": 192,
+      "y": -16
+    },
+    {
+      "clock": 162,
+      "formation": "animated_shooter_single_1",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 32,
+      "y": -16
+    },
+    {
+      "clock": 154,
+      "formation": "slow_descender_layout_8",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 160,
+      "y": -16
+    },
+    {
+      "clock": 152,
+      "formation": "slow_descender_layout_8",
+      "group": {
+        "drop": "none"
+      },
+      "x": 160,
+      "y": -16
+    },
+    {
+      "clock": 146,
+      "formation": "patrol_shoot_down_b_layout_4",
+      "group": {
+        "drop": "none"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 130,
+      "formation": "hover_fire_plunge_a_layout_4",
+      "group": {
+        "drop": "none"
+      },
+      "x": 64,
+      "y": -16
+    },
+    {
+      "clock": 110,
+      "formation": "fast_fall_3_column_9",
+      "group": {
+        "drop": "none"
+      },
+      "x": 16,
+      "y": -16
+    },
+    {
+      "clock": 110,
+      "formation": "fast_fall_3_column_9",
+      "group": {
+        "drop": "none"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 103,
+      "formation": "scrolling_shuttle_single_1",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 100,
+      "formation": "animated_shooter_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 91,
+      "formation": "descend_bounce_a_row_3",
+      "group": {
+        "drop": "none"
+      },
+      "x": 128,
+      "y": -16
+    },
+    {
+      "clock": 70,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "descend_burst_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 96,
+      "y": 0
+    },
+    {
+      "clock": 63,
+      "formation": "path_follower_a_column_6",
+      "group": {
+        "drop": "none"
+      },
+      "x": 16,
+      "y": -16
+    },
+    {
+      "clock": 60,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "patrol_shoot_down_64_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 59,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "patrol_shoot_down_64_single_1",
+      "group": {
+        "drop": "fuel"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 49,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "wall_bounce_descender_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": 0
+    },
+    {
+      "clock": 46,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "descend_burst_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 80,
+      "y": 0
+    },
+    {
+      "clock": 46,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "fall_burst_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 96,
+      "y": 0
+    },
+    {
+      "clock": 46,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "descend_burst_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 112,
+      "y": 0
+    },
+    {
+      "clock": 42,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "wall_bounce_descender_single_1",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 0,
+      "y": 0
+    },
+    {
+      "clock": 37,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "wall_bounce_descender_single_1",
+      "group": {
+        "drop": "energy"
+      },
+      "x": 192,
+      "y": 0
+    },
+    {
+      "clock": 31,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "patrol_shoot_down_64_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": 0
+    },
+    {
+      "clock": 31,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "wall_bounce_descender_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": 0
+    },
+    {
+      "clock": 30,
+      "formation": "vertical_bouncer_shooter_row_5",
+      "group": {
+        "drop": "none"
+      },
+      "x": 64,
+      "y": 0
+    },
+    {
+      "clock": 27,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "patrol_shoot_down_64_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": 0
+    },
+    {
+      "clock": 27,
+      "formation": "side_turret_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 144,
+      "y": -16
+    },
+    {
+      "clock": 25,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "patrol_shoot_down_64_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 32,
+      "y": 0
+    },
+    {
+      "clock": 4,
+      "formation": "encounter_director_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 112,
+      "y": 0
+    }
+  ],
   "version": 1
 }

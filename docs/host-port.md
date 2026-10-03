@@ -6,13 +6,16 @@ title, menus, level selection and gameplay through SDL3. The frozen ASM oracle a
 DOS hybrid remain separate targets.
 
 The `data-driven-levels` branch starts incremental level-data extraction with a
-native resource/terrain/checkpoint-binding `LevelDef`. See [engine-model.md](engine-model.md),
+native level-binding `LevelDef`. See [engine-model.md](engine-model.md),
 [original-level-mapping.md](original-level-mapping.md) and
 [level-format.md](level-format.md) for the audited boundaries and remaining work.
 The native build consumes six `.lvl` definitions for resources and ordered tile
-attributes and checkpoints, binding them into the original initialization layout. Run
+attributes, checkpoints, timelines and formations in the original initialization
+layout. Run
 `python tests/host/level_def.py --no-build` for their native-vs-oracle binding and
 loader/terrain regression; complete external gameplay-level loading is still pending.
+`python tests/host/timeline.py --no-build` compares every original event/formation
+against ASM with pool/group exhaustion and edited definition cases.
 
 ```powershell
 python tools/host.py

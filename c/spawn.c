@@ -45,6 +45,7 @@
 
 #ifdef OVERKILL_HOST
 #include "memory.h"
+#include "level_def.h"
 #endif
 
 /* CS-resident words (outside the state segment). */
@@ -729,8 +730,14 @@ void run_level_script_events(void)
     Record *r;
 
     for (;;) {
+#ifdef OVERKILL_HOST
+        LevelDef definition;
+        overkill_level_def(LevelIndex, &definition);
+        cursor_offset = *GAME_PTR(word, definition.timeline_cursor);
+#else
         cursor_offset = *GAME_PTR(word, (word)(GAME_OFFSET(LevelScriptCursorPtrs) +
                                                 (word)(LevelIndex * 2)));
+#endif
         event_offset = *GAME_PTR(word, cursor_offset);
         EventTrigger = *GAME_PTR(word, event_offset);
         event_offset = (word)(event_offset + 2);

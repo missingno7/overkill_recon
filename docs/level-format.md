@@ -1,12 +1,14 @@
-# Overkill level format: resource, terrain and checkpoint slice
+# Overkill level format: resources, terrain, checkpoints and timelines
 
 Version 1 has two partial profiles. `level-bindings` describes resources, tile
-attributes and optional checkpoints; the earlier `resource-bindings` profile remains
+attributes and optional checkpoints, timelines and formations; the earlier `resource-bindings` profile remains
 accepted and retains original terrain/checkpoints. Neither describes a complete
-playable level yet. Map contents, objects, paths, formations, events and encounters
+playable level yet. Map contents, map spawn recipes, paths and encounters
 await extraction.
 
-The implemented `level-bindings` fields are (the example patch list is abbreviated):
+An earlier partial `level-bindings` definition remains valid (the patch list below
+is abbreviated). Canonical files also contain the timeline/formation sections
+described below:
 
 ```json
 {
@@ -74,7 +76,8 @@ the 13-cell map, starting at zero; the adapter converts it to `MapScrollPos` byt
 The terminating event boundary is also a valid resume point. Import rejects indices
 outside the existing script. Optional marker words make event byte lengths variable;
 the adapter discovers boundaries from the source-built scripts rather than guessing
-an eight-byte stride. Timeline/formation payloads are not extracted yet.
+an eight-byte stride. When a timeline edit changes framing, checkpoint indices
+resolve to the new event boundaries automatically.
 
 The current binding requires four strictly increasing rows whose byte positions
 fit a word; clock and event indices also fit unsigned words. This validates binding
@@ -92,6 +95,68 @@ read reaches neighboring data, and its result is ignored. The adapter preserves
 those neighboring bytes; the native reader preserves the write/read order, including
 live alias effects. These are internal compatibility semantics, not public fields.
 
+## Timelines and formations
+
+`timeline` and `formations` are optional together; omitting both retains original
+definitions. A timeline is an ordered list of events; formations are a named object.
+This excerpt shows one original event and its formation (the complete level has
+more events):
+
+```json
+{
+  "formations": {
+    "sweep_leader_single_1": {
+      "enemy": "sweep_leader",
+      "size": "16x16",
+      "layer": "over_terrain",
+      "members": [{ "dx": 0, "dy": 0 }]
+    }
+  },
+  "timeline": [
+    {
+      "clock": 272,
+      "formation": "sweep_leader_single_1",
+      "x": 192,
+      "y": -16,
+      "group": { "drop": "none" }
+    }
+  ]
+}
+```
+
+Clock values are unsigned words below 65535, in non-increasing order. Origins and
+member offsets are signed words; runtime addition wraps as before. Members are
+ordered, with X then Y. Presets are semantic names mapped to the existing REC_TYPE
+dispatcher in `tools/level_presets.py`; they do not replace or merge behaviors.
+Letter suffixes distinguish existing presets whose parameter/path data is still
+pending extraction. Sizes are `8x8`, `16x16` or `32x32`; layers are `under_terrain`
+or `over_terrain`. Group drops are `none`, `upgrade`, `energy`, `smart_bomb` or `fuel`.
+Member lists are nonempty: the original zero-count LOOP bug remains supported in
+live compatibility streams, but is not a normal empty formation in public JSON.
+
+An importer-generated `"compatibility": {"clear_event_marker": true}` on an event
+retains its optional marker word. That word clears an otherwise-unused runtime
+byte; it also changes event length and checkpoint cursor identities. It is not a
+new gameplay action or scripting language.
+
+Every consecutive event whose clock equals the current countdown executes in
+source order. A missed trigger is not caught up. Each event advances its cursor
+before allocation. A full pool consumes events without retry; partial formations
+retain the members that fit. Drop `none` skips group allocation, and unavailable
+groups retain the original ungrouped/stale-index behavior. Initialization, column
+snapping, saved coordinates, hit points, leader setup and RNG use remain procedural
+in the existing spawner. They are deliberately not configurable fields yet.
+
+The adapter currently binds semantic formation names to original shared storage;
+names are generated from the preset and observed member layout. An edit can change
+that definition while retaining its binding name. Longer formations/timelines,
+unknown binding names and inconsistent edits to shared formations fail explicitly.
+Unused Formation48 is not exported as level content and remains untouched in DS.
+Event drops still bind to the shared legacy drop table, also used by map spawning;
+inconsistent drops for an aliased table cell fail. A consistent change affects all
+uses of that cell, including map drops. These restrictions belong to the temporary
+native layout adapter, not the future level/editor model.
+
 ## Export and validation
 
 ```powershell
@@ -108,6 +173,8 @@ reads named DS tables and filenames without executing original code. It exports
 terrain patches in source order, including duplicates, and resolves checkpoint
 cursors to event indices. It rejects unmodeled independent selection thresholds or
 checkpoint positions/cursors that are not row/event boundaries.
+It also reads all used formations and timeline events, including semantic presets,
+member ordering, explicit group drops and marker compatibility properties.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
 Serialization is deterministic. The six fixtures in `levels/original/` are consumed
@@ -115,7 +182,8 @@ by validation, native initialization and the binding/terrain/checkpoint regressi
 
 The native build loads all six `levels/original/level*.lvl` files. A generic adapter
 binds asset names to original DS filename identities, encodes semantic patches and
-resolves checkpoint rows/event indices into original storage. It writes only native
+encodes formation/timeline records and resolves checkpoint rows/event indices into
+original storage. It writes only native
 initialization; the oracle and DOS
 hybrid stay independent. Canonical originals reproduce the entire initial DS image,
 including ignored neighboring bytes. Native `host/level_def.*` reads live bindings.
@@ -155,6 +223,7 @@ python tools/host.py
 python tests/host/level_def.py --no-build
 python tests/host/terrain.py --no-build
 python tests/host/checkpoints.py --no-build
+python tests/host/timeline.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -171,3 +240,7 @@ pixel parity. Existing graphics/native suites remain responsible for that.
 The checkpoint suite compares full physical memory after restart for all original
 entries, wrapped level aliases and a structured checkpoint edit, including restored
 clocks/cursors, map reload/reset and scroll-to-row behavior.
+The timeline suite exercises all 138 original events and 52 referenced formations
+with free, partial and full pools. It compares complete DS/physical memory, group
+state, saved/stale record fields and cursor order, and tests edited definitions,
+marker-driven checkpoint relocation, equality boundaries and zero-count streams.

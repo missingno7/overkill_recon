@@ -22,6 +22,114 @@
     }
   ],
   "format": "overkill-level",
+  "formations": {
+    "descend_aimed_fire_single_1": {
+      "enemy": "descend_aimed_fire",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "32x32"
+    },
+    "encounter_director_single_1": {
+      "enemy": "encounter_director",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_a_column_6": {
+      "enemy": "path_follower_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_b_column_6": {
+      "enemy": "path_follower_b",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        }
+      ],
+      "size": "16x16"
+    },
+    "radial_burst_faller_single_1": {
+      "enemy": "radial_burst_faller",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "32x32"
+    },
+    "sway_leader_single_1": {
+      "enemy": "sway_leader",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    }
+  },
   "id": "original-level-3",
   "profile": "level-bindings",
   "resources": {
@@ -159,5 +267,91 @@
     ],
     "default": "wall"
   },
+  "timeline": [
+    {
+      "clock": 272,
+      "formation": "sway_leader_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 153,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "descend_aimed_fire_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 136,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "radial_burst_faller_single_1",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 80,
+      "y": -16
+    },
+    {
+      "clock": 90,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "radial_burst_faller_single_1",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 50,
+      "compatibility": {
+        "clear_event_marker": true
+      },
+      "formation": "descend_aimed_fire_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 26,
+      "formation": "path_follower_a_column_6",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 16,
+      "y": -16
+    },
+    {
+      "clock": 26,
+      "formation": "path_follower_b_column_6",
+      "group": {
+        "drop": "upgrade"
+      },
+      "x": 176,
+      "y": -16
+    },
+    {
+      "clock": 4,
+      "formation": "encounter_director_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 112,
+      "y": 0
+    }
+  ],
   "version": 1
 }

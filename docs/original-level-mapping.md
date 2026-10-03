@@ -16,10 +16,10 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Extracted to semantic ordered patches in `.lvl`; native build binds them into existing storage; levels 1/4 remain shared |
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Pending shared definition; load forces first two rows and last five rows |
 | Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Pending direct old/new comparisons |
-| Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Pending equality triggers, ordered repeated triggers, optional marker word |
-| Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Pending; size, draw pass, behavior, member count and ordered offsets |
-| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Pending; map offset and trigger low six bits select drop |
-| Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; public names will bind to these internally |
+| Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
+| Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
+| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted as semantic names; shared trigger/map-offset indexing retained in adapter; map recipes pending |
+| Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py` |
 | Waypoint paths | Pure data with distinct behavior contracts | `Type41Path`, `Type43/44/45/4A/51Path`, `PathType66/67`; `paths.c` | Pending; these use Y/X pairs, unlike formation member offsets |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Pending; do not merge with ordinary paths yet |
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Pending; allocator history and shared cursor retained |
@@ -99,6 +99,13 @@ The native selection retains provisional cursor writes before threshold reads;
 direct comparisons cover the two alias cases the previous C selection omitted.
 Level 2's final clock/event mismatch and level 5's repeated resume event are retained.
 
+Timeline and formation payloads now enter that initialization too. Preset identities
+are in `tools/level_presets.py`, directly consumed by export, validation and binding;
+the enemy dispatcher remains authoritative for behavior. The layout adapter retains
+shared formation identities and trigger-indexed group drops, rejects conflicting
+definitions and preserves ignored trailing bytes. Checkpoint indices follow edited
+event framing rather than retaining stale source byte offsets.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
@@ -106,7 +113,6 @@ six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
 Correlate decoded map-cell occurrences with recipes and every mutation path; build
 a behavior-name registry from actual uses; inventory precise leader record formats;
-extract event/formation payloads without changing checkpoint event identities; identify encounter parameters
+extract distinct path/leader payloads; identify encounter parameters
 without changing implementation order; compare complete affected state for every
-new extraction. No path, formation, event or enemy-family schema is locked by this
-resource/terrain slice.
+new extraction. No path or enemy-family schema is locked by these data extractions.

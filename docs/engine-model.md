@@ -21,13 +21,13 @@ slots must first retain their own semantics.
 ## Initial extraction
 
 The native `LevelDef` binds map, sprite bank, block bank, plaque and ordered tile
-attribute patches and checkpoints. References point at original DS pointer-table slots, not cached
+attribute patches, checkpoints and timeline cursors. References point at original DS pointer-table slots, not cached
 targets. Reading each slot at the original use point preserves mutations and loader
 callback ordering. No gameplay state is shadowed. Out-of-range word indices retain
 the original, independently wrapped table arithmetic.
 
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
-native build consumes their resource, terrain and checkpoint definitions through a generic
+native build consumes resource, terrain, checkpoint, timeline and formation definitions through a generic
 binding adapter, writing into the original initial DS layout. With all six originals
 this reproduces every initialization byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
@@ -61,15 +61,28 @@ following record into `CheckpointScriptCursor` expose the difference. Two small
 mutated-stream regressions preserve the demonstrated ASM order. Canonical restarts
 remain equivalent; the DOS implementation and load module remain unchanged.
 
+The six scripts contain 138 ordered events referencing 52 shared formations. An
+event names a countdown, formation, origin and group drop; a formation names an
+existing behavior preset, size/layer and ordered offsets. The unused Formation48
+is retained in initial DS, outside exported level content. The native spawner reads
+its live timeline cursor through LevelDef and keeps its established initializer.
+Equal-clock events execute in order; cursor advance precedes allocation, so pool
+exhaustion consumes events. Event-marker compatibility preserves variable framing.
+Rebinding a changed marker resolves checkpoint indices to their new byte cursors.
+
+Semantic presets expose handler identities without REC_TYPE numbers. Their registry
+is a binding, not a behavior-family abstraction. Leader scripts, follower paths,
+spawn-time HP/record setup and encounter logic still use the original procedures.
+The temporary layout adapter preserves shared formations and the group-drop table
+also used by map cells; conflicting edits fail instead of silently choosing one.
+
 ## Next boundaries to prove
 
-1. Formation events and member definitions, with cursor advance before allocation,
-   ordered members, optional marker clear and equality-only event triggering.
-2. Distinct path and leader formats, preserving transition timing and signedness.
-3. Map recipes, compared directly against every original cell handler before
+1. Distinct path and leader formats, preserving transition timing and signedness.
+2. Map recipes, compared directly against every original cell handler before
    switching dispatch. Recipes must express mutation before allocation, retained
    cells, 2x2 writes, conditional groups and exceptional scan-cursor results.
-4. Encounter descriptors retaining unique procedural implementations initially.
+3. Encounter descriptors retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
 by default. Binding fixtures version the implemented slice; future sections must

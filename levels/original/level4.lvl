@@ -22,6 +22,167 @@
     }
   ],
   "format": "overkill-level",
+  "formations": {
+    "encounter_director_single_1": {
+      "enemy": "encounter_director",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "fast_fall_3_column_9": {
+      "enemy": "fast_fall_3",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        }
+      ],
+      "size": "16x16"
+    },
+    "hover_fire_plunge_a_layout_4": {
+      "enemy": "hover_fire_plunge_a",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 16,
+          "dy": -16
+        },
+        {
+          "dx": 48,
+          "dy": -16
+        },
+        {
+          "dx": 64,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    },
+    "path_follower_f_column_16": {
+      "enemy": "path_follower_f",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "dx": 0,
+          "dy": -16
+        },
+        {
+          "dx": 0,
+          "dy": -32
+        },
+        {
+          "dx": 0,
+          "dy": -48
+        },
+        {
+          "dx": 0,
+          "dy": -64
+        },
+        {
+          "dx": 0,
+          "dy": -80
+        },
+        {
+          "dx": 0,
+          "dy": -96
+        },
+        {
+          "dx": 0,
+          "dy": -112
+        },
+        {
+          "dx": 0,
+          "dy": -128
+        },
+        {
+          "dx": 0,
+          "dy": -144
+        },
+        {
+          "dx": 0,
+          "dy": -160
+        },
+        {
+          "dx": 0,
+          "dy": -176
+        },
+        {
+          "dx": 0,
+          "dy": -192
+        },
+        {
+          "dx": 0,
+          "dy": -208
+        },
+        {
+          "dx": 0,
+          "dy": -224
+        },
+        {
+          "dx": 0,
+          "dy": -240
+        }
+      ],
+      "size": "16x16"
+    },
+    "sweeper_leader_single_1": {
+      "enemy": "sweeper_leader",
+      "layer": "over_terrain",
+      "members": [
+        {
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "size": "16x16"
+    }
+  },
   "id": "original-level-4",
   "profile": "level-bindings",
   "resources": {
@@ -99,5 +260,52 @@
     ],
     "default": "wall"
   },
+  "timeline": [
+    {
+      "clock": 272,
+      "formation": "sweeper_leader_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 177,
+      "formation": "hover_fire_plunge_a_layout_4",
+      "group": {
+        "drop": "none"
+      },
+      "x": 64,
+      "y": -16
+    },
+    {
+      "clock": 107,
+      "formation": "fast_fall_3_column_9",
+      "group": {
+        "drop": "smart_bomb"
+      },
+      "x": 96,
+      "y": -16
+    },
+    {
+      "clock": 16,
+      "formation": "path_follower_f_column_16",
+      "group": {
+        "drop": "none"
+      },
+      "x": 0,
+      "y": -16
+    },
+    {
+      "clock": 4,
+      "formation": "encounter_director_single_1",
+      "group": {
+        "drop": "none"
+      },
+      "x": 112,
+      "y": 0
+    }
+  ],
   "version": 1
 }
