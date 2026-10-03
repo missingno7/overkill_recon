@@ -27,7 +27,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `frame.c` | Pending; level 5 timing differs |
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route extracted with restart ending; parts/geometry/damage coupling pending |
-| Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Pending descriptors pointing at existing implementations |
+| Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Extracted four semantic kinds, phase thresholds, explicit burster health/sprite/X, faller policies and director damage eligibility; existing procedures retained |
 | Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
 | Map reset actions | Pure dispatch data + procedural mutations | `MapResetLists` in DATA and `MapResetList*` in code; restart scan | Pending; cleared/restored cells may differ from normal spawning |
 | Music | Resource metadata + timeline policy | `LevelMusicTable`; `life.c`, `frame.c` | Pending; low-byte index, start/end/late-level overrides remain |
@@ -37,7 +37,8 @@ this inventory. No complete external gameplay representation is claimed yet.
 
 `firers.c`, `flyers.c`, `terrain.c`, `pods.c` and `weapons.c` have no direct
 `LevelIndex` selection. Their runtime dependencies still matter for equivalence.
-`combat.c` has level-dependent director damage and descendant speed; `shots.c`
+`combat.c` now reads director damage eligibility from the encounter descriptor;
+descendant speed remains level-dependent. `shots.c`
 also changes projectile speed on level 0. The absence of a level branch is not a
 proof that a routine is independent of selected banks, tile properties or state.
 
@@ -78,10 +79,10 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 
 | Source | Selections to classify further |
 |---|---|
-| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; faller variants and conversion to aimed drift; selected path/steering rules; shooter exceptions; fall speed; child hit points; director selection/HP; slot-hopper speed; jitter-shooter preset |
+| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset; boss geometry/invader layout |
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
 | `spawn.c` | Map recipes; crawler sprite override; jitter group RNG; event HP initialization; type21's unusual initial leader-script pointer |
-| `combat.c`, `shots.c` | Director damage eligibility; descendant extra Y step; level0 projectile speed |
+| `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
 | `frame.c` | Level5 invader march timing; music selection; checkpoint/reset table bindings |
 | `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
@@ -146,12 +147,26 @@ resolved it without changing gameplay or adding a compatibility property.
 Group comparisons cover zero/nonzero/raw drops, full/partial group tables, failed
 record allocation, every original drop-cycle offset and live drop-word alias order.
 
+`tools/level_encounter.py` curates the small scalar choices in the director, faller
+spawner/movement and director destruction gate. It exports and validates the six
+descriptors and generates native immutable content; it does not patch runtime DS.
+The reference remains `Type21EncounterDirector`, `EncounterSpawnFaller`,
+`Type23ColumnFaller` and `DestroyRecord` in MODULE3.ASM and their DOS C bodies.
+Canonical data retains the entire initial DS image. Bounded tests cover every
+director kind, phase boundaries, free/partial/full allocation, column wrap,
+variant-counter wrap, arrival/motion and destruction. Permutation tests swap boss
+and invader descriptors and move burster HP/animation policies between slots.
+Authored tests independently change phase thresholds, HP, variant preservation,
+motion, sprite/X and damage eligibility. Live identity aliases verify the original
+read after type/sprite writes; no cached level selection replaces that read.
+Boss assembly/part offsets, invader slots and march timing remain unresolved data.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
 ## Open evidence work
 
 Correlate decoded map-cell occurrences with recipes and every mutation path; build
-a behavior-name registry from actual uses; identify encounter parameters
+a behavior-name registry from actual uses; identify remaining boss/invader parameters
 without changing implementation order; compare complete affected state for every
 new extraction. No enemy-family abstraction is locked by these data extractions.

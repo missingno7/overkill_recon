@@ -133,6 +133,22 @@
       }
     }
   },
+  "encounter": {
+    "burster": {
+      "hit_points": 60,
+      "sprite": 113,
+      "x": 96
+    },
+    "burster_at_tick": 240,
+    "director_destructible": false,
+    "fallers": {
+      "hit_points": "invulnerable",
+      "motion": "alternate_animated",
+      "variant": "record_tick"
+    },
+    "fallers_until_tick": 200,
+    "kind": "fallers_then_burster"
+  },
   "format": "overkill-level",
   "formations": {
     "drop_aim_single_1": {

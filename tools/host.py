@@ -53,6 +53,7 @@ def generate_state(out):
     from level_format import load, original_paths
     from level_map_recipes import generate_map_recipe_header
     from level_departure import generate_departure_header
+    from level_encounter import generate_encounter_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -60,6 +61,7 @@ def generate_state(out):
     (out / 'STATE.BIN').write_bytes(load_original_bindings(machine))
     generate_map_recipe_header(out, [load(path) for path in original_paths()])
     generate_departure_header(out, [load(path) for path in original_paths()], machine)
+    generate_encounter_header(out, [load(path) for path in original_paths()])
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')
@@ -199,7 +201,7 @@ def build(full=True):
         sources += [p for p in sorted((ROOT / 'host').glob('*.c')) if p.name != 'main.c']
         sources += [ROOT / 'third_party/nuked_opl3/opl3.c']
     else:
-        sources = [ROOT / p for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'c/terrain.c', 'c/combat.c', 'c/pod_motion.c', 'c/render.c', 'host/memory.c',
+        sources = [ROOT / p for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'c/terrain.c', 'c/combat.c', 'c/pod_motion.c', 'c/render.c', 'host/memory.c', 'host/level_encounter.c',
                    'host/input_services.c', 'host/sdl_input.c', 'host/sdl_gamepad.c', 'host/sdl_video.c', 'host/render_services.c', 'host/clock_services.c',
                    'host/resource_services.c', 'host/file_services.c', 'host/video_services.c', 'host/text_video.c')]
     command += [str(p) for p in sources]

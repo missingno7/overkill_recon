@@ -62,6 +62,9 @@
 #include "flyers.h"
 #include "firers.h"
 #include "terrain.h"
+#ifdef OVERKILL_HOST
+#include "level_encounter.h"
+#endif
 
 /* c/movement.c */
 void move_in_direction(Record *r, word n);
@@ -1294,6 +1297,9 @@ void encounter_spawn_faller(Record *r)
 {
     Record *c;
     word tick;
+#ifdef OVERKILL_HOST
+    LevelEncounter encounter;
+#endif
 
     if (FrameCount8 == 7) {
         c = spawn_enemy_here_quiet(r);
@@ -1301,12 +1307,21 @@ void encounter_spawn_faller(Record *r)
             assign_next_faller_column(c);
             c->saved_y = 0x10;
             c->type = 0x23;
+#ifdef OVERKILL_HOST
+            overkill_level_encounter(LevelIndex, &encounter);
+            if (encounter.faller_hp_override) c->hit_points = encounter.faller_hit_points;
+            if (encounter.faller_variant_tick) {
+                tick = RecordTickCounter++;
+                c->faller_variant = tick & 3;
+            }
+#else
             if (LevelIndex == 2) c->hit_points = 1;
             else if (LevelIndex == 1 || LevelIndex == 3 || LevelIndex == 5) {
                 c->hit_points = 0xFFFF;
                 tick = RecordTickCounter++;
                 c->faller_variant = tick & 3;
             }
+#endif
         }
     }
     finish_record_update(r);
@@ -1315,8 +1330,15 @@ void encounter_spawn_faller(Record *r)
 /* Level 3: fallers until EncounterTicks 32h, a pause, and from 5Ah one invader per call. */
 void encounter_invader_level(Record *r)
 {
+#ifdef OVERKILL_HOST
+    LevelEncounter encounter;
+    overkill_level_encounter(LevelIndex, &encounter);
+    if (EncounterTicks < encounter.invader_fallers_until_tick) encounter_spawn_faller(r);
+    else if (EncounterTicks < encounter.invaders_at_tick) finish_record_update(r);
+#else
     if (EncounterTicks < 0x32) encounter_spawn_faller(r);
     else if (EncounterTicks < 0x5A) finish_record_update(r);
+#endif
     else encounter_spawn_invader(r);
 }
 
@@ -1376,6 +1398,26 @@ failed:
    HP. */
 void type21_encounter_director(Record *r)
 {
+#ifdef OVERKILL_HOST
+    LevelEncounter encounter;
+    overkill_level_encounter(LevelIndex, &encounter);
+    if (encounter.kind == ENCOUNTER_LEADER_PATH) type21_leader_path_then_finish(r);
+    else if (encounter.kind == ENCOUNTER_INVADER_FORMATION) encounter_invader_level(r);
+    else if (encounter.kind == ENCOUNTER_SEGMENTED_BOSS) encounter_seg_boss_level(r);
+    else if (EncounterTicks < encounter.burster_fallers_until_tick) encounter_spawn_faller(r);
+    else {
+        if (EncounterTicks >= encounter.burster_at_tick) {
+            r->type = 0x22;
+            r->sprite = encounter.burster_sprite;
+            /* The original reads LevelIndex for HP after both record writes.
+               A record can alias that state; keep this selection live. */
+            overkill_level_encounter(LevelIndex, &encounter);
+            r->hit_points = encounter.burster_hit_points;
+            r->x = encounter.burster_x;
+        }
+        finish_record_update(r);
+    }
+#else
     if (LevelIndex == 4) type21_leader_path_then_finish(r);
     else if (LevelIndex == 3) encounter_invader_level(r);
     else if (LevelIndex == 0) encounter_seg_boss_level(r);
@@ -1389,6 +1431,7 @@ void type21_encounter_director(Record *r)
         }
         finish_record_update(r);
     }
+#endif
 }
 
 /* Type 23h: steers to its column top (SteerToSavedTail) until there exactly; sfx 1Dh
@@ -1398,13 +1441,21 @@ void type21_encounter_director(Record *r)
 void type23_column_faller(Record *r)
 {
     word *variant, shift, base;
+#ifdef OVERKILL_HOST
+    LevelEncounter encounter;
+#endif
 
     if (r->x != r->saved_x || r->y != r->saved_y) {
         steer_to_saved_tail(r);
         return;
     }
     if (r->y <= 0x20 && r->y >= 0x1C && SfxEnabled != 0) SfxRequest = 0x1D;
+#ifdef OVERKILL_HOST
+    overkill_level_encounter(LevelIndex, &encounter);
+    if (encounter.faller_motion == FALLER_AIMED_DRIFT) {
+#else
     if (LevelIndex == 2) {
+#endif
         aim_at_player(r);
         r->type = 0x2C;
         finish_record_update(r);
@@ -1413,7 +1464,11 @@ void type23_column_faller(Record *r)
     variant = FallerVariants;
     shift = 0;
     base = 0x80;
+#ifdef OVERKILL_HOST
+    if (encounter.faller_motion == FALLER_ALTERNATE_ANIMATED) {
+#else
     if (LevelIndex == 3 || LevelIndex == 5) {
+#endif
         variant = FallerVariantsAlt;
         shift = 1;
         base = 0x6D;

@@ -11,6 +11,9 @@
 */
 #include "combat.h"
 #include "pools.h"
+#ifdef OVERKILL_HOST
+#include "level_encounter.h"
+#endif
 
 /* Pickup record for DropKind: 16x16 KIND_PICKUP, sprite 46h + kind, draw pass 0 (under
    pass-1 records). Returns the sprite: the oracle leaves it in SI, and SpawnCellFuelPickup's
@@ -120,7 +123,15 @@ void destroy_record(Record *r)
 {
     byte *group;
 
+#ifdef OVERKILL_HOST
+    if (r->type == 0x21) {
+        LevelEncounter encounter;
+        overkill_level_encounter(LevelIndex, &encounter);
+        if (!encounter.director_destructible) return;
+    }
+#else
     if (r->type == 0x21 && LevelIndex != 4) return;
+#endif
     add_score_bcd(r->size_class == 1 ? 0x30 : 0x60);
     clamp_record_x(r);
     if (r->slot_index != 0xFFFF) {

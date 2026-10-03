@@ -2,10 +2,10 @@
 
 Version 2 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
-mothership departure data;
+mothership departure data and encounter descriptors;
 the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
-playable level yet. Map contents, remaining spawn recipes and encounter definitions
+playable level yet. Independent map storage, remaining spawn recipes and boss/invader data
 await extraction.
 Version 1 remains accepted with its original narrower map-recipe scope. Version 2
 adds grouped/no-spawn recipes and expands the converted cells. This version boundary
@@ -368,6 +368,79 @@ Terminal/intro map positions, the extra record's preset, refill rules, common sh
 resources and music policy remain shared procedural/default content pending further
 extraction. This section alone does not make the whole level self-contained.
 
+## Combat encounter director
+
+The optional `encounter` section selects existing combat director procedures.
+Every canonical original contains one. It is distinct from the first timeline
+event's opening ambush and the mothership departure. For example, level 1 has:
+
+```json
+{
+  "encounter": {
+    "kind": "fallers_then_burster",
+    "director_destructible": false,
+    "fallers": {
+      "hit_points": "invulnerable",
+      "variant": "record_tick",
+      "motion": "animated"
+    },
+    "fallers_until_tick": 200,
+    "burster_at_tick": 240,
+    "burster": { "hit_points": 20, "sprite": 113, "x": 96 }
+  }
+}
+```
+
+All kinds require `director_destructible` and the three `fallers` policies. The
+choice describes this director even if a particular procedure never spawns fallers:
+faller updates and the spawning helper independently consult the current level's
+policies. No runtime counter or cursor is stored here.
+
+| `kind` | Additional fields | Existing procedure |
+|---|---|---|
+| `segmented_boss` | None | Wait for the director to be the only enemy, then assemble the segmented boss |
+| `invader_formation` | `fallers_until_tick`, `invaders_at_tick` | Fallers, pause, then invader slots |
+| `leader_path` | None | The existing encounter-leader path reader |
+| `fallers_then_burster` | `fallers_until_tick`, `burster_at_tick`, `burster` | Fallers, pause, then convert the director into the burster |
+
+Thresholds are unsigned words in `EncounterTicks` units (one increment every four
+frame-counter updates). Fallers run while the clock is strictly below their end;
+the next phase starts at or above its threshold. Followup cannot precede the
+faller end. `burster.hit_points` and `sprite` are unsigned words, and `x` is a
+signed playfield word. Sprite is a bank index. The original HP calculation is
+performed by the exporter; runtime content has the explicit result.
+
+Faller `hit_points` is an integer 0..65534, `invulnerable` (the original FFFF word),
+or `spawn_default` (leave the quiet spawner's HP). `variant` is `preserve` (leave
+the record field, including stale state) or `record_tick` (assign the old counter's
+low two bits and increment it). `motion` is `animated`, `alternate_animated`, or
+`aimed_drift`. These name the existing two animation/movement table readers and
+aimed conversion, respectively; they do not merge their behaviors.
+
+| Original level | Kind | Faller HP / variant / motion | Phase thresholds | Burster HP |
+|---|---|---|---|---|
+| 0 | `segmented_boss` | default / preserve / animated | Existing boss condition | — |
+| 1 | `fallers_then_burster` | invulnerable / record_tick / animated | 200, 240 | 20 |
+| 2 | `fallers_then_burster` | 1 / preserve / aimed_drift | 200, 240 | 30 |
+| 3 | `invader_formation` | invulnerable / record_tick / alternate_animated | 50, 90 | — |
+| 4 | `leader_path` | default / preserve / animated | Existing path | — |
+| 5 | `fallers_then_burster` | invulnerable / record_tick / alternate_animated | 200, 240 | 60 |
+
+Only level 4's original director is destructible. Faller allocation and column
+assignment precede HP/variant policy evaluation; failed allocation changes neither
+column nor variant counter. Director conversion writes type and sprite before
+rereading live identity for HP. That order matters when records alias state.
+Unchecked animation indices, shared live tables, boss failure cleanup, invader
+cursor advancement and RNG order remain the original engine behavior.
+
+`tools/level_encounter.py` contains small curated equivalents of maintained C/ASM
+choices, consumed by export, validation and native generation. Omitting this section
+retains the original slot's rules in older partial profiles. Native selection for
+out-of-range word identities also retains original fallback arithmetic, an internal
+migration contract rather than a public level identity. These descriptors currently
+refer to the existing boss, invader and leader implementations/stream bindings;
+complete dependency validation and independent boss/invader storage remain pending.
+
 ## Export and validation
 
 ```powershell
@@ -387,7 +460,7 @@ checkpoint positions/cursors that are not row/event boundaries.
 It also reads all used formations and timeline events, including semantic presets,
 member ordering, explicit group drops and marker compatibility properties. It derives
 used path/leader streams, including their distinct endings and follower suppression.
-Map recipe slices are generated from explicitly curated equivalent data;
+Map recipe slices and encounter scalar policies are generated from explicitly curated equivalent data;
 large opaque tables are not transcribed.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
@@ -444,6 +517,7 @@ python tests/host/timeline.py --no-build
 python tests/host/path_data.py --no-build
 python tests/host/map_recipes.py --no-build
 python tests/host/departure.py --no-build
+python tests/host/encounter_data.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -486,3 +560,11 @@ source edits from the oracle snapshot while retaining all gameplay effects; map
 and record results must agree. Canonical alias cases retain the complete live-table
 comparison. The suite also checks malformed data, omitted-section compatibility,
 stale fields, full/partial allocation and same-call approach-to-dock transitions.
+The encounter suite compares complete DS and physical memory for all four original
+director procedures, faller spawn/movement and destruction, including phase
+boundaries, allocation failure, column/variant wrap and live identity aliases.
+An alternate descriptor build verifies permutations without changing DS source
+tables. Authored scalar tests use the equivalent original clock/procedure and
+declare only the changed input clock and expected authored output words; all other
+bytes must agree. This checks edited timing, health, variant/motion, sprite/X and
+damage policies without claiming parity for complete level permutations yet.

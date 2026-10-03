@@ -133,6 +133,15 @@
       }
     }
   },
+  "encounter": {
+    "director_destructible": true,
+    "fallers": {
+      "hit_points": "spawn_default",
+      "motion": "animated",
+      "variant": "preserve"
+    },
+    "kind": "leader_path"
+  },
   "format": "overkill-level",
   "formations": {
     "encounter_director_single_1": {

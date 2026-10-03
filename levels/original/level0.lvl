@@ -133,6 +133,15 @@
       }
     }
   },
+  "encounter": {
+    "director_destructible": false,
+    "fallers": {
+      "hit_points": "spawn_default",
+      "motion": "animated",
+      "variant": "preserve"
+    },
+    "kind": "segmented_boss"
+  },
   "format": "overkill-level",
   "formations": {
     "encounter_director_single_1": {

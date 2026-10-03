@@ -11,6 +11,7 @@ from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
 from level_paths import level_path_definitions
 from level_map_recipes import original_map_spawns
 from level_departure import departure_definition
+from level_encounter import original_encounter
 import argparse
 from pathlib import Path
 import struct
@@ -46,6 +47,7 @@ def definitions(machine):
             'paths': paths, 'leader_paths': leaders,
             'map_spawns': original_map_spawns(level),
             'departure': departure_definition(machine),
+            'encounter': original_encounter(level),
         }))
     return documents
 

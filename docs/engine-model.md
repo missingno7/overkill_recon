@@ -29,7 +29,7 @@ the original, independently wrapped table arithmetic.
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
 native build consumes resource, terrain, checkpoint, timeline, formation and path
 definitions through a binding adapter, writing legacy streams into the original
-initial DS layout. Map recipes and authored departure components use immutable
+initial DS layout. Map recipes, encounter descriptors and authored departure components use immutable
 native level data. With all six originals this reproduces every initialization
 byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
@@ -98,7 +98,27 @@ constraints pending further evidence and storage migration.
 Canonical definitions include routes used by their formations and directors,
 including the boss anchor. The demo route and unreferenced Type4A route remain
 in DS and have supported codecs, but are not invented level dependencies.
-Boss parts, invader layout and encounter selection remain pending.
+Boss parts and invader layout remain pending. Encounter selection now uses the
+per-level descriptors described below.
+
+The combat director has four demonstrated choices: segmented boss, fallers then
+invaders, leader path, and fallers then burster. A level's `encounter` section
+selects those existing procedures, phase thresholds and director damage eligibility.
+Faller health, variant assignment and motion are separate policies because their
+live selection also occurs after spawning and on subsequent record updates.
+The six originals supply explicit burster HP instead of a runtime calculation
+from level position. This is a descriptor for the existing director, not a new
+encounter scripting system or the opening ambush's formation definition.
+
+The spawner still allocates and assigns a column before applying faller policies;
+allocation failure consumes neither the column nor the variant counter. Director
+conversion still writes type, then sprite, then health, then X. Health selection
+rereads the live level identity after the first two writes, preserving their
+possible aliases. Existing animation tables, RNG consumption, boss construction,
+leader streams and invader spawning remain authoritative procedures/live data.
+Bounded comparisons move encounter descriptors between slots and separately edit
+timings, health and policies. They prove this subsystem travels with its content;
+they do not establish complete playable-level swaps yet.
 
 Map recipes cover all level-1 actions and fixed-field choices, clear-only cells
 and a group-only hole across levels 0/3/4/5. A recipe names the existing enemy behavior,
@@ -138,7 +158,8 @@ does not disable actions that were procedural when that definition was written.
 1. Remaining map recipes: conditional groups, center-facing/offset placement,
    RNG-dependent selection, retained stale group fields and exceptional scan-cursor
    results. Compare every conversion against the original handler before dispatch.
-2. Encounter descriptors retaining unique procedural implementations initially.
+2. Boss parts, invader layout, level-specific invader timing and remaining enemy
+   parameters, retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
 by default. Binding fixtures version the implemented slice; future sections must
@@ -201,9 +222,9 @@ as by episode permutation tests.
 The required endpoint is a complete level swap: moving a level to another place
 in an episode moves its map, resources, spawn rules, paths, encounters, enemy
 parameters, checkpoints, music and presentation together. Episode position must
-not implicitly select gameplay rules. For example, the original encounter HP
-formula based on `LevelIndex` must become an explicit level parameter, rather than
-change when the same level occupies a different episode position.
+not implicitly select gameplay rules. The original burster HP formula based on
+`LevelIndex` is now an explicit level parameter; the remaining spawn/child HP
+formulas and gameplay choices still need the same treatment.
 
 A level definition owns content and the policies needed to interpret that content.
 An episode definition references levels in order and owns selection, starting
@@ -219,7 +240,7 @@ they are not yet loaded from arbitrary files when the executable starts.
 
 Remaining work toward this endpoint:
 
-1. Complete map recipes and drop rules, encounter/boss/invader data, reset rules
+1. Complete map recipes and drop rules, boss/invader data, reset rules
    and the remaining level-dependent gameplay and presentation parameters.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.

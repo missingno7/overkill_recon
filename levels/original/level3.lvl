@@ -133,6 +133,17 @@
       }
     }
   },
+  "encounter": {
+    "director_destructible": false,
+    "fallers": {
+      "hit_points": "invulnerable",
+      "motion": "alternate_animated",
+      "variant": "record_tick"
+    },
+    "fallers_until_tick": 50,
+    "invaders_at_tick": 90,
+    "kind": "invader_formation"
+  },
   "format": "overkill-level",
   "formations": {
     "descend_aimed_fire_single_1": {

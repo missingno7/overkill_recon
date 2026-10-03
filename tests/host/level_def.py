@@ -138,6 +138,7 @@ def import_checks(machine):
         del document['leader_paths']
         del document['map_spawns']
         del document['departure']
+        del document['encounter']
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []
