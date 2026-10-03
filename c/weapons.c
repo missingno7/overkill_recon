@@ -129,7 +129,8 @@ Record *alloc_player_shot_si(Record **si)
 /* The same for shots that do not use SI afterwards. */
 Record *alloc_player_shot(void)
 {
-    Record *si;
+    /* This wrapper discards SI, including the eviction leaf's returned SI. */
+    Record *si = GAME_PTR(Record, 0);
 
     return alloc_player_shot_si(&si);
 }
@@ -504,7 +505,7 @@ void copy_position_plus10(Record *dst, Record *src)
    REC_STEP_ERROR are not set: the first chase steps depend on the slot's old occupant. */
 void fire_missile(Record *ship)
 {
-    Record *si, *missile, *target;
+    Record *si = GAME_PTR(Record, 0), *missile, *target;
 
     if (MissileAmmo == 0) return;
     if (MissilesLive == 1) return;

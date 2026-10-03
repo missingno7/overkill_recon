@@ -451,6 +451,31 @@ def _weapon_cases(h, arena: MainArena) -> int:
                   f"UpdateBeam growth previous tail X={tail_x:04X}",
                   registers={"BP": primary}, arguments=(_ptr(h, primary),))
         count += 1
+
+    # Growing a beam with all of pool B occupied calls SpawnBeamLink twice. Each
+    # eviction selects an ordinary type-2 shot, whose RemoveRecord path leaves SI alone;
+    # the native AllocPlayerShot wrapper must supply a valid value for the discarded SI.
+    _begin(h, arena)
+    beam = h.offset("BeamList")
+    for index in range(K.POOL_B_COUNT):
+        _record(h, shot + index * K.RECORD_SIZE,
+                status=1, type=2, kind=K.KIND_TYPED)
+    _record(h, shot, status=1, kind=K.KIND_TYPED, type=9,
+            x=0x20, y=0x80, sprite=0x6A)
+    _record(h, shot + K.RECORD_SIZE, status=1, kind=K.KIND_TYPED, type=9,
+            x=0x28, y=0x80, sprite=0x6C)
+    h.write(beam, b"\xff" * (h.offset("BeamListTerminator") + 2 - beam))
+    h.write(beam, struct.pack("<2H", shot, shot + K.RECORD_SIZE))
+    _put16(h, "BeamListEnd", beam + 4)
+    _put16(h, "ShotsLiveType9", 2)
+    _put16(h, "PoolBCursor", shot)
+    _put16(h, "FrameParity", 1)
+    _put8(h, "SfxEnabled", 0)
+    _run_void(h, arena, "update_beam", "UpdateBeam",
+              "UpdateBeam full pool evicts ordinary shots",
+              registers={"BP": primary, "SI": 0}, arguments=(_ptr(h, primary),))
+    count += 1
+
     for y, x, sprite, sfx, native_name, oracle_name in (
             (0xFFFF, 0xFFFC, 0, 0, "fire_single_shot", "FireSingleShot"),
             (0xFFF8, 0x8001, 1, 1, "fire_single_shot", "FireSingleShot"),

@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define HOST_EGA_PAGE1_SEGMENT 0xA200u
 #define HOST_EGA_PAGE0_SEGMENT 0xA000u
@@ -471,7 +472,17 @@ int overkill_video_service(word token, HostRegisters *registers)
                                           HOST_OFFSET_RETRACEBITINVERTED) = 0;
     } else if (token == HOST_SERVICE_STARTUPSETSELECTEDVIDEOMODE) {
         if (!overkill_sdl_video_open()) abort();
-        presented_segment = ScreenSegment;
+        /* INT 10h mode sets clear video memory unless bit 7 requests preservation.
+           Boss-key return uses the same ordinary mode set as startup. */
+        if (VideoAdapter == VIDEO_EGA) {
+            word plane;
+            for (plane = 0; plane != 4; ++plane)
+                memset(overkill_ega_plane_address(0xA000, plane, 0), 0, 0x10000);
+            presented_segment = 0xA000;
+        } else {
+            clear_segment(0xB800, 0, VideoAdapter == VIDEO_CGA ? 0x4000u : 0x8000u);
+            presented_segment = 0xB800;
+        }
     } else if (token == HOST_TOKEN_ALLOCATEBUFFERS) {
         allocate_video_buffers();
         if (registers != NULL) registers->es = MainDataSegment;

@@ -23,6 +23,8 @@ The executable, native core DLL, SDL3 DLL, source-generated initial image, origi
 assets and dependency licenses are placed together in `build/host`. Settings and
 high scores go to `build/host/saves/HISCORE.DAT`; `--assets` and `--saves` override those
 directories. The original assets are hash checked and remain unchanged.
+Interactive runs append native stderr diagnostics to saves/OVERKILL.log (under
+the selected save directory). Headless runs retain stderr for their test runner.
 
 ## State and oracle boundary
 

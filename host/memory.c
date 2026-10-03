@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "game.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 #define DOS_MEMORY_BYTES 0x100000u
 #define DOS_PHYSICAL_MASK 0xFFFFFu
@@ -31,8 +32,15 @@ uint16_t overkill_ds_offset(const void *pointer)
 {
     uintptr_t base = (uintptr_t)state_window;
     uintptr_t address = (uintptr_t)pointer;
-    if (state_window == NULL || address < base || address - base > 0x10000)
+    if (state_window == NULL || address < base || address - base > 0x10000) {
+        fprintf(stderr, "Invalid DOS DS pointer %p (DS base %p)\n", pointer,
+                (void *)state_window);
+        if (state_window != NULL)
+            fprintf(stderr, "level=%u scroll=%04X pool-B cursor=%04X\n",
+                    LevelIndex, MapScrollPos, PoolBCursor);
+        fflush(stderr);
         abort();
+    }
     /* One-past DS is permitted for end markers and wraps like a DOS offset. */
     return (uint16_t)(address - base);
 }

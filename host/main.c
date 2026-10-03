@@ -1,3 +1,6 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include "game.h"
 #include "launcher.h"
 #include "shutdown.h"
@@ -22,6 +25,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 typedef struct InputEvent {
     uint64_t time_ns;
@@ -251,6 +259,22 @@ int main(int argc, char **argv)
     if (!overkill_resource_mount_drive('C', asset_override ? asset_override : asset_path) ||
         !overkill_resource_set_current_drive('C') ||
         !overkill_file_services_set_save_root(save_override ? save_override : save_path)) return 1;
+    if (!headless) {
+        char log_path[2048];
+        FILE *log_file;
+        if (snprintf(log_path, sizeof log_path, "%s/OVERKILL.log",
+                     save_override ? save_override : save_path) < (int)sizeof log_path &&
+            (log_file = fopen(log_path, "a")) != NULL) {
+#ifdef _WIN32
+            (void)_dup2(_fileno(log_file), _fileno(stderr));
+#else
+            (void)dup2(fileno(log_file), fileno(stderr));
+#endif
+            fclose(log_file);
+            setvbuf(stderr, NULL, _IONBF, 0);
+            fprintf(stderr, "\nOverkill SDL3 session, build %s %s\n", __DATE__, __TIME__);
+        }
+    }
     {
         word heap_start = HOST_SEGMENT_IMAGEEND;
         if (!overkill_resource_services_bind_arena(heap_start, (word)(0xA000u - heap_start))) return 1;

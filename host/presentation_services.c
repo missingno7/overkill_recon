@@ -6,6 +6,7 @@
 #include "memory.h"
 #include "render_services.h"
 #include "sdl_video.h"
+#include "../third_party/font8x8/font8x8_cp437.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -820,17 +821,57 @@ void presentation_print_dos_string_at_bp(word bp)
                 }
             }
         } else {
-            segment_write_word(TextScreenSegment,
-                (word)(text_cursor_row * 0x00A0 + text_cursor_column * 2),
-                (word)(character | 0x0700));
+            if (text_page_active) {
+                segment_write_word(TextScreenSegment,
+                    (word)(text_cursor_row * 0x00A0 + text_cursor_column * 2),
+                    (word)(character | 0x0700));
+            } else {
+                /* DOS output uses the current BIOS mode. In particular the
+                   high-score leaf emits ten spaces on a 40-column graphics
+                   page; it never selects mode 3 or writes text attributes. */
+                word gy, gx;
+                for (gy = 0; gy != 8; ++gy) {
+                    word y = (word)(text_cursor_row * 8 + gy);
+                    for (gx = 0; gx != 8; ++gx) {
+                        word x = (word)(text_cursor_column * 8 + gx);
+                        byte color = (overkill_cp437_font[character][gy] >> gx) & 1 ? 7 : 0;
+                        word offset;
+                        if (VideoAdapter == VIDEO_EGA) {
+                            word plane;
+                            byte mask = (byte)(0x80u >> (x & 7));
+                            offset = (word)(y * 40 + x / 8);
+                            for (plane = 0; plane != 4; ++plane) {
+                                byte *pixel = overkill_ega_plane_address(0xA000, plane, offset);
+                                *pixel = (byte)((*pixel & ~mask) |
+                                    ((color & (1u << plane)) ? mask : 0));
+                            }
+                        } else {
+                            word shift;
+                            byte mask, old;
+                            if (VideoAdapter == VIDEO_TANDY) {
+                                offset = (word)((y & 3) * 0x2000 + (y >> 2) * 160 + x / 2);
+                                shift = (word)(4 - (x & 1) * 4);
+                                mask = (byte)(0x0Fu << shift);
+                            } else {
+                                offset = (word)((y & 1) * 0x2000 + (y >> 1) * 80 + x / 4);
+                                shift = (word)(6 - (x & 3) * 2);
+                                mask = (byte)(3u << shift);
+                                color &= 3;
+                            }
+                            old = segment_read_byte(0xB800, offset);
+                            segment_write_byte(0xB800, offset,
+                                (byte)((old & ~mask) | (color << shift)));
+                        }
+                    }
+                }
+            }
             text_cursor_column++;
-            if (text_cursor_column == 80) {
+            if (text_cursor_column == (text_page_active ? 80 : 40)) {
                 text_cursor_column = 0;
                 text_advance_row();
             }
         }
     }
-    text_page_active = 1;
 }
 
 void presentation_present_exit_order(void)

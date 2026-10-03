@@ -323,6 +323,12 @@ class NativeFixture:
         self.lib.overkill_clear_input_sample.restype = None
         self.lib.presentation_text_mode_active.argtypes = ()
         self.lib.presentation_text_mode_active.restype = ctypes.c_int
+        self.lib.presentation_text_get_cursor.argtypes = (
+            ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16))
+        self.lib.presentation_text_get_cursor.restype = None
+        self.lib.overkill_ega_plane_address.argtypes = (
+            ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint16)
+        self.lib.overkill_ega_plane_address.restype = ctypes.c_void_p
         self.lib.overkill_clock_bind.argtypes = (ctypes.c_void_p, ctypes.c_void_p)
         self.lib.overkill_clock_reset.argtypes = (ctypes.c_uint64,)
         self.lib.overkill_clock_advance.argtypes = (ctypes.c_uint64,)
@@ -604,9 +610,14 @@ def _test_boss_key_restore(native: NativeFixture, probe) -> int:
     native.reset()
     native.set_symbol("VideoAdapter", struct.pack("<H", 2))
     native.set_symbol("MainDataSegment", struct.pack("<H", _header_word("HOST_DATA_SEGMENT")))
+    native.set_symbol("ScreenSegment", struct.pack("<H", SCREEN_SEGMENT))
     native.set_symbol("SfxEnabled", b"\0")
     native.set_symbol("ModuleSoundEnabled", b"\0")
     native.set_symbol("SoundModuleLoaded", b"\0")
+    # INT 10h mode restoration clears the selected graphics aperture. Seed it
+    # before the boss-key mode-3 detour so stale text cells cannot survive as
+    # Tandy pixels when normal gameplay resumes.
+    native.physical_write(SCREEN_SEGMENT << 4, b"\xA5" * 0x8000)
     keys = bytearray(h.state_storage.snapshot()[h.offset("KeyDownTable"):
                                                 h.offset("KeyDownTable") + 0x60])
     keys[0x43] = 1  # SCAN_F9 remains held until the live SDL key-up.
@@ -624,10 +635,57 @@ def _test_boss_key_restore(native: NativeFixture, probe) -> int:
         raise AssertionError("boss-key flow skipped release or resume key pumping")
     if native.get_symbol("KeyLastMakeCode", 1) != b"\x30":
         raise AssertionError("boss-key resume key did not reach the DOS make-code mailbox")
+    restored = native.physical_read(SCREEN_SEGMENT << 4, 0x8000)
+    if any(restored):
+        raise AssertionError("boss-key BIOS mode restore did not clear the Tandy framebuffer")
     return 1
 
 
-def _prepare_calibration_assets(native: NativeFixture) -> None:
+def _snapshot_graphics(native: NativeFixture, adapter: int):
+    if adapter == 1:
+        return tuple(ctypes.string_at(
+            native.lib.overkill_ega_plane_address(0xA000, plane, 0), 0x10000)
+            for plane in range(4))
+    return native.physical_read(SCREEN_SEGMENT << 4, 0x8000)
+
+
+def _fill_graphics(native: NativeFixture, adapter: int, value: int) -> None:
+    if adapter == 1:
+        for plane in range(4):
+            ctypes.memset(native.lib.overkill_ega_plane_address(0xA000, plane, 0),
+                          value, 0x10000)
+    else:
+        native.physical_write(SCREEN_SEGMENT << 4, bytes((value,)) * 0x8000)
+
+
+def _apply_blank_glyph_footprint(snapshot, adapter: int, row: int):
+    """Clear the ten 8x8 CP437 space glyphs at BIOS row, column zero."""
+    if adapter == 1:
+        expected = [bytearray(plane) for plane in snapshot]
+        for y in range(row * 8, row * 8 + 8):
+            for x in range(80):
+                offset = y * 40 + x // 8
+                mask = 0x80 >> (x & 7)
+                for plane in expected:
+                    plane[offset] &= ~mask
+        return tuple(bytes(plane) for plane in expected)
+
+    expected = bytearray(snapshot)
+    for y in range(row * 8, row * 8 + 8):
+        for x in range(80):
+            if adapter == 2:
+                offset = (y & 3) * 0x2000 + (y >> 2) * 160 + x // 2
+                shift = 4 - (x & 1) * 4
+                mask = 0x0F << shift
+            else:
+                offset = (y & 1) * 0x2000 + (y >> 1) * 80 + x // 4
+                shift = 6 - (x & 3) * 2
+                mask = 3 << shift
+            expected[offset] &= ~mask
+    return bytes(expected)
+
+
+def _prepare_calibration_assets(native: NativeFixture, adapter: int = 2) -> None:
     native.lib.overkill_video_services_shutdown()
     native.reset()
     heap_start = _header_word("HOST_SEGMENT_IMAGEEND")
@@ -643,7 +701,7 @@ def _prepare_calibration_assets(native: NativeFixture) -> None:
         raise AssertionError("cannot select the C: game asset drive")
 
     native.set_symbol("MainDataSegment", struct.pack("<H", _header_word("HOST_DATA_SEGMENT")))
-    native.set_symbol("VideoAdapter", struct.pack("<H", 2))  # original Tandy priority path
+    native.set_symbol("VideoAdapter", struct.pack("<H", adapter))
     native.lib.overkill_platform_call(_token("SETUPRESOURCEARCHIVE"),
                                       ctypes.byref(HostRegisters()))
     native.lib.overkill_platform_call(_token("ALLOCATEBUFFERS"),
@@ -677,6 +735,61 @@ def _prepare_calibration_assets(native: NativeFixture) -> None:
             (panel_segment << 4) + image_offset, 4))
         if rows == 0 or width == 0:
             raise AssertionError(f"PANEL.ENC image at {image_offset:04X} is empty")
+
+
+def _test_hiscore_hardware_graphics_mode(native: NativeFixture) -> int:
+    row = 6
+    native.lib.presentation_text_set_cursor.argtypes = (ctypes.c_uint16, ctypes.c_uint16)
+    native.lib.presentation_text_set_cursor.restype = None
+    native.lib.presentation_print_dos_string_at_bp.argtypes = (ctypes.c_uint16,)
+    native.lib.presentation_print_dos_string_at_bp.restype = None
+
+    for adapter in (0, 1, 2):
+        _prepare_calibration_assets(native, adapter)
+        native.set_symbol("HiscoreEntryRow", bytes((row,)))
+        native.set_symbol("TextInGraphics", b"\1")
+        mode_regs = HostRegisters()
+        native.lib.overkill_platform_call(
+            _token("STARTUPSETSELECTEDVIDEOMODE"), ctypes.byref(mode_regs))
+        if native.lib.presentation_text_mode_active() != 0:
+            raise AssertionError("graphics mode setup left the text presenter active")
+        _fill_graphics(native, adapter, 0xFF)
+
+        # DOS AH=09 emits the ten-space string in the current graphics mode.
+        # Isolate that native leaf first to check its exact 80x8 pixel footprint.
+        native.lib.presentation_text_set_cursor(row, 0)
+        before = _snapshot_graphics(native, adapter)
+        expected = _apply_blank_glyph_footprint(before, adapter, row)
+        native.lib.presentation_print_dos_string_at_bp(
+            _header_word("HOST_OFFSET_HISCOREBLANKLINE"))
+        actual = _snapshot_graphics(native, adapter)
+        if actual != expected:
+            first = next((index for index, (left, right) in enumerate(zip(actual, expected))
+                          if left != right), None)
+            raise AssertionError(
+                f"adapter {adapter} high-score blankline framebuffer mismatch at {first}")
+        if native.lib.presentation_text_mode_active() != 0:
+            raise AssertionError(
+                f"adapter {adapter} graphics-mode DOS output switched to text mode")
+        actual_row, actual_column = ctypes.c_uint16(), ctypes.c_uint16()
+        native.lib.presentation_text_get_cursor(ctypes.byref(actual_row),
+                                                ctypes.byref(actual_column))
+        if (actual_row.value, actual_column.value) != (row, 10):
+            raise AssertionError(
+                f"adapter {adapter} DOS blankline cursor ended at "
+                f"{actual_row.value},{actual_column.value}, expected {row},10")
+
+        # Exercise the complete real C/DOS service path with PANEL.ENC loaded.
+        registers = HostRegisters()
+        native.lib.overkill_platform_call(
+            _token("HISCOREENTRYHARDWARE"), ctypes.byref(registers))
+        if native.lib.presentation_text_mode_active() != 0:
+            raise AssertionError(
+                f"adapter {adapter} high-score hardware service switched to text mode")
+
+    native.lib.overkill_video_services_shutdown()
+    native.lib.overkill_resource_mount_drive(b"C", None)
+    return 3 * 3
 
 
 def _calibration_idle_script(native: NativeFixture, probe, *, abort: bool = False):
@@ -897,6 +1010,8 @@ def run(no_build: bool = False) -> int:
             print("PASS quit-prompt N/Y branches", flush=True)
             checks += _test_boss_key_restore(native, probe)
             print("PASS boss-key restore", flush=True)
+            checks += _test_hiscore_hardware_graphics_mode(native)
+            print("PASS high-score graphics-mode DOS output", flush=True)
             checks += _test_calibration_services(native, probe)
             print("PASS page-driven calibration success/Escape and timer services", flush=True)
             print(f"PASS host UI flows: {checks} live character, quit, boss-key, "

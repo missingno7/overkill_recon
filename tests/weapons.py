@@ -142,6 +142,22 @@ def check(cond, what):
 
 def quirks(rng, pair):
     s = pair.sym
+    # UpdateBeam can grow an existing beam while pool B is full. Both new links evict
+    # ordinary type-2 shots; RemoveRecord leaves SI untouched on that route, even though
+    # SpawnBeamLink does not use the returned SI. Keep the oracle entry SI explicit so the
+    # native wrapper's discarded-SI value is deterministic too.
+    w = fire_world(rng, pair, demo=False)
+    w.fill('PoolB', K.POOL_B_COUNT, kind=K.KIND_TYPED, type=2, size=0,
+           player_shot=1, shot_timer=0xFFFF)
+    head = w.record('PoolB', 0).set(x=0x20, y=0x80, sprite=0x6A)
+    tail = w.record('PoolB', 1).set(x=0x28, y=0x80, sprite=0x6C)
+    w.put('BeamList', W(head.at) + W(tail.at) + W(0xFFFF) * 24)
+    w.word('BeamListEnd', s('BeamList') + 4).word('ShotsLiveType9', 2)
+    w.word('PoolBCursor', s('PoolB')).word('FrameParity', 1)
+    w.byte('SfxEnabled', 0)
+    yield Case('UpdateBeam', {'BP': s('PrimaryRecord'), 'SI': 0}, w.writes(), LOOP,
+               name='full pool beam growth evicts ordinary shots')
+
     # Early in the level heavy, twin and beam modes fall back to the single shot (type 2,
     # sprite 32h), and only one shot is spawned.
     for mode in (1, 3, 4, 5):
