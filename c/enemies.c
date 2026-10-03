@@ -64,6 +64,7 @@
 #include "terrain.h"
 #ifdef OVERKILL_HOST
 #include "level_encounter.h"
+#include "level_invaders.h"
 #endif
 
 /* c/movement.c */
@@ -1256,7 +1257,12 @@ void formation_complete(Record *r)
    20h, X), counted; at the formation's end the director completes instead. */
 void encounter_spawn_invader(Record *r)
 {
+#ifdef OVERKILL_HOST
+    LevelInvaders invaders;
+    word cursor;
+#else
     word *slot;
+#endif
     Record *c;
 
     FramesSinceInvaderSpawn = 0;
@@ -1264,11 +1270,21 @@ void encounter_spawn_invader(Record *r)
         formation_complete(r);
         return;
     }
+#ifdef OVERKILL_HOST
+    cursor = InvaderSlotCursor;
+    overkill_level_invaders(LevelIndex, &invaders);
+#else
     slot = GAME_PTR(word, InvaderSlotCursor);
+#endif
     c = spawn_enemy_here(r);
     if (c != NO_RECORD) {
+#ifdef OVERKILL_HOST
+        c->saved_y = overkill_invader_slot_word(invaders.slot_overrides, cursor) + 0x20;
+        c->saved_x = overkill_invader_slot_word(invaders.slot_overrides, (word)(cursor + 2));
+#else
         c->saved_y = GAME_INDEX(word, slot, 0) + 0x20;
         c->saved_x = GAME_INDEX(word, slot, 1);
+#endif
         c->type = 0x61;
         c->sprite = 0xE7;
         EncounterLiveCount++;

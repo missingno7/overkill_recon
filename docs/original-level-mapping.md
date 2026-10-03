@@ -25,7 +25,8 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
-| Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `frame.c` | Pending; level 5 timing differs |
+| Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `life.c` | Extracted level-3 director's 24 ordered slot targets; live cursor/end and post-allocation read order retained |
+| Opening march timing | Pure parameter tiers + shared latch behavior | `UpdateAllRecords`, `StepMarchFireDelay`, type80; `frame.c`, `reset_march_state` in `spawn.c` | Extracted enabled flag and separate step/fire delay tiers; initial state, edges/drop distance and member behavior remain procedural defaults; distinct from invader slots |
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route extracted with restart ending; parts/geometry/damage coupling pending |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Extracted four semantic kinds, phase thresholds, explicit burster health/sprite/X, faller policies and director damage eligibility; existing procedures retained |
 | Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
@@ -79,11 +80,11 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 
 | Source | Selections to classify further |
 |---|---|
-| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset; boss geometry/invader layout |
+| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset; boss geometry |
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
 | `spawn.c` | Map recipes; crawler sprite override; jitter group RNG; event HP initialization; type21's unusual initial leader-script pointer |
 | `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
-| `frame.c` | Level5 invader march timing; music selection; checkpoint/reset table bindings |
+| `frame.c` | March initial step/edges/drop/member defaults; boss offsets; music selection; checkpoint/reset table bindings |
 | `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
 
@@ -159,7 +160,33 @@ and invader descriptors and move burster HP/animation policies between slots.
 Authored tests independently change phase thresholds, HP, variant preservation,
 motion, sprite/X and damage eligibility. Live identity aliases verify the original
 read after type/sprite writes; no cached level selection replaces that read.
-Boss assembly/part offsets, invader slots and march timing remain unresolved data.
+Boss assembly/part offsets and remaining enemy/member parameters remain unresolved data.
+
+`tools/level_invaders.py` extracts the 24 targets from `InvaderFormation` and
+curates the two march delay tier lists from maintained scalar decisions. The slot
+list belongs to level 3's director; level 5's opening uses a different leader/member
+stream and only its separate march clock is enabled. Native code captures the
+slot cursor before allocation, reads Y and writes saved Y before reading X, then
+increments the live cursor only on success. End detection remains equality-only.
+Authored slot storage never patches another level's DS table. Canonical live table
+and cursor aliases are compared in full, including the case where writing saved Y
+changes the following X or the cursor itself. Authored comparisons change only
+the oracle's static source table, require it unchanged by the call, and remove
+those fixture input differences from the final comparison.
+
+The new FFFF-cursor fixture exposed a native borrowed-window boundary read:
+its high byte came from the harness canary rather than the next physical arena
+byte. ASM's LODSW reads that adjacent physical byte; only the subsequent starting
+offset wraps. The native slot reader now resolves this straddling byte explicitly,
+with different sentinel values proving it does not wrap the high byte into low DS.
+Odd offsets and authored-table seams retain the same word/read-offset contract.
+No DOS body or oracle bytes changed.
+
+March tests cover count-tier boundaries, delay zero/expiry, byte pulse wrap,
+edge latches, reverse-pass fire consumption, enabled-policy permutations and
+authored reload tiers. Both clocks run before records, not in TickFrameTimers.
+The new descriptor selects data; it does not move latch updates, reset march state
+on level selection, or alter type80's leader-end gate.
 
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.

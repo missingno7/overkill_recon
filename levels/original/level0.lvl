@@ -963,6 +963,49 @@
       "tile": 248
     }
   ],
+  "marching_formation": {
+    "enabled": false,
+    "fire_delays": [
+      {
+        "frames": 120,
+        "minimum_members": 17
+      },
+      {
+        "frames": 100,
+        "minimum_members": 9
+      },
+      {
+        "frames": 80,
+        "minimum_members": 5
+      },
+      {
+        "frames": 60,
+        "minimum_members": 3
+      },
+      {
+        "frames": 40,
+        "minimum_members": 0
+      }
+    ],
+    "step_delays": [
+      {
+        "frames": 10,
+        "minimum_members": 17
+      },
+      {
+        "frames": 6,
+        "minimum_members": 9
+      },
+      {
+        "frames": 4,
+        "minimum_members": 5
+      },
+      {
+        "frames": 1,
+        "minimum_members": 0
+      }
+    ]
+  },
   "paths": {
     "boss_anchor": {
       "end": {

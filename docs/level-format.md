@@ -2,10 +2,10 @@
 
 Version 2 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
-mothership departure data and encounter descriptors;
+mothership departure data, encounter descriptors and marching-formation timing;
 the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
-playable level yet. Independent map storage, remaining spawn recipes and boss/invader data
+playable level yet. Independent map storage, remaining spawn recipes and boss/member parameters
 await extraction.
 Version 1 remains accepted with its original narrower map-recipe scope. Version 2
 adds grouped/no-spawn recipes and expands the converted cells. This version boundary
@@ -399,7 +399,7 @@ policies. No runtime counter or cursor is stored here.
 | `kind` | Additional fields | Existing procedure |
 |---|---|---|
 | `segmented_boss` | None | Wait for the director to be the only enemy, then assemble the segmented boss |
-| `invader_formation` | `fallers_until_tick`, `invaders_at_tick` | Fallers, pause, then invader slots |
+| `invader_formation` | `fallers_until_tick`, `invaders_at_tick`, optional `slots` | Fallers, pause, then invader slots |
 | `leader_path` | None | The existing encounter-leader path reader |
 | `fallers_then_burster` | `fallers_until_tick`, `burster_at_tick`, `burster` | Fallers, pause, then convert the director into the burster |
 
@@ -439,7 +439,70 @@ retains the original slot's rules in older partial profiles. Native selection fo
 out-of-range word identities also retains original fallback arithmetic, an internal
 migration contract rather than a public level identity. These descriptors currently
 refer to the existing boss, invader and leader implementations/stream bindings;
-complete dependency validation and independent boss/invader storage remain pending.
+complete dependency validation and independent boss storage remain pending.
+
+`invader_formation` may include `slots`, an ordered list of 24 signed playfield
+`{"x": ..., "y": ...}` points. Level 3 exports its actual three-row target list
+from `InvaderFormation`; its first target is `{"x": 168, "y": 112}`. The adapter
+subtracts 32 from Y, just like the existing path codecs. These are target positions;
+enemies still spawn at the director and steer to them using the existing behavior.
+This list is distinct from opening-leader follower positions and slot-hopper slots.
+Omission retains the original table. The fixed count preserves existing cursor,
+reset and exact end identities during migration.
+
+Canonical coordinates use live DS; edited lists use independent immutable level
+data. The saved cursor is captured before allocation, but Y and X are read only
+after it succeeds, with the saved-Y write in between. Only success advances the
+live cursor. Failed allocation still resets the frames-since-spawn clock. Odd or
+out-of-range compatibility cursors are not clamped: authored-table bytes are used
+within its original span, and reads beyond it retain neighboring DS/physical bytes.
+A word starting at FFFF reads the next physical byte before the next offset wraps.
+
+## Opening march clock
+
+The optional `marching_formation` section describes the level-5 opening's shared
+march clock, separate from the level-3 invader director and its slots:
+
+```json
+{
+  "marching_formation": {
+    "enabled": true,
+    "step_delays": [
+      { "minimum_members": 17, "frames": 10 },
+      { "minimum_members": 9, "frames": 6 },
+      { "minimum_members": 5, "frames": 4 },
+      { "minimum_members": 0, "frames": 1 }
+    ],
+    "fire_delays": [
+      { "minimum_members": 17, "frames": 120 },
+      { "minimum_members": 9, "frames": 100 },
+      { "minimum_members": 5, "frames": 80 },
+      { "minimum_members": 3, "frames": 60 },
+      { "minimum_members": 0, "frames": 40 }
+    ]
+  }
+}
+```
+
+All six canonical definitions explicitly supply these tiers; only level 5 enables
+the clock. Each nonempty tier list has strictly descending unsigned-word minimum
+member counts, ending at zero. `frames` is a byte, including zero. The first tier
+whose minimum is at or below the live unsigned encounter count supplies the reload.
+Step and fire lists stay separate because the demonstrated thresholds differ.
+Omission retains original partial-profile behavior. Unknown word identities retain
+disabled marching and original tiers, independently of edits to any authored slot.
+
+`UpdateAllRecords` runs these clocks before its reverse record pass; ordinary
+frame-counter updates do not drive them. A zero step delay stays zero and increments
+the byte step pulse every pass; a zero fire delay decrements to 255. Expiry increments
+the respective byte pulse, including wrap to zero. A non-expiring clock clears its
+pulse. Any pending edge count reverses the horizontal step once and enables that
+pass's drop. The first eligible marcher consumes the fire pulse, so record order
+still matters. These are engine semantics, not additional JSON switches.
+Leader setup still initializes state for all leader kinds. Initial step magnitude,
+edge coordinates, drop distance and member/dive behavior remain procedural defaults.
+Type80 still uses the march-leader end cursor; enabling this clock alone does not
+make another opening a complete march encounter.
 
 ## Export and validation
 
@@ -518,6 +581,7 @@ python tests/host/path_data.py --no-build
 python tests/host/map_recipes.py --no-build
 python tests/host/departure.py --no-build
 python tests/host/encounter_data.py --no-build
+python tests/host/invader_data.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -568,3 +632,9 @@ tables. Authored scalar tests use the equivalent original clock/procedure and
 declare only the changed input clock and expected authored output words; all other
 bytes must agree. This checks edited timing, health, variant/motion, sprite/X and
 damage policies without claiming parity for complete level permutations yet.
+The invader-data suite compares all slots, allocation exhaustion, exact ending,
+live table/cursor aliases, odd/unchecked cursor reads and authored slot isolation.
+March comparisons cover all tier boundaries, zero/expiry and byte wrap, edge/drop
+latches, ordered member fire consumption and march policy permutations. Authored
+tiers use explicit expected reload bytes while every other state/memory byte must
+match the equivalent original pass. Canonical initialization remains byte-identical.

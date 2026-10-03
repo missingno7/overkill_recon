@@ -34,7 +34,8 @@ def imports(h, documents):
     if bind_level_documents(h.m, documents) != h.baseline:
         raise AssertionError('canonical encounter definitions change initial DS')
     for level, document in enumerate(documents):
-        if document['encounter'] != original_encounter(level):
+        encounter = {name: value for name, value in document['encounter'].items() if name != 'slots'}
+        if encounter != original_encounter(level):
             raise AssertionError('canonical encounter differs from maintained rules')
     old = copy.deepcopy(documents)
     for document in old:

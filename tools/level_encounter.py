@@ -1,7 +1,7 @@
 """Encounter policies curated from the maintained director/faller C and ASM.
 
-These small scalar choices are not opaque tables. Boss assembly, invader layout,
-leader movement and allocation remain their existing procedures and live streams.
+These small scalar choices are not opaque tables. Boss assembly, leader movement
+and allocation retain their existing procedures; invader slots have a separate codec.
 """
 KINDS = {'segmented_boss': 0, 'invader_formation': 1,
          'leader_path': 2, 'fallers_then_burster': 3}
@@ -44,6 +44,10 @@ def validate_encounter(document):
     kind = encounter['kind']
     if kind == 'invader_formation':
         fields.update(('fallers_until_tick', 'invaders_at_tick'))
+        if 'slots' in encounter:
+            fields.add('slots')
+            from level_invaders import validate_invader_slots
+            validate_invader_slots(encounter['slots'])
     elif kind == 'fallers_then_burster':
         fields.update(('fallers_until_tick', 'burster_at_tick', 'burster'))
     if set(encounter) != fields:

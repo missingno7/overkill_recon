@@ -12,6 +12,7 @@ from level_paths import level_path_definitions
 from level_map_recipes import original_map_spawns
 from level_departure import departure_definition
 from level_encounter import original_encounter
+from level_invaders import original_invader_slots, original_marching_formation
 import argparse
 from pathlib import Path
 import struct
@@ -37,6 +38,9 @@ def definitions(machine):
     for level in range(6):
         formations, timeline = timeline_definition(machine, level)
         paths, leaders = level_path_definitions(machine, level, formations)
+        encounter = original_encounter(level)
+        if encounter['kind'] == 'invader_formation':
+            encounter['slots'] = original_invader_slots(machine)
         documents.append(validate({
             'format': 'overkill-level', 'version': 2,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
@@ -47,7 +51,8 @@ def definitions(machine):
             'paths': paths, 'leader_paths': leaders,
             'map_spawns': original_map_spawns(level),
             'departure': departure_definition(machine),
-            'encounter': original_encounter(level),
+            'encounter': encounter,
+            'marching_formation': original_marching_formation(level),
         }))
     return documents
 

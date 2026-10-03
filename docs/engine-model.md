@@ -98,7 +98,7 @@ constraints pending further evidence and storage migration.
 Canonical definitions include routes used by their formations and directors,
 including the boss anchor. The demo route and unreferenced Type4A route remain
 in DS and have supported codecs, but are not invented level dependencies.
-Boss parts and invader layout remain pending. Encounter selection now uses the
+Boss parts remain pending. Encounter selection now uses the
 per-level descriptors described below.
 
 The combat director has four demonstrated choices: segmented boss, fallers then
@@ -119,6 +119,24 @@ leader streams and invader spawning remain authoritative procedures/live data.
 Bounded comparisons move encounter descriptors between slots and separately edit
 timings, health and policies. They prove this subsystem travels with its content;
 they do not establish complete playable-level swaps yet.
+
+Invader slot geometry now belongs to the director's `slots` list: the original
+level-3 encounter fills 24 ordered targets. This is a distinct stream from the
+slot-hopper leader's `FormationSlots` and the march leader's follower positions.
+The native view retains the original DS cursor and exact end identity. Canonical
+coordinates remain live DS reads; authored coordinates have independent level
+storage. Both Y and X are read after allocation, with the saved-Y write between
+them, so table/cursor aliases retain their original order. Fixed 24-slot capacity
+is a temporary adapter limit.
+
+The level-5 opening's marchers are a separate behavior. `marching_formation`
+selects whether the pre-record-pass march clocks run and supplies separate ordered
+member-count tiers for step and fire delays. They do not use the invader slot list.
+Original byte-counter wrap, zero-delay semantics, edge/drop latches and first-member
+fire-pulse consumption remain in the engine. Leader initialization still resets
+march state for every leader, and the type-80 reader still uses the march leader's
+end identity. Initial step, edges, drop distance and member behavior parameters
+remain procedural defaults; this extraction does not make whole openings portable.
 
 Map recipes cover all level-1 actions and fixed-field choices, clear-only cells
 and a group-only hole across levels 0/3/4/5. A recipe names the existing enemy behavior,
@@ -158,7 +176,7 @@ does not disable actions that were procedural when that definition was written.
 1. Remaining map recipes: conditional groups, center-facing/offset placement,
    RNG-dependent selection, retained stale group fields and exceptional scan-cursor
    results. Compare every conversion against the original handler before dispatch.
-2. Boss parts, invader layout, level-specific invader timing and remaining enemy
+2. Boss parts, remaining formation/enemy parameters and level-specific defaults,
    parameters, retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
@@ -240,7 +258,7 @@ they are not yet loaded from arbitrary files when the executable starts.
 
 Remaining work toward this endpoint:
 
-1. Complete map recipes and drop rules, boss/invader data, reset rules
+1. Complete map recipes and drop rules, boss data and remaining formation parameters, reset rules
    and the remaining level-dependent gameplay and presentation parameters.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.

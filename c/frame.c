@@ -42,6 +42,7 @@
 #ifdef OVERKILL_HOST
 #include "level_def.h"
 #include "level_departure.h"
+#include "level_invaders.h"
 #undef tick_frame_timers
 #endif
 
@@ -189,11 +190,19 @@ void step_march_fire_delay(void)
         return;
     }
     live = EncounterLiveCount;
+#ifdef OVERKILL_HOST
+    {
+        LevelInvaders invaders;
+        overkill_level_invaders(LevelIndex, &invaders);
+        delay = overkill_march_delay(invaders.fire_delays, invaders.fire_delay_count, live);
+    }
+#else
     if (live > 0x10) delay = 0x78;
     else if (live > 8) delay = 0x64;
     else if (live > 4) delay = 0x50;
     else if (live > 2) delay = 0x3C;
     else delay = 0x28;
+#endif
     MarchFireDelay = delay;
     MarchFireNow++;
 }
@@ -253,12 +262,20 @@ word update_all_records(void)
     word n, live, bp;
     byte delay;
     Record *r;
+#ifdef OVERKILL_HOST
+    LevelInvaders invaders;
+#endif
 
     if (FramesSinceInvaderSpawn != 0xFFFF) FramesSinceInvaderSpawn++;
     InvaderMarchLeft = InvaderNextMarchLeft;
     InvaderDropStep = InvaderNextDropStep;
     InvaderNextDropStep = 0;
+#ifdef OVERKILL_HOST
+    overkill_level_invaders(LevelIndex, &invaders);
+    if (invaders.march_enabled) {
+#else
     if (LevelIndex == 5) {
+#endif
         if (MarchEdgeHit != 0) {
             MarchStepX = -MarchStepX;
             MarchEdgeHit = 0;
@@ -275,10 +292,14 @@ word update_all_records(void)
         } else {
             if (MarchDelay != 0) {
                 live = EncounterLiveCount;
+#ifdef OVERKILL_HOST
+                delay = overkill_march_delay(invaders.step_delays, invaders.step_delay_count, live);
+#else
                 if (live > 0x10) delay = 0x0A;
                 else if (live > 8) delay = 6;
                 else if (live > 4) delay = 4;
                 else delay = 1;
+#endif
             }
             MarchDelay = delay;
             MarchStepNow++;

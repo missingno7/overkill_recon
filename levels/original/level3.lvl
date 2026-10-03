@@ -142,7 +142,105 @@
     },
     "fallers_until_tick": 50,
     "invaders_at_tick": 90,
-    "kind": "invader_formation"
+    "kind": "invader_formation",
+    "slots": [
+      {
+        "x": 168,
+        "y": 112
+      },
+      {
+        "x": 144,
+        "y": 112
+      },
+      {
+        "x": 120,
+        "y": 112
+      },
+      {
+        "x": 96,
+        "y": 112
+      },
+      {
+        "x": 72,
+        "y": 112
+      },
+      {
+        "x": 48,
+        "y": 112
+      },
+      {
+        "x": 24,
+        "y": 112
+      },
+      {
+        "x": 0,
+        "y": 112
+      },
+      {
+        "x": 0,
+        "y": 88
+      },
+      {
+        "x": 24,
+        "y": 88
+      },
+      {
+        "x": 48,
+        "y": 88
+      },
+      {
+        "x": 72,
+        "y": 88
+      },
+      {
+        "x": 96,
+        "y": 88
+      },
+      {
+        "x": 120,
+        "y": 88
+      },
+      {
+        "x": 144,
+        "y": 88
+      },
+      {
+        "x": 168,
+        "y": 88
+      },
+      {
+        "x": 168,
+        "y": 64
+      },
+      {
+        "x": 144,
+        "y": 64
+      },
+      {
+        "x": 120,
+        "y": 64
+      },
+      {
+        "x": 96,
+        "y": 64
+      },
+      {
+        "x": 72,
+        "y": 64
+      },
+      {
+        "x": 48,
+        "y": 64
+      },
+      {
+        "x": 24,
+        "y": 64
+      },
+      {
+        "x": 0,
+        "y": 64
+      }
+    ]
   },
   "format": "overkill-level",
   "formations": {
@@ -718,6 +816,49 @@
       "tile": 233
     }
   ],
+  "marching_formation": {
+    "enabled": false,
+    "fire_delays": [
+      {
+        "frames": 120,
+        "minimum_members": 17
+      },
+      {
+        "frames": 100,
+        "minimum_members": 9
+      },
+      {
+        "frames": 80,
+        "minimum_members": 5
+      },
+      {
+        "frames": 60,
+        "minimum_members": 3
+      },
+      {
+        "frames": 40,
+        "minimum_members": 0
+      }
+    ],
+    "step_delays": [
+      {
+        "frames": 10,
+        "minimum_members": 17
+      },
+      {
+        "frames": 6,
+        "minimum_members": 9
+      },
+      {
+        "frames": 4,
+        "minimum_members": 5
+      },
+      {
+        "frames": 1,
+        "minimum_members": 0
+      }
+    ]
+  },
   "paths": {
     "path_follower_a": {
       "end": {
