@@ -144,6 +144,53 @@ be justified by all six originals before joining the public format.
 
 ## Level identity and episode progression
 
+### A level includes arrival through departure
+
+The repeated original flow is plaque/arrival presentation, an opening ambush,
+the scrolling terrain stage with timed encounters, and the mothership departure.
+These belong to the complete level definition, rather than being implicitly
+attached to its episode slot. This describes the observed flow, not a commitment
+to a new generic phase interpreter.
+
+All six scripts start at countdown 272 with one formation leader. The canonical
+definitions already contain those events, formations and their leader/path data:
+
+| Original level ID | Opening leader preset |
+|---|---|
+| `original-level-0` | `sweep_leader` |
+| `original-level-1` | `slot_hopper_leader` |
+| `original-level-2` | `bob_chase_leader` |
+| `original-level-3` | `sway_leader` |
+| `original-level-4` | `sweeper_leader` |
+| `original-level-5` | `march_leader` |
+
+Evidence: `LevelScript0..5` and `Formation39..44` in `DATA.ASM`,
+`start_leader_script` and `type13_formation_leader` in `spawn.c`.
+Leader setup holds scrolling through the live encounter count and end delay;
+`scroll_forward_and_check_level_end` observes both. These timing and release
+rules must survive extraction. The opening is playable combat, distinct from
+`show_level_intro`'s plaque display. Early map-position gates also affect weapons,
+pods and rendering; an opening definition needs those policies, not just enemies.
+
+The mothership is distinct from the combat encounter director and segmented boss.
+`load_level_map` installs `LevelEndMapRows`; at `MAP_END_POS`, the frame coordinator
+smart-bombs live enemies and allocates four animated records from `Type53SpawnTable`.
+`run_level_end_sequence` then guides the player through two autopilot waypoints,
+creates the extra ship record and refills fuel/energy before requesting progression.
+Shared geometry, record recipes, waypoints, triggers and music remain implicit
+engine data pending extraction. Allocation failures, stale fields and same-frame
+phase transitions are part of the existing behavior.
+
+A complete `.lvl` must resolve every dependency for this whole sequence, including
+level-specific behavior parameters and resources. It must not consult another
+level definition or an original numeric slot to recover missing content. Common
+behavior implementations can remain in the engine. Referenced resources may become
+members of a `.lvl` container; physical packaging is still undecided. Independence
+must be verified by loading one level without the other five definitions, as well
+as by episode permutation tests.
+
+### Episode boundary
+
 The required endpoint is a complete level swap: moving a level to another place
 in an episode moves its map, resources, spawn rules, paths, encounters, enemy
 parameters, checkpoints, music and presentation together. Episode position must
