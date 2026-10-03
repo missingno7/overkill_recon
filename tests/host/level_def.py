@@ -18,14 +18,16 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 from export_original_levels import definitions
-from level_format import load, original_paths, validate
+from level_format import load, original_paths, validate, encode_attribute_patches
+from level_bindings import bind_level_documents, load_original_bindings
 from emu import REG, LOAD
 from world import K
 from unicorn import UC_HOOK_CODE
 
 
 class Definition(ctypes.Structure):
-    _fields_ = [(name, ctypes.c_uint16) for name in ('map', 'sprites', 'blocks', 'plaque')]
+    _fields_ = [(name, ctypes.c_uint16) for name in
+                ('map', 'sprites', 'blocks', 'plaque', 'attribute_patches')]
 
 
 class Registers(ctypes.Structure):
@@ -77,6 +79,18 @@ def fixtures(machine):
     document = copy.deepcopy(actual[0])
     del document['resources']['plaque']
     bad.append(document)
+    for tile, attribute in ((True, 'open'), (-1, 'open'), (255, 'open'),
+                            (256, 'open'), (2, 'unknown'), (2, 0)):
+        document = copy.deepcopy(actual[0])
+        document['terrain']['attribute_patches'] = [{'tile': tile, 'attribute': attribute}]
+        bad.append(document)
+    for value in ('open', None):
+        document = copy.deepcopy(actual[0])
+        document['terrain']['default'] = value
+        bad.append(document)
+    document = copy.deepcopy(actual[0])
+    document['terrain']['attribute_patches'] = {}
+    bad.append(document)
     for document in bad:
         try:
             validate(document)
@@ -84,6 +98,125 @@ def fixtures(machine):
             continue
         raise AssertionError(f'validator accepted invalid definition: {document}')
     return len(actual) + len(bad)
+
+
+def import_checks(machine):
+    documents = [load(path) for path in original_paths()]
+    original = machine.state()
+    if load_original_bindings(machine) != original:
+        raise AssertionError('canonical resource/terrain import changes the original DS image')
+    for level, document in enumerate(documents):
+        slot = machine.offset('AttributePatchPointers') + level * 2
+        cursor = struct.unpack_from('<H', original, slot)[0]
+        payload = encode_attribute_patches(document['terrain'])
+        if original[cursor:cursor + len(payload)] != payload:
+            raise AssertionError(f'level {level}: patch ordering or duplicate entries changed')
+    legacy = copy.deepcopy(documents)
+    for document in legacy:
+        document['profile'] = 'resource-bindings'
+        del document['terrain']
+    if bind_level_documents(machine, legacy) != original:
+        raise AssertionError('resource-only profile no longer preserves original terrain')
+    bad = []
+    too_long = copy.deepcopy(documents)
+    too_long[0]['terrain']['attribute_patches'].append({'tile': 2, 'attribute': 'open'})
+    bad.append((too_long, 'original binding holds'))
+    conflict = copy.deepcopy(documents)
+    conflict[4]['terrain']['attribute_patches'][0]['attribute'] = 'wall'
+    bad.append((conflict, 'shared original patch stream'))
+    unknown = copy.deepcopy(documents)
+    unknown[0]['resources']['map'] = 'custommap.bic'
+    bad.append((unknown, 'no original filename binding'))
+    repeated = copy.deepcopy(documents)
+    repeated[1]['id'] = repeated[0]['id']
+    bad.append((repeated, 'identifiers must be unique'))
+    bad.append((documents[:-1], 'six level definitions'))
+    for documents_, diagnostic in bad:
+        try:
+            bind_level_documents(machine, documents_)
+        except ValueError as error:
+            if diagnostic not in str(error): raise
+        else:
+            raise AssertionError(f'import accepted invalid binding: {diagnostic}')
+    # A real structured edit reaches the initialized native state and touches
+    # only the named pointer slot and the selected patch value byte.
+    edited = copy.deepcopy(documents)
+    edited[0]['resources']['sprites'] = documents[1]['resources']['sprites']
+    edited[0]['terrain']['attribute_patches'][0]['attribute'] = 'shot_permeable_wall'
+    bound = bind_level_documents(machine, edited)
+    slot = machine.offset('LevelBankFiles')
+    cursor = struct.unpack_from('<H', original, machine.offset('AttributePatchPointers'))[0]
+    allowed = {slot, slot + 1, cursor + 1}
+    changed = {i for i, (a, b) in enumerate(zip(original, bound)) if a != b}
+    if not changed or not changed <= allowed or bound[cursor + 1] != 2:
+        raise AssertionError('structured edit did not preserve its native binding boundary')
+    shortened = copy.deepcopy(documents)
+    shortened[0]['terrain']['attribute_patches'] = []
+    short_state = bind_level_documents(machine, shortened)
+    if short_state[cursor] != 255 or short_state[cursor + 1:] != original[cursor + 1:]:
+        raise AssertionError('shortened stream changed ignored trailing bytes')
+    return 15, bound
+
+
+def tile_attributes(h, imported):
+    lib = h.lib
+    lib.overkill_initialize_tile_attributes.argtypes = (ctypes.c_uint16,)
+    lib.overkill_initialize_tile_attributes.restype = None
+    attr = h.offset('ByteAttributeTable')
+    pointers = h.offset('AttributePatchPointers')
+    count = 0
+    # Stop at the actual end of the tile stage: map rows and keyboard handling
+    # belong to the coordinator tests. Return through the original near ABI.
+    def done(u, pc, size, _):
+        sp, ss = u.reg_read(REG['SP']), u.reg_read(REG['SS'])
+        ip = int.from_bytes(bytes(u.mem_read(ss * 16 + sp, 2)), 'little')
+        u.reg_write(REG['SP'], (sp + 2) & 0xFFFF)
+        u.reg_write(REG['IP'], ip)
+    at = h.m.linear('AttributePatchesDone')
+    hook = h.m.u.hook_add(UC_HOOK_CODE, done, begin=at, end=at)
+    def compare(level, label, writes=(), state=None):
+        nonlocal count
+        h.reset()
+        if state is not None:
+            h.m.set_state(state)
+            h.state_storage.load(state)
+        h.write_symbol('LevelIndex', struct.pack('<H', level))
+        for offset, data in writes: h.write(offset, data)
+        slot = (pointers + 2 * level) & 0xFFFF
+        h.m.call('InitializeByteAttributes')
+        lib.overkill_initialize_tile_attributes(slot)
+        h.compare(label)
+        if h.state_storage.snapshot()[attr + 255] != 1:
+            raise AssertionError(f'{label}: terminator tile changed')
+        count += 1
+    try:
+        for level in (*range(6), 0x8000, 0x8001, 0x8005):
+            for seed in (bytes([0xA5]) * 256, bytes(range(256))):
+                compare(level, f'tile attributes level {level:04X}', [(attr, seed)])
+        compare(0, 'structured terrain edit', state=imported)
+        scratch = 0x0400
+        for raw_value in (0, 1, 2, 0x80, 0xFF):
+            compare(0, f'ordered repeated raw attribute {raw_value}', [
+                (pointers, struct.pack('<H', scratch)),
+                (scratch, bytes((7, 2, 7, raw_value, 254, raw_value, 255, 0x12)))])
+        compare(0, 'stream pair wraps past FFFF', [
+            (pointers, b'\xff\xff'), (0xFFFF, b'\x05'), (0, b'\x02\xff')])
+        compare(0, 'terminator at FFFF has no value byte', [
+            (pointers, b'\xff\xff'), (0xFFFF, b'\xff'), (0, b'\x80')])
+        # The reset overwrites this binding with 0101h before it is dereferenced.
+        alias = attr + 16
+        level = ((alias - pointers) & 0xFFFF) // 2
+        compare(level, 'binding aliases reset table', [
+            (alias, struct.pack('<H', 0x0201)),
+            (0x0101, b'\x0a\x02\xff'), (0x0201, b'\x0b\x00\xff')])
+        # The first write supplies the terminator for a later stream read. This
+        # would behave differently if patches were buffered before applying them.
+        compare(5, 'patch writes alter later stream reads', [
+            (pointers + 10, struct.pack('<H', attr - 2)),
+            (attr - 2, b'\xfc\xff')])
+    finally:
+        h.m.u.hook_del(hook)
+    return count
 
 
 def bindings(h):
@@ -112,12 +245,16 @@ def bindings(h):
     h.compare('all word indices are read-only', ignore_stack=False)
     # A definition keeps a reference rather than a stale snapshot of a pointer.
     lib.overkill_level_def(3, ctypes.byref(definition))
-    for role, _ in Definition._fields_:
+    for role in ('map', 'sprites', 'blocks', 'plaque'):
         slot = getattr(definition, role)
         h.write(slot, struct.pack('<H', 0xABCD))
         if lib.overkill_level_resource_name(slot) != 0xABCD:
             raise AssertionError(f'{role}: resource value was cached')
-    return 0x10000 * 4 + 4
+    for level in range(0x10000):
+        lib.overkill_level_def(level, ctypes.byref(definition))
+        if definition.attribute_patches != (h.offset('AttributePatchPointers') + 2 * level) & 0xFFFF:
+            raise AssertionError(f'{level:04X}: attribute binding differs')
+    return 0x10000 * 5 + 4
 
 
 def coordinator(h, library):
@@ -280,10 +417,14 @@ def main():
     harness = module('level_def_input_harness', ROOT / 'tests/host/input.py')
     h = harness.HostHarness()
     fixture_count = fixtures(h.m)
+    import_count, imported = import_checks(h.m)
     binding_count = bindings(h)
+    attribute_count = tile_attributes(h, imported)
     loader_count = coordinator(h, probe())
     print(f'PASS LevelDef: {fixture_count} fixture/validator checks, '
-          f'{binding_count} resource checks, {loader_count} native/oracle loader cases')
+          f'{import_count} import checks, {binding_count} binding checks, '
+          f'{attribute_count} native/oracle attribute cases, '
+          f'{loader_count} native/oracle loader cases')
 
 
 if __name__ == '__main__':

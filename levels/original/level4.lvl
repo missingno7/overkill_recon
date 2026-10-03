@@ -1,12 +1,81 @@
 {
   "format": "overkill-level",
   "id": "original-level-4",
-  "profile": "resource-bindings",
+  "profile": "level-bindings",
   "resources": {
     "blocks": "LEV4BLX.BIC",
     "map": "LEV4MAP.BIC",
     "plaque": "plaq3.enc",
     "sprites": "G4.BIC"
+  },
+  "terrain": {
+    "attribute_patches": [
+      {
+        "attribute": "open",
+        "tile": 1
+      },
+      {
+        "attribute": "open",
+        "tile": 163
+      },
+      {
+        "attribute": "open",
+        "tile": 161
+      },
+      {
+        "attribute": "open",
+        "tile": 168
+      },
+      {
+        "attribute": "open",
+        "tile": 117
+      },
+      {
+        "attribute": "open",
+        "tile": 113
+      },
+      {
+        "attribute": "open",
+        "tile": 166
+      },
+      {
+        "attribute": "open",
+        "tile": 111
+      },
+      {
+        "attribute": "shot_permeable_wall",
+        "tile": 108
+      },
+      {
+        "attribute": "shot_permeable_wall",
+        "tile": 109
+      },
+      {
+        "attribute": "open",
+        "tile": 122
+      },
+      {
+        "attribute": "open",
+        "tile": 138
+      },
+      {
+        "attribute": "open",
+        "tile": 148
+      },
+      {
+        "attribute": "open",
+        "tile": 149
+      },
+      {
+        "attribute": "open",
+        "tile": 172
+      },
+      {
+        "attribute": "open",
+        "tile": 177
+      }
+    ],
+    "default": "wall"
   },
   "version": 1
 }

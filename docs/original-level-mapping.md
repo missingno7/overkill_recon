@@ -13,7 +13,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Sprite/block banks | Resource metadata | `LevelBankFiles`; `load_level_graphics` | Native resource view; blocks load before sprites despite opposite table order |
 | Plaque | Resource metadata | `PlaqueFiles`; `load_level_graphics` | Native resource view; plaque numbering does not equal level numbering |
 | Common graphics | Resource metadata shared by all levels | `load_common_graphics`, adapter decoders in `host/graphics_decode.c` | Remains shared; not duplicated in level fixtures |
-| Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Pending; ordered patches over a wall-filled table; levels 1/4 share a stream |
+| Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Extracted to semantic ordered patches in `.lvl`; native build binds them into existing storage; levels 1/4 remain shared |
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Pending shared definition; load forces first two rows and last five rows |
 | Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Pending direct old/new comparisons |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Pending equality triggers, ordered repeated triggers, optional marker word |
@@ -84,6 +84,13 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 | `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
 
+Resources and terrain now enter native initialization through `level_bindings.py`.
+Canonical import is byte-identical to the original DS image. Public terrain values
+are `open`, `wall`, and `shot_permeable_wall`; tests also preserve raw legacy values
+in mutated DS streams. Source ordering, duplicate entries, the tile-only terminator
+and original storage identity remain intact. The adapter rejects longer streams and
+divergent definitions sharing a stream until separate native storage is supported.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
@@ -94,4 +101,4 @@ a behavior-name registry from actual uses; inventory precise leader record forma
 relate checkpoint byte cursors to event boundaries; identify encounter parameters
 without changing implementation order; compare complete affected state for every
 new extraction. No path, formation, event or enemy-family schema is locked by this
-initial resource slice.
+resource/terrain slice.

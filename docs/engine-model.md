@@ -20,34 +20,47 @@ slots must first retain their own semantics.
 
 ## Initial extraction
 
-The native `LevelDef` skeleton is a resource view: map, sprite bank, block bank and
-plaque. Its binding references point at the original DS table slots, not copied
-resource pointers. Reading each slot at the original use point preserves mutations
-and the ordering of loader callbacks. No gameplay state is shadowed. Out-of-range
-word indices retain the original, independently wrapped table arithmetic.
+The native `LevelDef` binds map, sprite bank, block bank, plaque and ordered tile
+attribute patches. References point at original DS pointer-table slots, not cached
+targets. Reading each slot at the original use point preserves mutations and loader
+callback ordering. No gameplay state is shadowed. Out-of-range word indices retain
+the original, independently wrapped table arithmetic.
 
-Canonical resource-only `.lvl` fixtures are generated from a freshly built, exact
-oracle and checked against the native view. They are regression evidence for this
-slice, not a claim that six complete levels already load from external files.
-The DOS resource coordinator remains unchanged. A later extraction can replace
-native bindings with external definition data after proving its initialization
-and lifetime rules.
+Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
+native build consumes their resource and terrain definitions through a generic
+binding adapter, writing into the original initial DS layout. With all six originals
+this reproduces every initialization byte, including neighboring data. Native code
+uses those bindings through the same live state view. DOS initialization and its
+coordinator remain unchanged. Complete external gameplay definitions and runtime
+JSON loading are still pending.
+
+Terrain has three observed properties: open, wall, and wall that passes player
+shots. All 256 entries start as wall; ordered overrides follow. Preserve duplicate
+writes rather than reduce the stream to a dictionary. The legacy terminator is a
+tile ID with no value; tile 255 therefore remains wall. The demo separately clears
+attributes as runtime policy. Patch writes may alter subsequent DS stream reads;
+the native initializer retains this order and does not prebuffer live patches.
+
+The current binding adapter preserves original filename identities, patch storage
+capacities and the shared level-1/level-4 stream. Conflicting shared definitions,
+longer streams and unbound asset names fail explicitly. These are temporary adapter
+limits, not a proposed editor architecture. A future storage expansion must be
+proved against ordinary state access and unchecked neighboring reads first.
 
 ## Next boundaries to prove
 
-1. Ordered tile-attribute patches, including duplicate writes and shared lists.
-2. Checkpoints with script positions expressed as event boundaries, preserving
+1. Checkpoints with script positions expressed as event boundaries, preserving
    unsigned threshold selection and the unused fourth-word overread.
-3. Formation events and member definitions, with cursor advance before allocation,
+2. Formation events and member definitions, with cursor advance before allocation,
    ordered members, optional marker clear and equality-only event triggering.
-4. Distinct path and leader formats, preserving transition timing and signedness.
-5. Map recipes, compared directly against every original cell handler before
+3. Distinct path and leader formats, preserving transition timing and signedness.
+4. Map recipes, compared directly against every original cell handler before
    switching dispatch. Recipes must express mutation before allocation, retained
    cells, 2x2 writes, conditional groups and exceptional scan-cursor results.
-6. Encounter descriptors retaining unique procedural implementations initially.
+5. Encounter descriptors retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
-by default. Resource fixtures version the implemented slice; future sections must
+by default. Binding fixtures version the implemented slice; future sections must
 be justified by all six originals before joining the public format.
 
 ## Comparison rules

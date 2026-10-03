@@ -1,11 +1,11 @@
-"""Export canonical resource-only original level fixtures from the exact ASM build.
+"""Export canonical resource/terrain original level fixtures from the exact ASM build.
 
 No original program is executed. --check compares fixtures without overwriting;
 --no-build reuses the existing source-built oracle after checking its pinned hash.
 """
 from common import ROOT, read_json, sha, write_json
 from extract import mz
-from level_format import load, original_paths, validate
+from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 import argparse
 from pathlib import Path
 import struct
@@ -29,9 +29,30 @@ def resource_bindings(machine, level):
 def definitions(machine):
     return [validate({
         'format': 'overkill-level', 'version': 1,
-        'profile': 'resource-bindings', 'id': f'original-level-{level}',
+        'profile': 'level-bindings', 'id': f'original-level-{level}',
         'resources': resource_bindings(machine, level),
+        'terrain': terrain_definition(machine, level),
     }) for level in range(6)]
+
+
+def terrain_definition(machine, level):
+    state = machine.state()
+    slot = (machine.offset('AttributePatchPointers') + level * 2) & 0xFFFF
+    cursor = struct.unpack_from('<H', state, slot)[0]
+    names = {value: name for name, value in TILE_ATTRIBUTES.items()}
+    patches = []
+    # Static original streams must terminate; never silently truncate bad input.
+    for _ in range(0x10000):
+        tile = state[cursor]
+        cursor = (cursor + 1) & 0xFFFF
+        if tile == 255:
+            return {'default': 'wall', 'attribute_patches': patches}
+        value = state[cursor]
+        cursor = (cursor + 1) & 0xFFFF
+        if value not in names:
+            raise ValueError(f'level {level}: unmodeled original tile attribute {value}')
+        patches.append({'tile': tile, 'attribute': names[value]})
+    raise ValueError(f'level {level}: original attribute stream has no terminator')
 
 
 def exact_oracle(no_build=False):

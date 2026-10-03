@@ -102,6 +102,12 @@ void levels_blit_page(main_routine adapter, DosRegisters *registers)
 void initialize_level_byte_attributes(void)
 {
     word i;
+#ifdef OVERKILL_HOST
+    LevelDef definition;
+
+    overkill_level_def(LevelIndex, &definition);
+    overkill_initialize_tile_attributes(definition.attribute_patches);
+#else
     word patch_cursor;
     byte index, value;
 
@@ -119,6 +125,7 @@ void initialize_level_byte_attributes(void)
         patch_cursor = (word)(patch_cursor + 1);
         ByteAttributeTable[index] = value;
     }
+#endif
 
     for (i = 0; i < 2 * MAP_ROW_BYTES; i++) *LEVELS_MAP_AT(i) = 1;
     for (i = 0; i < 5 * MAP_ROW_BYTES; i++)

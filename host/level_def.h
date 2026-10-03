@@ -2,16 +2,24 @@
 #define OVERKILL_LEVEL_DEF_H
 #include <stdint.h>
 
-/* Native binding of the resource slice of a level definition. These are DS
-   filename-table slots, not cached filename values or host pointers. */
+/* Native bindings of a level definition. These are DS pointer-table slots,
+   not cached values or host pointers. */
 typedef struct LevelDef {
     uint16_t map;
     uint16_t sprites;
     uint16_t blocks;
     uint16_t plaque;
+    uint16_t attribute_patches;
 } LevelDef;
+
+enum TileAttribute {
+    TILE_OPEN = 0,
+    TILE_WALL = 1,
+    TILE_SHOT_PERMEABLE_WALL = 2
+};
 
 void overkill_level_def(uint16_t level_index, LevelDef *definition);
 uint16_t overkill_level_resource_name(uint16_t binding);
+void overkill_initialize_tile_attributes(uint16_t patch_binding);
 
 #endif

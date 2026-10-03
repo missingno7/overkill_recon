@@ -1,12 +1,141 @@
 {
   "format": "overkill-level",
   "id": "original-level-3",
-  "profile": "resource-bindings",
+  "profile": "level-bindings",
   "resources": {
     "blocks": "LEV3BLX.BIC",
     "map": "LEV3MAP.BIC",
     "plaque": "plaq2.enc",
     "sprites": "G3.BIC"
+  },
+  "terrain": {
+    "attribute_patches": [
+      {
+        "attribute": "open",
+        "tile": 1
+      },
+      {
+        "attribute": "open",
+        "tile": 15
+      },
+      {
+        "attribute": "open",
+        "tile": 17
+      },
+      {
+        "attribute": "open",
+        "tile": 18
+      },
+      {
+        "attribute": "open",
+        "tile": 34
+      },
+      {
+        "attribute": "open",
+        "tile": 35
+      },
+      {
+        "attribute": "open",
+        "tile": 85
+      },
+      {
+        "attribute": "open",
+        "tile": 89
+      },
+      {
+        "attribute": "open",
+        "tile": 91
+      },
+      {
+        "attribute": "open",
+        "tile": 96
+      },
+      {
+        "attribute": "open",
+        "tile": 98
+      },
+      {
+        "attribute": "open",
+        "tile": 99
+      },
+      {
+        "attribute": "open",
+        "tile": 100
+      },
+      {
+        "attribute": "open",
+        "tile": 102
+      },
+      {
+        "attribute": "open",
+        "tile": 103
+      },
+      {
+        "attribute": "open",
+        "tile": 104
+      },
+      {
+        "attribute": "open",
+        "tile": 110
+      },
+      {
+        "attribute": "open",
+        "tile": 118
+      },
+      {
+        "attribute": "open",
+        "tile": 120
+      },
+      {
+        "attribute": "open",
+        "tile": 126
+      },
+      {
+        "attribute": "open",
+        "tile": 127
+      },
+      {
+        "attribute": "open",
+        "tile": 133
+      },
+      {
+        "attribute": "open",
+        "tile": 138
+      },
+      {
+        "attribute": "open",
+        "tile": 139
+      },
+      {
+        "attribute": "open",
+        "tile": 140
+      },
+      {
+        "attribute": "open",
+        "tile": 149
+      },
+      {
+        "attribute": "open",
+        "tile": 150
+      },
+      {
+        "attribute": "open",
+        "tile": 151
+      },
+      {
+        "attribute": "open",
+        "tile": 152
+      },
+      {
+        "attribute": "open",
+        "tile": 153
+      },
+      {
+        "attribute": "open",
+        "tile": 154
+      }
+    ],
+    "default": "wall"
   },
   "version": 1
 }

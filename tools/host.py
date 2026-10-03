@@ -46,7 +46,15 @@ def generate_state(out):
         offsets[name.upper()] = offset
     out.mkdir(parents=True, exist_ok=True)
     hybrid.generate_header(out, state_offsets=offsets)
-    (out / 'STATE.BIN').write_bytes(image[base:base + size].ljust(0x10000, b'\0'))
+    # Bind the structured original definitions only into native initialization.
+    # The exact oracle image/header layout and DOS hybrid stay independent.
+    from emu import Machine
+    from level_bindings import load_original_bindings
+    machine = Machine(exe)
+    original_state = image[base:base + size].ljust(0x10000, b'\0')
+    if machine.state() != original_state:
+        raise ValueError('level binding requires the canonical native DS initialization')
+    (out / 'STATE.BIN').write_bytes(load_original_bindings(machine))
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')
