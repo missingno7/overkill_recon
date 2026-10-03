@@ -1,9 +1,10 @@
-# Overkill level format: resource and terrain slice
+# Overkill level format: resource, terrain and checkpoint slice
 
-Version 1 has two partial profiles. `level-bindings` describes resources and tile
-attributes; the earlier `resource-bindings` profile remains accepted and retains
-original terrain. Neither describes a complete playable level yet. Map contents,
-objects, paths, formations, events, encounters and checkpoints await extraction.
+Version 1 has two partial profiles. `level-bindings` describes resources, tile
+attributes and optional checkpoints; the earlier `resource-bindings` profile remains
+accepted and retains original terrain/checkpoints. Neither describes a complete
+playable level yet. Map contents, objects, paths, formations, events and encounters
+await extraction.
 
 The implemented `level-bindings` fields are (the example patch list is abbreviated):
 
@@ -24,7 +25,13 @@ The implemented `level-bindings` fields are (the example patch list is abbreviat
     "attribute_patches": [
       { "tile": 1, "attribute": "open" }
     ]
-  }
+  },
+  "checkpoints": [
+    { "map_row": 12, "script_clock": 273, "resume_event": 0 },
+    { "map_row": 75, "script_clock": 210, "resume_event": 1 },
+    { "map_row": 144, "script_clock": 141, "resume_event": 4 },
+    { "map_row": 208, "script_clock": 77, "resume_event": 10 }
+  ]
 }
 ```
 
@@ -32,7 +39,9 @@ The implemented `level-bindings` fields are (the example patch list is abbreviat
 and are asset basenames; path separators and relative traversal are rejected.
 Map/sprites/blocks use BIC resources, plaques use ENC. Unknown fields and profiles
 are rejected so partially implemented gameplay sections cannot silently be ignored.
-The resource-only profile has no `terrain` field. Schema validation checks structure
+The resource-only profile has no `terrain` or `checkpoints` field. Earlier
+`level-bindings` files without checkpoints retain their original checkpoint tables.
+Schema validation checks structure
 and property names; native binding additionally checks storage and asset identities.
 Canonical checking establishes equivalence to the original definitions. None of
 these alone establishes gameplay parity for edits.
@@ -56,6 +65,33 @@ compatibility behavior. The initializer resets output before reading its binding
 then reads each pair before writing it. Prebuffering or reordering live patches
 can change later reads. Arbitrary raw values are not public property names.
 
+## Checkpoints
+
+Each canonical definition has four ordered checkpoints. `map_row` names a row of
+the 13-cell map, starting at zero; the adapter converts it to `MapScrollPos` bytes.
+`script_clock` is the unsigned 16-bit countdown restored after scrolling back.
+`resume_event` is a zero-based index of the next timeline event, not a byte offset.
+The terminating event boundary is also a valid resume point. Import rejects indices
+outside the existing script. Optional marker words make event byte lengths variable;
+the adapter discovers boundaries from the source-built scripts rather than guessing
+an eight-byte stride. Timeline/formation payloads are not extracted yet.
+
+The current binding requires four strictly increasing rows whose byte positions
+fit a word; clock and event indices also fit unsigned words. This validates binding
+structure, not arbitrary edited restart/encounter behavior. Clocks remain explicit
+and independent of resume events. In particular, level 2's last checkpoint restores
+clock 77 and resumes at event 42, whose trigger is 80. Equality-only script triggering
+retains that original mismatch. Level 5's last two checkpoints resume at the same
+event 7. Neither case is normalized.
+
+Selection uses an unsigned comparison against the following checkpoint's row;
+equality advances to the following checkpoint. The final checkpoint is unconditional.
+The legacy reader writes each candidate's script cursor before reading its threshold,
+and always reads four words. Its final record stores only three words: the fourth
+read reaches neighboring data, and its result is ignored. The adapter preserves
+those neighboring bytes; the native reader preserves the write/read order, including
+live alias effects. These are internal compatibility semantics, not public fields.
+
 ## Export and validation
 
 ```powershell
@@ -69,15 +105,18 @@ python tests/host/level_def.py --no-build
 
 The exporter builds the exact source oracle, verifies its pinned program hash and
 reads named DS tables and filenames without executing original code. It exports
-terrain patches in source order, including duplicates.
+terrain patches in source order, including duplicates, and resolves checkpoint
+cursors to event indices. It rejects unmodeled independent selection thresholds or
+checkpoint positions/cursors that are not row/event boundaries.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
 Serialization is deterministic. The six fixtures in `levels/original/` are consumed
-by validation, native initialization and the binding/terrain regression.
+by validation, native initialization and the binding/terrain/checkpoint regression.
 
 The native build loads all six `levels/original/level*.lvl` files. A generic adapter
-binds asset names to original DS filename identities and encodes semantic patches
-into original storage. It writes only native initialization; the oracle and DOS
+binds asset names to original DS filename identities, encodes semantic patches and
+resolves checkpoint rows/event indices into original storage. It writes only native
+initialization; the oracle and DOS
 hybrid stay independent. Canonical originals reproduce the entire initial DS image,
 including ignored neighboring bytes. Native `host/level_def.*` reads live bindings.
 
@@ -124,7 +163,11 @@ this extraction; the complete suite remains the DOS behavioral gate.
 
 The LevelDef test checks canonical import against the whole initial DS image,
 edited binding boundaries, rejected imports, all word-index binding arithmetic,
-complete tile initialization against ASM (including wrapping/aliases), and coordinator state,
+complete tile initialization and checkpoint selection against ASM (including
+wrapping/aliases), and coordinator state,
 ordered resource/decoder requests, map writes and meaningful registers. Service
 substitutions match at the native and ASM boundaries; they do not establish decoder
 pixel parity. Existing graphics/native suites remain responsible for that.
+The checkpoint suite compares full physical memory after restart for all original
+entries, wrapped level aliases and a structured checkpoint edit, including restored
+clocks/cursors, map reload/reset and scroll-to-row behavior.

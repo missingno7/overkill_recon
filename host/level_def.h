@@ -10,7 +10,13 @@ typedef struct LevelDef {
     uint16_t blocks;
     uint16_t plaque;
     uint16_t attribute_patches;
+    uint16_t checkpoints;
 } LevelDef;
+
+typedef struct LevelCheckpoint {
+    uint16_t map_position;
+    uint16_t script_clock;
+} LevelCheckpoint;
 
 enum TileAttribute {
     TILE_OPEN = 0,
@@ -21,5 +27,6 @@ enum TileAttribute {
 void overkill_level_def(uint16_t level_index, LevelDef *definition);
 uint16_t overkill_level_resource_name(uint16_t binding);
 void overkill_initialize_tile_attributes(uint16_t patch_binding);
+void overkill_select_checkpoint(uint16_t binding, LevelCheckpoint *selection);
 
 #endif

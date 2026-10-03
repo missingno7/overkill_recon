@@ -160,7 +160,18 @@ def _restart_cases(h, arena: Arena, baseline_state: bytes,
 
     # Cover all four checkpoints for every actual level table. Equality at each next
     # position selects the following checkpoint because ReadCheckpoint uses unsigned JB.
-    for level in range(K.LEVEL_COUNT):
+    from level_bindings import bind_level_documents
+    from level_format import load, original_paths
+    documents = [load(path) for path in original_paths()]
+    documents[0]['checkpoints'][1] = {
+        'map_row': 76, 'script_clock': 0xBEEF, 'resume_event': 2}
+    h.m.set_state(baseline_state)
+    edited_state = bind_level_documents(h.m, documents)
+    variants = [(level, level, baseline_state) for level in range(K.LEVEL_COUNT)]
+    variants += [(level + 0x8000, level, baseline_state) for level in range(K.LEVEL_COUNT)]
+    variants.append((0, 0, edited_state))
+    for level_index, level, level_state in variants:
+        h.m.set_state(level_state)
         checkpoints = _word_at(h.m, h.offset("LevelCheckpointPtrs") + 2 * level)
         entries = [tuple(_word_at(h.m, (checkpoints + 8 * index + 2 * field) & 0xFFFF)
                          for field in range(4)) for index in range(4)]
@@ -178,14 +189,14 @@ def _restart_cases(h, arena: Arena, baseline_state: bytes,
                     h.m.read(h.offset("LevelEndMapRows"), 5 * K.MAP_ROW_BYTES)):
                 map_data[K.MAP_END_ROWS_POS + index] = value
 
-            _reset_runtime(h, arena, baseline_state, baseline_memory)
+            _reset_runtime(h, arena, level_state, baseline_memory)
             filename = _word_at(h.m, h.offset("LevelMapFiles") + level * 2)
             cache = struct.pack("<5H", filename, MAP_CACHE_SEGMENT,
                                 len(map_data), 0, 0)
             cache += struct.pack("<5H", NO_RECORD, 0, 0, 0, 0)
             writes = [
                 (player, _record(kind=K.KIND_PLAYER, type=0)),
-                _word(h, "LevelIndex", level),
+                _word(h, "LevelIndex", level_index),
                 _word(h, "MapScrollPos", initial_scroll),
                 _word(h, "LevelScriptClock", 0x6A5B),
                 _word(h, "ScrollSubRow", (level + checkpoint_index * 5) & 0x0F),
@@ -208,7 +219,8 @@ def _restart_cases(h, arena: Arena, baseline_state: bytes,
 
             h.m.call("RestartAtCheckpoint", {"BP": player})
             oracle_after = bytes(h.m.u.mem_read(0, DOS_MEMORY_BYTES))
-            label = f"RestartAtCheckpoint level {level} checkpoint {checkpoint_index}"
+            variant = 'edited' if level_state is edited_state else 'canonical'
+            label = f"RestartAtCheckpoint {variant} level {level_index:04X} checkpoint {checkpoint_index}"
             h.compare(label)
             _compare_arena(native_after, oracle_after, stack_begin, stack_end, label)
             # The last byte in the reset scan is in its range for every checkpoint,

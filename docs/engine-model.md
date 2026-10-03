@@ -21,13 +21,13 @@ slots must first retain their own semantics.
 ## Initial extraction
 
 The native `LevelDef` binds map, sprite bank, block bank, plaque and ordered tile
-attribute patches. References point at original DS pointer-table slots, not cached
+attribute patches and checkpoints. References point at original DS pointer-table slots, not cached
 targets. Reading each slot at the original use point preserves mutations and loader
 callback ordering. No gameplay state is shadowed. Out-of-range word indices retain
 the original, independently wrapped table arithmetic.
 
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
-native build consumes their resource and terrain definitions through a generic
+native build consumes their resource, terrain and checkpoint definitions through a generic
 binding adapter, writing into the original initial DS layout. With all six originals
 this reproduces every initialization byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
@@ -47,17 +47,29 @@ longer streams and unbound asset names fail explicitly. These are temporary adap
 limits, not a proposed editor architecture. A future storage expansion must be
 proved against ordinary state access and unchecked neighboring reads first.
 
+Checkpoints name map rows, restored countdown clocks and next-event indices. All
+24 original cursor values resolve to event boundaries, including scripts with
+optional marker words. Selection thresholds equal the next checkpoint's position
+in all six levels; the final checkpoint is unconditional. Its unused fourth-word
+read stays an internal compatibility rule. Resume clocks/events are independent:
+level 2 retains its final clock 77/event-trigger 80 mismatch, and level 5 retains
+the same resume event for its last two checkpoints.
+
+The native reader now follows the ASM candidate writes before threshold reads.
+The previous C selection skipped intermediate writes; aliases of a threshold or
+following record into `CheckpointScriptCursor` expose the difference. Two small
+mutated-stream regressions preserve the demonstrated ASM order. Canonical restarts
+remain equivalent; the DOS implementation and load module remain unchanged.
+
 ## Next boundaries to prove
 
-1. Checkpoints with script positions expressed as event boundaries, preserving
-   unsigned threshold selection and the unused fourth-word overread.
-2. Formation events and member definitions, with cursor advance before allocation,
+1. Formation events and member definitions, with cursor advance before allocation,
    ordered members, optional marker clear and equality-only event triggering.
-3. Distinct path and leader formats, preserving transition timing and signedness.
-4. Map recipes, compared directly against every original cell handler before
+2. Distinct path and leader formats, preserving transition timing and signedness.
+3. Map recipes, compared directly against every original cell handler before
    switching dispatch. Recipes must express mutation before allocation, retained
    cells, 2x2 writes, conditional groups and exceptional scan-cursor results.
-5. Encounter descriptors retaining unique procedural implementations initially.
+4. Encounter descriptors retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
 by default. Binding fixtures version the implemented slice; future sections must

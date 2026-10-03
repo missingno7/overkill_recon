@@ -1,9 +1,10 @@
-"""Validate the implemented resource/terrain slice of Overkill level JSON.
+"""Validate the implemented resource/terrain/checkpoint slice of Overkill level JSON.
 
 This deliberately does not accept unimplemented gameplay sections or certify a
 playable level. Run without arguments to validate the six original fixtures.
 """
 from common import ROOT, read_json
+from world import K
 import argparse
 from pathlib import Path
 import re
@@ -19,6 +20,8 @@ def validate(document):
     profile = document.get('profile')
     if profile == 'level-bindings':
         fields.add('terrain')
+        if 'checkpoints' in document:
+            fields.add('checkpoints')
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
@@ -54,6 +57,22 @@ def validate(document):
                 raise ValueError('patch tile must be 0..254; 255 terminates the legacy stream')
             if not isinstance(patch['attribute'], str) or patch['attribute'] not in TILE_ATTRIBUTES:
                 raise ValueError('unknown tile attribute')
+    if 'checkpoints' in document:
+        checkpoints = document['checkpoints']
+        if not isinstance(checkpoints, list) or len(checkpoints) != 4:
+            raise ValueError('the original binding requires four checkpoints')
+        previous_row = -1
+        for checkpoint in checkpoints:
+            if not isinstance(checkpoint, dict) or set(checkpoint) != {
+                    'map_row', 'script_clock', 'resume_event'}:
+                raise ValueError('checkpoint must specify map_row, script_clock and resume_event')
+            for field, maximum in (('map_row', 0xFFFF // K.MAP_ROW_BYTES),
+                                   ('script_clock', 0xFFFF), ('resume_event', 0xFFFF)):
+                if type(checkpoint[field]) is not int or not 0 <= checkpoint[field] <= maximum:
+                    raise ValueError(f'checkpoint {field} is outside its unsigned binding range')
+            if checkpoint['map_row'] <= previous_row:
+                raise ValueError('checkpoint map rows must increase')
+            previous_row = checkpoint['map_row']
     return document
 
 

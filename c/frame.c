@@ -40,6 +40,7 @@
 #include "sound.h"
 
 #ifdef OVERKILL_HOST
+#include "level_def.h"
 #undef tick_frame_timers
 #endif
 
@@ -702,18 +703,31 @@ void reset_map_before_view(void)
 void restart_at_checkpoint(Record *here)
 {
     DosRegisters map_registers;
+#ifdef OVERKILL_HOST
+    LevelDef definition;
+    LevelCheckpoint selection;
+    word position, clock, saved;
+#else
     word checkpoint = FRAME_STATE_WORD(LevelCheckpointPtrs, (word)(LevelIndex << 1));
     word n, position, clock, saved;
+#endif
 
     /* BP was the record passed to the old MAIN call. ES is dead input here: the loader
        sets its buffer segment before any DOS service, and this routine returns no pair. */
     map_registers.bp = GAME_OFFSET(here);
     map_registers.es = 0;
+#ifdef OVERKILL_HOST
+    overkill_level_def(LevelIndex, &definition);
+    overkill_select_checkpoint(definition.checkpoints, &selection);
+    position = selection.map_position;
+    clock = selection.script_clock;
+#else
     for (n = 3; n != 0; n--, checkpoint = (word)(checkpoint + 8))
         if (MapScrollPos < FRAME_DS_WORD((word)(checkpoint + 6))) break;
     position = FRAME_DS_WORD(checkpoint);
     clock = FRAME_DS_WORD((word)(checkpoint + 2));
     CheckpointScriptCursor = FRAME_DS_WORD((word)(checkpoint + 4));
+#endif
     saved = LevelScriptClock;
     load_level_map(&map_registers);
     LevelScriptClock = saved;

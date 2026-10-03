@@ -1,4 +1,4 @@
-"""Native LevelDef resource bindings and loader order against the frozen oracle.
+"""Native LevelDef bindings, terrain and checkpoints against the frozen oracle.
 
 The probe compiles the production coordinator and binding code with narrow service
 substitutions. Identical substitutions hook the corresponding ASM entries. No
@@ -17,7 +17,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
-from export_original_levels import definitions
+from export_original_levels import definitions, script_event_boundaries
 from level_format import load, original_paths, validate, encode_attribute_patches
 from level_bindings import bind_level_documents, load_original_bindings
 from emu import REG, LOAD
@@ -27,7 +27,11 @@ from unicorn import UC_HOOK_CODE
 
 class Definition(ctypes.Structure):
     _fields_ = [(name, ctypes.c_uint16) for name in
-                ('map', 'sprites', 'blocks', 'plaque', 'attribute_patches')]
+                ('map', 'sprites', 'blocks', 'plaque', 'attribute_patches', 'checkpoints')]
+
+
+class Checkpoint(ctypes.Structure):
+    _fields_ = [('map_position', ctypes.c_uint16), ('script_clock', ctypes.c_uint16)]
 
 
 class Registers(ctypes.Structure):
@@ -79,6 +83,18 @@ def fixtures(machine):
     document = copy.deepcopy(actual[0])
     del document['resources']['plaque']
     bad.append(document)
+    for field, value in (('map_row', True), ('map_row', -1), ('map_row', 5042),
+                         ('script_clock', 65536), ('resume_event', False)):
+        document = copy.deepcopy(actual[0])
+        document['checkpoints'][0][field] = value
+        bad.append(document)
+    for value in ([], {}, actual[0]['checkpoints'][:3]):
+        document = copy.deepcopy(actual[0])
+        document['checkpoints'] = value
+        bad.append(document)
+    document = copy.deepcopy(actual[0])
+    document['checkpoints'][1]['map_row'] = document['checkpoints'][0]['map_row']
+    bad.append(document)
     for tile, attribute in ((True, 'open'), (-1, 'open'), (255, 'open'),
                             (256, 'open'), (2, 'unknown'), (2, 0)):
         document = copy.deepcopy(actual[0])
@@ -115,6 +131,7 @@ def import_checks(machine):
     for document in legacy:
         document['profile'] = 'resource-bindings'
         del document['terrain']
+        del document['checkpoints']
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []
@@ -131,6 +148,9 @@ def import_checks(machine):
     repeated[1]['id'] = repeated[0]['id']
     bad.append((repeated, 'identifiers must be unique'))
     bad.append((documents[:-1], 'six level definitions'))
+    invalid_event = copy.deepcopy(documents)
+    invalid_event[0]['checkpoints'][0]['resume_event'] = 65535
+    bad.append((invalid_event, 'no script boundary'))
     for documents_, diagnostic in bad:
         try:
             bind_level_documents(machine, documents_)
@@ -155,7 +175,24 @@ def import_checks(machine):
     short_state = bind_level_documents(machine, shortened)
     if short_state[cursor] != 255 or short_state[cursor + 1:] != original[cursor + 1:]:
         raise AssertionError('shortened stream changed ignored trailing bytes')
-    return 15, bound
+    without_checkpoints = copy.deepcopy(documents)
+    for document in without_checkpoints:
+        del document['checkpoints']
+    if bind_level_documents(machine, without_checkpoints) != original:
+        raise AssertionError('earlier terrain profile changes original checkpoints')
+    checkpoint_edit = copy.deepcopy(documents)
+    checkpoint_edit[0]['checkpoints'][1] = {
+        'map_row': 76, 'script_clock': 0xBEEF, 'resume_event': 2}
+    changed_state = bind_level_documents(machine, checkpoint_edit)
+    cursor = struct.unpack_from('<H', original, machine.offset('LevelCheckpointPtrs'))[0]
+    allowed = set(range(cursor + 6, cursor + 14))
+    changed = {i for i, (a, b) in enumerate(zip(original, changed_state)) if a != b}
+    if not changed or not changed <= allowed:
+        raise AssertionError('checkpoint edit crosses its record/previous threshold boundary')
+    if struct.unpack_from('<4H', changed_state, cursor + 6) != (
+            76 * 13, 76 * 13, 0xBEEF, script_event_boundaries(machine, 0)[2]):
+        raise AssertionError('checkpoint row/event binding did not reach the native image')
+    return 18, bound, changed_state
 
 
 def tile_attributes(h, imported):
@@ -252,9 +289,75 @@ def bindings(h):
             raise AssertionError(f'{role}: resource value was cached')
     for level in range(0x10000):
         lib.overkill_level_def(level, ctypes.byref(definition))
-        if definition.attribute_patches != (h.offset('AttributePatchPointers') + 2 * level) & 0xFFFF:
-            raise AssertionError(f'{level:04X}: attribute binding differs')
-    return 0x10000 * 5 + 4
+        for field, table in (('attribute_patches', 'AttributePatchPointers'),
+                             ('checkpoints', 'LevelCheckpointPtrs')):
+            if getattr(definition, field) != (h.offset(table) + 2 * level) & 0xFFFF:
+                raise AssertionError(f'{level:04X}: {field} binding differs')
+    return 0x10000 * 6 + 4
+
+
+def checkpoint_selection(h, imported):
+    lib = h.lib
+    lib.overkill_select_checkpoint.argtypes = (ctypes.c_uint16, ctypes.POINTER(Checkpoint))
+    lib.overkill_select_checkpoint.restype = None
+    pointers = h.offset('LevelCheckpointPtrs')
+    saved_cursor = h.offset('CheckpointScriptCursor')
+    count = 0
+    def compare(level, position, label, writes=(), state=None):
+        nonlocal count
+        h.reset()
+        if state is not None:
+            h.m.set_state(state)
+            h.state_storage.load(state)
+        h.write_symbol('MapScrollPos', struct.pack('<H', position))
+        for offset, data in writes:
+            h.write(offset, data)
+        binding = (pointers + 2 * level) & 0xFFFF
+        cursor = h.m.word(binding)
+        selection = Checkpoint()
+        lib.overkill_select_checkpoint(binding, ctypes.byref(selection))
+        # Compose the original reader's four calls, with the final carry ignored.
+        # Its writes remain live between calls, exactly as in RestartAtCheckpoint.
+        for index in range(4):
+            result = h.m.call('ReadCheckpoint', {'SI': cursor})
+            cursor = result['SI']
+            if index == 3 or result['FLAGS'] & 1:
+                break
+        if (selection.map_position, selection.script_clock) != (result['DI'], result['DX']):
+            raise AssertionError(f'{label}: checkpoint selection differs')
+        h.compare(label)
+        count += 1
+    for level in range(6):
+        checkpoints = load(original_paths()[level])['checkpoints']
+        positions = {0, 0x7FFF, 0x8000, 0xFFFF}
+        for checkpoint in checkpoints[1:]:
+            position = checkpoint['map_row'] * 13
+            positions.update((position - 1, position, position + 1))
+        for position in sorted(positions):
+            compare(level, position, f'checkpoint level {level} position {position:04X}')
+            compare(level + 0x8000, position, f'checkpoint wrapped level {level} position {position:04X}')
+    compare(0, 76 * 13, 'structured checkpoint edit', state=imported)
+    scratch = 0x0400
+    for position, threshold in ((0x7FFF, 0x8000), (0x8000, 0x7FFF),
+                                (0xFFFF, 0), (0, 0xFFFF), (0, 0), (0xFFFF, 0xFFFF)):
+        payload = struct.pack('<15H', 13, 3, 17, threshold,
+                              26, 4, 18, threshold, 39, 5, 19, threshold, 52, 6, 20)
+        compare(0, position, f'unsigned checkpoint {position:04X}/{threshold:04X}', [
+            (pointers, struct.pack('<H', scratch)), (scratch, payload)])
+    compare(0, 0, 'checkpoint words wrap at FFFF', [
+        (pointers, b'\xf8\xff'), (0xFFF8, struct.pack('<4H', 13, 3, 17, 0)),
+        (0, struct.pack('<4H', 26, 4, 18, 1))])
+    compare(0, 0x200, 'candidate cursor write changes its own threshold', [
+        (pointers, struct.pack('<H', saved_cursor - 6)),
+        (saved_cursor - 6, struct.pack('<8H', 13, 3, 0x100, 0xFFFF, 26, 4, 18, 0xFFFF))])
+    compare(0, 0x200, 'candidate cursor write changes following position', [
+        (pointers, struct.pack('<H', saved_cursor - 8)),
+        (saved_cursor - 8, struct.pack('<8H', 13, 3, 0x1234, 0, 26, 4, 18, 0xFFFF))])
+    fallback = h.m.word(pointers + 10) + 30
+    for neighbor in (0, 0xFFFF):
+        compare(5, 0x0B00, 'fallback neighboring word ignored ' + str(neighbor), [
+            (fallback, struct.pack('<H', neighbor))])
+    return count
 
 
 def coordinator(h, library):
@@ -417,13 +520,15 @@ def main():
     harness = module('level_def_input_harness', ROOT / 'tests/host/input.py')
     h = harness.HostHarness()
     fixture_count = fixtures(h.m)
-    import_count, imported = import_checks(h.m)
+    import_count, imported, imported_checkpoints = import_checks(h.m)
     binding_count = bindings(h)
     attribute_count = tile_attributes(h, imported)
+    checkpoint_count = checkpoint_selection(h, imported_checkpoints)
     loader_count = coordinator(h, probe())
     print(f'PASS LevelDef: {fixture_count} fixture/validator checks, '
           f'{import_count} import checks, {binding_count} binding checks, '
           f'{attribute_count} native/oracle attribute cases, '
+          f'{checkpoint_count} native/oracle checkpoint selections, '
           f'{loader_count} native/oracle loader cases')
 
 

@@ -26,7 +26,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `frame.c` | Pending; level 5 timing differs |
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Pending; anchor, parts, damage coupling and same-frame next-waypoint steering |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Pending descriptors pointing at existing implementations |
-| Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Pending; four entries per level, unsigned thresholds and script cursor restoration |
+| Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
 | Map reset actions | Pure dispatch data + procedural mutations | `MapResetLists` in DATA and `MapResetList*` in code; restart scan | Pending; cleared/restored cells may differ from normal spawning |
 | Music | Resource metadata + timeline policy | `LevelMusicTable`; `life.c`, `frame.c` | Pending; low-byte index, start/end/late-level overrides remain |
 | Palette/HUD level identity | Resource metadata / presentation | `display.c`, CS `LevelCgaPaletteCases`, `DacColor6*`, `LevelDigitChars`, native presentation dispatch | Pending; adapter-specific choice, original digit and chooser order retained |
@@ -91,6 +91,14 @@ in mutated DS streams. Source ordering, duplicate entries, the tile-only termina
 and original storage identity remain intact. The adapter rejects longer streams and
 divergent definitions sharing a stream until separate native storage is supported.
 
+Checkpoints now bind into the same native initialization. Event indices are decoded
+from variable-length original script records and resolved back to cursor identities;
+all 24 checkpoint cursors are event boundaries. Three thresholds derive from the
+following checkpoint row, and the final fallback's neighboring word stays untouched.
+The native selection retains provisional cursor writes before threshold reads;
+direct comparisons cover the two alias cases the previous C selection omitted.
+Level 2's final clock/event mismatch and level 5's repeated resume event are retained.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
@@ -98,7 +106,7 @@ six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
 Correlate decoded map-cell occurrences with recipes and every mutation path; build
 a behavior-name registry from actual uses; inventory precise leader record formats;
-relate checkpoint byte cursors to event boundaries; identify encounter parameters
+extract event/formation payloads without changing checkpoint event identities; identify encounter parameters
 without changing implementation order; compare complete affected state for every
 new extraction. No path, formation, event or enemy-family schema is locked by this
 resource/terrain slice.

@@ -12,6 +12,7 @@ void overkill_level_def(uint16_t level_index, LevelDef *definition)
     definition->blocks = (word)(definition->sprites + 2);
     definition->plaque = (word)(GAME_OFFSET(PlaqueFiles) + pair_index);
     definition->attribute_patches = (word)(GAME_OFFSET(AttributePatchPointers) + pair_index);
+    definition->checkpoints = (word)(GAME_OFFSET(LevelCheckpointPtrs) + pair_index);
 }
 
 uint16_t overkill_level_resource_name(uint16_t binding)
@@ -38,5 +39,27 @@ void overkill_initialize_tile_attributes(uint16_t patch_binding)
         attribute = *GAME_PTR(byte, cursor);
         cursor = (word)(cursor + 1);
         ByteAttributeTable[tile] = attribute;
+    }
+}
+
+void overkill_select_checkpoint(uint16_t binding, LevelCheckpoint *selection)
+{
+    word cursor = *GAME_PTR(word, binding);
+    word n, threshold;
+
+    for (n = 0; n < 4; n++) {
+        selection->map_position = *GAME_PTR(word, cursor);
+        cursor = (word)(cursor + 2);
+        selection->script_clock = *GAME_PTR(word, cursor);
+        cursor = (word)(cursor + 2);
+        /* ReadCheckpoint writes every candidate cursor before its threshold
+           read. Live tables may alias this state or MapScrollPos. */
+        CheckpointScriptCursor = *GAME_PTR(word, cursor);
+        cursor = (word)(cursor + 2);
+        /* The fourth entry has no threshold word. The original reads into the
+           neighboring table anyway; its result is ignored. Retain that read. */
+        threshold = *(volatile word *)GAME_PTR(word, cursor);
+        cursor = (word)(cursor + 2);
+        if (n == 3 || MapScrollPos < threshold) break;
     }
 }

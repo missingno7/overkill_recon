@@ -1,4 +1,4 @@
-"""Bind structured resource/terrain definitions into the native initial DS image.
+"""Bind structured level definitions into the native initial DS image.
 
 The adapter derives original storage locations/capacities from the exact oracle.
 It retains source filename identities and shared patch streams. Longer streams or
@@ -7,8 +7,9 @@ migration. No oracle source or DOS build artifact is modified.
 """
 from common import ROOT
 from level_format import load, original_paths, validate, encode_attribute_patches
-from export_original_levels import terrain_definition
+from export_original_levels import terrain_definition, script_event_boundaries
 from emu import LOAD
+from world import K
 import argparse
 from pathlib import Path
 import struct
@@ -57,6 +58,23 @@ def bind_level_documents(machine, documents):
         # Keep unused trailing bytes intact: unchecked neighboring reads still
         # belong to the original memory model. Short streams stop at their new FF.
         state[cursor:cursor + len(payload)] = payload
+        if 'checkpoints' in document:
+            boundaries = script_event_boundaries(machine, level)
+            slot = machine.offset('LevelCheckpointPtrs') + level * 2
+            cursor = struct.unpack_from('<H', original, slot)[0]
+            checkpoints = document['checkpoints']
+            for index, checkpoint in enumerate(checkpoints):
+                event = checkpoint['resume_event']
+                if event >= len(boundaries):
+                    raise ValueError(f'level {level}: checkpoint resume_event has no script boundary')
+                struct.pack_into('<3H', state, cursor + index * 8,
+                                 checkpoint['map_row'] * K.MAP_ROW_BYTES,
+                                 checkpoint['script_clock'], boundaries[event])
+                if index < 3:
+                    struct.pack_into('<H', state, cursor + index * 8 + 6,
+                                     checkpoints[index + 1]['map_row'] * K.MAP_ROW_BYTES)
+            # The fallback has three words. Do not synthesize a fourth word:
+            # ReadCheckpoint deliberately sees the original neighboring object.
     return bytes(state)
 
 

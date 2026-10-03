@@ -1,4 +1,26 @@
 {
+  "checkpoints": [
+    {
+      "map_row": 12,
+      "resume_event": 0,
+      "script_clock": 273
+    },
+    {
+      "map_row": 75,
+      "resume_event": 1,
+      "script_clock": 210
+    },
+    {
+      "map_row": 139,
+      "resume_event": 2,
+      "script_clock": 146
+    },
+    {
+      "map_row": 215,
+      "resume_event": 4,
+      "script_clock": 70
+    }
+  ],
   "format": "overkill-level",
   "id": "original-level-3",
   "profile": "level-bindings",

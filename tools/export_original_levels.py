@@ -1,10 +1,11 @@
-"""Export canonical resource/terrain original level fixtures from the exact ASM build.
+"""Export canonical original level fixtures from the exact ASM build.
 
 No original program is executed. --check compares fixtures without overwriting;
 --no-build reuses the existing source-built oracle after checking its pinned hash.
 """
 from common import ROOT, read_json, sha, write_json
 from extract import mz
+from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 import argparse
 from pathlib import Path
@@ -32,6 +33,7 @@ def definitions(machine):
         'profile': 'level-bindings', 'id': f'original-level-{level}',
         'resources': resource_bindings(machine, level),
         'terrain': terrain_definition(machine, level),
+        'checkpoints': checkpoint_definitions(machine, level),
     }) for level in range(6)]
 
 
@@ -55,6 +57,50 @@ def terrain_definition(machine, level):
     raise ValueError(f'level {level}: original attribute stream has no terminator')
 
 
+def script_event_boundaries(machine, level):
+    """Event ordinal -> source cursor, including the terminating event boundary.
+
+    Only the original record framing is decoded here. Formation definitions and
+    timeline behavior remain in their existing implementations.
+    """
+    state = machine.state()
+    cursor = machine.offset(f'LevelScript{level}')
+    boundaries = []
+    for _ in range(0x10000 // 8):
+        if cursor + 2 > len(state):
+            break
+        boundaries.append(cursor)
+        trigger = struct.unpack_from('<H', state, cursor)[0]
+        if trigger == 0xFFFF:
+            return boundaries
+        if cursor + 8 > len(state):
+            break
+        marker = struct.unpack_from('<H', state, cursor + 2)[0]
+        cursor += 10 if marker == 0xFFFF else 8
+    raise ValueError(f'level {level}: script has no bounded terminator')
+
+
+def checkpoint_definitions(machine, level):
+    state = machine.state()
+    slot = machine.offset('LevelCheckpointPtrs') + level * 2
+    cursor = struct.unpack_from('<H', state, slot)[0]
+    boundaries = script_event_boundaries(machine, level)
+    checkpoints = []
+    for index in range(4):
+        position, clock, script_cursor = struct.unpack_from('<3H', state, cursor + index * 8)
+        row, remainder = divmod(position, K.MAP_ROW_BYTES)
+        if remainder or script_cursor not in boundaries:
+            raise ValueError(f'level {level}: checkpoint is not a row/event boundary')
+        if index < 3:
+            threshold = struct.unpack_from('<H', state, cursor + index * 8 + 6)[0]
+            following = struct.unpack_from('<H', state, cursor + (index + 1) * 8)[0]
+            if threshold != following:
+                raise ValueError(f'level {level}: independent checkpoint threshold needs modeling')
+        checkpoints.append({'map_row': row, 'script_clock': clock,
+                            'resume_event': boundaries.index(script_cursor)})
+    return checkpoints
+
+
 def exact_oracle(no_build=False):
     if no_build:
         exe = ROOT / 'build/oracle-sym/OVERKILL.EXE'
@@ -74,7 +120,7 @@ def export(directory=None, check=False, no_build=False):
     for path, document in zip(original_paths(directory), generated):
         if check:
             if load(path) != document:
-                raise ValueError(f'{path}: resource fixture differs from the oracle')
+                raise ValueError(f'{path}: level fixture differs from the oracle')
         else:
             write_json(path, document)
         print(('PASS' if check else 'Exported') + ': ' + path.name)
