@@ -8,7 +8,8 @@ ARCHETYPES = {
     'sway_leader': 0x13, 'sweep_leader': 0x15,
     'wall_patrol_shooter': 0x19, 'wall_patrol_a': 0x1A, 'wall_patrol_b': 0x1B,
     'bob_chase_leader': 0x1C, 'slot_hopper_leader': 0x1F,
-    'encounter_director': 0x21, 'slow_descender': 0x27,
+    'encounter_director': 0x21, 'wall_turret_left': 0x24, 'wall_turret_right': 0x25,
+    'slow_descender': 0x27, 'enemy_hatch': 0x28,
     'hover_fire_plunge_a': 0x2D, 'scrolling_shuttle': 0x2F,
     'animated_shooter': 0x30, 'fast_fall_3': 0x31, 'descend_bounce_a': 0x32,
     'side_turret': 0x34, 'descend_burst': 0x35, 'fall_burst': 0x36,
@@ -26,6 +27,7 @@ ARCHETYPES = {
     'drop_aim': 0x7B, 'sweeper_leader': 0x7D, 'march_leader': 0x7E,
     'patrol_shoot_down_64': 0x83, 'patrol_shoot_down_b': 0x89,
     'patrol_shoot_down_c': 0x8A, 'climbing_walker_a': 0x8B, 'climbing_walker_b': 0x8C,
+    'volley_turret_left': 0x90, 'volley_turret_right': 0x91,
 }
 SIZES = {'8x8': 0, '16x16': 1, '32x32': 2}
 LAYERS = {'under_terrain': 0, 'over_terrain': 1}

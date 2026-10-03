@@ -421,6 +421,53 @@
       ]
     }
   },
+  "map_spawns": [
+    {
+      "direction": "left",
+      "enemy": "volley_turret_left",
+      "map_writes": [],
+      "spawn": "enemy",
+      "sprite": 137,
+      "tile": 172
+    },
+    {
+      "direction": "right",
+      "enemy": "volley_turret_right",
+      "map_writes": [],
+      "spawn": "enemy",
+      "sprite": 140,
+      "tile": 177
+    },
+    {
+      "direction": "up",
+      "enemy": "enemy_hatch",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 1,
+          "tile": 38
+        },
+        {
+          "dx": 1,
+          "dy": 1,
+          "tile": 39
+        },
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 40
+        },
+        {
+          "dx": 1,
+          "dy": 0,
+          "tile": 41
+        }
+      ],
+      "spawn": "large_enemy",
+      "sprite": 28,
+      "tile": 201
+    }
+  ],
   "paths": {
     "encounter_leader": {
       "end": {

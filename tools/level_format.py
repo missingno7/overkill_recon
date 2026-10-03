@@ -7,6 +7,7 @@ from common import ROOT, read_json
 from world import K
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS
 from level_paths import validate_path_sections
+from level_map_recipes import validate_map_spawns
 import argparse
 from pathlib import Path
 import re
@@ -26,7 +27,7 @@ def validate(document):
             fields.add('checkpoints')
         if 'timeline' in document or 'formations' in document:
             fields.update(('timeline', 'formations'))
-        fields.update(name for name in ('paths', 'leader_paths') if name in document)
+        fields.update(name for name in ('paths', 'leader_paths', 'map_spawns') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
@@ -130,6 +131,7 @@ def validate(document):
                for checkpoint in document.get('checkpoints', [])):
             raise ValueError('checkpoint resume_event has no timeline boundary')
     validate_path_sections(document)
+    validate_map_spawns(document)
     return document
 
 

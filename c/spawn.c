@@ -46,6 +46,7 @@
 #ifdef OVERKILL_HOST
 #include "memory.h"
 #include "level_def.h"
+#include "map_recipes.h"
 #endif
 
 /* CS-resident words (outside the state segment). */
@@ -621,6 +622,11 @@ void level5_map_cell(Record *here, word off, byte cell)
 word level_map_cell(Record *here, word off, word level_cell)
 {
     byte cell = (byte)level_cell;
+#ifdef OVERKILL_HOST
+    word continuation;
+
+    if (overkill_spawn_map_recipe(here, off, level_cell, &continuation)) return continuation;
+#endif
 
     switch (level_cell >> 8) {
     case 0: return level0_map_cell(here, off, cell);

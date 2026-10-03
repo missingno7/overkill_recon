@@ -854,6 +854,7 @@
       ]
     }
   },
+  "map_spawns": [],
   "paths": {
     "path_follower_c": {
       "end": {

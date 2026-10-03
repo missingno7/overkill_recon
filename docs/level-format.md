@@ -1,9 +1,10 @@
 # Overkill level format: current structured bindings
 
 Version 1 has two partial profiles. `level-bindings` describes resources, tile
-attributes and optional checkpoints, timelines, formations and paths; the earlier `resource-bindings` profile remains
+attributes and optional checkpoints, timelines, formations, paths and map recipes;
+the earlier `resource-bindings` profile remains
 accepted and retains original terrain/checkpoints. Neither describes a complete
-playable level yet. Map contents, map spawn recipes and encounter definitions
+playable level yet. Map contents, remaining spawn recipes and encounter definitions
 await extraction.
 
 An earlier partial `level-bindings` definition remains valid (the patch list below
@@ -223,6 +224,65 @@ Canonical level paths include the boss anchor and level-4 encounter route. The
 demo and currently unreferenced Type4A route retain original DS data outside level
 fixtures; their supported codecs do not assert original level reachability.
 
+## Map spawn recipes: first slice
+
+`map_spawns` is an optional list of unique tile-triggered recipes. It currently
+represents all seven original level-1 actions, the matching volley turrets/hatch
+in level 4, and the two matching volley turrets in level 5. Other cells retain their
+existing handlers during migration. An empty list in a partially converted level
+does not disable its unconverted spawns. Native binding rejects recipes outside
+that level's converted scope; level 1 supports all byte-valued triggers.
+
+```json
+{
+  "map_spawns": [
+    {
+      "tile": 4,
+      "spawn": "enemy",
+      "enemy": "climbing_walker_a",
+      "map_writes": [{ "dx": 0, "dy": 0, "tile": 1 }]
+    },
+    {
+      "tile": 172,
+      "spawn": "enemy",
+      "enemy": "volley_turret_left",
+      "sprite": 137,
+      "direction": "left",
+      "map_writes": []
+    }
+  ]
+}
+```
+
+`tile` is the input map byte (0..255), not an enemy type. `enemy` uses the semantic
+preset registry. `spawn` selects one of two proven map initializers: `enemy` or
+`large_enemy`. Both allocate in the original Pool A order and preserve unspecified
+record fields. Ordinary enemies have 4 HP at `(MapCellX, 16)` and saved coordinates
+copied from the caller; large enemies have 10 HP at `(MapCellX, 0)` and retain stale
+saved coordinates. Both use draw pass 0 and no group in this first slice. Large
+initialization is distinct from changing an ordinary enemy's size.
+
+`map_writes` is an ordered list of relative cell positions, with signed word `dx`
+and `dy` and byte `tile`. Offsets compile as `dy * 13 + dx`, with word wrapping.
+An empty list keeps the cell; a write of tile 1 at `(0, 0)` clears it. Every write
+occurs before allocation, including when the pool is full. The original hatch
+writes `(0,1)=38`, `(1,1)=39`, `(0,0)=40`, `(1,0)=41` in that order. Repeated writes
+are preserved, and the native resolver keeps physical aliases into DS.
+
+Optional `sprite` is an unsigned word index within the selected bank; optional
+`direction` is one of the eight compass directions (`up`, `up_right`, `right`,
+`down_right`, `down`, `down_left`, `left`, `up_left`). The evaluator writes type,
+then sprite if specified, then direction if specified. Omission does not zero a
+field: ordinary initialization leaves sprite stale and sets direction down;
+large initialization leaves both stale before these overrides.
+
+Omitting `map_spawns` keeps original recipes. An explicit list replaces the covered
+slice; removing an entry disables that trigger rather than falling back to its old
+switch case. Coverage is internal migration metadata, not a permanent original-game
+path. The exporter derives this small slice from curated equivalents of maintained
+C handlers; canonical execution is independently checked against ASM. Group/drop,
+center-facing, RNG-dependent, pickup and other recipe primitives remain pending.
+
 ## Export and validation
 
 ```powershell
@@ -242,6 +302,8 @@ checkpoint positions/cursors that are not row/event boundaries.
 It also reads all used formations and timeline events, including semantic presets,
 member ordering, explicit group drops and marker compatibility properties. It derives
 used path/leader streams, including their distinct endings and follower suppression.
+The first map slice is generated from the explicitly curated equivalent recipe data;
+large opaque tables are not transcribed.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
 Serialization is deterministic. The six fixtures in `levels/original/` are consumed
@@ -254,6 +316,9 @@ original storage. It writes only native
 initialization; the oracle and DOS
 hybrid stay independent. Canonical originals reproduce the entire initial DS image,
 including ignored neighboring bytes. Native `host/level_def.*` reads live bindings.
+Map recipes have no original DS table: the native build generates immutable C data
+from their JSON, consumed by `host/map_recipes.c`. The same evaluator handles edited
+recipes without rewriting enemy behavior or introducing copied runtime records.
 
 This is build-time structured loading. Runtime JSON loading and arbitrary custom
 asset/storage allocation remain pending. The adapter derives capacities and shared
@@ -292,6 +357,7 @@ python tests/host/terrain.py --no-build
 python tests/host/checkpoints.py --no-build
 python tests/host/timeline.py --no-build
 python tests/host/path_data.py --no-build
+python tests/host/map_recipes.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -316,3 +382,8 @@ The path-data suite compares every original waypoint and leader step, arrivals,
 endings and full/partial allocation outcomes. Full physical memory comparisons
 include CS encounter cursors, RNG and stale record fields. Edited shared routes,
 leader targets/follower slots and boss points also run through the existing readers.
+The map-recipe suite checks all safe cell bytes across six levels against ASM and
+the retained C handlers, then stresses the converted actions with full/free pools,
+stale fields, record/physical aliases and wrapped writes. Mixed rows run through the
+real scanner. A separately generated edited table uses the same evaluator and shared
+core initializers to test recipe replacement/removal, authored fields and write order.

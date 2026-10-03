@@ -98,11 +98,32 @@ including the boss anchor. The demo route and unreferenced Type4A route remain
 in DS and have supported codecs, but are not invented level dependencies.
 Boss parts, invader layout and encounter selection remain pending.
 
+The first map recipe slice covers all seven level-1 actions and five identical
+turret/hatch uses in levels 4/5. A recipe names the existing enemy behavior, ordinary
+or large map initialization, ordered relative map-cell writes, and optional sprite
+and direction. No general instruction interpreter is needed. The native build
+compiles these `.lvl` definitions into immutable per-level recipe tables; shared
+runtime state remains in DS. The generic evaluator uses the existing initializers.
+
+Mutation precedes allocation, including full pools. Ordinary initialization copies
+saved coordinates from the caller before overriding map position; large initialization
+leaves saved coordinates stale. Omitted sprite/direction overrides retain the
+initializer's actual result, including stale sprites. The hatch's four writes retain
+their source order and word offset wrapping. Physical map/DS aliases are resolved
+by the existing native memory layer, including high offsets in the ordinary map segment.
+
+An internal migration mask distinguishes converted cells from pending procedures.
+Level 1 now dispatches entirely through the generic evaluator; the shared level-4/5
+cases use it before their original handlers. Removing a covered recipe disables it;
+omitting the section keeps the originals. Grouped ranges, center-facing placement,
+RNG-dependent grouping and fuel scan-cursor behavior remain procedural. Retained C
+switches are temporary comparison references, and DOS dispatch is unchanged.
+
 ## Next boundaries to prove
 
-1. Map recipes, compared directly against every original cell handler before
-   switching dispatch. Recipes must express mutation before allocation, retained
-   cells, 2x2 writes, conditional groups and exceptional scan-cursor results.
+1. Remaining map recipes: conditional groups, center-facing/offset placement,
+   RNG-dependent selection, retained stale group fields and exceptional scan-cursor
+   results. Compare every conversion against the original handler before dispatch.
 2. Encounter descriptors retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels

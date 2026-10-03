@@ -15,7 +15,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Common graphics | Resource metadata shared by all levels | `load_common_graphics`, adapter decoders in `host/graphics_decode.c` | Remains shared; not duplicated in level fixtures |
 | Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Extracted to semantic ordered patches in `.lvl`; native build binds them into existing storage; levels 1/4 remain shared |
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Pending shared definition; load forces first two rows and last five rows |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Pending direct old/new comparisons |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Level 1's seven actions plus five identical level-4/5 uses extracted; remaining recipes pending |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted as semantic names; shared trigger/map-offset indexing retained in adapter; map recipes pending |
@@ -114,6 +114,21 @@ bindings, six leaders, sweep routes, encounter and boss routes are exercised aga
 ASM. The demo's Type51 path is deliberately outside original level content; Type4A
 has no demonstrated original level reference yet and remains untouched in DS.
 Neither its existence nor a supported binding is evidence of level reachability.
+
+`tools/level_map_recipes.py` curates the first map slice from `level1_map_cell` and
+identical pre-group cases in `level4_map_cell`/`level5_map_cell`. It is consumed by
+export, validation and native table generation. The generic evaluator applies
+ordered relative writes, then reuses ordinary/large map initialization and existing
+behavior presets. Original level-1 selection is entirely data-driven; the level-4/5
+turret and hatch entries share the same model. Native retained C switches and ASM
+remain independent comparison references. No grouped-range case has moved yet.
+
+Direct tests cover every safe map byte in all six levels, pool exhaustion, stale
+fields, caller/allocated-record aliases, wrapped offsets, physical DS aliases and
+row integration. Forbidden past-table bytes remain an ASM precondition, as in the
+DOS suite. The initial high-offset fixture mismatch was a setup error: the normal
+map segment aliases DS there. Populating both sides through the same physical alias
+resolved it without changing gameplay or adding a compatibility property.
 
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.

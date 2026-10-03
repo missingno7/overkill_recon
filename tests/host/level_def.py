@@ -136,6 +136,7 @@ def import_checks(machine):
         del document['timeline']
         del document['paths']
         del document['leader_paths']
+        del document['map_spawns']
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []

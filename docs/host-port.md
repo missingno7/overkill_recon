@@ -18,6 +18,10 @@ loader/terrain regression; complete external gameplay-level loading is still pen
 against ASM with pool/group exhaustion and edited definition cases.
 `python tests/host/path_data.py --no-build` compares original waypoint/leader streams,
 arrivals/endings, allocation failures and edited route/slot definitions against ASM.
+The first map recipe slice is compiled from `.lvl` definitions into native immutable
+tables: all level-1 actions and shared level-4/5 turrets/hatch now use one evaluator.
+`python tests/host/map_recipes.py --no-build` checks all safe cells, converted-action
+boundaries, row integration and authored edits; remaining recipes retain their handlers.
 
 ```powershell
 python tools/host.py

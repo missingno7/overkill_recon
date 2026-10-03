@@ -12,6 +12,7 @@ from export_original_levels import (terrain_definition, script_event_boundaries,
                                    source_formations, timeline_definition, checkpoint_definitions)
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS
 from level_paths import bind_path_sections
+from level_map_recipes import map_recipe_bindings
 from emu import LOAD
 from world import K
 import argparse
@@ -23,6 +24,7 @@ def bind_level_documents(machine, documents):
     if len(documents) != 6:
         raise ValueError('the original native binding requires six level definitions')
     documents = [validate(document) for document in documents]
+    map_recipe_bindings(documents)
     if len({document['id'] for document in documents}) != len(documents):
         raise ValueError('level identifiers must be unique')
     original = machine.state()

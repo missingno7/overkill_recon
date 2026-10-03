@@ -9,6 +9,7 @@ from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
 from level_paths import level_path_definitions
+from level_map_recipes import original_map_spawns
 import argparse
 from pathlib import Path
 import struct
@@ -42,6 +43,7 @@ def definitions(machine):
             'checkpoints': checkpoint_definitions(machine, level),
             'formations': formations, 'timeline': timeline,
             'paths': paths, 'leader_paths': leaders,
+            'map_spawns': original_map_spawns(level),
         }))
     return documents
 

@@ -337,6 +337,24 @@
       ]
     }
   },
+  "map_spawns": [
+    {
+      "direction": "right",
+      "enemy": "volley_turret_right",
+      "map_writes": [],
+      "spawn": "enemy",
+      "sprite": 140,
+      "tile": 210
+    },
+    {
+      "direction": "left",
+      "enemy": "volley_turret_left",
+      "map_writes": [],
+      "spawn": "enemy",
+      "sprite": 137,
+      "tile": 211
+    }
+  ],
   "paths": {},
   "profile": "level-bindings",
   "resources": {
