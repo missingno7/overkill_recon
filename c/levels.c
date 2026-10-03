@@ -14,6 +14,7 @@
 #include "memory.h"
 #include "platform_services.h"
 #include "level_def.h"
+#include "level_departure.h"
 #endif
 
 #ifndef OVERKILL_HOST
@@ -104,6 +105,7 @@ void initialize_level_byte_attributes(void)
     word i;
 #ifdef OVERKILL_HOST
     LevelDef definition;
+    LevelDeparture departure;
 
     overkill_level_def(LevelIndex, &definition);
     overkill_initialize_tile_attributes(definition.attribute_patches);
@@ -128,8 +130,14 @@ void initialize_level_byte_attributes(void)
 #endif
 
     for (i = 0; i < 2 * MAP_ROW_BYTES; i++) *LEVELS_MAP_AT(i) = 1;
+#ifdef OVERKILL_HOST
+    overkill_level_departure(LevelIndex, &departure);
+    for (i = 0; i < 5 * MAP_ROW_BYTES; i++)
+        *LEVELS_MAP_AT((word)(MAP_END_ROWS_POS + i)) = departure.terrain_rows[i];
+#else
     for (i = 0; i < 5 * MAP_ROW_BYTES; i++)
         *LEVELS_MAP_AT((word)(MAP_END_ROWS_POS + i)) = LevelEndMapRows[i];
+#endif
 }
 
 void load_level_map(DosRegisters *registers)

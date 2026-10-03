@@ -41,6 +41,7 @@
 
 #ifdef OVERKILL_HOST
 #include "level_def.h"
+#include "level_departure.h"
 #undef tick_frame_timers
 #endif
 
@@ -617,8 +618,12 @@ void smart_bomb_all(void)
    slot's last occupant). */
 void scroll_forward_and_check_level_end(Record *here)
 {
-    word n, *spawn;
+    word n;
+    const word *spawn;
     Record *r;
+#ifdef OVERKILL_HOST
+    LevelDeparture departure;
+#endif
 
     if (LevelEndPhase != LEVEL_END_OFF) return;
     if (EncounterLiveCount != 0 || EncounterEndDelay != 0) return;
@@ -634,7 +639,12 @@ void scroll_forward_and_check_level_end(Record *here)
     if (MapScrollPos != MAP_END_POS) return;
     LevelEndPhase = LEVEL_END_TO_WAYPOINT_A;
     smart_bomb_all();
+#ifdef OVERKILL_HOST
+    overkill_level_departure(LevelIndex, &departure);
+    spawn = departure.animated_parts;
+#else
     spawn = GAME_PTR(word, GAME_OFFSET(Type53SpawnTable));
+#endif
     for (n = 4; n != 0; n--) {
         r = find_free_record_pool_a();
         if (r == FRAME_NO_RECORD) continue;

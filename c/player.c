@@ -15,6 +15,9 @@
 #include "pods.h"
 #include "input_normalize.h"
 #include "render.h"
+#ifdef OVERKILL_HOST
+#include "level_departure.h"
+#endif
 
 void update_beam(Record *r);
 void handle_fire_button(Record *r);
@@ -117,7 +120,7 @@ void add_energy_point(void)
 #endif
 }
 
-void steer_input_to_waypoint(word *point)
+void steer_input_to_waypoint(const word *point)
 {
     word target;
 
@@ -139,19 +142,32 @@ void run_level_end_sequence(void)
 {
     Record *extra;
     word spread;
+#ifdef OVERKILL_HOST
+    LevelDeparture departure;
+#endif
 
     for (;;) {
         PRIMARY->x &= 0xFFFE;
         InputBits = 0;
         switch (LevelEndPhase) {
         case LEVEL_END_TO_WAYPOINT_A:
+#ifdef OVERKILL_HOST
+            overkill_level_departure(LevelIndex, &departure);
+            steer_input_to_waypoint(departure.approach);
+#else
             steer_input_to_waypoint(GAME_PTR(word, GAME_OFFSET(AutopilotWaypointA)));
+#endif
             break;
         case LEVEL_END_TO_WAYPOINT_B:
             spread = PRIMARY->sprite == 0 ? 8 : 0x0F;
             if (SidePodSpreadLeft != spread) SidePodSpreadLeft++;
             if (SidePodSpreadRight != (word)-spread) SidePodSpreadRight--;
+#ifdef OVERKILL_HOST
+            overkill_level_departure(LevelIndex, &departure);
+            steer_input_to_waypoint(departure.dock);
+#else
             steer_input_to_waypoint(GAME_PTR(word, GAME_OFFSET(AutopilotWaypointB)));
+#endif
             break;
         case LEVEL_END_REFILL:
             InputBits = IN_YMINUS;

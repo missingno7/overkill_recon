@@ -27,9 +27,11 @@ callback ordering. No gameplay state is shadowed. Out-of-range word indices reta
 the original, independently wrapped table arithmetic.
 
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
-native build consumes resource, terrain, checkpoint, timeline, formation and path definitions through a generic
-binding adapter, writing into the original initial DS layout. With all six originals
-this reproduces every initialization byte, including neighboring data. Native code
+native build consumes resource, terrain, checkpoint, timeline, formation and path
+definitions through a binding adapter, writing legacy streams into the original
+initial DS layout. Map recipes and authored departure components use immutable
+native level data. With all six originals this reproduces every initialization
+byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
 coordinator remain unchanged. Complete external gameplay definitions and runtime
 JSON loading are still pending.
@@ -177,9 +179,14 @@ The mothership is distinct from the combat encounter director and segmented boss
 smart-bombs live enemies and allocates four animated records from `Type53SpawnTable`.
 `run_level_end_sequence` then guides the player through two autopilot waypoints,
 creates the extra ship record and refills fuel/energy before requesting progression.
-Shared geometry, record recipes, waypoints, triggers and music remain implicit
-engine data pending extraction. Allocation failures, stale fields and same-frame
-phase transitions are part of the existing behavior.
+The five map rows, four animated parts and both waypoints are now exported as
+`departure` data in each original `.lvl`. Native coordinators use a shared content
+view at their original use points. Canonical components retain live DS references;
+authored components use independent immutable per-level storage. Neither switching
+levels nor restarting patches a shared table. Counts remain the original fixed
+five rows/four parts. Triggers, the extra record preset, refill rules, common ship
+resources and music remain shared procedural/default content pending extraction.
+Allocation failures, stale fields and same-frame phase transitions are preserved.
 
 A complete `.lvl` must resolve every dependency for this whole sequence, including
 level-specific behavior parameters and resources. It must not consult another

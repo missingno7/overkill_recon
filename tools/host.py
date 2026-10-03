@@ -52,12 +52,14 @@ def generate_state(out):
     from level_bindings import load_original_bindings
     from level_format import load, original_paths
     from level_map_recipes import generate_map_recipe_header
+    from level_departure import generate_departure_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
         raise ValueError('level binding requires the canonical native DS initialization')
     (out / 'STATE.BIN').write_bytes(load_original_bindings(machine))
     generate_map_recipe_header(out, [load(path) for path in original_paths()])
+    generate_departure_header(out, [load(path) for path in original_paths()], machine)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')

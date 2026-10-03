@@ -1,9 +1,10 @@
 # Overkill level format: current structured bindings
 
 Version 2 has two partial profiles. `level-bindings` describes resources, tile
-attributes and optional checkpoints, timelines, formations, paths and map recipes;
-the earlier `resource-bindings` profile remains
-accepted and retains original terrain/checkpoints. Neither describes a complete
+attributes and optional checkpoints, timelines, formations, paths, map recipes and
+mothership departure data;
+the earlier `resource-bindings` profile remains accepted and retains original
+terrain/checkpoints. Neither describes a complete
 playable level yet. Map contents, remaining spawn recipes and encounter definitions
 await extraction.
 Version 1 remains accepted with its original narrower map-recipe scope. Version 2
@@ -331,6 +332,42 @@ path. The exporter derives this small slice from curated equivalents of maintain
 C handlers; canonical execution is independently checked against ASM. Full map drop
 rules, center-facing, RNG-dependent, pickup and other recipe primitives remain pending.
 
+## Mothership departure
+
+The optional `departure` section describes the geometry used by the existing
+mothership sequence. Every canonical original contains it. Its fields are:
+
+| Field | Meaning and current binding limits |
+|---|---|
+| `kind` | `mothership`, the original docking/refill behavior |
+| `terrain_rows` | Five ordered rows of thirteen byte-valued tiles, installed at the original map-tail position |
+| `animated_parts` | Four ordered objects with signed playfield `x`, `y` and unsigned sprite-bank `sprite` |
+| `waypoints.approach` | Signed playfield `x`, `y` for the first autopilot target |
+| `waypoints.dock` | Signed playfield `x`, `y` for the second autopilot target |
+
+These are actual playfield positions: unlike follower path encoding, departure
+coordinates have no added 32-pixel Y offset. The fixed counts come from the shared
+original sequence and are explicit adapter limits, not an arbitrary object schema.
+Sprite values remain bank indices; no public REC_TYPE values are needed.
+
+`tools/level_departure.py` derives the canonical values directly from
+`LevelEndMapRows`, `Type53SpawnTable` and `AutopilotWaypointA/B`. The native build
+generates component references consumed by `host/level_departure.c` at the existing
+map-load, terminal-spawn and autopilot use points. Canonical components retain
+their live DS table references, so ordered map aliases and waypoint/table mutations
+still behave like the oracle. Changed components use independent immutable data
+for that level; editing one departure does not patch a shared table or another
+level. This source-reference distinction is internal migration metadata.
+Omitting the section preserves original departure data in earlier partial profiles.
+
+The terminal spawner advances its part cursor only after successful allocation.
+Draw pass, flash timer and hit points remain stale. The player state machine still
+redispatches phases in the same call, and its extra ship-record allocation still
+has the original unchecked full-pool write. Phase counters and records stay in DS.
+Terminal/intro map positions, the extra record's preset, refill rules, common ship
+resources and music policy remain shared procedural/default content pending further
+extraction. This section alone does not make the whole level self-contained.
+
 ## Export and validation
 
 ```powershell
@@ -375,7 +412,7 @@ conflicting definitions for a shared stream (original levels 1 and 4). Shortened
 streams retain ignored trailing bytes. These limits belong to the current legacy
 layout adapter, not the eventual editor model. `level_bindings.py --levels DIRECTORY`
 checks alternate definitions against them. Public JSON exposes no REC_TYPE or DS
-addresses; no host pointers or copied game records are introduced.
+addresses or host pointers; game records remain in the existing runtime state.
 
 ## Behavioral invariants of the binding
 
@@ -406,6 +443,7 @@ python tests/host/checkpoints.py --no-build
 python tests/host/timeline.py --no-build
 python tests/host/path_data.py --no-build
 python tests/host/map_recipes.py --no-build
+python tests/host/departure.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -438,3 +476,13 @@ core initializers to test recipe replacement/removal, authored fields and write 
 Grouped cases additionally test all original drop-cycle offsets, zero/nonzero/raw
 drops, exhausted/partially free groups, allocation-only holes and clear-only cells,
 and a live drop-word alias mutated between preparation and joining.
+The departure suite compares terminal map writes, animated-part allocation and
+autopilot/refill transitions for all six originals against ASM. An alternate build
+of the production coordinators proves that authored departure components reach
+gameplay independently for each level, without changing shared DS tables.
+For authored cases, only the oracle's source tables are edited to supply equivalent
+content. Native DS retains the canonical tables. Comparisons remove those test-only
+source edits from the oracle snapshot while retaining all gameplay effects; map
+and record results must agree. Canonical alias cases retain the complete live-table
+comparison. The suite also checks malformed data, omitted-section compatibility,
+stale fields, full/partial allocation and same-call approach-to-dock transitions.

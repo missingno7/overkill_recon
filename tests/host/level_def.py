@@ -60,7 +60,7 @@ def probe():
     command += ['-static-libgcc'] if os.name == 'nt' else ['-fPIC']
     command += ['-I' + str(ROOT / p) for p in ('build/host', 'c', 'host')]
     command += [str(ROOT / p) for p in ('tests/host/level_def_probe.c',
-                                       'c/levels.c', 'host/level_def.c', 'host/memory.c')]
+                                       'c/levels.c', 'host/level_def.c', 'host/level_departure.c', 'host/memory.c')]
     subprocess.run(command + ['-o', str(library)], check=True)
     return library
 
@@ -137,6 +137,7 @@ def import_checks(machine):
         del document['paths']
         del document['leader_paths']
         del document['map_spawns']
+        del document['departure']
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []

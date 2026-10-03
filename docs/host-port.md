@@ -78,6 +78,7 @@ python tests/host/rendering.py --no-build
 python tests/host/video_services.py --no-build
 python tests/host/graphics_decode.py
 python tests/host/checkpoints.py --no-build
+python tests/host/departure.py --no-build
 python tests/host/ui_flows.py --no-build
 python tests/host/runtime.py
 python tests/host/adlib_sequence.py
