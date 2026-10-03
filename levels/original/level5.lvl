@@ -353,6 +353,333 @@
       "spawn": "enemy",
       "sprite": 137,
       "tile": 211
+    },
+    {
+      "enemy": "climbing_walker_b",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 215
+    },
+    {
+      "enemy": "climbing_walker_a",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 216
+    },
+    {
+      "compatibility": {
+        "map_group": "join_after_fields"
+      },
+      "direction": "down",
+      "enemy": "descend_aimed_fire",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        },
+        {
+          "dx": 1,
+          "dy": 0,
+          "tile": 1
+        },
+        {
+          "dx": 0,
+          "dy": 1,
+          "tile": 1
+        },
+        {
+          "dx": 1,
+          "dy": 1,
+          "tile": 1
+        }
+      ],
+      "spawn": "large_enemy",
+      "tile": 217
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "right",
+      "enemy": "row_firer",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 346,
+      "tile": 218
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "left",
+      "enemy": "row_firer",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 347,
+      "tile": 219
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "direction": "down",
+      "enemy": "fast_drop_8",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 119,
+      "tile": 224
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "none",
+      "tile": 225
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "none",
+      "tile": 226
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "right",
+      "enemy": "slide_then_drop",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 231,
+      "tile": 227
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "down",
+      "enemy": "animated_shooter",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 70,
+      "tile": 228
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "right",
+      "enemy": "delayed_crawler_right",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 153,
+      "tile": 229
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "left",
+      "enemy": "delayed_crawler_left",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 155,
+      "tile": 230
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "direction": "right",
+      "enemy": "wall_patrol_shooter",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 231
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "enemy": "patrol_shoot_down_b",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 232
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "direction": "left",
+      "enemy": "patrol_shoot_down_a",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 233
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "enemy": "descend_burst",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 234
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "fast_fall_4_flicker",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 236
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "enemy": "vertical_bouncer_shooter",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 237
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "direction": "up",
+      "enemy": "hover_fire_plunge_a",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 238
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "direction": "down",
+      "enemy": "crawler_turn_left",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 39,
+      "tile": 239
     }
   ],
   "paths": {},
@@ -650,5 +977,5 @@
       "y": 0
     }
   ],
-  "version": 1
+  "version": 2
 }

@@ -34,7 +34,7 @@ def validate(document):
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] != 1:
+    if type(document['version']) is not int or document['version'] not in (1, 2):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):

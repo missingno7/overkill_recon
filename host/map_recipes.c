@@ -6,6 +6,8 @@
 Record *spawn_map_enemy_keep_cell(Record *here);
 Record *find_free_record_pool_a(void);
 void init_map_large_enemy(Record *r);
+void start_map_cell_group(word off);
+Record *join_map_group(Record *r);
 
 int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *continuation)
 {
@@ -23,13 +25,17 @@ int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *con
     for (i = 0; i < definition->count; i++) {
         recipe = &definition->recipes[i];
         if (recipe->tile != cell) continue;
-        /* Map mutations precede allocation even when the pool is full. Resolve
+        /* Original grouped ranges prepare a slot even for nonmember enemies,
+           clear-only cells and holes. Drop lookup/allocation precedes map writes. */
+        if (recipe->map_group != MAP_GROUP_NONE) start_map_cell_group(off);
+        /* Map mutations precede record allocation even when the pool is full. Resolve
            each segment access anew and wrap the offset, like the original writes. */
         for (write_index = 0; write_index < recipe->map_write_count; write_index++) {
             const MapCellWrite *write = &recipe->map_writes[write_index];
             *(byte *)overkill_segment_address(LevelMapSegment,
                 (word)(off + write->displacement)) = write->tile;
         }
+        if (recipe->spawn == MAP_SPAWN_NONE) return 1;
         if (recipe->spawn == MAP_SPAWN_ENEMY) {
             r = spawn_map_enemy_keep_cell(here);
         } else {
@@ -37,9 +43,11 @@ int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *con
             if (r != NO_RECORD) init_map_large_enemy(r);
         }
         if (r != NO_RECORD) {
+            if (recipe->map_group == MAP_GROUP_JOIN_BEFORE_FIELDS) join_map_group(r);
             r->type = recipe->enemy_type;
             if (recipe->fields & MAP_RECIPE_SPRITE) r->sprite = recipe->sprite;
             if (recipe->fields & MAP_RECIPE_DIRECTION) r->direction = recipe->direction;
+            if (recipe->map_group == MAP_GROUP_JOIN_AFTER_FIELDS) join_map_group(r);
         }
         return 1;
     }

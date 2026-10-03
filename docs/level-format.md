@@ -1,11 +1,15 @@
 # Overkill level format: current structured bindings
 
-Version 1 has two partial profiles. `level-bindings` describes resources, tile
+Version 2 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths and map recipes;
 the earlier `resource-bindings` profile remains
 accepted and retains original terrain/checkpoints. Neither describes a complete
 playable level yet. Map contents, remaining spawn recipes and encounter definitions
 await extraction.
+Version 1 remains accepted with its original narrower map-recipe scope. Version 2
+adds grouped/no-spawn recipes and expands the converted cells. This version boundary
+keeps an older explicit recipe list from silently disabling newly converted cells.
+Omitting map recipes still retains originals under either version.
 
 An earlier partial `level-bindings` definition remains valid (the patch list below
 is abbreviated). Canonical files also contain the timeline/formation sections
@@ -224,11 +228,12 @@ Canonical level paths include the boss anchor and level-4 encounter route. The
 demo and currently unreferenced Type4A route retain original DS data outside level
 fixtures; their supported codecs do not assert original level reachability.
 
-## Map spawn recipes: first slice
+## Map spawn recipes
 
 `map_spawns` is an optional list of unique tile-triggered recipes. It currently
-represents all seven original level-1 actions, the matching volley turrets/hatch
-in level 4, and the two matching volley turrets in level 5. Other cells retain their
+represents all original level-1 actions and fixed-field, clear-only and group-hole
+cases in levels 0/3/4/5. Center-facing, conditional-sprite, RNG-dependent, positional
+and pickup cases, plus level 2's actions, retain their
 existing handlers during migration. An empty list in a partially converted level
 does not disable its unconverted spawns. Native binding rejects recipes outside
 that level's converted scope; level 1 supports all byte-valued triggers.
@@ -259,13 +264,16 @@ preset registry. `spawn` selects one of two proven map initializers: `enemy` or
 `large_enemy`. Both allocate in the original Pool A order and preserve unspecified
 record fields. Ordinary enemies have 4 HP at `(MapCellX, 16)` and saved coordinates
 copied from the caller; large enemies have 10 HP at `(MapCellX, 0)` and retain stale
-saved coordinates. Both use draw pass 0 and no group in this first slice. Large
+saved coordinates. Both use draw pass 0. Large
 initialization is distinct from changing an ordinary enemy's size.
+`spawn: "none"` allocates no record and omits `enemy`, `sprite` and `direction`.
+Its ordered map writes still occur; this represents clear-only cells and the real
+level-3 hole that only prepares a group slot.
 
 `map_writes` is an ordered list of relative cell positions, with signed word `dx`
 and `dy` and byte `tile`. Offsets compile as `dy * 13 + dx`, with word wrapping.
 An empty list keeps the cell; a write of tile 1 at `(0, 0)` clears it. Every write
-occurs before allocation, including when the pool is full. The original hatch
+occurs before record allocation, including when the pool is full. The original hatch
 writes `(0,1)=38`, `(1,1)=39`, `(0,0)=40`, `(1,0)=41` in that order. Repeated writes
 are preserved, and the native resolver keeps physical aliases into DS.
 
@@ -276,12 +284,52 @@ then sprite if specified, then direction if specified. Omission does not zero a
 field: ordinary initialization leaves sprite stale and sets direction down;
 large initialization leaves both stale before these overrides.
 
+### Original group compatibility
+
+Original grouped ranges prepare a group slot even for cells that produce no
+members. The importer-generated property
+`"compatibility": {"map_group": "allocate_only"}` preserves that preparation
+without joining. `join_before_fields` prepares and joins after record initialization
+but before type/sprite/direction overrides; `join_after_fields` joins after those
+overrides. Ordinary grouped spawns use the former; the two large grouped spawns use
+the latter. These phases are source-supported ordering, not arbitrary instructions.
+Non-spawning recipes permit only `allocate_only`.
+Grouped compatibility and `spawn: "none"` require version 2. Version 1 retains only
+level 1's complete basic recipe model and the original shared turret/hatch scope
+in levels 4/5; all its other cells continue through their established handlers.
+
+Preparation reads the live `GroupDropKinds[map_offset & 63]` and calls the existing
+allocator before map writes. This temporary adapter retains the shared original
+drop table and its aliases with timeline drops; it does not expose the masked index
+as a normal editing property. Extracting complete map drop rules is still pending.
+Without a drop or available slot, the existing globals retain their original stale
+or exhausted values. Record exhaustion prevents joining, but still consumes map
+writes and preparation. Allocation-only recipes do not claim or rewrite group bytes.
+Joining reads live group/drop globals after initialization and map mutation; a DS
+alias can change them, so the evaluator must not cache them during preparation.
+
+For example, the level-3 no-spawn hole is represented by:
+
+```json
+{
+  "tile": 223,
+  "spawn": "none",
+  "map_writes": [],
+  "compatibility": { "map_group": "allocate_only" }
+}
+```
+
+Level 5's walker cells return before the original grouped range, despite falling
+within its numeric bounds; their recipes have no group compatibility property.
+The past-table bytes excluded by the ASM test precondition retain their existing
+native handling and are not exported as playable recipes.
+
 Omitting `map_spawns` keeps original recipes. An explicit list replaces the covered
 slice; removing an entry disables that trigger rather than falling back to its old
 switch case. Coverage is internal migration metadata, not a permanent original-game
 path. The exporter derives this small slice from curated equivalents of maintained
-C handlers; canonical execution is independently checked against ASM. Group/drop,
-center-facing, RNG-dependent, pickup and other recipe primitives remain pending.
+C handlers; canonical execution is independently checked against ASM. Full map drop
+rules, center-facing, RNG-dependent, pickup and other recipe primitives remain pending.
 
 ## Export and validation
 
@@ -302,7 +350,7 @@ checkpoint positions/cursors that are not row/event boundaries.
 It also reads all used formations and timeline events, including semantic presets,
 member ordering, explicit group drops and marker compatibility properties. It derives
 used path/leader streams, including their distinct endings and follower suppression.
-The first map slice is generated from the explicitly curated equivalent recipe data;
+Map recipe slices are generated from explicitly curated equivalent data;
 large opaque tables are not transcribed.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
@@ -387,3 +435,6 @@ the retained C handlers, then stresses the converted actions with full/free pool
 stale fields, record/physical aliases and wrapped writes. Mixed rows run through the
 real scanner. A separately generated edited table uses the same evaluator and shared
 core initializers to test recipe replacement/removal, authored fields and write order.
+Grouped cases additionally test all original drop-cycle offsets, zero/nonzero/raw
+drops, exhausted/partially free groups, allocation-only holes and clear-only cells,
+and a live drop-word alias mutated between preparation and joining.

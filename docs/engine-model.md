@@ -98,14 +98,14 @@ including the boss anchor. The demo route and unreferenced Type4A route remain
 in DS and have supported codecs, but are not invented level dependencies.
 Boss parts, invader layout and encounter selection remain pending.
 
-The first map recipe slice covers all seven level-1 actions and five identical
-turret/hatch uses in levels 4/5. A recipe names the existing enemy behavior, ordinary
-or large map initialization, ordered relative map-cell writes, and optional sprite
+Map recipes cover all level-1 actions and fixed-field choices, clear-only cells
+and a group-only hole across levels 0/3/4/5. A recipe names the existing enemy behavior,
+ordinary, large or no record allocation, ordered relative map-cell writes, and optional sprite
 and direction. No general instruction interpreter is needed. The native build
 compiles these `.lvl` definitions into immutable per-level recipe tables; shared
 runtime state remains in DS. The generic evaluator uses the existing initializers.
 
-Mutation precedes allocation, including full pools. Ordinary initialization copies
+Map mutation precedes record allocation, including full pools. Ordinary initialization copies
 saved coordinates from the caller before overriding map position; large initialization
 leaves saved coordinates stale. Omitted sprite/direction overrides retain the
 initializer's actual result, including stale sprites. The hatch's four writes retain
@@ -113,11 +113,23 @@ their source order and word offset wrapping. Physical map/DS aliases are resolve
 by the existing native memory layer, including high offsets in the ordinary map segment.
 
 An internal migration mask distinguishes converted cells from pending procedures.
-Level 1 now dispatches entirely through the generic evaluator; the shared level-4/5
-cases use it before their original handlers. Removing a covered recipe disables it;
-omitting the section keeps the originals. Grouped ranges, center-facing placement,
-RNG-dependent grouping and fuel scan-cursor behavior remain procedural. Retained C
+Level 1 now dispatches entirely through the generic evaluator; converted cases in
+other levels use it before their original handlers. Removing a covered recipe disables it;
+omitting the section keeps the originals. Center-facing placement, conditional
+sprites, RNG-dependent grouping and fuel scan-cursor behavior remain procedural. Retained C
 switches are temporary comparison references, and DOS dispatch is unchanged.
+
+Group preparation is separate from membership. Importer-generated compatibility
+data retains allocation-only cases, normal joining before field overrides and large
+joining afterward. Preparation precedes map writes, even for the real no-spawn hole
+and clear-only cells; failed record allocation still leaves its global effects.
+Joining uses the live globals at that phase, including mutations through DS/map
+aliases. The current drop source remains the shared legacy offset cycle, also used
+by timeline events. Complete map drop-rule extraction remains pending rather than
+inventing a separate per-enemy drop that cannot represent the original.
+Canonical fixtures now use version 2 for the expanded map recipe scope. Version-1
+definitions retain their earlier scope, so an older explicit empty/partial list
+does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 

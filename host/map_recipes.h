@@ -4,7 +4,15 @@
 
 enum MapSpawnInitializer {
     MAP_SPAWN_ENEMY = 0,
-    MAP_SPAWN_LARGE_ENEMY = 1
+    MAP_SPAWN_LARGE_ENEMY = 1,
+    MAP_SPAWN_NONE = 2
+};
+
+enum MapGroupPhase {
+    MAP_GROUP_NONE = 0,
+    MAP_GROUP_ALLOCATE_ONLY = 1,
+    MAP_GROUP_JOIN_BEFORE_FIELDS = 2,
+    MAP_GROUP_JOIN_AFTER_FIELDS = 3
 };
 
 enum MapRecipeFields {
@@ -20,6 +28,7 @@ typedef struct MapCellWrite {
 typedef struct MapSpawnRecipe {
     byte tile;
     byte spawn;
+    byte map_group;
     word enemy_type;
     byte fields;
     word sprite;

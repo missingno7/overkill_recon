@@ -36,7 +36,7 @@ def definitions(machine):
         formations, timeline = timeline_definition(machine, level)
         paths, leaders = level_path_definitions(machine, level, formations)
         documents.append(validate({
-            'format': 'overkill-level', 'version': 1,
+            'format': 'overkill-level', 'version': 2,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
             'terrain': terrain_definition(machine, level),

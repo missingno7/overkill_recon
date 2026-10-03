@@ -15,10 +15,10 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Common graphics | Resource metadata shared by all levels | `load_common_graphics`, adapter decoders in `host/graphics_decode.c` | Remains shared; not duplicated in level fixtures |
 | Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Extracted to semantic ordered patches in `.lvl`; native build binds them into existing storage; levels 1/4 remain shared |
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Pending shared definition; load forces first two rows and last five rows |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Level 1's seven actions plus five identical level-4/5 uses extracted; remaining recipes pending |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Level 1 and fixed-field/clear-only/group-hole choices in 0/3/4/5 extracted; conditional/positional and level-2 cases pending |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
-| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted as semantic names; shared trigger/map-offset indexing retained in adapter; map recipes pending |
+| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted; map preparation/membership phases represented as compatibility data; complete map drop rules pending |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py` |
 | Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
@@ -115,13 +115,25 @@ ASM. The demo's Type51 path is deliberately outside original level content; Type
 has no demonstrated original level reference yet and remains untouched in DS.
 Neither its existence nor a supported binding is evidence of level reachability.
 
-`tools/level_map_recipes.py` curates the first map slice from `level1_map_cell` and
-identical pre-group cases in `level4_map_cell`/`level5_map_cell`. It is consumed by
+`tools/level_map_recipes.py` curates map recipe slices from the maintained cell
+handlers. It is consumed by
 export, validation and native table generation. The generic evaluator applies
 ordered relative writes, then reuses ordinary/large map initialization and existing
 behavior presets. Original level-1 selection is entirely data-driven; the level-4/5
-turret and hatch entries share the same model. Native retained C switches and ASM
-remain independent comparison references. No grouped-range case has moved yet.
+turret and hatch entries share the same model. Fixed-field and clear-only cases
+across 0/3/4/5 now use it too. Native retained C switches and ASM remain independent
+comparison references.
+
+Group preparation/membership order now has three importer-generated compatibility
+phases. Allocation-only applies to both ungrouped enemies within admitted ranges
+and no-record cells; ordinary members join before field overrides, large members
+afterward. The real level-3 hole retains its allocation attempt without touching
+map, pool or group bytes. Level-5 walker cells retain their early nongroup return.
+The shared live drop cycle remains authoritative, including aliases with timeline
+events and map writes that alter the drop word after preparation. RNG-dependent
+jitter grouping, center-facing/offset placement and stale-group hatches remain open.
+Expanded grouped coverage is version 2. The version-1 map scope remains a consumed
+compatibility binding, tested with an older empty list; it is not silently widened.
 
 Direct tests cover every safe map byte in all six levels, pool exhaustion, stale
 fields, caller/allocated-record aliases, wrapped offsets, physical DS aliases and
@@ -129,6 +141,8 @@ row integration. Forbidden past-table bytes remain an ASM precondition, as in th
 DOS suite. The initial high-offset fixture mismatch was a setup error: the normal
 map segment aliases DS there. Populating both sides through the same physical alias
 resolved it without changing gameplay or adding a compatibility property.
+Group comparisons cover zero/nonzero/raw drops, full/partial group tables, failed
+record allocation, every original drop-cycle offset and live drop-word alias order.
 
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.

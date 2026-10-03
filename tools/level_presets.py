@@ -28,6 +28,13 @@ ARCHETYPES = {
     'patrol_shoot_down_64': 0x83, 'patrol_shoot_down_b': 0x89,
     'patrol_shoot_down_c': 0x8A, 'climbing_walker_a': 0x8B, 'climbing_walker_b': 0x8C,
     'volley_turret_left': 0x90, 'volley_turret_right': 0x91,
+    'fast_drop_4': 0x55, 'delayed_crawler_left': 0x57, 'delayed_crawler_right': 0x58,
+    'scroll_then_rise': 0x5B, 'fast_drop_8': 0x5D, 'crawler_turn_left': 0x5E,
+    'slide_then_drop': 0x63, 'low_row_jitterer': 0x69, 'descender_to_x80': 0x6B,
+    'descender_to_x96_shooter': 0x6C, 'descender_to_x112': 0x6D,
+    'staircase_crawler': 0x6E, 'hover_fire_plunge_c': 0x71,
+    'aimed_descender': 0x72, 'spread_shot_descender': 0x75,
+    'climbing_walker_c': 0x8D, 'climbing_walker_d': 0x8E, 'row_firer': 0x92,
 }
 SIZES = {'8x8': 0, '16x16': 1, '32x32': 2}
 LAYERS = {'under_terrain': 0, 'over_terrain': 1}
