@@ -1,9 +1,9 @@
-# Overkill level format: resources, terrain, checkpoints and timelines
+# Overkill level format: current structured bindings
 
 Version 1 has two partial profiles. `level-bindings` describes resources, tile
-attributes and optional checkpoints, timelines and formations; the earlier `resource-bindings` profile remains
+attributes and optional checkpoints, timelines, formations and paths; the earlier `resource-bindings` profile remains
 accepted and retains original terrain/checkpoints. Neither describes a complete
-playable level yet. Map contents, map spawn recipes, paths and encounters
+playable level yet. Map contents, map spawn recipes and encounter definitions
 await extraction.
 
 An earlier partial `level-bindings` definition remains valid (the patch list below
@@ -128,8 +128,8 @@ Clock values are unsigned words below 65535, in non-increasing order. Origins an
 member offsets are signed words; runtime addition wraps as before. Members are
 ordered, with X then Y. Presets are semantic names mapped to the existing REC_TYPE
 dispatcher in `tools/level_presets.py`; they do not replace or merge behaviors.
-Letter suffixes distinguish existing presets whose parameter/path data is still
-pending extraction. Sizes are `8x8`, `16x16` or `32x32`; layers are `under_terrain`
+Letter suffixes distinguish existing behavior/path presets. Sizes are `8x8`,
+`16x16` or `32x32`; layers are `under_terrain`
 or `over_terrain`. Group drops are `none`, `upgrade`, `energy`, `smart_bomb` or `fuel`.
 Member lists are nonempty: the original zero-count LOOP bug remains supported in
 live compatibility streams, but is not a normal empty formation in public JSON.
@@ -157,6 +157,72 @@ inconsistent drops for an aliased table cell fail. A consistent change affects a
 uses of that cell, including map drops. These restrictions belong to the temporary
 native layout adapter, not the future level/editor model.
 
+## Paths and leader paths
+
+`paths` and `leader_paths` are optional named objects. Omitted bindings retain the
+original payloads, including shared-definition constraints. Canonical files contain
+the dependencies of their formation presets and encounter director. Points use
+signed 16-bit playfield coordinates, X then Y; the adapter subtracts 32 from Y
+with word wrapping to match the existing readers. Formation offsets remain offsets.
+
+```json
+{
+  "paths": {
+    "path_follower_b": {
+      "points": [{ "x": 96, "y": 64 }],
+      "end": { "kind": "fly_off", "x": 96 }
+    },
+    "sweep_loop": {
+      "points": [{ "x": 96, "y": 64 }],
+      "end": { "kind": "jump", "path": "sweep_loop" }
+    }
+  },
+  "leader_paths": {
+    "sweep_leader": {
+      "steps": [{ "target": { "x": 96, "y": 64 }, "follower": null }],
+      "end": { "kind": "fly_off", "x": 96 }
+    }
+  }
+}
+```
+
+This illustrates field shapes, not a complete original definition. `points` and
+`steps` are nonempty ordered lists. Routes end with one of:
+
+| Ending | Observed reader contract |
+|---|---|
+| `fly_off`, with signed `x` | Ordinary followers steer toward Y 30032; no terminator check or instant removal |
+| `restart` | Boss/encounter readers reset their own cursor to the start |
+| `jump`, with named `path` | Sweep reader follows an encoded target and resumes in the same call |
+| `continue`, with named `path` | Sweep lead-in flows directly into adjacent sweep-loop storage |
+
+Each original binding retains its reader's ending kind. Jump/continue targets must
+exist in the same `paths` object and retain their original target binding. Restart/jump/
+continue points cannot use Y 31: its encoding collides with the reader's control
+marker. Ordinary fly-off paths have no such control-marker restriction, but retain
+their original point count: a far target is not a checked terminator. Shortened
+restart/jump routes preserve trailing bytes beyond their control marker. Longer
+routes fail the current layout adapter.
+The continued lead-in retains its original point count and adjacency.
+
+Leader `steps` contain `target` only for `sway_leader` and `slot_hopper_leader`.
+The other four leaders also require `follower`, a position or null. Null suppresses
+spawning for `sweep_leader`, `sweeper_leader` and `march_leader`; those follower
+positions cannot use Y 31. `bob_chase_leader` requires a position even when the source
+pair is FFFF/FFFF: its unchecked reader spawns at that encoded position. The slot
+hopper additionally requires an ordered `slots` list of positions. Five slot entries
+are consumed per arrival even when all allocations fail.
+
+The current adapter requires unchanged leader step/slot counts because their end
+addresses synchronize existing follower handlers. These limits, original binding
+names and shared storage restrictions are adapter constraints. Movement, arrival
+timing, child types/HP/delays, RNG calls, allocation order and stale-field behavior
+remain in the proven implementations. Public definitions expose no byte cursors.
+
+Canonical level paths include the boss anchor and level-4 encounter route. The
+demo and currently unreferenced Type4A route retain original DS data outside level
+fixtures; their supported codecs do not assert original level reachability.
+
 ## Export and validation
 
 ```powershell
@@ -174,7 +240,8 @@ terrain patches in source order, including duplicates, and resolves checkpoint
 cursors to event indices. It rejects unmodeled independent selection thresholds or
 checkpoint positions/cursors that are not row/event boundaries.
 It also reads all used formations and timeline events, including semantic presets,
-member ordering, explicit group drops and marker compatibility properties.
+member ordering, explicit group drops and marker compatibility properties. It derives
+used path/leader streams, including their distinct endings and follower suppression.
 `--no-build` reuses an existing exact source-built oracle. `--output DIRECTORY`
 exports elsewhere. `--check` compares existing files without overwriting them.
 Serialization is deterministic. The six fixtures in `levels/original/` are consumed
@@ -182,7 +249,7 @@ by validation, native initialization and the binding/terrain/checkpoint regressi
 
 The native build loads all six `levels/original/level*.lvl` files. A generic adapter
 binds asset names to original DS filename identities, encodes semantic patches and
-encodes formation/timeline records and resolves checkpoint rows/event indices into
+encodes formation/timeline/path/leader records and resolves checkpoint rows/event indices into
 original storage. It writes only native
 initialization; the oracle and DOS
 hybrid stay independent. Canonical originals reproduce the entire initial DS image,
@@ -224,6 +291,7 @@ python tests/host/level_def.py --no-build
 python tests/host/terrain.py --no-build
 python tests/host/checkpoints.py --no-build
 python tests/host/timeline.py --no-build
+python tests/host/path_data.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -244,3 +312,7 @@ The timeline suite exercises all 138 original events and 52 referenced formation
 with free, partial and full pools. It compares complete DS/physical memory, group
 state, saved/stale record fields and cursor order, and tests edited definitions,
 marker-driven checkpoint relocation, equality boundaries and zero-count streams.
+The path-data suite compares every original waypoint and leader step, arrivals,
+endings and full/partial allocation outcomes. Full physical memory comparisons
+include CS encounter cursors, RNG and stale record fields. Edited shared routes,
+leader targets/follower slots and boss points also run through the existing readers.

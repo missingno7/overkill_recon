@@ -27,7 +27,7 @@ callback ordering. No gameplay state is shadowed. Out-of-range word indices reta
 the original, independently wrapped table arithmetic.
 
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
-native build consumes resource, terrain, checkpoint, timeline and formation definitions through a generic
+native build consumes resource, terrain, checkpoint, timeline, formation and path definitions through a generic
 binding adapter, writing into the original initial DS layout. With all six originals
 this reproduces every initialization byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
@@ -71,18 +71,39 @@ exhaustion consumes events. Event-marker compatibility preserves variable framin
 Rebinding a changed marker resolves checkpoint indices to their new byte cursors.
 
 Semantic presets expose handler identities without REC_TYPE numbers. Their registry
-is a binding, not a behavior-family abstraction. Leader scripts, follower paths,
+is a binding, not a behavior-family abstraction. Path movement, leader spawning,
 spawn-time HP/record setup and encounter logic still use the original procedures.
 The temporary layout adapter preserves shared formations and the group-drop table
 also used by map cells; conflicting edits fail instead of silently choosing one.
 
+Paths expose ordered playfield positions, with distinct endings inferred from the
+readers: fly off toward a far target, restart, jump, or continue into an adjacent
+route. Public Y coordinates include the original reader's 32-pixel offset; encoding
+wraps to words. Ordinary followers advance and steer again on arrival in the same
+call. Sweep arrivals also consume RNG; the level-4 encounter leader advances its
+separate CS cursor and spawns a child. These remain different procedures.
+
+Leader paths expose targets and, where present, follower positions. A null follower
+means suppress spawning only for readers that check that marker. The bob/chase
+leader does not check it; a source FFFF coordinate becomes a real public Y of 31.
+The slot-hopper leader owns an ordered slot list and advances five slots on arrival,
+even if allocation fails. End addresses synchronize follower behavior, so the
+temporary adapter retains original leader step/slot counts. Ordinary fly-off routes
+retain their point count because there is no checked terminator; sweep lead-in
+adjacency and the proven self-loop target are also fixed. These are reader/layout
+constraints pending further evidence and storage migration.
+
+Canonical definitions include routes used by their formations and directors,
+including the boss anchor. The demo route and unreferenced Type4A route remain
+in DS and have supported codecs, but are not invented level dependencies.
+Boss parts, invader layout and encounter selection remain pending.
+
 ## Next boundaries to prove
 
-1. Distinct path and leader formats, preserving transition timing and signedness.
-2. Map recipes, compared directly against every original cell handler before
+1. Map recipes, compared directly against every original cell handler before
    switching dispatch. Recipes must express mutation before allocation, retained
    cells, 2x2 writes, conditional groups and exceptional scan-cursor results.
-3. Encounter descriptors retaining unique procedural implementations initially.
+2. Encounter descriptors retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
 by default. Binding fixtures version the implemented slice; future sections must

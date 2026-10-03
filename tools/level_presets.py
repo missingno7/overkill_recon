@@ -17,6 +17,7 @@ ARCHETYPES = {
     'fall_random_flicker': 0x3B, 'descend_bounce_b': 0x3C, 'drop_dash': 0x3E,
     'jitter_fall_shooter': 0x40, 'path_follower_c': 0x41, 'descend_sway': 0x42,
     'path_follower_d': 0x43, 'path_follower_e': 0x44, 'path_follower_f': 0x45,
+    'path_follower_g': 0x4A, 'demo_path_follower': 0x51,
     'hover_fire_plunge_b': 0x46, 'patrol_shoot_down_a': 0x47,
     'descend_aimed_fire': 0x48, 'radial_burst_faller': 0x49,
     'descend_bounce_c': 0x4B, 'sink_rise': 0x4C, 'sink_rise_dash': 0x4D,

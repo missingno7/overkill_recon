@@ -1,4 +1,4 @@
-"""Validate the implemented resource/terrain/checkpoint slice of Overkill level JSON.
+"""Validate the implemented structured-data slice of Overkill level JSON.
 
 This deliberately does not accept unimplemented gameplay sections or certify a
 playable level. Run without arguments to validate the six original fixtures.
@@ -6,6 +6,7 @@ playable level. Run without arguments to validate the six original fixtures.
 from common import ROOT, read_json
 from world import K
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS
+from level_paths import validate_path_sections
 import argparse
 from pathlib import Path
 import re
@@ -25,6 +26,7 @@ def validate(document):
             fields.add('checkpoints')
         if 'timeline' in document or 'formations' in document:
             fields.update(('timeline', 'formations'))
+        fields.update(name for name in ('paths', 'leader_paths') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
@@ -127,6 +129,7 @@ def validate(document):
         if any(checkpoint['resume_event'] > len(timeline)
                for checkpoint in document.get('checkpoints', [])):
             raise ValueError('checkpoint resume_event has no timeline boundary')
+    validate_path_sections(document)
     return document
 
 

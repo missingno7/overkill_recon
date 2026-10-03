@@ -20,11 +20,11 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted as semantic names; shared trigger/map-offset indexing retained in adapter; map recipes pending |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py` |
-| Waypoint paths | Pure data with distinct behavior contracts | `Type41Path`, `Type43/44/45/4A/51Path`, `PathType66/67`; `paths.c` | Pending; these use Y/X pairs, unlike formation member offsets |
-| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Pending; do not merge with ordinary paths yet |
-| Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Pending; allocator history and shared cursor retained |
+| Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
+| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
+| Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `frame.c` | Pending; level 5 timing differs |
-| Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Pending; anchor, parts, damage coupling and same-frame next-waypoint steering |
+| Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route extracted with restart ending; parts/geometry/damage coupling pending |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Pending descriptors pointing at existing implementations |
 | Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
 | Map reset actions | Pure dispatch data + procedural mutations | `MapResetLists` in DATA and `MapResetList*` in code; restart scan | Pending; cleared/restored cells may differ from normal spawning |
@@ -106,13 +106,21 @@ shared formation identities and trigger-indexed group drops, rejects conflicting
 definitions and preserves ignored trailing bytes. Checkpoint indices follow edited
 event framing rather than retaining stale source byte offsets.
 
+`tools/level_paths.py` now derives route and leader payloads from source labels.
+The codecs preserve public playfield coordinates, distinct stream endings, shared
+route identities, leader end synchronization and lead-in adjacency. Six level
+fixtures contain their formation/director dependencies. All ten ordinary follower
+bindings, six leaders, sweep routes, encounter and boss routes are exercised against
+ASM. The demo's Type51 path is deliberately outside original level content; Type4A
+has no demonstrated original level reference yet and remains untouched in DS.
+Neither its existence nor a supported binding is evidence of level reachability.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
 ## Open evidence work
 
 Correlate decoded map-cell occurrences with recipes and every mutation path; build
-a behavior-name registry from actual uses; inventory precise leader record formats;
-extract distinct path/leader payloads; identify encounter parameters
+a behavior-name registry from actual uses; identify encounter parameters
 without changing implementation order; compare complete affected state for every
-new extraction. No path or enemy-family schema is locked by these data extractions.
+new extraction. No enemy-family abstraction is locked by these data extractions.

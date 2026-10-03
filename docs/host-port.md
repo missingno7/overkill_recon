@@ -10,12 +10,14 @@ native level-binding `LevelDef`. See [engine-model.md](engine-model.md),
 [original-level-mapping.md](original-level-mapping.md) and
 [level-format.md](level-format.md) for the audited boundaries and remaining work.
 The native build consumes six `.lvl` definitions for resources and ordered tile
-attributes, checkpoints, timelines and formations in the original initialization
+attributes, checkpoints, timelines, formations and paths in the original initialization
 layout. Run
 `python tests/host/level_def.py --no-build` for their native-vs-oracle binding and
 loader/terrain regression; complete external gameplay-level loading is still pending.
 `python tests/host/timeline.py --no-build` compares every original event/formation
 against ASM with pool/group exhaustion and edited definition cases.
+`python tests/host/path_data.py --no-build` compares original waypoint/leader streams,
+arrivals/endings, allocation failures and edited route/slot definitions against ASM.
 
 ```powershell
 python tools/host.py

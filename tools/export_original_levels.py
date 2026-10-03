@@ -8,6 +8,7 @@ from extract import mz
 from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
+from level_paths import level_path_definitions
 import argparse
 from pathlib import Path
 import struct
@@ -32,6 +33,7 @@ def definitions(machine):
     documents = []
     for level in range(6):
         formations, timeline = timeline_definition(machine, level)
+        paths, leaders = level_path_definitions(machine, level, formations)
         documents.append(validate({
             'format': 'overkill-level', 'version': 1,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
@@ -39,6 +41,7 @@ def definitions(machine):
             'terrain': terrain_definition(machine, level),
             'checkpoints': checkpoint_definitions(machine, level),
             'formations': formations, 'timeline': timeline,
+            'paths': paths, 'leader_paths': leaders,
         }))
     return documents
 

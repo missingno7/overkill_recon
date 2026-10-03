@@ -1,7 +1,7 @@
 """Bind structured level definitions into the native initial DS image.
 
 The adapter derives original storage locations/capacities from the exact oracle.
-It retains source filename identities, shared patch/formation storage and drop
+It retains source filename identities, shared patch/formation/path storage and drop
 table aliases. Longer streams or conflicting shared definitions fail explicitly;
 allocating new storage is a later
 migration. No oracle source or DOS build artifact is modified.
@@ -11,6 +11,7 @@ from level_format import load, original_paths, validate, encode_attribute_patche
 from export_original_levels import (terrain_definition, script_event_boundaries,
                                    source_formations, timeline_definition, checkpoint_definitions)
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS
+from level_paths import bind_path_sections
 from emu import LOAD
 from world import K
 import argparse
@@ -118,6 +119,8 @@ def bind_level_documents(machine, documents):
                                      checkpoints[index + 1]['map_row'] * K.MAP_ROW_BYTES)
             # The fallback has three words. Do not synthesize a fourth word:
             # ReadCheckpoint deliberately sees the original neighboring object.
+    bind_path_sections(machine, documents, state,
+                       [timeline_definition(machine, level)[0] for level in range(6)])
     return bytes(state)
 
 

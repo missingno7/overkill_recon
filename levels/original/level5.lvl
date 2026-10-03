@@ -120,6 +120,224 @@
     }
   },
   "id": "original-level-5",
+  "leader_paths": {
+    "march_leader": {
+      "end": {
+        "kind": "fly_off",
+        "x": 0
+      },
+      "steps": [
+        {
+          "follower": {
+            "x": 80,
+            "y": 48
+          },
+          "target": {
+            "x": 96,
+            "y": 32
+          }
+        },
+        {
+          "follower": {
+            "x": 112,
+            "y": 48
+          },
+          "target": {
+            "x": 96,
+            "y": 48
+          }
+        },
+        {
+          "follower": {
+            "x": 96,
+            "y": 64
+          },
+          "target": {
+            "x": 96,
+            "y": 64
+          }
+        },
+        {
+          "follower": {
+            "x": 96,
+            "y": 80
+          },
+          "target": {
+            "x": 96,
+            "y": 80
+          }
+        },
+        {
+          "follower": {
+            "x": 96,
+            "y": 96
+          },
+          "target": {
+            "x": 96,
+            "y": 96
+          }
+        },
+        {
+          "follower": {
+            "x": 96,
+            "y": 112
+          },
+          "target": {
+            "x": 96,
+            "y": 112
+          }
+        },
+        {
+          "follower": {
+            "x": 112,
+            "y": 128
+          },
+          "target": {
+            "x": 112,
+            "y": 128
+          }
+        },
+        {
+          "follower": {
+            "x": 128,
+            "y": 112
+          },
+          "target": {
+            "x": 128,
+            "y": 112
+          }
+        },
+        {
+          "follower": {
+            "x": 144,
+            "y": 96
+          },
+          "target": {
+            "x": 144,
+            "y": 96
+          }
+        },
+        {
+          "follower": {
+            "x": 176,
+            "y": 112
+          },
+          "target": {
+            "x": 160,
+            "y": 80
+          }
+        },
+        {
+          "follower": {
+            "x": 176,
+            "y": 80
+          },
+          "target": {
+            "x": 176,
+            "y": 64
+          }
+        },
+        {
+          "follower": {
+            "x": 176,
+            "y": 64
+          },
+          "target": {
+            "x": 192,
+            "y": 48
+          }
+        },
+        {
+          "follower": {
+            "x": 160,
+            "y": 48
+          },
+          "target": {
+            "x": 192,
+            "y": 32
+          }
+        },
+        {
+          "follower": {
+            "x": 32,
+            "y": 48
+          },
+          "target": {
+            "x": 0,
+            "y": 32
+          }
+        },
+        {
+          "follower": {
+            "x": 16,
+            "y": 64
+          },
+          "target": {
+            "x": 0,
+            "y": 48
+          }
+        },
+        {
+          "follower": {
+            "x": 16,
+            "y": 80
+          },
+          "target": {
+            "x": 16,
+            "y": 64
+          }
+        },
+        {
+          "follower": {
+            "x": 16,
+            "y": 112
+          },
+          "target": {
+            "x": 32,
+            "y": 80
+          }
+        },
+        {
+          "follower": {
+            "x": 48,
+            "y": 96
+          },
+          "target": {
+            "x": 48,
+            "y": 96
+          }
+        },
+        {
+          "follower": {
+            "x": 64,
+            "y": 112
+          },
+          "target": {
+            "x": 64,
+            "y": 112
+          }
+        },
+        {
+          "follower": {
+            "x": 80,
+            "y": 128
+          },
+          "target": {
+            "x": 80,
+            "y": 128
+          }
+        },
+        {
+          "follower": null,
+          "target": {
+            "x": 96,
+            "y": 144
+          }
+        }
+      ]
+    }
+  },
+  "paths": {},
   "profile": "level-bindings",
   "resources": {
     "blocks": "LEV5BLX.BIC",
