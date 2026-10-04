@@ -60,6 +60,7 @@ def generate_state(out):
     from level_maps import generate_map_limit_header
     from level_timeline import generate_timeline_parameter_header, generate_level_preset_header
     from level_waypoints import generate_waypoint_preset_header
+    from level_leaders import generate_leader_preset_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -75,6 +76,7 @@ def generate_state(out):
     generate_timeline_parameter_header(out, [load(path) for path in original_paths()], machine)
     generate_level_preset_header(out)
     generate_waypoint_preset_header(out, machine)
+    generate_leader_preset_header(out, machine)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')
@@ -215,7 +217,7 @@ def build(full=True):
         sources += [ROOT / 'third_party/nuked_opl3/opl3.c']
     else:
         sources = [ROOT / p for p in ('c/input_normalize.c', 'c/movement.c', 'c/pools.c', 'c/terrain.c', 'c/combat.c', 'c/pod_motion.c', 'c/render.c', 'host/memory.c', 'host/level_encounter.c',
-                   'host/input_services.c', 'host/sdl_input.c', 'host/sdl_gamepad.c', 'host/sdl_video.c', 'host/render_services.c', 'host/clock_services.c',
+                   'host/level_leaders.c', 'host/content_json.c', 'host/input_services.c', 'host/sdl_input.c', 'host/sdl_gamepad.c', 'host/sdl_video.c', 'host/render_services.c', 'host/clock_services.c',
                    'host/resource_services.c', 'host/file_services.c', 'host/video_services.c', 'host/text_video.c')]
     command += [str(p) for p in sources]
     flags = sdl_flags()

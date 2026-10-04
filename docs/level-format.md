@@ -31,7 +31,7 @@ read order. A live marker must match the original policy exactly. Omit the marke
 for authored content: explicit values are independently owned even when identical
 to an original list or tune. No shared source table is overwritten.
 
-## Loose content test path (versions 8, 9 and 10)
+## Loose content test path (versions 8 through 11)
 
 A directory contains `level.json` (a full copied definition) and a decoded map:
 
@@ -80,19 +80,22 @@ and repeat their content on completion; they do not implement episode progressio
 That paragraph describes the version 8 runtime slice. Version 9 additionally owns
 its timeline, named formations, semantic checkpoint rows and formation spawn HP.
 Version 10 additionally owns ordinary fly-off waypoint routes through the same
-path-following implementation used by canonical play.
+path-following implementation used by canonical play. Version 11 additionally owns
+the six leader presets and the slot-hopper geometry through the existing leader
+procedures and global cursor words.
 The loader still requires sprite, block and plaque resources, terrain attributes,
-paths, map-spawn recipes and parameters, map group drops, departure, encounter,
+special paths, map-spawn recipes and parameters, map group drops, departure, encounter,
 marching formation and boss definitions to match the selected profile. Version 10
-may replace the ten ordinary fly-off routes; special routes and leader paths remain
-canonical-profile constrained. Map bytes are independent only within the modeled
+may replace the ten ordinary fly-off routes; version 11 may replace the six leader
+presets and slot-hopper geometry. Sweep/encounter/boss paths remain profile-bound.
+Map bytes are independent only within the modeled
 tile-dispatch boundary; maps or restoration rules that contain an unmodeled dispatch
 cell are rejected. No version supplies independent graphics banks, the remaining
 gameplay sections, or episode progression.
 
 `levels/examples/copied-planet` is a generated seventh identity using level 2's
-behavior/graphics and tune 9. Its copied content is version 10 and owns an edited
-ordinary waypoint route; `tools/level_content.py duplicate` also creates version 10
+behavior/graphics and tune 9. Its copied content is version 11 and owns edited
+ordinary and leader routes; `tools/level_content.py duplicate` also creates version 11
 copies while the six canonical original fixtures remain unchanged at version 9.
 `tools/level_maps.py` imports all six historical BIC
 maps; tests compare the resulting bytes against the existing packed decoder.
@@ -114,7 +117,8 @@ Version 8 adds level-local decoded map references and an explicit original behav
 profile for transitional loose content loading. Version 9 adds independently owned
 runtime timelines/formations, semantic checkpoint rows with event ordinals, and
 formation spawn hit-point parameters. Version 10 adds independently owned ordinary
-fly-off waypoint presets. Versions 8 and 9 remain accepted with their earlier equality
+fly-off waypoint presets. Version 11 adds independently owned leader presets and
+slot-hopper geometry. Versions 8 through 10 remain accepted with their earlier equality
 boundaries. No loose version supplies independent graphics banks, general spawn or
 encounter sections, or episode progression.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
@@ -296,8 +300,9 @@ of their formation presets and encounter director. Points use signed 16-bit play
 coordinates, X then Y; the adapter subtracts 32 from Y with word wrapping to match
 the existing readers. Formation offsets remain offsets. Versions 8 and 9 require
 these sections to match the selected behavior profile. Version 10 can independently
-replace any of the ten ordinary fly-off presets; special paths and all leader paths
-must still match that profile.
+replace any of the ten ordinary fly-off presets; version 11 can also replace the six
+named leader presets and the slot-hopper slot list. Sweep/encounter/boss paths still
+match the profile.
 
 ```json
 {
@@ -364,28 +369,61 @@ restart/jump routes preserve trailing bytes beyond their control marker. Longer
 routes fail the current layout adapter.
 The continued lead-in retains its original point count and adjacency.
 
-Leader `steps` contain `target` only for `sway_leader` and `slot_hopper_leader`.
-The other four leaders also require `follower`, a position or null. Null suppresses
-spawning for `sweep_leader`, `sweeper_leader` and `march_leader`; those follower
-positions cannot use Y 31. `bob_chase_leader` requires a position even when the source
-pair is FFFF/FFFF: its unchecked reader spawns at that encoded position. The slot
-hopper additionally requires an ordered `slots` list of positions. Five slot entries
-are consumed per arrival even when all allocations fail.
+Version 11 can override these six leader presets: `sway_leader` (type 0x13),
+`sweep_leader` (0x15), `bob_chase_leader` (0x1C), `slot_hopper_leader` (0x1F),
+`sweeper_leader` (0x7D) and `march_leader` (0x7E). Defaults are taken from the
+immutable shared catalog `levels/shared/leader-presets.json`; `tools/level_leaders.py`,
+original-level export and native header generation check it against the maintained
+original streams. An omitted preset binds its catalog default;
+it does not read the live DS table. Authored `steps` are ordered and may have a
+variable count of 1..65,534. A full loose v11 file retains a `leader_paths` object;
+an empty object selects all six shared defaults. Each `target` is a signed playfield
+`{x,y}`. Only types 0x15, 0x1C,
+0x7D and 0x7E have `follower`; types 0x13 and 0x1F have target-only steps. The
+`end` remains the named `fly_off` form shown above. An authored terminal is appended,
+included in the flattened word-sized count (maximum 65,535), and clamped if exact
+arrival reaches it; that terminal does not spawn another child or read into adjacent
+content.
 
-The current adapter requires unchanged leader step/slot counts because their end
-addresses synchronize existing follower handlers. These limits, original binding
-names and shared storage restrictions are adapter constraints. Movement, arrival
-timing, child types/HP/delays, RNG calls, allocation order and stale-field behavior
-remain in the proven implementations. Public definitions expose no byte cursors.
+For pair readers, `follower: null` represents the no-follower case for the sweep,
+sweeper and march readers; bob/chase requires a position and rejects null. A
+position with public Y 31 is valid even though its
+encoded Y word is FFFF; the explicit null flag, rather than that coordinate value,
+controls authored suppression. The bob/chase reader never suppresses: its original
+FFFF/FFFF source pair remains the real point `{ "x": -1, "y": 31 }`.
+
+`slot_hopper_leader` also has an ordered `slots` list. Its original catalog has 20
+positions in four groups of five. The 0x1F leader consumes five per step without
+wrapping; its 0x20 children hop one slot at a time and wrap at the end, skipping any
+slot matching their current position. Authored slot cursors use the shared global
+slot ordinal with a clean cycle for both leader group spawning and child hopping.
+The slot list has a word-sized maximum of 65,535 positions and must contain at least
+two distinct positions so the skip-current loop can terminate.
+
+Leader routes use the existing global `LeaderScriptCursor` as a flattened ordinal in
+authored content and as the live DS byte offset in canonical play. The existing
+`FormationSlotCursor` similarly holds an authored slot ordinal or canonical DS
+offset. Neither gains private shadow state. Starting a leader overwrites the same
+global cursors, preserving coupling. End ordinals map leader death to its matching
+route end, while type 0x14, 0x93 and 0x80 continue to gate on the 0x13, 0x7D and 0x7E
+end respectively. Canonical execution retains original DS reads, strides, sentinels
+and unchecked neighboring reads. Movement, arrival timing, child types/HP/delays,
+RNG calls, allocation order and stale-field behavior remain in the existing handlers.
+
+The type-0x21 encounter director follows the separate `encounter_leader` route and
+does not consume an ordinary leader preset. Starting it still performs the existing
+script-cursor write. For authored version 11, an unrecognized leader start maps to
+the no-active-leader sentinel `0xFFFF`, so the unused `original_level + 1` seed cannot
+alias one of the custom route end ordinals. Versions 8 through 10 retain their exact
+seed behavior, and canonical play is unchanged.
 
 Canonical level paths include the boss anchor and level-4 encounter route. The
 demo path remains one of the ten generated ordinary defaults although it is not
 demonstrated in original level play; currently unreferenced Type4A storage also
 retains its original DS data. These facts do not make special paths editable or
 assert additional original level reachability. Sweep routes use marker/jump
-semantics, while encounter and boss paths restart through distinct readers. Leader
-scripts synchronize through original end addresses. Their readers do not consume the
-ordinary flattened point array, so custom edits to them remain unsupported.
+semantics, while encounter and boss paths restart through distinct readers. Their
+custom edits remain unsupported by v11.
 
 ## Map spawn recipes
 
@@ -780,8 +818,8 @@ retains the original slot's rules in older partial profiles. Native selection fo
 out-of-range word identities also retains original fallback arithmetic, an internal
 migration contract rather than a public level identity. These descriptors currently
 refer to the existing boss, invader and leader implementations/stream bindings;
-complete dependency validation and independent special/leader path storage remain
-pending. Version 10 ordinary fly-off overrides use the existing type-12 movement
+complete dependency validation and independent special-path storage remain pending.
+Version 10 ordinary fly-off overrides use the existing type-12 movement
 reader and are described in the path section above.
 
 `invader_formation` may include `slots`, an ordered list of 24 signed playfield
@@ -931,10 +969,10 @@ Map recipes have no original DS table: the native build generates immutable C da
 from their JSON, consumed by `host/map_recipes.c`. The same evaluator handles edited
 recipes without rewriting enemy behavior or introducing copied runtime records.
 
-Canonical original files are still bound at build time. Loose version 8/9 runtime
-JSON loading is available for the explicitly supported independent sections; it
-does not allocate arbitrary graphics banks or make the remaining source tables
-independent. The canonical adapter derives capacities and shared storage from the
+Canonical original files are still bound at build time. Loose runtime JSON loading
+for versions 8 through 11 is available for the explicitly supported independent
+sections; it does not allocate arbitrary graphics banks or make the remaining source
+tables independent. The canonical adapter derives capacities and shared storage from the
 exact oracle; it rejects unbound filenames, oversized streams and conflicting
 definitions for shared streams (including original levels 1 and 4). Shortened
 streams retain ignored trailing bytes. These limits belong to the current legacy
@@ -973,6 +1011,7 @@ python tests/host/timeline.py --no-build
 python tests/host/timeline_content.py
 python tests/host/level_content_runtime.py
 python tests/host/path_data.py --no-build
+python tests/host/leader_content.py
 python tests/host/map_recipes.py --no-build
 python tests/host/departure.py --no-build
 python tests/host/encounter_data.py --no-build
@@ -994,8 +1033,8 @@ pixel parity. Existing graphics/native suites remain responsible for that.
 The checkpoint suite compares full physical memory after restart for all original
 entries, wrapped level aliases and a structured checkpoint edit, including restored
 clocks/cursors, map reload/reset and scroll-to-row behavior. The loose-content
-runtime suite validates transactional v8/v9/v10 loading, independent timeline,
-formation and ordinary-route data, checkpoint ordinals, and rejection at the remaining profile-equality
+runtime suite validates transactional v8/v9/v10/v11 loading, independent timeline,
+formation and ordinary-route data, checkpoint ordinals, and rejection at remaining profile-equality
 boundaries.
 The timeline suite exercises all 138 original events and 52 referenced formations
 with free, partial and full pools. It compares complete DS/physical memory, group
@@ -1010,7 +1049,9 @@ include CS encounter cursors, RNG and stale record fields. Edited shared routes,
 leader targets/follower slots and boss points also run through the existing readers.
 The waypoint-content suite checks edited v10 ordinary paths against type-12 movement,
 including flattened start ordinals, signed Y encoding, arrival and terminal clamping;
-special route and leader equality constraints remain enforced by validation.
+special route equality remains enforced by validation. The leader-content suite checks
+the six generated flattened leader defaults and compares original leader arrival and
+nonarrival calls with ASM, including cursor writes and pool state.
 The map-recipe suite checks all safe cell bytes across six levels against ASM and
 the retained C handlers, then stresses the converted actions with full/free pools,
 stale fields, record/physical aliases and wrapped writes. Mixed rows run through the

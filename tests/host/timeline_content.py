@@ -25,10 +25,19 @@ sys.path.append(str(TESTS))
 
 from common import write_json  # noqa: E402
 from export_original_levels import script_event_boundaries  # noqa: E402
-from level_content import duplicate_original, validate_directory  # noqa: E402
+from level_content import duplicate_original as _duplicate_latest, validate_directory  # noqa: E402
 from level_format import load, original_paths  # noqa: E402
 from level_presets import ARCHETYPES, DROPS  # noqa: E402
 from world import K  # noqa: E402
+
+
+def duplicate_original(profile, directory, identity, music=None):
+    """Keep this suite pinned to its v9 timeline/formation contract."""
+    document = _duplicate_latest(profile, directory, identity, music)
+    document['version'] = 9
+    write_json(Path(directory) / 'level.json', document)
+    validate_directory(directory)
+    return document
 
 
 def _module(name: str, path: Path):

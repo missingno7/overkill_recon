@@ -333,6 +333,26 @@ def _custom_headless_case(work: Path) -> None:
         "points": [{"x": 96, "y": 48}, {"x": 144, "y": 80}, {"x": 48, "y": 112}],
         "end": {"kind": "fly_off", "x": 96},
     }
+    # Exercise owned leader start/steps in the SDL coordinator as well as an
+    # ordinary route. Both events run at the first clock; checkpoint ordinals
+    # still identify the same following events after inserting this one.
+    document["formations"]["custom_leader_probe"] = {
+        "enemy": "bob_chase_leader", "layer": "over_terrain", "size": "16x16",
+        "members": [{"dx": 0, "dy": 0}],
+    }
+    document["timeline"].insert(1, {
+        "clock": document["timeline"][0]["clock"], "formation": "custom_leader_probe",
+        "group": {"drop": "none"}, "x": 16, "y": -16,
+    })
+    for checkpoint in document["checkpoints"]:
+        if checkpoint["resume_event"] >= 1:
+            checkpoint["resume_event"] += 1
+    document["leader_paths"]["bob_chase_leader"] = {
+        "steps": [
+            {"target": {"x": 16, "y": -16}, "follower": {"x": 32, "y": 64}},
+            {"target": {"x": 96, "y": 64}, "follower": {"x": 64, "y": 80}},
+        ], "end": {"kind": "fly_off", "x": 96},
+    }
     _rewrite(content, document)
     validate_directory(content)
     events = runtime._chooser_events(0)
@@ -366,7 +386,12 @@ def _custom_headless_case(work: Path) -> None:
         raise AssertionError("headless trace omitted the selected custom content ID")
     if state["level"] != 2:
         raise AssertionError(f"custom compatibility profile started LevelIndex {state['level']}, expected 2")
-    if state["scroll"] <= 156 or state["fuel"] == 0 or state["player_status"] == 0:
+    # A changed encounter can lose a life and end this bounded run in its
+    # checkpoint intro. Earlier scroll requests still prove gameplay ran.
+    progressed = state["scroll"] > 156 or (state["lives"] < 3 and any(
+        scroll > 156 and level == 2 for _time, _token, scroll, level in services
+    ))
+    if not progressed or state["fuel"] == 0 or state["player_status"] == 0:
         raise AssertionError(f"custom level did not reach live gameplay: {state}")
     menu_music = runtime._generated_token("HOST_SERVICE_MENUREQUESTMUSIC")
     if not any(token == menu_music for _time, token, _scroll, _level in services):

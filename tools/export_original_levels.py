@@ -8,7 +8,7 @@ from extract import mz
 from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
-from level_paths import level_path_definitions, source_paths
+from level_paths import level_path_definitions, source_paths, source_leaders
 from level_waypoints import ORDINARY_WAYPOINT_NAMES
 from level_map_recipes import original_map_spawns, original_map_spawn_parameters
 from level_departure import departure_definition
@@ -215,6 +215,16 @@ def export(directory=None, check=False, no_build=False):
     else:
         write_json(shared, presets)
     print(('PASS' if check else 'Exported') + ': ' + shared.name)
+    shared_leaders = (Path(directory) / 'shared/leader-presets.json' if directory else
+                      ROOT / 'levels/shared/leader-presets.json')
+    leader_sources = source_leaders(machine)
+    leader_presets = {name: leader_sources[name][2] for name in leader_sources}
+    if check:
+        if read_json(shared_leaders) != leader_presets:
+            raise ValueError(f'{shared_leaders}: shared leader presets differ from the oracle')
+    else:
+        write_json(shared_leaders, leader_presets)
+    print(('PASS' if check else 'Exported') + ': ' + shared_leaders.name)
 
 
 def main():

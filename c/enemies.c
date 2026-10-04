@@ -66,6 +66,7 @@
 #include "level_encounter.h"
 #include "level_invaders.h"
 #include "level_boss.h"
+#include "level_leaders.h"
 #endif
 
 /* c/movement.c */
@@ -1578,6 +1579,9 @@ void type2c_aimed_drifter(Record *r)
 void type20_slot_hopper(Record *r)
 {
     word *slot;
+#ifdef OVERKILL_HOST
+    const LevelLeaderSlot *owned_slot;
+#endif
 
     r->sprite = r->x < PLAYFIELD_CENTER_X ? 0x7F - SlowCount6 : SlowCount6 + 0x7A;
     if (r->x != r->saved_x || r->y != r->saved_y) {
@@ -1595,6 +1599,16 @@ void type20_slot_hopper(Record *r)
     if (FrameCount64 != 0x3F) goto finish;
     do {
         slot = GAME_PTR(word, FormationSlotCursor);
+#ifdef OVERKILL_HOST
+        if (FormationSlotCursor >= overkill_leader_slot_limit()) {
+            FormationSlotCursor = overkill_leader_slot_start();
+            slot = GAME_PTR(word, FormationSlotCursor);
+        }
+        owned_slot = overkill_leader_slot(FormationSlotCursor);
+        r->saved_y = (owned_slot ? owned_slot->y : GAME_INDEX(word, slot, 0)) + 0x20;
+        r->saved_x = owned_slot ? owned_slot->x : GAME_INDEX(word, slot, 1);
+        FormationSlotCursor = overkill_leader_slot_next(FormationSlotCursor);
+#else
         if (FormationSlotCursor >= GAME_OFFSET(FormationSlotsEnd)) {
             FormationSlotCursor = GAME_OFFSET(FormationSlots);
             slot = GAME_PTR(word, FormationSlotCursor);
@@ -1602,6 +1616,7 @@ void type20_slot_hopper(Record *r)
         r->saved_y = GAME_INDEX(word, slot, 0) + 0x20;
         r->saved_x = GAME_INDEX(word, slot, 1);
         FormationSlotCursor = (word)(FormationSlotCursor + 4);
+#endif
     } while (r->y == r->saved_y && r->x == r->saved_x);
     goto finish;
 target_player_x:
@@ -1751,7 +1766,11 @@ void type14_formation_sway_diver(Record *r)
 {
     word tick;
 
+#ifdef OVERKILL_HOST
+    if (LeaderScriptCursor == overkill_leader_end(GAME_OFFSET(LeaderScript13End))) {
+#else
     if (LeaderScriptCursor == GAME_OFFSET(LeaderScript13End)) {
+#endif
         if (RecordTickCounter == 0x2EF) {
             spawn_aimed_shot(r);
             RecordTickCounter++;
@@ -1836,7 +1855,11 @@ void type93_sweep_body(Record *r)
 {
     word zf, direction;
 
+#ifdef OVERKILL_HOST
+    if (LeaderScriptCursor != overkill_leader_end(GAME_OFFSET(LeaderScript7DEnd))) goto check_dive_row;
+#else
     if (LeaderScriptCursor != GAME_OFFSET(LeaderScript7DEnd)) goto check_dive_row;
+#endif
     if (r->entry_delay != 0 && --r->entry_delay != 0) goto check_dive_row;
     direction = r->direction;
     if (direction == DIR_UP || direction == DIR_UP_RIGHT || direction == DIR_UP_LEFT) goto climb;

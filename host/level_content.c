@@ -3,6 +3,7 @@
 #include "level_policies.h"
 #include "level_timeline_data.h"
 #include "level_waypoints.h"
+#include "level_leaders.h"
 #include "game.h"
 #include "memory.h"
 #include <stdio.h>
@@ -20,6 +21,7 @@ typedef struct LevelContent {
     LevelTileRestoration *rules;
     LevelTimeline *timeline;
     LevelWaypoints *waypoints;
+    LevelLeaderPaths *leaders;
 } LevelContent;
 
 static LevelContent current;
@@ -58,6 +60,8 @@ void overkill_level_content_unload(void)
     if (current.id[0]) overkill_level_policy_bind_current(NULL, NULL);
     overkill_level_timeline_bind_current(NULL);
     overkill_level_waypoints_bind_current(NULL);
+    overkill_level_leaders_bind_current(NULL);
+    overkill_level_leaders_free(current.leaders);
     overkill_level_waypoints_free(current.waypoints);
     overkill_level_timeline_free(current.timeline);
     free(current.map);
@@ -100,7 +104,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     if (!directory || !original_directory) goto done;
     if (snprintf(path, sizeof path, "%s/level.json", directory) >= (int)sizeof path) goto done;
     if (!content_json_load(path, &doc, error, error_size)) goto done;
-    if (!integer(&doc, 0, "version", 10, &version) || (version < 8) ||
+    if (!integer(&doc, 0, "version", 11, &version) || (version < 8) ||
         !content_json_string(&doc, content_json_member(&doc, 0, "id"), next.id, sizeof next.id) ||
         !safe_name(next.id, 0)) goto done;
     compatibility = content_json_member(&doc, 0, "compatibility");
@@ -115,12 +119,17 @@ int overkill_level_content_load(const char *directory, const char *original_dire
        and unknown fields all fail; a compatibility profile cannot hide edits. */
     if (content_json_size(&doc, 0) != content_json_size(&original, 0) + (version >= 9 ? 1 : 0)) goto done;
     if (version == 8 && content_json_member(&doc, 0, "formation_spawn_parameters") >= 0) goto done;
+    if (version >= 11) {
+        int leaders = content_json_member(&doc, 0, "leader_paths");
+        if (leaders < 0 || doc.tokens[leaders].type != CONTENT_JSON_OBJECT) goto done;
+    }
     for (i = 0; i < sizeof unchanged / sizeof unchanged[0]; i++) {
         int a = content_json_member(&doc, 0, unchanged[i]);
         int b = content_json_member(&original, 0, unchanged[i]);
         if (version >= 9 && (!strcmp(unchanged[i], "timeline") ||
             !strcmp(unchanged[i], "formations") || !strcmp(unchanged[i], "checkpoints"))) continue;
-        if (version == 10 && !strcmp(unchanged[i], "paths")) continue;
+        if (version >= 10 && !strcmp(unchanged[i], "paths")) continue;
+        if (version >= 11 && !strcmp(unchanged[i], "leader_paths")) continue;
         if (a < 0 && b < 0) continue;
         if (!content_json_equal(&doc, a, &original, b)) {
             snprintf(field_error, sizeof field_error, "%s: independent runtime loading is not implemented yet", unchanged[i]);
@@ -195,14 +204,17 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     }
     if (version >= 9 && !overkill_level_timeline_parse(&doc, &original, next.behavior_profile,
                                                       &next.timeline, error, error_size)) goto done;
-    if (version == 10 && !overkill_level_waypoints_parse(&doc, &original,
+    if (version >= 10 && !overkill_level_waypoints_parse(&doc, &original,
                                                        &next.waypoints, error, error_size)) goto done;
+    if (version >= 11 && !overkill_level_leaders_parse(&doc, &original,
+                                                     &next.leaders, error, error_size)) goto done;
     overkill_level_content_unload();
     current = next;
     overkill_level_policy_bind_current(
         current.live_restart ? NULL : &current.restart, current.live_music ? NULL : &current.music);
     overkill_level_timeline_bind_current(current.timeline);
     overkill_level_waypoints_bind_current(current.waypoints);
+    overkill_level_leaders_bind_current(current.leaders);
     memset(&next, 0, sizeof next);
     ok = 1;
 done:
@@ -211,6 +223,7 @@ done:
     free(next.rules);
     overkill_level_timeline_free(next.timeline);
     overkill_level_waypoints_free(next.waypoints);
+    overkill_level_leaders_free(next.leaders);
     content_json_free(&doc);
     content_json_free(&original);
     if (!ok && error && error_size && !error[0]) snprintf(error, error_size, "%s", reason);

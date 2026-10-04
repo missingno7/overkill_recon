@@ -209,6 +209,7 @@ int overkill_level_waypoints_parse(const JsonDocument *document,
     LevelWaypoints *waypoints = NULL;
     size_t total = 0, i, route_count;
     int paths, original_paths, leaders, original_leaders;
+    long version = 0;
     size_t cursor;
     int ok = 0;
 
@@ -227,10 +228,11 @@ int overkill_level_waypoints_parse(const JsonDocument *document,
     original_paths = content_json_member(original, 0, "paths");
     leaders = content_json_member(document, 0, "leader_paths");
     original_leaders = content_json_member(original, 0, "leader_paths");
+    content_json_integer(document, content_json_member(document, 0, "version"), &version);
     if (!token_is(document, paths, CONTENT_JSON_OBJECT) ||
         !token_is(original, original_paths, CONTENT_JSON_OBJECT) ||
-        (leaders < 0) != (original_leaders < 0) ||
-        (leaders >= 0 && !content_json_equal(document, leaders, original, original_leaders))) {
+        (version < 11 && ((leaders < 0) != (original_leaders < 0) ||
+        (leaders >= 0 && !content_json_equal(document, leaders, original, original_leaders))))) {
         set_error(error, error_size, "paths must be an object and leader_paths must match the canonical definition");
         return 0;
     }

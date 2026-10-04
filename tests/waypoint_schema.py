@@ -148,12 +148,12 @@ class WaypointSchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must remain unchanged"):
             validate_authored_waypoints({"version": 10, "paths": changed}, original)
 
-    def test_v10_local_level_creation_and_validation(self):
+    def test_latest_local_level_creation_and_validation(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "local-level"
             duplicate_original(0, directory, "local-waypoint-test")
             document = validate_directory(directory)
-            self.assertEqual(document["version"], 10)
+            self.assertEqual(document["version"], 11)
             self.assertEqual(document["id"], "local-waypoint-test")
 
 

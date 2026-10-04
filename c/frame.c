@@ -46,6 +46,7 @@
 #include "level_departure.h"
 #include "level_invaders.h"
 #include "level_boss.h"
+#include "level_leaders.h"
 #undef tick_frame_timers
 #endif
 
@@ -381,7 +382,11 @@ void type80_march_member(Record *r)
 {
     word sprite, x;
 
+#ifdef OVERKILL_HOST
+    if (LeaderScriptCursor != overkill_leader_end(GAME_OFFSET(LeaderScript7EEnd))) return;
+#else
     if (LeaderScriptCursor != GAME_OFFSET(LeaderScript7EEnd)) return;
+#endif
     if (r->entry_delay != 0 && --r->entry_delay != 0) return;
     if (MarchStepNow != 0) r->saved_x += MarchStepX;
     sprite = r->sprite;

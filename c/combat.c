@@ -1,5 +1,5 @@
 /* Damage, destruction, enemy bursts, rewards and player hit boxes shared
-   by the DOS hybrid and native core. Stored boss links and script cursors keep their
+   by the DOS hybrid and native core. Stored boss links and canonical script cursors keep their
    original DS offsets. Drops use the original pool A allocator and state directly.
    The frozen oracle holds the routine contracts, including repeated destruction,
    indestructible type 21h and signed collision bounds.
@@ -13,6 +13,7 @@
 #include "pools.h"
 #ifdef OVERKILL_HOST
 #include "level_encounter.h"
+#include "level_leaders.h"
 #endif
 
 /* Pickup record for DropKind: 16x16 KIND_PICKUP, sprite 46h + kind, draw pass 0 (under
@@ -113,8 +114,13 @@ void release_encounter_member(Record *r)
     case 0x15: script_end = GAME_OFFSET(LeaderScript15End); goto leader;
     case 0x13: script_end = GAME_OFFSET(LeaderScript13End);
     leader:
+#ifdef OVERKILL_HOST
+        LeaderScriptCursor = overkill_leader_end(script_end);
+        FormationSlotCursor = overkill_leader_slot_start();
+#else
         LeaderScriptCursor = script_end;
         FormationSlotCursor = GAME_OFFSET(FormationSlots);
+#endif
         DropX = r->x;
         DropY = r->y;
         DropKind = 2;

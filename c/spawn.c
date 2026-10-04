@@ -10,7 +10,8 @@
    the image); C reaches it through a far pointer built from that word each time, so the
    map has one owner. Type21PathCursor is a CS-resident word of the oracle's far segment,
    read and written in place through a far reference. Level scripts, formations and leader
-   scripts are DS tables, read in place.
+   scripts are DS tables, read in place for DOS/canonical play. Native owned content
+   supplies immutable source data while retaining the same records and cursor words.
 
    SEGMENT: CGAME
    OWNS: RunLevelScriptEvents ProcessLevelScript SpawnFromMapRow
@@ -47,6 +48,7 @@
 #include "memory.h"
 #include "level_def.h"
 #include "level_timeline.h"
+#include "level_leaders.h"
 #include "map_recipes.h"
 #endif
 
@@ -706,8 +708,15 @@ void reset_type21_path(void)
    leader gets 20 hit points. */
 void start_leader_script(Record *leader, word script)
 {
+#ifdef OVERKILL_HOST
+    /* Type 21h's unused legacy pointer seed has no owned leader stream. The
+       provider returns its invalid ordinal, avoiding an accidental end match. */
+    LeaderScriptCursor = overkill_leader_start(script);
+    FormationSlotCursor = overkill_leader_slot_start();
+#else
     LeaderScriptCursor = script;
     FormationSlotCursor = GAME_OFFSET(FormationSlots);
+#endif
     leader->hit_points = 0x14;
     EncounterLiveCount = 1;
     EncounterEndDelay = 0x64;
@@ -923,28 +932,63 @@ word draw_incoming_map_row(Record *here)
 void type13_formation_leader(Record *r)
 {
     word point_offset = LeaderScriptCursor;
+#ifdef OVERKILL_HOST
+    /* The end ordinal also releases followers. An authored terminal stays at
+       that ordinal even if forced to arrive; canonical DS reads remain unchecked. */
+    const LevelLeaderStep *step = overkill_leader_current_step(point_offset);
+    const LevelLeaderSlot *slot;
+#endif
     word slot_offset;
     word n, x;
     Record *f;
 
+#ifdef OVERKILL_HOST
+    SteerTargetY = (word)((step ? step->y : *GAME_PTR(word, point_offset)) + 0x20);
+    SteerTargetX = step ? step->x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
     SteerTargetY = (word)(*GAME_PTR(word, point_offset) + 0x20);
     SteerTargetX = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
     point_offset = (word)(point_offset + 4);
     SteerSpeed = 3;
     steer_toward_target(r);
-    if (SteerArrived != 0) {
+    if (SteerArrived != 0
+#ifdef OVERKILL_HOST
+        && (!step || !step->terminal)
+#endif
+    ) {
         switch (r->type) {
         case 0x13:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 4;
+#else
             LeaderScriptCursor += 4;
+#endif
             if (spawn_enemy_here(r) != NO_RECORD) EncounterLiveCount++;
             break;
         case 0x15:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 8;
+#else
             LeaderScriptCursor += 8;
+#endif
+#ifdef OVERKILL_HOST
+            if (step ? !step->spawn_follower : *GAME_PTR(word, point_offset) == 0xFFFF) break;
+#else
             if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
+#endif
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
+#ifdef OVERKILL_HOST
+            f->saved_y = (word)((step ? step->follower_y : *GAME_PTR(word, point_offset)) + 0x20);
+#else
             f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+#endif
+#ifdef OVERKILL_HOST
+            f->saved_x = step ? step->follower_x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
             f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
             f->type = 0x16;
             f->path = GAME_OFFSET(SweepPath);
             if (r->y != 0x40) {
@@ -956,11 +1000,23 @@ void type13_formation_leader(Record *r)
             EncounterLiveCount++;
             break;
         case 0x1C:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 8;
+#else
             LeaderScriptCursor += 8;
+#endif
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
+#ifdef OVERKILL_HOST
+            f->saved_y = (word)((step ? step->follower_y : *GAME_PTR(word, point_offset)) + 0x20);
+#else
             f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+#endif
+#ifdef OVERKILL_HOST
+            f->saved_x = step ? step->follower_x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
             f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
             f->type = 0x1D;
             if (r->x == 0) {
                 f->type = 0x1E;
@@ -970,26 +1026,56 @@ void type13_formation_leader(Record *r)
             EncounterLiveCount++;
             break;
         case 0x1F:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 4;
+#else
             LeaderScriptCursor += 4;
+#endif
             for (n = 5; n != 0; n--) {
                 f = spawn_enemy_here(r);
                 slot_offset = FormationSlotCursor;
+#ifdef OVERKILL_HOST
+                FormationSlotCursor = overkill_leader_slot_next(FormationSlotCursor);
+#else
                 FormationSlotCursor += 4;
+#endif
                 if (f == NO_RECORD) continue;
+#ifdef OVERKILL_HOST
+                slot = overkill_leader_slot(slot_offset);
+                f->saved_y = (word)((slot ? slot->y : *GAME_PTR(word, slot_offset)) + 0x20);
+                f->saved_x = slot ? slot->x : *GAME_PTR(word, (word)(slot_offset + 2));
+#else
                 f->saved_y = (word)(*GAME_PTR(word, slot_offset) + 0x20);
                 f->saved_x = *GAME_PTR(word, (word)(slot_offset + 2));
+#endif
                 f->type = 0x20;
                 f->dive_phase = 0xFFFF;
                 EncounterLiveCount++;
             }
             break;
         case 0x7D:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 8;
+#else
             LeaderScriptCursor += 8;
+#endif
+#ifdef OVERKILL_HOST
+            if (step ? !step->spawn_follower : *GAME_PTR(word, point_offset) == 0xFFFF) break;
+#else
             if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
+#endif
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
+#ifdef OVERKILL_HOST
+            f->saved_y = (word)((step ? step->follower_y : *GAME_PTR(word, point_offset)) + 0x20);
+#else
             f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+#endif
+#ifdef OVERKILL_HOST
+            x = step ? step->follower_x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
             x = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
             f->saved_x = x;
             f->direction = DIR_RIGHT;
             if (x >> 4 & 1) f->direction = DIR_LEFT;
@@ -1001,12 +1087,28 @@ void type13_formation_leader(Record *r)
             EncounterLiveCount++;
             break;
         default:
+#ifdef OVERKILL_HOST
+            LeaderScriptCursor += step ? 1 : 8;
+#else
             LeaderScriptCursor += 8;
+#endif
+#ifdef OVERKILL_HOST
+            if (step ? !step->spawn_follower : *GAME_PTR(word, point_offset) == 0xFFFF) break;
+#else
             if (*GAME_PTR(word, point_offset) == 0xFFFF) break;
+#endif
             f = spawn_enemy_here(r);
             if (f == NO_RECORD) break;
+#ifdef OVERKILL_HOST
+            f->saved_y = (word)((step ? step->follower_y : *GAME_PTR(word, point_offset)) + 0x20);
+#else
             f->saved_y = (word)(*GAME_PTR(word, point_offset) + 0x20);
+#endif
+#ifdef OVERKILL_HOST
+            f->saved_x = step ? step->follower_x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
             f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
             f->type = 0x7F;
             f->entry_delay = 0x14;
             f->hit_points = 5;

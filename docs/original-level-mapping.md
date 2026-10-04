@@ -3,7 +3,7 @@
 Initial audit baseline: commit `9377201`, native SDL3 and shared DOS C. The inventory
 below identifies sources and semantic boundaries; the ASM/C source remains the
 authority for numeric values. Re-run `rg -n LevelIndex c host -g '*.c'` when extending
-this inventory. Version 10 supports only a partial loose runtime representation;
+this inventory. Version 11 supports only a partial loose runtime representation;
 complete independent levels and episodes are not claimed.
 
 ## Inventory
@@ -24,8 +24,8 @@ complete independent levels and episodes are not claimed.
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained. Canonical timeline drops still share DS bindings; loose v9 event drops are owned per event |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py`. Procedures and their global DS path/resource tables still come from the selected behavior profile |
 | Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | V10 owns the ten ordinary fly-off presets as flattened semantic points; existing type-12 movement/`REC_PATH` cursor retained. Sweep, encounter and boss routes remain canonical-profile constrained |
-| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
-| Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
+| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript13/15/1C/1F/7D/7E`, `LeaderScriptCursor`; `spawn.c`, `combat.c`, `frame.c`, `enemies.c` | Loose v11 owns six variable-length semantic presets and maps their ends into the existing global cursor. Canonical live DS streams/strides, type-specific spawn rules, leader-death writes and follower end gates remain unchanged; `Type21Path` is a separate profile-bound route |
+| Leader-child slots | Pure layout + runtime cursor | 20 `FormationSlots`, `FormationSlotCursor`; type 1F leader and type 20 children | Loose v11 owns slot-hopper geometry and uses the existing global cursor with a clean authored cycle. Canonical leader takes five without wrap; canonical children wrap. Authored list requires two distinct positions to keep skip-current hopping finite |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `life.c` | Extracted level-3 director's 24 ordered slot targets; live cursor/end and post-allocation read order retained |
 | Opening march timing | Pure parameter tiers + shared latch behavior | `UpdateAllRecords`, `StepMarchFireDelay`, type80; `frame.c`, `reset_march_state` in `spawn.c` | Extracted enabled flag and separate step/fire delay tiers; initial state, edges/drop distance and member behavior remain procedural defaults; distinct from invader slots |
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route, health, sprites, initial positions and placement offsets extracted; unique construction/damage/destruction remain procedural |
@@ -154,12 +154,24 @@ compare it with the maintained oracle streams. An absent override binds that gen
 shared default, independent from live runtime DS. Canonical execution still uses the
 original live DS address and advances by four bytes per point.
 
-The other readers are not interchangeable: sweep routes have marker/jump and adjacency
-semantics, encounter/boss paths restart their own cursors, and leader scripts synchronize
-through end addresses and special follower markers. Their payloads remain canonical
-profile constraints. The demo Type51 route is one ordinary preset but is not demonstrated
-in original level play; Type4A has no demonstrated original level reference. Neither fact
-establishes further reachability.
+The other path readers are not interchangeable: sweep routes have marker/jump and
+adjacency semantics, and encounter/boss paths restart their own cursors. They remain
+canonical profile constraints. Six v11 leader presets are `sway_leader` (0x13),
+`sweep_leader` (0x15), `bob_chase_leader` (0x1C), `slot_hopper_leader` (0x1F),
+`sweeper_leader` (0x7D) and `march_leader` (0x7E). The type 0x13/0x1F streams contain
+target-only steps; 0x15/0x1C/0x7D/0x7E contain target/follower pairs. Shared immutable
+defaults are generated and checked against the original streams. Authored steps,
+explicit null-follower state and appended terminal points are owned data, but retain
+the existing readers. `levels/shared/leader-presets.json` supplies immutable defaults;
+original-level export and native header generation check it against the maintained
+streams. `LeaderScriptCursor` remains one global cursor: starting a new
+leader overwrites it, leader death maps it to that route's end, and type 0x14/0x93/0x80
+followers wait for the 0x13/0x7D/0x7E ends. Canonical play retains the live DS byte
+offset, exact strides and unchecked reads. Authored Type21 start maps its unused
+`original_level + 1` seed to a no-active-leader sentinel; v8-v10 and canonical seed
+behavior remain unchanged. The demo Type51 route is one ordinary preset but is not
+demonstrated in original level play; Type4A has no demonstrated original level
+reference. Neither fact establishes further reachability.
 
 `tools/level_map_recipes.py` curates map recipe slices from the maintained cell
 handlers. It is consumed by
