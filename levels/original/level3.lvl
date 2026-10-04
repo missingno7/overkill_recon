@@ -511,6 +511,162 @@
       "compatibility": {
         "map_group": "allocate_only"
       },
+      "enemy": "launch_aimed_enemy",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 218
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 200
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 206
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "launch_aimed_enemy",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 218
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 200
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 207
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "scroll_to_y176_then_crawl",
+      "facing": {
+        "at_or_left": {
+          "direction": "up_right",
+          "sprite": 244
+        },
+        "kind": "center",
+        "right": {
+          "direction": "up_left",
+          "sprite": 245
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 208
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "scroll_to_y176_then_crawl",
+      "facing": {
+        "at_or_left": {
+          "direction": "up_right",
+          "sprite": 244
+        },
+        "kind": "center",
+        "right": {
+          "direction": "up_left",
+          "sprite": 245
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 209
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "animated_fire_burst_a",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 221
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 224
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 210
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "animated_fire_burst_a",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 221
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 224
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 211
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
       "enemy": "fast_drop_4",
       "map_writes": [
         {
@@ -540,6 +696,31 @@
     },
     {
       "compatibility": {
+        "direction_before_type": true,
+        "map_group": "allocate_only"
+      },
+      "enemy": "crawl_turn_diagonal_down",
+      "facing": {
+        "at_or_left": {
+          "direction": "right"
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left"
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 214
+    },
+    {
+      "compatibility": {
         "map_group": "allocate_only"
       },
       "direction": "right",
@@ -554,6 +735,32 @@
       "spawn": "enemy",
       "sprite": 231,
       "tile": 215
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "scroll_then_diagonal_crawl",
+      "facing": {
+        "at_or_left": {
+          "direction": "up_right",
+          "sprite": 227
+        },
+        "kind": "center",
+        "right": {
+          "direction": "up_left",
+          "sprite": 227
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 216
     },
     {
       "compatibility": {
@@ -1155,5 +1362,5 @@
       "y": 0
     }
   ],
-  "version": 2
+  "version": 3
 }

@@ -17,7 +17,12 @@ enum MapGroupPhase {
 
 enum MapRecipeFields {
     MAP_RECIPE_SPRITE = 1,
-    MAP_RECIPE_DIRECTION = 2
+    MAP_RECIPE_DIRECTION = 2,
+    MAP_RECIPE_FACE_CENTER = 4,
+    MAP_RECIPE_LEFT_SPRITE = 8,
+    MAP_RECIPE_OFFSET_X = 16,
+    MAP_RECIPE_OFFSET_Y = 32,
+    MAP_RECIPE_DIRECTION_FIRST = 64
 };
 
 typedef struct MapCellWrite {
@@ -33,6 +38,10 @@ typedef struct MapSpawnRecipe {
     byte fields;
     word sprite;
     word direction;
+    word left_sprite;
+    word left_direction;
+    word offset_x;
+    word offset_y;
     word map_write_count;
     const MapCellWrite *map_writes;
 } MapSpawnRecipe;

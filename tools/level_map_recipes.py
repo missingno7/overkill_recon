@@ -1,6 +1,6 @@
 """Map recipe slices, curated from the maintained map-cell handlers.
 
-Fixed-field cases, clear-only cells and group preparation/join phases are converted.
+Fixed-field/center-facing cases, offsets and group preparation/join phases are converted.
 Coverage is migration metadata: unconverted cells keep their proven procedures.
 The generated native table is consumed by host/map_recipes.c, never by DOS C.
 """
@@ -17,12 +17,24 @@ MAP_GROUPS = {'allocate_only': 1, 'join_before_fields': 2, 'join_after_fields': 
 # Version 1's explicit recipe lists replaced only this original migration scope.
 # Retain its meaning when version 2 expands coverage to grouped-range cells.
 V1_MAP_SCOPE = {1: set(range(256)), 4: {0xAC, 0xB1, 0xC9}, 5: {0xD2, 0xD3}}
+# Older explicit lists disable only cells converted in that version. These masks
+# are migration contracts, not another copy of the original spawn semantics.
+V2_MAP_SCOPE = {
+    0: {0xE4, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xED, 0xEE, 0xEF,
+        0xF2, 0xF3, 0xF5, 0xF6, 0xF7, 0xF8},
+    1: set(range(256)),
+    3: {0xD4, 0xD5, 0xD7, *range(0xD9, 0xEA)},
+    4: {0xAC, 0xB1, 0xC9, *range(0xCE, 0xD2), 0xD5, 0xD6,
+        *range(0xD8, 0xDD), *range(0xDE, 0xE1)},
+    5: {0xD2, 0xD3, *range(0xD7, 0xDC), *range(0xE0, 0xEB), *range(0xEC, 0xF0)},
+}
 
 
-def original_map_spawns(level, version=2):
-    if version == 1:
+def original_map_spawns(level, version=3):
+    if version in (1, 2):
+        scope = (V1_MAP_SCOPE if version == 1 else V2_MAP_SCOPE).get(level, set())
         return [recipe for recipe in original_map_spawns(level)
-                if recipe['tile'] in V1_MAP_SCOPE.get(level, set())]
+                if recipe['tile'] in scope]
     def recipe(tile, enemy=None, *, clear=False, sprite=None, direction=None, large=False,
                writes=(), group=None):
         result = {'tile': tile, 'spawn': ('large_enemy' if large else 'enemy') if enemy else 'none',
@@ -41,11 +53,27 @@ def original_map_spawns(level, version=2):
     def grouped(tile, enemy=None, *, join=False, after=False, **fields):
         return recipe(tile, enemy, group=('join_after_fields' if after else
             'join_before_fields' if join else 'allocate_only'), **fields)
+    def centered(tile, enemy, right_sprite, right_direction, left_sprite, left_direction,
+                 *, group=True, direction_first=False):
+        result = recipe(tile, enemy, clear=True, group='allocate_only' if group else None)
+        right, left = {'direction': right_direction}, {'direction': left_direction}
+        if right_sprite is not None:
+            right['sprite'] = right_sprite
+        if left_sprite is not None:
+            left['sprite'] = left_sprite
+        result['facing'] = {'kind': 'center', 'right': right, 'at_or_left': left}
+        if direction_first:
+            result.setdefault('compatibility', {})['direction_before_type'] = True
+        return result
     clear_square = [{'dx': 0, 'dy': 0, 'tile': 1}, {'dx': 1, 'dy': 0, 'tile': 1},
                     {'dx': 0, 'dy': 1, 'tile': 1}, {'dx': 1, 'dy': 1, 'tile': 1}]
     if level == 0:
         return [
+            centered(0xE1, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
+            centered(0xE2, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
             grouped(0xE4, 'low_row_jitterer', clear=True),
+            centered(0xE5, 'scroll_to_y80_then_crawl', 0x11E, 'down_left', 0x11D, 'down_right'),
+            centered(0xE6, 'scroll_to_y80_then_crawl', 0x11E, 'down_left', 0x11D, 'down_right'),
             grouped(0xE7, 'descender_to_x80', clear=True),
             grouped(0xE8, 'descender_to_x96_shooter', clear=True, sprite=0x123, join=True),
             grouped(0xE9, 'descender_to_x112', clear=True),
@@ -54,7 +82,10 @@ def original_map_spawns(level, version=2):
             grouped(0xED, 'climbing_walker_c', clear=True, join=True),
             grouped(0xEE, 'climbing_walker_d', clear=True, join=True),
             grouped(0xEF, 'patrol_shoot_down_c', clear=True, direction='down', join=True),
+            centered(0xF0, 'scroll_to_y176_then_crawl', 0x143, 'up_left', 0x144, 'up_right'),
+            centered(0xF1, 'scroll_to_y176_then_crawl', 0x143, 'up_left', 0x144, 'up_right'),
             grouped(0xF2, 'side_turret', clear=True), grouped(0xF3, 'side_turret', clear=True),
+            centered(0xF4, 'scroll_then_diagonal_crawl', 0xE3, 'up_left', 0xE3, 'up_right'),
             grouped(0xF5, clear=True), grouped(0xF6, 'fast_fall_4_flicker', clear=True),
             grouped(0xF7, 'aimed_descender', large=True, direction='down', writes=clear_square),
             grouped(0xF8, 'spread_shot_descender', large=True, sprite=0x24,
@@ -71,14 +102,21 @@ def original_map_spawns(level, version=2):
                 recipe(0x6C, 'wall_turret_left', sprite=0x8F, direction='left'),
                 recipe(0x6D, 'wall_turret_right', sprite=0x90, direction='right'),
                 left, right, hatch]
+    if level == 2:
+        plunger = recipe(0x5A, 'plunge_at_player_column', clear=True)
+        plunger['position_offset'] = {'dy': -6}
+        return [centered(0xC4, 'animated_fire_burst_c', 0xBF, 'left', 0xC2, 'right', group=False),
+                plunger]
     if level == 4:
         return [left, right, hatch,
             grouped(0xCE, 'climbing_walker_b', clear=True),
             grouped(0xCF, 'climbing_walker_a', clear=True),
             grouped(0xD0, 'delayed_crawler_right', clear=True, sprite=0x99, direction='right'),
             grouped(0xD1, 'delayed_crawler_left', clear=True, sprite=0x9B, direction='left'),
+            centered(0xD4, 'crawl_turn_diagonal_down', None, 'left', None, 'right', direction_first=True),
             grouped(0xD5, 'patrol_shoot_down_c', clear=True, direction='down', join=True),
             grouped(0xD6, 'fast_fall_4_flicker', clear=True),
+            centered(0xD7, 'scroll_then_diagonal_crawl', 0xE3, 'up_left', 0xE3, 'up_right'),
             grouped(0xD8, 'patrol_shoot_down_64', clear=True, join=True),
             grouped(0xD9, 'fast_drop_8', clear=True, sprite=0x77, direction='down', join=True),
             grouped(0xDA, 'wall_bounce_descender', clear=True, direction='down_right'),
@@ -95,6 +133,8 @@ def original_map_spawns(level, version=2):
             grouped(0xD9, 'descend_aimed_fire', large=True, direction='down', writes=clear_square, after=True),
             grouped(0xDA, 'row_firer', clear=True, sprite=0x15A, direction='right'),
             grouped(0xDB, 'row_firer', clear=True, sprite=0x15B, direction='left'),
+            centered(0xDE, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
+            centered(0xDF, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
             grouped(0xE0, 'fast_drop_8', clear=True, sprite=0x77, direction='down', join=True),
             grouped(0xE1, clear=True), grouped(0xE2, clear=True),
             grouped(0xE3, 'slide_then_drop', clear=True, sprite=0xE7, direction='right'),
@@ -112,9 +152,17 @@ def original_map_spawns(level, version=2):
         ]
     if level == 3:
         return [
+            centered(0xCE, 'launch_aimed_enemy', 0xC8, 'left', 0xDA, 'right'),
+            centered(0xCF, 'launch_aimed_enemy', 0xC8, 'left', 0xDA, 'right'),
+            centered(0xD0, 'scroll_to_y176_then_crawl', 0xF5, 'up_left', 0xF4, 'up_right'),
+            centered(0xD1, 'scroll_to_y176_then_crawl', 0xF5, 'up_left', 0xF4, 'up_right'),
+            centered(0xD2, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
+            centered(0xD3, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
             grouped(0xD4, 'fast_drop_4', clear=True, sprite=0x77),
             grouped(0xD5, 'patrol_shoot_down_64', clear=True, join=True),
+            centered(0xD6, 'crawl_turn_diagonal_down', None, 'left', None, 'right', direction_first=True),
             grouped(0xD7, 'slide_then_drop', clear=True, sprite=0xE7, direction='right'),
+            centered(0xD8, 'scroll_then_diagonal_crawl', 0xE3, 'up_left', 0xE3, 'up_right'),
             grouped(0xD9, 'delayed_crawler_right', clear=True, sprite=0x99, direction='right'),
             grouped(0xDA, 'delayed_crawler_left', clear=True, sprite=0x9B, direction='left'),
             grouped(0xDB, 'wall_patrol_shooter', clear=True, join=True),
@@ -145,7 +193,8 @@ def validate_map_spawns(document):
         required = {'tile', 'spawn', 'map_writes'}
         if isinstance(recipe, dict) and recipe.get('spawn') != 'none':
             required.add('enemy')
-        optional = {'compatibility'} | ({'sprite', 'direction'} if 'enemy' in required else set())
+        optional = {'compatibility'} | ({'sprite', 'direction', 'facing', 'position_offset'}
+                                        if 'enemy' in required else set())
         if not isinstance(recipe, dict) or not required <= set(recipe) or set(recipe) - required - optional:
             raise ValueError('map recipe must specify tile, spawn, ordered map_writes and enemy when spawning')
         tile = recipe['tile']
@@ -156,16 +205,41 @@ def validate_map_spawns(document):
             raise ValueError('group/no-spawn map recipes require level version 2')
         if 'compatibility' in recipe:
             compatibility = recipe['compatibility']
-            if not isinstance(compatibility, dict) or set(compatibility) != {'map_group'} or not isinstance(
-                    compatibility['map_group'], str) or compatibility['map_group'] not in MAP_GROUPS:
+            if not isinstance(compatibility, dict) or not compatibility or set(compatibility) - {
+                    'map_group', 'direction_before_type'}:
                 raise ValueError('unsupported map recipe group compatibility')
-            if recipe['spawn'] == 'none' and compatibility['map_group'] != 'allocate_only':
+            if 'map_group' in compatibility and (not isinstance(compatibility['map_group'], str) or
+                    compatibility['map_group'] not in MAP_GROUPS):
+                raise ValueError('unsupported map recipe group compatibility')
+            if 'direction_before_type' in compatibility and (document['version'] < 3 or
+                    compatibility['direction_before_type'] is not True or 'facing' not in recipe):
+                raise ValueError('direction_before_type requires version-3 center facing')
+            if recipe['spawn'] == 'none' and compatibility.get('map_group') != 'allocate_only':
                 raise ValueError('non-spawning map recipes cannot join a group')
         for field, choices in (('spawn', SPAWNS), ('enemy', ARCHETYPES), ('direction', DIRECTIONS)):
             if field in recipe and (not isinstance(recipe[field], str) or recipe[field] not in choices):
                 raise ValueError('unknown map recipe ' + field)
         if 'sprite' in recipe and (type(recipe['sprite']) is not int or not 0 <= recipe['sprite'] <= 65535):
             raise ValueError('map recipe sprite must be an unsigned bank index')
+        if 'facing' in recipe:
+            facing = recipe['facing']
+            if document['version'] < 3 or 'sprite' in recipe or 'direction' in recipe:
+                raise ValueError('center facing requires version 3 and replaces sprite/direction fields')
+            if not isinstance(facing, dict) or set(facing) != {'kind', 'right', 'at_or_left'} or facing['kind'] != 'center':
+                raise ValueError('facing must specify center, right and at_or_left')
+            for side in ('right', 'at_or_left'):
+                fields = facing[side]
+                if not isinstance(fields, dict) or not {'direction'} <= set(fields) <= {'direction', 'sprite'}:
+                    raise ValueError('facing side requires direction and optional sprite')
+                if not isinstance(fields['direction'], str) or fields['direction'] not in DIRECTIONS:
+                    raise ValueError('unknown center-facing direction')
+                if 'sprite' in fields and (type(fields['sprite']) is not int or not 0 <= fields['sprite'] <= 65535):
+                    raise ValueError('center-facing sprite must be an unsigned bank index')
+        if 'position_offset' in recipe:
+            offset = recipe['position_offset']
+            if document['version'] < 3 or not isinstance(offset, dict) or not offset or set(offset) - {'dx', 'dy'} or any(
+                    type(value) is not int or not -32768 <= value <= 32767 for value in offset.values()):
+                raise ValueError('position_offset requires version 3 and signed pixel dx/dy')
         writes = recipe['map_writes']
         if not isinstance(writes, list) or len(writes) > 65535:
             raise ValueError('map_writes must be an ordered list')
@@ -213,8 +287,19 @@ def generate_map_recipe_header(out, documents):
                 writes = f'map_writes_{level}_{index}' if recipe['map_writes'] else 'NULL'
                 flags = (1 if 'sprite' in recipe else 0) | (2 if 'direction' in recipe else 0)
                 group = MAP_GROUPS.get(recipe.get('compatibility', {}).get('map_group'), 0)
+                right, left = {}, {}
+                if 'facing' in recipe:
+                    right, left = recipe['facing']['right'], recipe['facing']['at_or_left']
+                    flags |= 4 | 2 | (1 if 'sprite' in right else 0) | (8 if 'sprite' in left else 0)
+                offset = recipe.get('position_offset', {})
+                flags |= (16 if 'dx' in offset else 0) | (32 if 'dy' in offset else 0)
+                if recipe.get('compatibility', {}).get('direction_before_type'):
+                    flags |= 64
                 values = [recipe['tile'], SPAWNS[recipe['spawn']], group, ARCHETYPES.get(recipe.get('enemy'), 0),
-                          flags, recipe.get('sprite', 0), DIRECTIONS.get(recipe.get('direction'), 0),
+                          flags, right.get('sprite', recipe.get('sprite', 0)),
+                          DIRECTIONS.get(right.get('direction', recipe.get('direction')), 0),
+                          left.get('sprite', 0), DIRECTIONS.get(left.get('direction'), 0),
+                          offset.get('dx', 0) & 65535, offset.get('dy', 0) & 65535,
                           len(recipe['map_writes']), writes]
                 rows.append('    {' + ', '.join(map(str, values)) + '},')
             rows.append('};')

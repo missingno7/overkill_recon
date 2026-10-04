@@ -44,9 +44,21 @@ int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *con
         }
         if (r != NO_RECORD) {
             if (recipe->map_group == MAP_GROUP_JOIN_BEFORE_FIELDS) join_map_group(r);
+            if (recipe->fields & MAP_RECIPE_DIRECTION_FIRST) r->direction = recipe->direction;
             r->type = recipe->enemy_type;
             if (recipe->fields & MAP_RECIPE_SPRITE) r->sprite = recipe->sprite;
-            if (recipe->fields & MAP_RECIPE_DIRECTION) r->direction = recipe->direction;
+            if ((recipe->fields & MAP_RECIPE_DIRECTION) &&
+                    !(recipe->fields & MAP_RECIPE_DIRECTION_FIRST)) r->direction = recipe->direction;
+            /* Evaluate the live record after its default fields, not the map X
+               cached before writes/allocation. Equality selects the left side. */
+            if ((recipe->fields & MAP_RECIPE_FACE_CENTER) && r->x <= PLAYFIELD_CENTER_X) {
+                if (recipe->fields & MAP_RECIPE_LEFT_SPRITE) r->sprite = recipe->left_sprite;
+                r->direction = recipe->left_direction;
+            }
+            /* Pixel offsets alter current coordinates only; saved coordinates
+               remain those established by the initializer. Word wrap is intentional. */
+            if (recipe->fields & MAP_RECIPE_OFFSET_X) r->x += recipe->offset_x;
+            if (recipe->fields & MAP_RECIPE_OFFSET_Y) r->y += recipe->offset_y;
             if (recipe->map_group == MAP_GROUP_JOIN_AFTER_FIELDS) join_map_group(r);
         }
         return 1;

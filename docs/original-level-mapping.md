@@ -17,7 +17,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Last five rows extracted into departure data; first two forced rows/placement positions remain shared rules |
 | Opening ambush | Shared encounter behavior + per-level leader/event/path data | First `LevelScript0..5` event at clock 272, `Formation39..44`, `start_leader_script`, `type13_formation_leader` | Opening events/formations/routes extracted; shared scroll-hold, release delay and early-stage weapon/pod/render policies remain implicit |
 | Mothership departure | Shared sequence data + procedural state machine | `LevelEndMapRows`, `Type53SpawnTable`, `AutopilotWaypointA/B`, `scroll_forward_and_check_level_end`, `run_level_end_sequence` | Five rows, four animated parts and both waypoints extracted with independent authored data; trigger/extra-record/refill/music rules remain; distinct from combat bosses |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Level 1 and fixed-field/clear-only/group-hole choices in 0/3/4/5 extracted; conditional/positional and level-2 cases pending |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases in levels 1/3, center-facing choices in 0/2/3/4/5, level-2 plunger offset and fixed/grouped cases extracted; gated/conditional/RNG/pickup/stale-group hatch cases pending |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted; map preparation/membership phases represented as compatibility data; complete map drop rules pending |
@@ -27,7 +27,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `life.c` | Extracted level-3 director's 24 ordered slot targets; live cursor/end and post-allocation read order retained |
 | Opening march timing | Pure parameter tiers + shared latch behavior | `UpdateAllRecords`, `StepMarchFireDelay`, type80; `frame.c`, `reset_march_state` in `spawn.c` | Extracted enabled flag and separate step/fire delay tiers; initial state, edges/drop distance and member behavior remain procedural defaults; distinct from invader slots |
-| Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route extracted with restart ending; parts/geometry/damage coupling pending |
+| Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route, health, sprites, initial positions and placement offsets extracted; unique construction/damage/destruction remain procedural |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Extracted four semantic kinds, phase thresholds, explicit burster health/sprite/X, faller policies and director damage eligibility; existing procedures retained |
 | Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
 | Map reset actions | Pure dispatch data + procedural mutations | `MapResetLists` in DATA and `MapResetList*` in code; restart scan | Pending; cleared/restored cells may differ from normal spawning |
@@ -80,11 +80,11 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 
 | Source | Selections to classify further |
 |---|---|
-| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset; boss geometry |
+| `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset |
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
 | `spawn.c` | Map recipes; crawler sprite override; jitter group RNG; event HP initialization; type21's unusual initial leader-script pointer |
 | `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
-| `frame.c` | March initial step/edges/drop/member defaults; boss offsets; music selection; checkpoint/reset table bindings |
+| `frame.c` | March initial step/edges/drop/member defaults; music selection; checkpoint/reset table bindings |
 | `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
 
@@ -123,7 +123,7 @@ Neither its existence nor a supported binding is evidence of level reachability.
 handlers. It is consumed by
 export, validation and native table generation. The generic evaluator applies
 ordered relative writes, then reuses ordinary/large map initialization and existing
-behavior presets. Original level-1 selection is entirely data-driven; the level-4/5
+behavior presets. Original level-1 and all defined level-3 cases are data-driven; the level-4/5
 turret and hatch entries share the same model. Fixed-field and clear-only cases
 across 0/3/4/5 now use it too. Native retained C switches and ASM remain independent
 comparison references.
@@ -135,9 +135,19 @@ afterward. The real level-3 hole retains its allocation attempt without touching
 map, pool or group bytes. Level-5 walker cells retain their early nongroup return.
 The shared live drop cycle remains authoritative, including aliases with timeline
 events and map writes that alter the drop word after preparation. RNG-dependent
-jitter grouping, center-facing/offset placement and stale-group hatches remain open.
-Expanded grouped coverage is version 2. The version-1 map scope remains a consumed
-compatibility binding, tested with an older empty list; it is not silently widened.
+jitter grouping, gated/conditional positional changes and stale-group hatches remain open.
+Grouped coverage arrived in version 2; center-facing and pixel-offset coverage uses
+version 3. Both older map scopes remain consumed compatibility bindings, tested
+with older empty lists; neither is silently widened.
+
+The center-facing data corresponds to inline ASM spawn cases and the shared C
+`face_centre` helper, plus the sprite-less `SpawnCellCrawler5F`. These recipes read
+the record's post-initialization X, compare unsigned, and take the alternate values
+at equality. The sprite-less crawler retains its direction-before-type compatibility
+and leaves sprite untouched. `SpawnCellPlunger2E` sets type then subtracts six from Y,
+without changing saved Y. Full-memory tests cover center neighbors/high words,
+map-clear aliases crossing sides, authored field/offset values and every defined
+level-3 case; the latter no longer needs procedural selection in the native path.
 
 Direct tests cover every safe map byte in all six levels, pool exhaustion, stale
 fields, caller/allocated-record aliases, wrapped offsets, physical DS aliases and

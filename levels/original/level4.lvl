@@ -654,6 +654,31 @@
     },
     {
       "compatibility": {
+        "direction_before_type": true,
+        "map_group": "allocate_only"
+      },
+      "enemy": "crawl_turn_diagonal_down",
+      "facing": {
+        "at_or_left": {
+          "direction": "right"
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left"
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 212
+    },
+    {
+      "compatibility": {
         "map_group": "join_before_fields"
       },
       "direction": "down",
@@ -682,6 +707,32 @@
       ],
       "spawn": "enemy",
       "tile": 214
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "scroll_then_diagonal_crawl",
+      "facing": {
+        "at_or_left": {
+          "direction": "up_right",
+          "sprite": 227
+        },
+        "kind": "center",
+        "right": {
+          "direction": "up_left",
+          "sprite": 227
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 215
     },
     {
       "compatibility": {
@@ -1141,5 +1192,5 @@
       "y": 0
     }
   ],
-  "version": 2
+  "version": 3
 }

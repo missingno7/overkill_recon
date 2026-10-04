@@ -35,6 +35,11 @@ ARCHETYPES = {
     'staircase_crawler': 0x6E, 'hover_fire_plunge_c': 0x71,
     'aimed_descender': 0x72, 'spread_shot_descender': 0x75,
     'climbing_walker_c': 0x8D, 'climbing_walker_d': 0x8E, 'row_firer': 0x92,
+    'plunge_at_player_column': 0x2E,
+    'scroll_to_y176_then_crawl': 0x54, 'scroll_then_diagonal_crawl': 0x59,
+    'crawl_turn_diagonal_down': 0x5F, 'scroll_to_y80_then_crawl': 0x6A,
+    'launch_aimed_enemy': 0x86, 'animated_fire_burst_a': 0x87,
+    'wait_then_fire_burst': 0x88, 'animated_fire_burst_c': 0x8F,
 }
 SIZES = {'8x8': 0, '16x16': 1, '32x32': 2}
 LAYERS = {'under_terrain': 0, 'over_terrain': 1}

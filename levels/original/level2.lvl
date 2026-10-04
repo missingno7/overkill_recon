@@ -982,7 +982,46 @@
       ]
     }
   },
-  "map_spawns": [],
+  "map_spawns": [
+    {
+      "enemy": "animated_fire_burst_c",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 194
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 191
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 196
+    },
+    {
+      "enemy": "plunge_at_player_column",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "position_offset": {
+        "dy": -6
+      },
+      "spawn": "enemy",
+      "tile": 90
+    }
+  ],
   "marching_formation": {
     "enabled": false,
     "fire_delays": [
@@ -1959,5 +1998,5 @@
       "y": 0
     }
   ],
-  "version": 2
+  "version": 3
 }

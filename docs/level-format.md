@@ -1,6 +1,6 @@
 # Overkill level format: current structured bindings
 
-Version 2 has two partial profiles. `level-bindings` describes resources, tile
+Version 3 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
 mothership departure data, encounter descriptors, marching-formation timing and
 segmented-boss member data;
@@ -8,9 +8,9 @@ the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
 playable level yet. Independent map storage, remaining spawn recipes and enemy/member parameters
 await extraction.
-Version 1 remains accepted with its original narrower map-recipe scope. Version 2
-adds grouped/no-spawn recipes and expands the converted cells. This version boundary
-keeps an older explicit recipe list from silently disabling newly converted cells.
+Versions 1 and 2 remain accepted with their original map-recipe scopes. Version 2
+adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
+Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
 Omitting map recipes still retains originals under either version.
 
 An earlier partial `level-bindings` definition remains valid (the patch list below
@@ -233,9 +233,10 @@ fixtures; their supported codecs do not assert original level reachability.
 ## Map spawn recipes
 
 `map_spawns` is an optional list of unique tile-triggered recipes. It currently
-represents all original level-1 actions and fixed-field, clear-only and group-hole
-cases in levels 0/3/4/5. Center-facing, conditional-sprite, RNG-dependent, positional
-and pickup cases, plus level 2's actions, retain their
+represents all defined original level-1/level-3 actions, center-facing choices across
+levels 0/2/3/4/5, the level-2 plunger offset, and fixed-field, clear-only and group-hole
+cases in levels 0/4/5. Conditional-sprite, RNG-dependent, gated runners/cruiser,
+pickup and retained-cell stale-group hatch cases retain their
 existing handlers during migration. An empty list in a partially converted level
 does not disable its unconverted spawns. Native binding rejects recipes outside
 that level's converted scope; level 1 supports all byte-valued triggers.
@@ -286,6 +287,45 @@ then sprite if specified, then direction if specified. Omission does not zero a
 field: ordinary initialization leaves sprite stale and sets direction down;
 large initialization leaves both stale before these overrides.
 
+### Center-facing choices and pixel offsets
+
+Version 3 adds `facing`, replacing the top-level sprite/direction overrides:
+
+```json
+{
+  "tile": 196,
+  "spawn": "enemy",
+  "enemy": "animated_fire_burst_c",
+  "map_writes": [{"dx": 0, "dy": 0, "tile": 1}],
+  "facing": {
+    "kind": "center",
+    "right": {"sprite": 191, "direction": "left"},
+    "at_or_left": {"sprite": 194, "direction": "right"}
+  }
+}
+```
+
+Each side requires a compass direction and optionally a sprite-bank index. The
+evaluator writes the right-side defaults after initialization, then compares the
+live record X to the fixed playfield center (96 pixels) as an unsigned word.
+Equality takes `at_or_left`. Its supplied fields overwrite the defaults; omitted
+sprite fields retain the actual previous sprite. This preserves the sprite-less
+crawler and the crawler with the same sprite on both sides. The choice occurs
+after map writes and allocation, so a map/DS alias changing `MapCellX` affects it.
+It is a demonstrated spawn-placement rule, not a reusable enemy movement family.
+
+Optional version-3 `position_offset` is a nonempty object with signed pixel `dx`
+and/or `dy`. It adds X then Y after type/sprite/direction and facing, before any
+`join_after_fields` membership, using word wrapping. It does not update saved
+coordinates. The original level-2 plunger uses `{"dy": -6}` after setting its type;
+the gated runners' saved-X copies and the cruiser's shifted-X comparison are
+different operations and remain procedural pending their own extraction.
+
+The importer-generated `compatibility.direction_before_type: true` retains the
+sprite-less crawler's direction-before-type writes. It requires version-3 facing
+and can accompany group preparation. This is an internal historical ordering
+property; ordinary authored facing definitions use the shared field order above.
+
 ### Original group compatibility
 
 Original grouped ranges prepare a group slot even for cells that produce no
@@ -296,7 +336,7 @@ but before type/sprite/direction overrides; `join_after_fields` joins after thos
 overrides. Ordinary grouped spawns use the former; the two large grouped spawns use
 the latter. These phases are source-supported ordering, not arbitrary instructions.
 Non-spawning recipes permit only `allocate_only`.
-Grouped compatibility and `spawn: "none"` require version 2. Version 1 retains only
+Grouped compatibility and `spawn: "none"` require version 2 or later. Version 1 retains only
 level 1's complete basic recipe model and the original shared turret/hatch scope
 in levels 4/5; all its other cells continue through their established handlers.
 
@@ -331,7 +371,8 @@ slice; removing an entry disables that trigger rather than falling back to its o
 switch case. Coverage is internal migration metadata, not a permanent original-game
 path. The exporter derives this small slice from curated equivalents of maintained
 C handlers; canonical execution is independently checked against ASM. Full map drop
-rules, center-facing, RNG-dependent, pickup and other recipe primitives remain pending.
+rules, RNG-dependent selection, gated/conditional positional changes, pickup and
+stale-group hatch initialization remain pending.
 
 ## Mothership departure
 
@@ -663,6 +704,12 @@ core initializers to test recipe replacement/removal, authored fields and write 
 Grouped cases additionally test all original drop-cycle offsets, zero/nonzero/raw
 drops, exhausted/partially free groups, allocation-only holes and clear-only cells,
 and a live drop-word alias mutated between preparation and joining.
+Center-facing comparisons exercise unsigned equality/neighbor/high-word boundaries,
+stale sprites, full pools, caller aliases and a map clear changing X from the right
+to the left side. Authored choices and signed offsets use explicitly checked oracle
+output words while every other DS/physical byte, saved coordinate and RNG state
+must agree. Version-1/2 coverage remains fixed; older empty lists do not intercept
+new version-3 triggers. Mixed rows exercise all six handlers.
 The departure suite compares terminal map writes, animated-part allocation and
 autopilot/refill transitions for all six originals against ASM. An alternate build
 of the production coordinators proves that authored departure components reach

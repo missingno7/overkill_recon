@@ -150,8 +150,9 @@ destroyed part has zero HP; parts exploded through its release keep initialized 
 because later smart-bomb visits skip explosion types. These rules explain why a
 clean-looking construction rollback would change observable behavior.
 
-Map recipes cover all level-1 actions and fixed-field choices, clear-only cells
-and a group-only hole across levels 0/3/4/5. A recipe names the existing enemy behavior,
+Map recipes cover all defined level-1/level-3 actions, center-facing choices across
+five levels, the level-2 plunger offset, and fixed-field/clear-only choices across
+levels 0/4/5. A recipe names the existing enemy behavior,
 ordinary, large or no record allocation, ordered relative map-cell writes, and optional sprite
 and direction. No general instruction interpreter is needed. The native build
 compiles these `.lvl` definitions into immutable per-level recipe tables; shared
@@ -165,9 +166,9 @@ their source order and word offset wrapping. Physical map/DS aliases are resolve
 by the existing native memory layer, including high offsets in the ordinary map segment.
 
 An internal migration mask distinguishes converted cells from pending procedures.
-Level 1 now dispatches entirely through the generic evaluator; converted cases in
+Level 1 and all defined level-3 cases now dispatch through the generic evaluator; converted cases in
 other levels use it before their original handlers. Removing a covered recipe disables it;
-omitting the section keeps the originals. Center-facing placement, conditional
+omitting the section keeps the originals. Gated runners/cruiser placement, conditional
 sprites, RNG-dependent grouping and fuel scan-cursor behavior remain procedural. Retained C
 switches are temporary comparison references, and DOS dispatch is unchanged.
 
@@ -179,13 +180,21 @@ Joining uses the live globals at that phase, including mutations through DS/map
 aliases. The current drop source remains the shared legacy offset cycle, also used
 by timeline events. Complete map drop-rule extraction remains pending rather than
 inventing a separate per-enemy drop that cannot represent the original.
-Canonical fixtures now use version 2 for the expanded map recipe scope. Version-1
-definitions retain their earlier scope, so an older explicit empty/partial list
+Center-facing definitions write right-side defaults, then test live initialized
+X as unsigned against the playfield center; equality selects the left-side fields.
+The same policy explains launchers, burst firers and several crawlers without
+generalizing their movement. Sprite omission preserves the actual stale value.
+Pixel offsets apply after those fields/facing with word wrapping, retaining saved
+coordinates. The plunger uses only a Y offset; gated runners and cruiser movement
+also copy or conditionally alter coordinates and remain separate evidence work.
+
+Canonical fixtures now use version 3 for the expanded map recipe scope. Version-1/2
+definitions retain their earlier scopes, so an older explicit empty/partial list
 does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. Remaining map recipes: conditional groups, center-facing/offset placement,
+1. Remaining map recipes: conditional groups, gated/conditional positional changes,
    RNG-dependent selection, retained stale group fields and exceptional scan-cursor
    results. Compare every conversion against the original handler before dispatch.
 2. Remaining formation/enemy parameters and level-specific defaults,

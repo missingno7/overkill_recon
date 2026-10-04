@@ -52,6 +52,18 @@ def import_cases(h, documents):
         expected = set(range(256)) if level == 1 else set(expected_tiles.get(level, []))
         if coverage != expected:
             raise AssertionError('version-1 converted scope changed')
+    version_two = copy.deepcopy(documents)
+    new_tiles = {0: {0xE1, 0xE2, 0xE5, 0xE6, 0xF0, 0xF1, 0xF4},
+                 2: {0xC4, 0x5A}, 3: {0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD6, 0xD8},
+                 4: {0xD4, 0xD7}, 5: {0xDE, 0xDF}}
+    for level, document in enumerate(version_two):
+        document['version'] = 2
+        document['map_spawns'] = original_map_spawns(level, 2)
+        validate(document)
+    for level, ((old_scope, recipes), (scope, _)) in enumerate(zip(
+            map_recipe_bindings(version_two), map_recipe_bindings(documents))):
+        if old_scope != scope - new_tiles.get(level, set()) or len(recipes) != (15, 7, 0, 20, 17, 22)[level]:
+            raise AssertionError('version-2 recipe identities/coverage changed')
     bad = []
     for field, value in (('tile', True), ('tile', 256), ('spawn', 'boss'),
             ('enemy', '0x24'), ('sprite', True), ('sprite', 65536),
@@ -65,6 +77,28 @@ def import_cases(h, documents):
         bad.append((edited, None))
     edited = copy.deepcopy(documents)
     edited[1]['map_spawns'].append(copy.deepcopy(edited[1]['map_spawns'][0]))
+    bad.append((edited, None))
+    facing = {'kind': 'center', 'right': {'sprite': 20, 'direction': 'left'},
+              'at_or_left': {'sprite': 21, 'direction': 'right'}}
+    for field, value in (('facing', []), ('facing', {**facing, 'kind': 'edge'}),
+            ('facing', {**facing, 'right': {'direction': 'center'}}),
+            ('facing', {**facing, 'at_or_left': {'direction': 'right', 'sprite': True}}),
+            ('facing', {**facing, 'at_or_left': {}}),
+            ('position_offset', {}), ('position_offset', {'dy': False}),
+            ('position_offset', {'dy': -32769}), ('position_offset', {'dx': 32768}),
+            ('position_offset', {'y': -6}),
+            ('compatibility', {'direction_before_type': True})):
+        edited = copy.deepcopy(documents)
+        edited[1]['map_spawns'][0][field] = value
+        bad.append((edited, None))
+    for version in (1, 2):
+        for field, value in (('facing', facing), ('position_offset', {'dy': -6})):
+            edited = copy.deepcopy(documents)
+            edited[1]['version'] = version
+            edited[1]['map_spawns'][0][field] = value
+            bad.append((edited, None))
+    edited = copy.deepcopy(documents)
+    edited[1]['map_spawns'][0].update(facing=facing, direction='up')
     bad.append((edited, None))
     edited = copy.deepcopy(documents)
     edited[4]['map_spawns'][0]['tile'] = 1
@@ -94,6 +128,8 @@ def import_cases(h, documents):
     for level in (1, 4, 5):
         edited[level]['version'] = 1
         edited[level]['map_spawns'] = original_map_spawns(level, 1)
+    # Older explicit empty lists leave the version-3 center/plunger slice procedural.
+    edited[2]['version'], edited[2]['map_spawns'] = 2, []
     turret = copy.deepcopy(edited[1]['map_spawns'][4])
     turret['tile'] = 4
     edited[1]['map_spawns'][0] = turret
@@ -106,6 +142,17 @@ def import_cases(h, documents):
             # ordinary walker. Drop lookup still occurs before clearing the cell.
             recipe['enemy'] = 'climbing_walker_a'
             recipe['compatibility']['map_group'] = 'allocate_only'
+        if recipe['tile'] == 0xCE:
+            recipe['facing'] = {'kind': 'center',
+                'right': {'sprite': 321, 'direction': 'up_left'},
+                'at_or_left': {'sprite': 654, 'direction': 'down_right'}}
+            recipe['position_offset'] = {'dx': 7, 'dy': -24}
+        if recipe['tile'] == 0xD4:
+            recipe['position_offset'] = {'dy': -23}
+        if recipe['tile'] == 0xD6:
+            # A one-sided sprite override must retain the initializer's stale
+            # sprite on the other side; absence is not a zero-valued default.
+            recipe['facing']['at_or_left']['sprite'] = 999
     # A version-1 level keeps the original narrower scope. Its explicit list
     # must not disable newly converted version-2 cells when the game is rebuilt.
     edited[0]['version'] = 1
@@ -138,7 +185,7 @@ def import_cases(h, documents):
     alternate.overkill_spawn_map_recipe.argtypes = (ctypes.c_void_p, ctypes.c_uint16,
         ctypes.c_uint16, ctypes.POINTER(ctypes.c_uint16))
     alternate.overkill_spawn_map_recipe.restype = ctypes.c_int
-    return len(bad) + 5, alternate
+    return len(bad) + 6, alternate
 
 
 def execution_cases(h, arena, checkpoints, alternate):
@@ -215,7 +262,7 @@ def execution_cases(h, arena, checkpoints, alternate):
             h.m.data_frame * 16 + h.stack_lo, h.m.data_frame * 16 + h.stack_hi, label)
 
     def run(level, cell, off=1300, x=96, free=3, alias=False, map_alias=False,
-            edited=False, oracle_cell=None, drop=None, groups='free'):
+            edited=False, oracle_cell=None, drop=None, groups='free', expected_fields=()):
         nonlocal count
         here, segment = setup(level, cell, off, x, free, alias, map_alias, drop, groups)
         label = (f'level {level} cell {cell:02X} off {off:04X} x {x} free {free} '
@@ -232,6 +279,14 @@ def execution_cases(h, arena, checkpoints, alternate):
         native_state, native_memory = snapshot()
         registers = h.m.call(f'Level{level}MapCell', {'AX': cell if oracle_cell is None else oracle_cell,
             'SI': off, 'BP': here, 'ES': segment})
+        # Authored parameters change only declared record outputs. Assert the
+        # original words before editing the expectation; every other byte,
+        # including saved coordinates, allocation, map and RNG, must still agree.
+        for field, old, new in expected_fields:
+            at = cursor + getattr(K, 'REC_' + field.upper())
+            if struct.unpack('<H', h.m.read(at, 2))[0] != old:
+                raise AssertionError(label + ': unexpected oracle ' + field)
+            h.m.write(at, struct.pack('<H', new))
         compare(label, native_memory)
         if result != registers['SI']:
             raise AssertionError(label + ': scan continuation offset changed')
@@ -260,8 +315,14 @@ def execution_cases(h, arena, checkpoints, alternate):
                     for free in (0, 1, K.POOL_A_COUNT):
                         for alias in (False, True):
                             run(level, recipe['tile'], off, x, free, alias)
+            if 'facing' in recipe:
+                for x in (95, 96, 97, 32768):
+                    for free in (0, 1):
+                        run(level, recipe['tile'], x=x, free=free, drop=4, groups='mixed')
             for free in (0, 1):
-                # Writes that alias MapCellX affect the subsequent initializer read.
+                # Setup's incoming tile byte aliases MapCellX. Center-facing
+                # triggers exceed 96; clearing crosses from the right side to 1
+                # before initialization and facing read that updated live value.
                 run(level, recipe['tile'], h.offset('MapCellX'), 96, free, False, True)
             if 'compatibility' in recipe:
                 for drop in (0, 1, 4, 255):
@@ -299,6 +360,30 @@ def execution_cases(h, arena, checkpoints, alternate):
     if alternate.overkill_spawn_map_recipe(ctypes.c_void_p(h.state_addr + here), 1300,
             0x00E8, ctypes.byref(result)) != 0 or result.value != 0xBEEF:
         raise AssertionError('version-1 level intercepted a newly converted group cell')
+    for cell in (0xC4, 0x5A):
+        here, _ = setup(2, cell, 1300, 96, 1, False)
+        before = snapshot()
+        result = ctypes.c_uint16(0xBEEF)
+        if alternate.overkill_spawn_map_recipe(ctypes.c_void_p(h.state_addr + here), 1300,
+                0x0200 | cell, ctypes.byref(result)) != 0 or result.value != 0xBEEF or snapshot() != before:
+            raise AssertionError('version-2 empty list intercepted a version-3 cell')
+    # Facing uses the initialized X before the authored +7 pixel shift. At X=96
+    # the left tuple wins even though the final coordinate is on the right side.
+    for x, old_sprite, old_direction, sprite, direction in (
+            (95, 0xDA, K.DIR_RIGHT, 654, K.DIR_DOWN_RIGHT),
+            (96, 0xDA, K.DIR_RIGHT, 654, K.DIR_DOWN_RIGHT),
+            (97, 0xC8, K.DIR_LEFT, 321, K.DIR_UP_LEFT),
+            (65535, 0xC8, K.DIR_LEFT, 321, K.DIR_UP_LEFT)):
+        run(3, 0xCE, x=x, free=1, edited=True, drop=4, groups='mixed', expected_fields=(
+            ('sprite', old_sprite, sprite), ('direction', old_direction, direction),
+            ('x', x, (x + 7) & 65535), ('y', 16, 65528)))
+    run(3, 0xCE, x=96, free=0, edited=True, drop=4, groups='mixed')
+    run(3, 0xD4, free=1, edited=True, expected_fields=(('y', 16, 65529),))
+    previous_sprite = struct.unpack_from('<H', stale,
+        (K.POOL_A_COUNT - 1) * K.RECORD_SIZE + K.REC_SPRITE)[0]
+    run(3, 0xD6, x=96, free=1, edited=True,
+        expected_fields=(('sprite', previous_sprite, 999),))
+    run(3, 0xD6, x=97, free=1, edited=True)
     # Test custom properties directly; the oracle contains no such authored recipe.
     here, _ = setup(1, 0x6D, 1300, 96, 1, False)
     result = ctypes.c_uint16()
@@ -314,11 +399,12 @@ def execution_cases(h, arena, checkpoints, alternate):
     if ctypes.string_at(arena.base + map_base + 1300, 1) != bytes([61]):
         raise AssertionError('authored repeated map writes did not retain source order')
     # Row-level integration observes incoming-cell mutations and allocation order.
-    for level, cells in ((0, [0xE7, 0xE8, 0xF5, 0xF7, 0xF8]),
+    for level, cells in ((0, [0xE1, 0xE5, 0xE8, 0xF4, 0xF7, 0xF8]),
                          (1, [4, 7, 0x6C, 0x6D, 0xAC, 0xB1, 0xC9]),
-                         (3, [0xDF, 0xE1, 0xDE, 0xE3, 0xE5]),
-                         (4, [0xAC, 0xB1, 0xC9, 0xD5, 0xCE, 0xDF]),
-                         (5, [0xD3, 0xD2, 0xD7, 0xD9, 0xE0, 0xE1, 0xE8])):
+                         (2, [0xC4, 0x5A, 0xC4, 0x30, 0x5A]),
+                         (3, [0xCE, 0xD0, 0xD2, 0xD6, 0xDF, 0xE1, 0xD8]),
+                         (4, [0xAC, 0xB1, 0xC9, 0xD4, 0xD7, 0xDF]),
+                         (5, [0xD3, 0xD2, 0xD9, 0xDE, 0xDF, 0xE1, 0xE8])):
         for free in (0, 2, K.POOL_A_COUNT):
             here, segment = setup(level, 1, 1300, 96, free, False)
             row = bytes((cells * 13)[:13])
@@ -328,7 +414,7 @@ def execution_cases(h, arena, checkpoints, alternate):
             h.m.call('SpawnFromMapRow', {'SI': 1300, 'BP': here, 'ES': segment})
             compare(f'level {level} recipe row free {free}', native_memory)
             count += 1
-    return count, 3
+    return count, 11
 
 
 def main():

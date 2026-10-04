@@ -573,6 +573,58 @@
     },
     {
       "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "animated_fire_burst_a",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 221
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 224
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 222
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only"
+      },
+      "enemy": "animated_fire_burst_a",
+      "facing": {
+        "at_or_left": {
+          "direction": "right",
+          "sprite": 221
+        },
+        "kind": "center",
+        "right": {
+          "direction": "left",
+          "sprite": 224
+        }
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 223
+    },
+    {
+      "compatibility": {
         "map_group": "join_before_fields"
       },
       "direction": "down",
@@ -1148,5 +1200,5 @@
       "y": 0
     }
   ],
-  "version": 2
+  "version": 3
 }
