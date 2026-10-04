@@ -21,16 +21,30 @@
    keeps it; see tests/hits.py). */
 word init_pickup_record(Record *pickup)
 {
+#ifdef OVERKILL_HOST
+    word sprite;
+#endif
     pickup->anim_counter = 0;
     pickup->size_class = 1;
     pickup->kind = KIND_PICKUP;
     pickup->type = 0;
     pickup->slot_index = 0xFFFF;
     pickup->flash_timer = 0;
+#ifdef OVERKILL_HOST
+    /* ASM keeps DropKind in SI after these writes. Item-index aliases can change
+       the global, so derive both outputs and the continuation from that one read. */
+    sprite = DropKind;
+    pickup->item_index = sprite;
+    sprite += 0x46;
+    pickup->sprite = sprite;
+    pickup->draw_pass = 0;
+    return sprite;
+#else
     pickup->item_index = DropKind;
     pickup->sprite = DropKind + 0x46;
     pickup->draw_pass = 0;
     return pickup->sprite;
+#endif
 }
 
 /* The pickup DropKind at (DropX, DropY + ScrollDeltaY) in a free pool A slot, if any.

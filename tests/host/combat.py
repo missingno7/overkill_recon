@@ -270,6 +270,16 @@ def _init_pickup_cases(h, rng: random.Random) -> int:
                      writes, f"InitPickupRecord seeded #{index}",
                      oracle_register="BX", result="SI")
         count += 1
+    # The original loads DropKind once after its first six field writes. An
+    # unaligned item-index alias must not cause a second read for the sprite.
+    for field in (K.REC_ITEM_INDEX, K.REC_KIND, K.REC_FLASH_TIMER, K.REC_SPRITE):
+        at = h.offset('DropKind') + 1 - field
+        for kind in (4, 0x1234, 0xFFFF):
+            writes = _base_writes(h) + [(at, _record(rng)), _word('DropKind', kind, h)]
+            _run_pointer(h, 'init_pickup_record', 'InitPickupRecord', at, writes,
+                         f'InitPickupRecord alias field {field} kind {kind:04X}',
+                         oracle_register='BX', result='SI')
+            count += 1
     return count
 
 
