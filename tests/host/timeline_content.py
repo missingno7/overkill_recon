@@ -424,10 +424,14 @@ def _exhausted_same_clock_case(h, arena, work: Path) -> int:
     return 1
 
 
-def _checkpoint_restart_case(h, arena, work: Path) -> int:
+def _checkpoint_restart_case(h, arena, work: Path, *, owned_terrain=False) -> int:
     profile = 2
     directory = work / "authored-checkpoint"
     document = duplicate_original(profile, directory, "authored_checkpoint")
+    if owned_terrain:
+        document['version'] = 13
+        document['terrain']['attribute_patches'].append(
+            {'tile': 12, 'attribute': 'shot_permeable_wall'})
     resume_event = min(7, len(document["timeline"]))
     checkpoint_index = 1
     authored_checkpoint = document["checkpoints"][checkpoint_index]
@@ -502,6 +506,16 @@ def _checkpoint_restart_case(h, arena, work: Path) -> int:
     h.write(h.offset("ScrollingBackward"), struct.pack("<H", 0))
     h.write(h.offset("LevelScriptCursors") + 2 * profile, struct.pack("<H", 0))
 
+    if owned_terrain:
+        from level_format import encode_attribute_patches
+        # The oracle reloads equivalent semantic properties from a separate
+        # source stream; native v13 reloads its immutable terrain content.
+        terrain_source = 0x0600
+        h.write(h.offset('AttributePatchPointers') + 2 * profile,
+                struct.pack('<H', terrain_source))
+        h.write(terrain_source, encode_attribute_patches(document['terrain']))
+        h.write(h.offset('ByteAttributeTable') + 12, b'\xa5')
+
     # Re-seed the oracle's physical memory after state writes and run both restart
     # implementations from the same DOS bytes and primary record.
     before = bytes(h.m.u.mem_read(0, checkpoints.DOS_MEMORY_BYTES))
@@ -510,6 +524,8 @@ def _checkpoint_restart_case(h, arena, work: Path) -> int:
     h.lib.restart_at_checkpoint.restype = None
     h.lib.restart_at_checkpoint(ctypes.c_void_p(h.state_addr + h.offset("PrimaryRecord")))
     native_state = h.state_storage.snapshot()
+    if owned_terrain and native_state[h.offset('ByteAttributeTable') + 12] != 2:
+        raise AssertionError('checkpoint restart did not restore owned terrain properties')
     native_cursor_offset = _cursor_offset(h, profile)
     if _state_word(native_state, native_cursor_offset) != resume_event:
         raise AssertionError("checkpoint restart did not restore authored event ordinal")

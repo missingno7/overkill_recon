@@ -1,4 +1,5 @@
 #include "level_content.h"
+#include "level_def.h"
 #include "content_json.h"
 #include "level_policies.h"
 #include "level_timeline_data.h"
@@ -24,6 +25,8 @@ typedef struct LevelContent {
     LevelWaypoints *waypoints;
     LevelLeaderPaths *leaders;
     LevelSpecialPaths *special_paths;
+    LevelTerrain terrain;
+    int owns_terrain;
 } LevelContent;
 
 static LevelContent current;
@@ -57,6 +60,32 @@ static int safe_name(const char *name, int path)
     return !path && name[0] >= 'a' && name[0] <= 'z';
 }
 
+static int parse_terrain(const JsonDocument *doc, LevelTerrain *terrain)
+{
+    static const char *names[] = {"open", "wall", "shot_permeable_wall"};
+    int section = content_json_member(doc, 0, "terrain");
+    int patches = content_json_member(doc, section, "attribute_patches");
+    size_t i, count = content_json_size(doc, patches);
+    if (content_json_size(doc, section) != 2 ||
+        !string_is(doc, section, "default", "wall") || patches < 0 ||
+        doc->tokens[patches].type != CONTENT_JSON_ARRAY) return 0;
+    memset(terrain->attributes, TILE_WALL, sizeof terrain->attributes);
+    for (i = 0; i < count; i++) {
+        int patch = content_json_at(doc, patches, i);
+        unsigned attribute;
+        long tile;
+        if (content_json_size(doc, patch) != 2 ||
+            !integer(doc, patch, "tile", 255, &tile)) return 0;
+        for (attribute = 0; attribute < sizeof names / sizeof names[0]; attribute++)
+            if (string_is(doc, patch, "attribute", names[attribute])) break;
+        if (attribute == sizeof names / sizeof names[0]) return 0;
+        /* Ordered patches are last-wins. No original pointer, capacity or
+           level-1/4 shared storage is used by authored content. */
+        terrain->attributes[tile] = (uint8_t)attribute;
+    }
+    return 1;
+}
+
 void overkill_level_content_unload(void)
 {
     if (current.id[0]) overkill_level_policy_bind_current(NULL, NULL);
@@ -64,6 +93,7 @@ void overkill_level_content_unload(void)
     overkill_level_waypoints_bind_current(NULL);
     overkill_level_leaders_bind_current(NULL);
     overkill_level_special_paths_bind_current(NULL);
+    overkill_level_terrain_bind_current(NULL);
     overkill_level_special_paths_free(current.special_paths);
     overkill_level_leaders_free(current.leaders);
     overkill_level_waypoints_free(current.waypoints);
@@ -108,7 +138,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     if (!directory || !original_directory) goto done;
     if (snprintf(path, sizeof path, "%s/level.json", directory) >= (int)sizeof path) goto done;
     if (!content_json_load(path, &doc, error, error_size)) goto done;
-    if (!integer(&doc, 0, "version", 12, &version) || (version < 8) ||
+    if (!integer(&doc, 0, "version", 13, &version) || (version < 8) ||
         !content_json_string(&doc, content_json_member(&doc, 0, "id"), next.id, sizeof next.id) ||
         !safe_name(next.id, 0)) goto done;
     compatibility = content_json_member(&doc, 0, "compatibility");
@@ -134,6 +164,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
             !strcmp(unchanged[i], "formations") || !strcmp(unchanged[i], "checkpoints"))) continue;
         if (version >= 10 && !strcmp(unchanged[i], "paths")) continue;
         if (version >= 11 && !strcmp(unchanged[i], "leader_paths")) continue;
+        if (version >= 13 && !strcmp(unchanged[i], "terrain")) continue;
         if (a < 0 && b < 0) continue;
         if (!content_json_equal(&doc, a, &original, b)) {
             snprintf(field_error, sizeof field_error, "%s: independent runtime loading is not implemented yet", unchanged[i]);
@@ -214,6 +245,11 @@ int overkill_level_content_load(const char *directory, const char *original_dire
                                                      &next.leaders, error, error_size)) goto done;
     if (version >= 12 && !overkill_level_special_paths_parse(&doc, &original,
                     &next.special_paths, error, error_size)) goto done;
+    if (version >= 13) {
+        reason = "invalid level-owned terrain attributes";
+        if (!parse_terrain(&doc, &next.terrain)) goto done;
+        next.owns_terrain = 1;
+    }
     overkill_level_content_unload();
     current = next;
     overkill_level_policy_bind_current(
@@ -222,6 +258,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     overkill_level_waypoints_bind_current(current.waypoints);
     overkill_level_leaders_bind_current(current.leaders);
     overkill_level_special_paths_bind_current(current.special_paths);
+    overkill_level_terrain_bind_current(current.owns_terrain ? &current.terrain : NULL);
     memset(&next, 0, sizeof next);
     ok = 1;
 done:

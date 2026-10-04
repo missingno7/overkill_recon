@@ -71,7 +71,7 @@ def fixtures(machine):
     if actual != expected:
         raise AssertionError('canonical resource fixtures differ from the exact oracle')
     bad = []
-    for key, value in (('version', True), ('version', 13), ('profile', 'complete'),
+    for key, value in (('version', True), ('version', 14), ('profile', 'complete'),
                        ('id', '0x34'), ('objects', [])):
         document = copy.deepcopy(actual[0])
         document[key] = value

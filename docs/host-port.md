@@ -11,10 +11,10 @@ native level-binding `LevelDef`. See [engine-model.md](engine-model.md),
 [level-format.md](level-format.md) for the audited boundaries and remaining work.
 The native build consumes six canonical `.lvl` definitions for resources and ordered
 tile attributes, checkpoints, timelines, formations and paths in the original
-initialization layout. Loose version 12 runtime content can independently own a
+initialization layout. Loose version 13 runtime content can independently own a
 decoded map, timeline, formations, semantic checkpoint rows, formation spawn HP,
 checkpoint-restoration rules, music, ordinary fly-off routes, six leader presets,
-slot-hopper geometry and four fixed-topology special routes. Run
+slot-hopper geometry, four fixed-topology special routes and terrain attributes. Run
 `python tests/host/level_def.py --no-build` for their native-vs-oracle binding and
 loader/terrain regression; the canonical six-level path retains its original DS
 bindings.
@@ -55,11 +55,16 @@ against bounded ASM calls and separately authored definitions.
 
 The current content boundary distinguishes engine/runtime state and procedures,
 shared game content, level-specific choices and legacy storage compatibility; see
-`engine-model.md`. Versions 8 through 12 can be loaded from a loose directory with
+`engine-model.md`. Versions 8 through 13 can be loaded from a loose directory with
 `--level`; v9 additionally owns events, formations, checkpoint rows and the two
 formation-member HP parameters. Version 10 additionally owns ordinary fly-off
 waypoint routes; version 11 owns six leader presets and slot-hopper geometry; version
-12 owns special route points and their fixed end topology.
+12 owns special route points and their fixed end topology. Version 13 owns the
+three semantic terrain attributes for all 256 tile IDs, using immutable content
+and the existing mutable `ByteAttributeTable`. Canonical live-stream reads and
+alias effects remain unchanged. `python tests/host/terrain_content.py` compares
+initialization and collision behavior with ASM, tests authored tile 255, longer
+ordered patches, poisoned-source independence and transactional loading.
 Their defaults come from shared generated catalogs, and omitted routes bind those
 immutable presets rather than runtime DS. The event ordinal remains in
 `LevelScriptCursors[behavior_profile]`; the leader ordinal and slot ordinal occupy
@@ -68,7 +73,7 @@ keeps their live DS byte offsets. Map reload performs the original six cursor re
 setting that authored slot to zero; checkpoint restart restores the selected ordinal
 after its backward scroll. Authored Type21 uses a no-active-leader sentinel for the
 otherwise unused `original_level + 1` cursor seed; versions 8 through 10 and canonical
-play retain their existing seed. Terrain, map spawns/drop cycles/parameters,
+play retain their existing seed. Map spawns/drop cycles/parameters,
 departure, encounter, marching, boss geometry and graphics still match an explicit
 original behavior profile, so complete independent gameplay levels and episodes
 remain pending. Shared

@@ -129,7 +129,7 @@ class SpecialPathSchemaTests(unittest.TestCase):
             directory = Path(temp) / "special-path-level"
             duplicate_original(0, directory, "special-path-test")
             document = validate_directory(directory)
-        self.assertEqual(document["version"], 12)
+        self.assertEqual(document["version"], 13)
 
 
 if __name__ == "__main__":

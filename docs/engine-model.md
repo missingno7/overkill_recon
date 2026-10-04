@@ -27,7 +27,7 @@ them; it is not a conversion to a second game-state model.
 |---|---|---|
 | Engine/runtime | Record pools and allocation, movement and combat procedures, RNG, scrolling, collision, rendering/audio services, encounter and script cursors, counters, mutable map cells and checkpoint state | Keep observable execution state in the original memory layout. Authored timeline event ordinals occupy the existing `LevelScriptCursors[behavior_profile]` DS word; canonical timelines keep their original byte offsets there. Preserve procedure order, stale fields, timing and side effects. |
 | Shared game content | Common graphics/resources and common start, end, late-level and title music tracks; shared rules for intro, encounter release and mothership departure | Keep content shared when the original uses one identity or one policy across levels. A shared trigger does not make its selected level resource shared. |
-| Level-specific content | Map, banks and plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations and their spawn HP, semantic checkpoints, paths and leader paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint restoration and level theme | These choices travel with a level definition only where runtime loading supports them. Version 10 owns the ten ordinary fly-off waypoint routes; version 11 adds six leader presets and slot-hopper layout; version 12 owns four fixed-topology special routes. Version 9 owns its map, timeline, formations, arbitrary semantic checkpoint list, formation member HP, checkpoint restoration and music. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
+| Level-specific content | Map, banks and plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations and their spawn HP, semantic checkpoints, paths and leader paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint restoration and level theme | These choices travel with a level definition only where runtime loading supports them. Version 10 owns the ten ordinary fly-off waypoint routes; version 11 adds six leader presets and slot-hopper layout; version 12 owns four fixed-topology special routes; version 13 owns terrain attributes. Version 9 owns its map, timeline, formations, arbitrary semantic checkpoint list, formation member HP, checkpoint restoration and music. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
 | Legacy packaging/compatibility | SHADOW archive distribution, BIC/ENC encodings, original DS/CS tables, pointer slots, aliases, unchecked neighboring reads, marker framing, physical segment wrapping and read/write order | Canonical generated definitions retain live source bindings at each original use point. Authored definitions store their explicit values independently even when equal to canonical values; internal compatibility metadata identifies a live canonical binding without making it a public editing concept. |
 
 This inventory is a working ownership boundary, not a claim that every item is
@@ -37,10 +37,10 @@ audit, including the chooser's `choose.enc` six-slot boundary and unchecked
 seventh-level behavior. Episode progression and fully independent bank,
 spawn-recipe and encounter data remain pending.
 
-The version 12 loose content object owns an immutable source map, timeline, named
+The version 13 loose content object owns an immutable source map, terrain attributes, timeline, named
 formations, checkpoint rows, formation spawn HP, restart/music policies, ordinary
 fly-off routes, six leader paths, slot-hopper geometry and four special paths, with a
-content ID distinct from its original behavior profile. Versions 8 through 11 remain accepted with their
+content ID distinct from its original behavior profile. Versions 8 through 12 remain accepted with their
 earlier content slices. Loading is transactional: a failed
 validation or asset read retains the active content. Map reload copies source tiles
 into the existing mutable map arena; it does not create a second gameplay map.
@@ -68,10 +68,10 @@ initial DS layout. Map recipes, encounter descriptors and authored departure com
 native level data. With all six originals this reproduces every initialization
 byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
-coordinator remain unchanged. The version 12 runtime JSON loader supports copied
+coordinator remain unchanged. The version 13 runtime JSON loader supports copied
 content with a new ID and independent map, timeline, formations, checkpoint rows,
 formation-member HP, checkpoint-restoration rules, music and ordinary fly-off
-waypoint, leader and special routes. Sprite/block/plaque resources, terrain patches,
+waypoint, leader and special routes, and terrain attributes. Sprite/block/plaque resources,
 map-spawn recipes and parameters, group tables,
 departure, encounter, marching formation and boss sections must still match the
 explicit original behavior profile; unsupported edits fail before gameplay.
@@ -82,13 +82,21 @@ shots. All 256 entries start as wall; ordered overrides follow. Preserve duplica
 writes rather than reduce the stream to a dictionary. The legacy terminator is a
 tile ID with no value; tile 255 therefore remains wall. The demo separately clears
 attributes as runtime policy. Patch writes may alter subsequent DS stream reads;
-the native initializer retains this order and does not prebuffer live patches.
+the canonical initializer retains this order and does not prebuffer live patches.
+
+Loose v13 owns these properties as immutable content. Ordered semantic overrides
+compile last-wins into 256 values, including tile 255; initialization restores those
+values to the original mutable runtime table. Authored content has no dependency on
+the legacy stream's pointer, capacity, aliases or terminator. This separates level
+tile properties from engine collision procedures and mutable play state. The map
+head/tail mutations remain separate coordinator and departure rules.
 
 The current binding adapter preserves original filename identities, patch storage
 capacities and the shared level-1/level-4 stream. Conflicting shared definitions,
 longer streams and unbound asset names fail explicitly. These are temporary adapter
-limits, not a proposed editor architecture. A future storage expansion must be
-proved against ordinary state access and unchecked neighboring reads first.
+limits, not a proposed editor architecture. Loose v13 terrain bypasses those
+stream limits with independent immutable content. Remaining storage extractions
+must likewise be proved against state access and unchecked neighboring reads.
 
 Checkpoints name map rows, restored countdown clocks and next-event indices. All
 24 original cursor values resolve to event boundaries, including scripts with
@@ -336,15 +344,15 @@ does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. The loose version 12 loader still requires graphics banks/plaque, terrain
-   attributes, map-spawn recipes/parameters, map-group-drop
+1. The loose version 13 loader still requires graphics banks/plaque,
+   map-spawn recipes/parameters, map-group-drop
    policy, departure, encounter, marching formation and boss data to match an
    original behavior profile.
 2. Palette/HUD identity, level resource selection, chooser/progression behavior,
    unchecked seventh-level reads and remaining enemy parameters still need evidence
    and equivalence coverage.
 
-Loose v12 is a narrow runtime slice, not a fully independent level or episode format.
+Loose v13 is a narrow runtime slice, not a fully independent level or episode format.
 Continue extracting one boundary at a time, retaining unique procedures and the
 canonical live-data path for comparison.
 
@@ -430,7 +438,7 @@ Remaining work toward this endpoint:
    boundaries and level-dependent presentation data.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.
-3. Extend validated runtime loading from the v12 subset to complete level and
+3. Extend validated runtime loading from the v13 subset to complete level and
    episode files, including custom resource references. Shared original data must
    not make an edit to one custom level alter another.
 4. Add permutation regressions: with identical initial gameplay state, inputs and

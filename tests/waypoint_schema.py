@@ -153,7 +153,7 @@ class WaypointSchemaTests(unittest.TestCase):
             directory = Path(temp) / "local-level"
             duplicate_original(0, directory, "local-waypoint-test")
             document = validate_directory(directory)
-            self.assertEqual(document["version"], 12)
+            self.assertEqual(document["version"], 13)
             self.assertEqual(document["id"], "local-waypoint-test")
 
 

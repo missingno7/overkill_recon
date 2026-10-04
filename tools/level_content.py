@@ -2,7 +2,7 @@
 
 Runtime-owned sections include the decoded map, restart rules, music, timeline,
 formations, checkpoints, formation HP, ordinary waypoints, leader scripts/slots
-and special paths. Other sections
+and special paths. Version 13 also owns terrain attributes. Other sections
 must match the selected canonical definition; unsupported edits fail.
 The source stays JSON/raw tiles, with no generated registration or DS slot.
 """
@@ -40,8 +40,8 @@ def validate_directory(directory, originals=None):
     if token_count(document) > 65536:
         raise ValueError('level JSON exceeds runtime token limit')
     validate(document)
-    if document['version'] not in (8, 9, 10, 11, 12) or 'compatibility' not in document:
-        raise ValueError('loose content requires version 8..12 and an explicit original behavior profile')
+    if document['version'] not in (8, 9, 10, 11, 12, 13) or 'compatibility' not in document:
+        raise ValueError('loose content requires version 8..13 and an explicit original behavior profile')
     index = document['compatibility']['original_level']
     original = load(Path(originals or ROOT / 'levels/original') / f'level{index}.lvl')
     supported = {'id', 'version', 'compatibility', 'resources', 'music', 'checkpoint_restart'}
@@ -68,6 +68,8 @@ def validate_directory(directory, originals=None):
         supported.add('leader_paths')
         if 'leader_paths' not in document:
             raise ValueError('version 11 loose content requires a leader_paths object (empty for defaults)')
+    if document['version'] >= 13:
+        supported.add('terrain')
     for name in (set(original) | set(document)) - supported:
         if original.get(name) != document.get(name):
             raise ValueError(f'{name}: independent runtime loading is not implemented yet')
@@ -99,7 +101,7 @@ def duplicate_original(index, directory, identity, music=None):
     if directory.exists() and any(directory.iterdir()):
         raise ValueError('output directory must be empty; existing level content is not overwritten')
     document = copy.deepcopy(load(ROOT / 'levels/original' / f'level{index}.lvl'))
-    document.update(version=12, id=identity, compatibility={'original_level': index})
+    document.update(version=13, id=identity, compatibility={'original_level': index})
     columns, rows = original_map_dimensions(index)
     document['resources']['map'] = {'path': 'map.bin', 'encoding': 'tile-grid',
                                   'columns': columns, 'rows': rows}

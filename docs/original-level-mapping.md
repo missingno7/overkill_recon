@@ -3,7 +3,7 @@
 Initial audit baseline: commit `9377201`, native SDL3 and shared DOS C. The inventory
 below identifies sources and semantic boundaries; the ASM/C source remains the
 authority for numeric values. Re-run `rg -n LevelIndex c host -g '*.c'` when extending
-this inventory. Version 12 supports only a partial loose runtime representation;
+this inventory. Version 13 supports only a partial loose runtime representation;
 complete independent levels and episodes are not claimed.
 
 ## Inventory
@@ -14,7 +14,7 @@ complete independent levels and episodes are not claimed.
 | Sprite/block banks | Resource metadata | `LevelBankFiles`; `load_level_graphics` | Native resource view; blocks load before sprites despite opposite table order |
 | Plaque | Resource metadata | `PlaqueFiles`; `load_level_graphics` | Native resource view; plaque numbering does not equal level numbering |
 | Common graphics | Resource metadata shared by all levels | `load_common_graphics`, adapter decoders in `host/graphics_decode.c` | Remains shared; not duplicated in level fixtures |
-| Tile collision properties | Pure data | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Extracted to semantic ordered patches in `.lvl`; native build binds them into existing storage; levels 1/4 remain shared |
+| Tile collision properties | Pure data + legacy shared storage | `AttributePatchPointers`, `AttributePatches*`, `ByteAttributeTable`; `levels.c`, `terrain.c`, shots/pods | Canonical live patch reads and levels 1/4 shared storage remain. Loose v13 compiles semantic ordered overrides into immutable level-owned attributes for all 256 tiles; the original runtime table still holds mutable play state |
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Last five rows extracted into departure data; first two forced rows/placement positions remain shared rules |
 | Opening ambush | Shared encounter behavior + per-level leader/event/path data | First `LevelScript0..5` event at clock 272, `Formation39..44`, `start_leader_script`, `type13_formation_leader` | Opening events/formations/routes extracted; shared scroll-hold, release delay and early-stage weapon/pod/render policies remain implicit |
 | Mothership departure | Shared sequence data + procedural state machine | `LevelEndMapRows`, `Type53SpawnTable`, `AutopilotWaypointA/B`, `scroll_forward_and_check_level_end`, `run_level_end_sequence` | Five rows, four animated parts and both waypoints extracted with independent authored data; trigger/extra-record/refill/music rules remain; distinct from combat bosses |

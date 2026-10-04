@@ -43,7 +43,7 @@ def validate(document):
     if 'compatibility' in document:
         fields.add('compatibility')
         compatibility = document['compatibility']
-        if (document.get('version') not in (8, 9, 10, 11, 12) or profile != 'level-bindings' or
+        if (document.get('version') not in (8, 9, 10, 11, 12, 13) or profile != 'level-bindings' or
                 not isinstance(compatibility, dict) or set(compatibility) != {'original_level'} or
                 type(compatibility['original_level']) is not int or
                 not 0 <= compatibility['original_level'] < 6):
@@ -52,7 +52,7 @@ def validate(document):
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or len(document['id']) > 127 or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):
@@ -62,10 +62,10 @@ def validate(document):
         raise ValueError('resources must specify map, sprites, blocks and plaque')
     for role, name in resources.items():
         if role == 'map' and isinstance(name, dict):
-            if (document['version'] not in (8, 9, 10, 11, 12) or set(name) != {'path', 'encoding', 'columns', 'rows'} or
+            if (document['version'] not in (8, 9, 10, 11, 12, 13) or set(name) != {'path', 'encoding', 'columns', 'rows'} or
                     name['encoding'] != 'tile-grid' or type(name['columns']) is not int or
                     name['columns'] != 13 or type(name['rows']) is not int or name['rows'] != 288):
-                raise ValueError('local map requires version 8..12 and a 13 by 288 tile-grid')
+                raise ValueError('local map requires version 8..13 and a 13 by 288 tile-grid')
             if (not isinstance(name['path'], str) or len(name['path']) > 1023 or not re.fullmatch(
                     r'[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\.bin', name['path'])):
                 raise ValueError('local map path must be a safe relative .bin path')
@@ -86,8 +86,9 @@ def validate(document):
         for patch in patches:
             if not isinstance(patch, dict) or set(patch) != {'tile', 'attribute'}:
                 raise ValueError('each attribute patch must specify tile and attribute')
-            if type(patch['tile']) is not int or not 0 <= patch['tile'] < 255:
-                raise ValueError('patch tile must be 0..254; 255 terminates the legacy stream')
+            maximum = 255 if document['version'] >= 13 and 'compatibility' in document else 254
+            if type(patch['tile']) is not int or not 0 <= patch['tile'] <= maximum:
+                raise ValueError('patch tile must be 0..254, or 0..255 for version 13 loose terrain')
             if not isinstance(patch['attribute'], str) or patch['attribute'] not in TILE_ATTRIBUTES:
                 raise ValueError('unknown tile attribute')
     if 'checkpoints' in document:
@@ -174,6 +175,8 @@ def validate(document):
 
 def encode_attribute_patches(terrain):
     """Validated semantic patches -> ordered legacy pairs and tile-only terminator."""
+    if any(patch['tile'] == 255 for patch in terrain['attribute_patches']):
+        raise ValueError('tile 255 attributes require loose terrain loading, not legacy DS binding')
     return bytes(value for patch in terrain['attribute_patches']
                  for value in (patch['tile'], TILE_ATTRIBUTES[patch['attribute']])) + b'\xff'
 

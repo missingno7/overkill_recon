@@ -2,6 +2,18 @@
 #include "game.h"
 #include "level_timeline.h"
 
+static const LevelTerrain *current_terrain;
+
+void overkill_level_terrain_bind_current(const LevelTerrain *terrain)
+{
+    current_terrain = terrain;
+}
+
+const LevelTerrain *overkill_level_terrain_current(void)
+{
+    return current_terrain;
+}
+
 void overkill_level_def(uint16_t level_index, LevelDef *definition)
 {
     /* Each original table has its own stride. Keep all word indices, including
@@ -29,6 +41,11 @@ void overkill_initialize_tile_attributes(uint16_t patch_binding)
     word i, cursor;
     byte tile, attribute;
 
+    if (current_terrain) {
+        for (i = 0; i < BYTE_ATTRIBUTE_COUNT; i++)
+            ByteAttributeTable[i] = current_terrain->attributes[i];
+        return;
+    }
     for (i = 0; i < BYTE_ATTRIBUTE_COUNT; i++) ByteAttributeTable[i] = TILE_WALL;
     /* Reset before reading the binding, and read each pair before its write.
        Live DS streams may alias the output or wrap past FFFFh. Do not snapshot

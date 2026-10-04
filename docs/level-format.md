@@ -31,7 +31,7 @@ read order. A live marker must match the original policy exactly. Omit the marke
 for authored content: explicit values are independently owned even when identical
 to an original list or tune. No shared source table is overwritten.
 
-## Loose content test path (versions 8 through 12)
+## Loose content test path (versions 8 through 13)
 
 A directory contains `level.json` (a full copied definition) and a decoded map:
 
@@ -84,7 +84,8 @@ path-following implementation used by canonical play. Version 11 additionally ow
 the six leader presets and the slot-hopper geometry through the existing leader
 procedures and global cursor words. Version 12 additionally owns four special-path
 payloads while retaining their fixed original end topology and existing readers.
-The loader still requires sprite, block and plaque resources, terrain attributes,
+Version 13 additionally owns terrain tile attributes, including tile 255.
+The loader still requires sprite, block and plaque resources,
 map-spawn recipes and parameters, map group drops, departure, encounter, marching
 formation and boss definitions to match the selected profile. Version 10 may replace
 the ten ordinary fly-off routes; version 11 may replace the six leader presets and
@@ -96,9 +97,9 @@ cell are rejected. No version supplies independent graphics banks, the remaining
 gameplay sections, or episode progression.
 
 `levels/examples/copied-planet` is a generated seventh identity using level 2's
-behavior/graphics and tune 9. Its copied content is version 12 and owns edited
+behavior/graphics and tune 9. Its copied content is version 13 and owns edited
 ordinary, leader and special routes; `tools/level_content.py duplicate` also creates
-version 12 copies while the six canonical original fixtures remain unchanged at version 9.
+version 13 copies while the six canonical original fixtures remain unchanged at version 9.
 `tools/level_maps.py` imports all six historical BIC
 maps; tests compare the resulting bytes against the existing packed decoder.
 The archive is a legacy distribution source, not the custom map namespace.
@@ -187,6 +188,21 @@ Native live streams retain unchecked raw attributes and DS alias effects as
 compatibility behavior. The initializer resets output before reading its binding,
 then reads each pair before writing it. Prebuffering or reordering live patches
 can change later reads. Arbitrary raw values are not public property names.
+
+Loose version 13 uses the same semantic `terrain` section, compiling its ordered
+patches into an immutable 256-entry level-owned definition. The three names and
+`default: "wall"` remain the established model. Duplicate overrides are last-wins;
+their count is bounded by the JSON input limits rather than a historical stream's
+capacity. All tile IDs 0..255 are available. No DS pointer, terminator or shared
+level-1/4 storage participates in this compilation. Attempting to encode tile 255
+into a legacy DS patch stream fails explicitly.
+
+Initialization copies this content into the original mutable `ByteAttributeTable`
+at the same coordinator stage. Terrain movement, ship/pod collision, spawn-column
+selection and player-shot checks continue to read that runtime table. Demo clears
+remain runtime policy; reinitializing restores the level's owned values. Canonical
+play and loose versions 8..12 retain the live stream path described above. Forced
+map-head rows and departure map-tail rows remain separate coordinator data/rules.
 
 ## Checkpoints
 
@@ -996,7 +1012,7 @@ from their JSON, consumed by `host/map_recipes.c`. The same evaluator handles ed
 recipes without rewriting enemy behavior or introducing copied runtime records.
 
 Canonical original files are still bound at build time. Loose runtime JSON loading
-for versions 8 through 12 is available for the explicitly supported independent
+for versions 8 through 13 is available for the explicitly supported independent
 sections; it does not allocate arbitrary graphics banks or make the remaining source
 tables independent. The canonical adapter derives capacities and shared storage from the
 exact oracle; it rejects unbound filenames, oversized streams and conflicting
@@ -1032,6 +1048,8 @@ python tools/difftest.py
 python tools/host.py
 python tests/host/level_def.py --no-build
 python tests/host/terrain.py --no-build
+python tests/host/terrain_content.py
+python tests/terrain_schema.py
 python tests/host/checkpoints.py --no-build
 python tests/host/timeline.py --no-build
 python tests/host/timeline_content.py
@@ -1058,8 +1076,10 @@ substitutions match at the native and ASM boundaries; they do not establish deco
 pixel parity. Existing graphics/native suites remain responsible for that.
 The checkpoint suite compares full physical memory after restart for all original
 entries, wrapped level aliases and a structured checkpoint edit, including restored
-clocks/cursors, map reload/reset and scroll-to-row behavior. The loose-content
-runtime suite validates transactional v8 through v12 loading, independent timeline,
+clocks/cursors, map reload/reset and scroll-to-row behavior. The terrain-content
+suite also compares a checkpoint restart with edited owned tile properties, an
+equivalent ASM stream, and the existing map/event-cursor checks. The loose-content
+runtime suite validates transactional v8 through v13 loading, independent timeline,
 formation and route data, checkpoint ordinals, and rejection at remaining profile-equality
 boundaries.
 The timeline suite exercises all 138 original events and 52 referenced formations

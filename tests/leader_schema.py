@@ -147,13 +147,13 @@ class LeaderSchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exceed 65535"):
                 validate_authored_leader_paths(document)
 
-    def test_format_rejects_v12_but_canonical_fixtures_validate(self):
+    def test_format_rejects_future_version_but_canonical_fixtures_validate(self):
         originals = [load(path) for path in original_paths()]
         self.assertTrue(all(document["version"] == 9 for document in originals))
         for document in originals:
             validate(document)
         unsupported = copy.deepcopy(originals[0])
-        unsupported["version"] = 13
+        unsupported["version"] = 14
         with self.assertRaisesRegex(ValueError, "unsupported level version"):
             validate(unsupported)
 

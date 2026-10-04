@@ -25,6 +25,15 @@ enum TileAttribute {
     TILE_SHOT_PERMEABLE_WALL = 2
 };
 
+/* Immutable level content; ByteAttributeTable remains the mutable play state.
+   Authored tile 255 has no sentinel meaning. */
+typedef struct LevelTerrain {
+    uint8_t attributes[256];
+} LevelTerrain;
+
+void overkill_level_terrain_bind_current(const LevelTerrain *terrain);
+const LevelTerrain *overkill_level_terrain_current(void);
+
 void overkill_level_def(uint16_t level_index, LevelDef *definition);
 uint16_t overkill_level_resource_name(uint16_t binding);
 void overkill_initialize_tile_attributes(uint16_t patch_binding);
