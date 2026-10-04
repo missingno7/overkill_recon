@@ -160,7 +160,8 @@ and invader descriptors and move burster HP/animation policies between slots.
 Authored tests independently change phase thresholds, HP, variant preservation,
 motion, sprite/X and damage eligibility. Live identity aliases verify the original
 read after type/sprite writes; no cached level selection replaces that read.
-Boss assembly/part offsets and remaining enemy/member parameters remain unresolved data.
+Boss setup/member offsets now use the descriptor below; remaining enemy/member
+parameters are still unresolved data.
 
 `tools/level_invaders.py` extracts the 24 targets from `InvaderFormation` and
 curates the two march delay tier lists from maintained scalar decisions. The slot
@@ -188,12 +189,29 @@ authored reload tiers. Both clocks run before records, not in TickFrameTimers.
 The new descriptor selects data; it does not move latch updates, reset march state
 on level selection, or alter type80's leader-end gate.
 
+`tools/level_boss.py` derives the four geometry pairs from `BossPartOffsets` and
+curates the small setup immediates in `EncounterSegBossLevel` and
+`InitSegBossPartRecord`. Public roles map privately to types 76h..79h; core conversion
+precedes allocation of anchor, upper-right and lower-right. Initial Y is zero for
+every part, whereas later geometry places the core/lower-right at Y + 32.
+Canonical placement retains live DS reads after core fire and Y-before-X mutation;
+edited geometry is separate immutable content. Existing movement, combat and linked
+destruction remain procedural. Full-memory comparisons cover allocation failure,
+stale/zero/repeated links, release, signed clamps, wrap and geometry/global aliases.
+Edited builds also exercise a moved director/boss descriptor and independently
+authored HP, sprites, spawn positions and geometry, without changing source tables.
+
+Failed-setup comparisons establish that reverse scanning zeroes the newest part,
+whose release explodes the other linked parts. Later visits skip their explosion
+types, preserving their initialized HP. Explicit authored-output expectations encode
+that observed order; the runtime retains the original cleanup procedure.
+
 Level-6 branches and extra map/bank entries are retained. Normal selection reaches
 six levels, but unchecked/wrapped accesses are tested rather than normalized.
 
 ## Open evidence work
 
 Correlate decoded map-cell occurrences with recipes and every mutation path; build
-a behavior-name registry from actual uses; identify remaining boss/invader parameters
+a behavior-name registry from actual uses; identify remaining enemy/member parameters
 without changing implementation order; compare complete affected state for every
 new extraction. No enemy-family abstraction is locked by these data extractions.

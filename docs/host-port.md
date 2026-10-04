@@ -24,6 +24,10 @@ levels 0/3/4/5 now use one evaluator. Group compatibility retains preparation an
 membership order while sharing the original live drop table.
 `python tests/host/map_recipes.py --no-build` checks all safe cells, converted-action
 boundaries, row integration and authored edits; remaining recipes retain their handlers.
+Segmented-boss health, sprites, spawn positions and placement offsets now come from
+per-level data. Unique construction/combat/destruction procedures retain their
+allocation and stale-pointer semantics; `tests/host/boss_data.py` compares them
+against bounded ASM calls and separately authored definitions.
 
 ```powershell
 python tools/host.py
@@ -81,6 +85,7 @@ python tests/host/checkpoints.py --no-build
 python tests/host/departure.py --no-build
 python tests/host/encounter_data.py --no-build
 python tests/host/invader_data.py --no-build
+python tests/host/boss_data.py --no-build
 python tests/host/ui_flows.py --no-build
 python tests/host/runtime.py
 python tests/host/adlib_sequence.py

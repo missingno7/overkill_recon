@@ -98,8 +98,7 @@ constraints pending further evidence and storage migration.
 Canonical definitions include routes used by their formations and directors,
 including the boss anchor. The demo route and unreferenced Type4A route remain
 in DS and have supported codecs, but are not invented level dependencies.
-Boss parts remain pending. Encounter selection now uses the
-per-level descriptors described below.
+Boss member data and encounter selection now use per-level descriptors described below.
 
 The combat director has four demonstrated choices: segmented boss, fallers then
 invaders, leader path, and fallers then burster. A level's `encounter` section
@@ -137,6 +136,19 @@ fire-pulse consumption remain in the engine. Leader initialization still resets
 march state for every leader, and the type-80 reader still uses the march leader's
 end identity. Initial step, edges, drop distance and member behavior parameters
 remain procedural defaults; this extraction does not make whole openings portable.
+
+The segmented boss has four fixed roles: anchor, upper-right, core and lower-right.
+Its definition separates initial record positions from later anchor-relative offsets:
+the lower parts begin at Y zero and acquire their 32-pixel offsets on subsequent
+updates. Common health and each role's sprite are data; the director's conversion,
+ordered allocation and linked damage/destruction are one unique engine procedure.
+This does not imply a generalized boss framework. Canonical offsets remain live DS;
+edited geometry has independent per-level storage. Core fire precedes offset reads,
+and placement writes/clamps Y before reading X, preserving physical aliases.
+Failure retains the reverse smart-bomb pass and stale part pointers. The first
+destroyed part has zero HP; parts exploded through its release keep initialized HP
+because later smart-bomb visits skip explosion types. These rules explain why a
+clean-looking construction rollback would change observable behavior.
 
 Map recipes cover all level-1 actions and fixed-field choices, clear-only cells
 and a group-only hole across levels 0/3/4/5. A recipe names the existing enemy behavior,
@@ -176,7 +188,7 @@ does not disable actions that were procedural when that definition was written.
 1. Remaining map recipes: conditional groups, center-facing/offset placement,
    RNG-dependent selection, retained stale group fields and exceptional scan-cursor
    results. Compare every conversion against the original handler before dispatch.
-2. Boss parts, remaining formation/enemy parameters and level-specific defaults,
+2. Remaining formation/enemy parameters and level-specific defaults,
    parameters, retaining unique procedural implementations initially.
 
 Only after those boundaries pass should the native game load full external levels
@@ -258,7 +270,7 @@ they are not yet loaded from arbitrary files when the executable starts.
 
 Remaining work toward this endpoint:
 
-1. Complete map recipes and drop rules, boss data and remaining formation parameters, reset rules
+1. Complete map recipes and drop rules, remaining formation/enemy parameters, reset rules
    and the remaining level-dependent gameplay and presentation parameters.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.

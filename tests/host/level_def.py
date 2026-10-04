@@ -140,6 +140,7 @@ def import_checks(machine):
         del document['departure']
         del document['encounter']
         del document['marching_formation']
+        document.pop('boss', None)
     if bind_level_documents(machine, legacy) != original:
         raise AssertionError('resource-only profile no longer preserves original terrain')
     bad = []

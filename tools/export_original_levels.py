@@ -13,6 +13,7 @@ from level_map_recipes import original_map_spawns
 from level_departure import departure_definition
 from level_encounter import original_encounter
 from level_invaders import original_invader_slots, original_marching_formation
+from level_boss import original_boss
 import argparse
 from pathlib import Path
 import struct
@@ -41,7 +42,7 @@ def definitions(machine):
         encounter = original_encounter(level)
         if encounter['kind'] == 'invader_formation':
             encounter['slots'] = original_invader_slots(machine)
-        documents.append(validate({
+        document = {
             'format': 'overkill-level', 'version': 2,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
@@ -53,7 +54,10 @@ def definitions(machine):
             'departure': departure_definition(machine),
             'encounter': encounter,
             'marching_formation': original_marching_formation(level),
-        }))
+        }
+        if encounter['kind'] == 'segmented_boss':
+            document['boss'] = original_boss(machine)
+        documents.append(validate(document))
     return documents
 
 

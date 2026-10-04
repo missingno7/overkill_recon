@@ -1,4 +1,54 @@
 {
+  "boss": {
+    "hit_points": 200,
+    "kind": "segmented",
+    "parts": {
+      "anchor": {
+        "offset": {
+          "dx": 0,
+          "dy": 0
+        },
+        "spawn_position": {
+          "x": 0,
+          "y": 0
+        },
+        "sprite": 32
+      },
+      "core": {
+        "offset": {
+          "dx": 0,
+          "dy": 32
+        },
+        "spawn_position": {
+          "x": 0,
+          "y": 0
+        },
+        "sprite": 34
+      },
+      "lower_right": {
+        "offset": {
+          "dx": 32,
+          "dy": 32
+        },
+        "spawn_position": {
+          "x": 32,
+          "y": 0
+        },
+        "sprite": 35
+      },
+      "upper_right": {
+        "offset": {
+          "dx": 32,
+          "dy": 0
+        },
+        "spawn_position": {
+          "x": 32,
+          "y": 0
+        },
+        "sprite": 33
+      }
+    }
+  },
   "checkpoints": [
     {
       "map_row": 12,

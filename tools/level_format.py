@@ -11,6 +11,7 @@ from level_map_recipes import validate_map_spawns
 from level_departure import validate_departure
 from level_encounter import validate_encounter
 from level_invaders import validate_marching_formation
+from level_boss import validate_boss
 import argparse
 from pathlib import Path
 import re
@@ -31,7 +32,7 @@ def validate(document):
         if 'timeline' in document or 'formations' in document:
             fields.update(('timeline', 'formations'))
         fields.update(name for name in ('paths', 'leader_paths', 'map_spawns', 'departure', 'encounter',
-                                       'marching_formation') if name in document)
+                                       'marching_formation', 'boss') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
@@ -139,6 +140,7 @@ def validate(document):
     validate_departure(document)
     validate_encounter(document)
     validate_marching_formation(document)
+    validate_boss(document)
     return document
 
 

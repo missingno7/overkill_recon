@@ -2,10 +2,11 @@
 
 Version 2 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
-mothership departure data, encounter descriptors and marching-formation timing;
+mothership departure data, encounter descriptors, marching-formation timing and
+segmented-boss member data;
 the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
-playable level yet. Independent map storage, remaining spawn recipes and boss/member parameters
+playable level yet. Independent map storage, remaining spawn recipes and enemy/member parameters
 await extraction.
 Version 1 remains accepted with its original narrower map-recipe scope. Version 2
 adds grouped/no-spawn recipes and expands the converted cells. This version boundary
@@ -439,7 +440,7 @@ retains the original slot's rules in older partial profiles. Native selection fo
 out-of-range word identities also retains original fallback arithmetic, an internal
 migration contract rather than a public level identity. These descriptors currently
 refer to the existing boss, invader and leader implementations/stream bindings;
-complete dependency validation and independent boss storage remain pending.
+complete dependency validation and independent path storage remain pending.
 
 `invader_formation` may include `slots`, an ordered list of 24 signed playfield
 `{"x": ..., "y": ...}` points. Level 3 exports its actual three-row target list
@@ -503,6 +504,53 @@ Leader setup still initializes state for all leader kinds. Initial step magnitud
 edge coordinates, drop distance and member/dive behavior remain procedural defaults.
 Type80 still uses the march-leader end cursor; enabling this clock alone does not
 make another opening a complete march encounter.
+
+## Segmented boss
+
+The optional `boss` section describes the original unique four-part boss. It does
+not replace its setup, movement, combat or linked destruction procedures.
+Canonical level 0 includes this section; omission retains the original parameters
+for older partial definitions. Validation requires its `segmented_boss` director;
+the existing `boss_anchor` path binding remains a gameplay dependency.
+
+```json
+{
+  "boss": {
+    "kind": "segmented",
+    "hit_points": 200,
+    "parts": {
+      "anchor": {"sprite": 32, "spawn_position": {"x": 0, "y": 0}, "offset": {"dx": 0, "dy": 0}},
+      "upper_right": {"sprite": 33, "spawn_position": {"x": 32, "y": 0}, "offset": {"dx": 32, "dy": 0}},
+      "core": {"sprite": 34, "spawn_position": {"x": 0, "y": 0}, "offset": {"dx": 0, "dy": 32}},
+      "lower_right": {"sprite": 35, "spawn_position": {"x": 32, "y": 0}, "offset": {"dx": 32, "dy": 32}}
+    }
+  }
+}
+```
+
+All four roles are required. Health and sprite indices are unsigned words;
+spawn coordinates and offsets are signed words. Spawn positions are the initial
+record values, before scrolling. Offsets describe later placement relative to the
+moving boss anchor; they are not interchangeable with those initial values. Each
+placement adds Y, clamps negative signed Y to zero, then adds X without clamping.
+The core fires before these placement reads. Word arithmetic and mutation order
+remain engine semantics.
+
+Construction converts the director to the core, then allocates anchor, upper-right
+and lower-right records in that order. Side-part X is initially zero and written
+again after type/sprite assignment. Other stale fields retain their existing rules.
+Allocation failure runs the original reverse smart-bomb pass and linked explosion
+sequence, including zero, repeated or stale pointers; it is not rollback. The first
+destroyed initialized part loses its HP, while linked parts already converted to
+explosions retain theirs. Damage sharing, flash propagation, firing, movement speed,
+path resets and destruction stay procedural because this is one unique behavior.
+
+`tools/level_boss.py` extracts geometry from `BossPartOffsets` and curates the small
+setup constants from `EncounterSegBossLevel`/`InitSegBossPartRecord`. Canonical
+geometry stays live in DS, preserving aliases and writes between reads. Authored
+geometry has independent immutable per-level storage and never patches that table.
+Setup parameters use per-level descriptors; unknown identities retain original
+parameters independently of edits to level 0. Role-to-handler IDs remain private.
 
 ## Export and validation
 
@@ -582,6 +630,7 @@ python tests/host/map_recipes.py --no-build
 python tests/host/departure.py --no-build
 python tests/host/encounter_data.py --no-build
 python tests/host/invader_data.py --no-build
+python tests/host/boss_data.py --no-build
 python tests/host/runtime.py
 ```
 
@@ -638,3 +687,10 @@ March comparisons cover all tier boundaries, zero/expiry and byte wrap, edge/dro
 latches, ordered member fire consumption and march policy permutations. Authored
 tiers use explicit expected reload bytes while every other state/memory byte must
 match the equivalent original pass. Canonical initialization remains byte-identical.
+The boss-data suite compares full DS/physical memory for construction, partial/full
+allocation, stale and repeated links, release, placement, core firing, signed/word
+boundaries and live geometry aliases. Alternate builds move boss content between
+slots and edit health, sprites, initial positions and offsets. Authored setup uses
+explicit expected output words, including failed-setup HP preservation; placement
+uses equivalent oracle source geometry with only those static fixture inputs removed
+from the final comparison. Other identities retain original data.

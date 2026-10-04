@@ -65,6 +65,7 @@
 #ifdef OVERKILL_HOST
 #include "level_encounter.h"
 #include "level_invaders.h"
+#include "level_boss.h"
 #endif
 
 /* c/movement.c */
@@ -1222,9 +1223,27 @@ word count_live_enemies(void)
     return count;
 }
 
-/* A live size class 2 KIND_ENEMY with 200 HP at (0, 0); draw pass and flash left stale. */
+/* Write only the original boss initializer fields; draw pass and flash stay stale. */
+#ifdef OVERKILL_HOST
+static void init_seg_boss_member(Record *b, word hp, word x, word y)
+{
+    b->hit_points = hp;
+    b->x = x;
+    b->y = y;
+    b->size_class = 2;
+    b->slot_index = 0xFFFF;
+    b->status = 1;
+    b->kind = KIND_ENEMY;
+}
+#endif
+
 void init_seg_boss_part_record(Record *b)
 {
+#ifdef OVERKILL_HOST
+    LevelBoss boss;
+    overkill_level_boss(LevelIndex, &boss);
+    init_seg_boss_member(b, boss.hit_points, 0, 0);
+#else
     b->hit_points = 0xC8;
     b->x = 0;
     b->y = 0;
@@ -1232,6 +1251,7 @@ void init_seg_boss_part_record(Record *b)
     b->slot_index = 0xFFFF;
     b->status = 1;
     b->kind = KIND_ENEMY;
+#endif
 }
 
 /* The level 4 director (Type21LeaderPath): the far body in c/spawn.c, then the finish. */
@@ -1365,39 +1385,81 @@ void encounter_invader_level(Record *r)
 void encounter_seg_boss_level(Record *r)
 {
     Record *b;
+#ifdef OVERKILL_HOST
+    LevelBoss boss;
+#endif
 
     if (count_live_enemies() == 1) {
+#ifdef OVERKILL_HOST
+        overkill_level_boss(LevelIndex, &boss);
+#endif
         SegBossX = 0;
         SegBossY = 0;
         SegBossActive = 1;
         SegBossPathCursor = GAME_OFFSET(BossPath);
         r->type = 0x78;
+#ifdef OVERKILL_HOST
+        r->sprite = boss.parts[BOSS_CORE].sprite;
+        r->hit_points = boss.hit_points;
+        r->x = boss.parts[BOSS_CORE].spawn_x;
+        r->y = boss.parts[BOSS_CORE].spawn_y;
+#else
         r->sprite = 0x22;
         r->hit_points = 0xC8;
         r->x = 0;
         r->y = 0;
+#endif
         r->size_class = 2;
         r->slot_index = 0xFFFF;
         SegBossCore = GAME_OFFSET(r);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
+#ifdef OVERKILL_HOST
+        init_seg_boss_member(b, boss.hit_points, boss.parts[BOSS_ANCHOR].spawn_x,
+                             boss.parts[BOSS_ANCHOR].spawn_y);
+#else
         init_seg_boss_part_record(b);
+#endif
         b->type = 0x76;
+#ifdef OVERKILL_HOST
+        b->sprite = boss.parts[BOSS_ANCHOR].sprite;
+#else
         b->sprite = 0x20;
+#endif
         SegBossAnchor = GAME_OFFSET(b);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
+#ifdef OVERKILL_HOST
+        /* The original writes zero X during initialization, then the side-part
+           X after type and sprite. Keep both stages, including live aliases. */
+        init_seg_boss_member(b, boss.hit_points, 0, boss.parts[BOSS_UPPER_RIGHT].spawn_y);
+#else
         init_seg_boss_part_record(b);
+#endif
         b->type = 0x77;
+#ifdef OVERKILL_HOST
+        b->sprite = boss.parts[BOSS_UPPER_RIGHT].sprite;
+        b->x = boss.parts[BOSS_UPPER_RIGHT].spawn_x;
+#else
         b->sprite = 0x21;
         b->x = 0x20;
+#endif
         SegBossPart77 = GAME_OFFSET(b);
         b = find_free_record_pool_a();
         if (b == NO_RECORD) goto failed;
+#ifdef OVERKILL_HOST
+        init_seg_boss_member(b, boss.hit_points, 0, boss.parts[BOSS_LOWER_RIGHT].spawn_y);
+#else
         init_seg_boss_part_record(b);
+#endif
         b->type = 0x79;
+#ifdef OVERKILL_HOST
+        b->sprite = boss.parts[BOSS_LOWER_RIGHT].sprite;
+        b->x = boss.parts[BOSS_LOWER_RIGHT].spawn_x;
+#else
         b->sprite = 0x23;
         b->x = 0x20;
+#endif
         SegBossPart79 = GAME_OFFSET(b);
     }
     finish_record_update(r);

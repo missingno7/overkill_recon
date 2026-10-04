@@ -43,6 +43,7 @@
 #include "level_def.h"
 #include "level_departure.h"
 #include "level_invaders.h"
+#include "level_boss.h"
 #undef tick_frame_timers
 #endif
 
@@ -350,7 +351,14 @@ void type50_steer_home(Record *r)
    runs ScrollRecordThenFinish. */
 void seg_boss_part(Record *r, word part)
 {
+#ifdef OVERKILL_HOST
+    LevelBoss boss;
+    const word *offset;
+    overkill_level_boss(LevelIndex, &boss);
+    offset = boss.offsets + 2 * part;
+#else
     word *offset = BossPartOffsets + 2 * part;
+#endif
 
     if (part == 2) {
         r->direction = DIR_DOWN;

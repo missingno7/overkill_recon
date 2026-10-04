@@ -253,6 +253,9 @@ def main():
     edited = copy.deepcopy(documents)
     for level, source in enumerate(mapping):
         edited[level]['encounter'] = copy.deepcopy(documents[source]['encounter'])
+        edited[level].pop('boss', None)
+        if 'boss' in documents[source]:
+            edited[level]['boss'] = copy.deepcopy(documents[source]['boss'])
     alternate = compile_alternate(ROOT / 'build/host-encounter-data', edited)
     execute(cases, alternate, mapping)
     authored(cases, documents)
