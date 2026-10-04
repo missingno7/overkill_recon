@@ -11,9 +11,9 @@ native level-binding `LevelDef`. See [engine-model.md](engine-model.md),
 [level-format.md](level-format.md) for the audited boundaries and remaining work.
 The native build consumes six canonical `.lvl` definitions for resources and ordered
 tile attributes, checkpoints, timelines, formations and paths in the original
-initialization layout. Loose version 9 runtime content can independently own a
+initialization layout. Loose version 10 runtime content can independently own a
 decoded map, timeline, formations, semantic checkpoint rows, formation spawn HP,
-checkpoint-restoration rules and music. Run
+checkpoint-restoration rules, music and ordinary fly-off waypoint routes. Run
 `python tests/host/level_def.py --no-build` for their native-vs-oracle binding and
 loader/terrain regression; the canonical six-level path retains its original DS
 bindings.
@@ -24,6 +24,10 @@ formation HP/drop behavior and checkpoint restarts against an equivalent legacy
 stream, normalizing only the two cursor-token words whose representations differ.
 `python tests/host/path_data.py --no-build` compares original waypoint/leader streams,
 arrivals/endings, allocation failures and edited route/slot definitions against ASM.
+`python tests/host/waypoint_content.py` compares authored ordinary-route behavior
+while preserving the existing `REC_PATH` cursor. Only the ten ordinary fly-off
+presets are independently owned: special sweep/encounter/boss routes and leader
+scripts remain canonical-profile constrained.
 Map recipe slices compile from `.lvl` definitions into native immutable tables:
 all defined original actions across the six levels now use one evaluator, including
 live crawler sprite offsets, jitter group tests and fuel scan continuation.
@@ -42,14 +46,17 @@ against bounded ASM calls and separately authored definitions.
 
 The current content boundary distinguishes engine/runtime state and procedures,
 shared game content, level-specific choices and legacy storage compatibility; see
-`engine-model.md`. Versions 8 and 9 can be loaded from a loose directory with
+`engine-model.md`. Versions 8, 9 and 10 can be loaded from a loose directory with
 `--level`; v9 additionally owns events, formations, checkpoint rows and the two
-formation-member HP parameters. The event ordinal remains in the existing
+formation-member HP parameters. Version 10 additionally owns ordinary fly-off
+waypoint routes. Their defaults come from the shared generated catalog, and each
+omitted route binds that immutable preset rather than runtime DS. The event ordinal remains in the existing
 `LevelScriptCursors[behavior_profile]` DS word, while canonical execution keeps its
 live byte-offset cursor. Map reload performs the original six cursor resets before
 setting that authored slot to zero; checkpoint restart restores the selected ordinal
-after its backward scroll. Other sections still match an explicit original behavior
-profile, so complete independent gameplay levels and episodes remain pending. Shared
+after its backward scroll. Special routes, leader scripts and other sections still
+match an explicit original behavior profile, so complete independent gameplay levels
+and episodes remain pending. Shared
 start/end/late-level music triggers and the ordered checkpoint map-restoration scan
 remain engine policy. Canonical definitions retain live DS/CS bindings; authored
 fields are independently owned, even when their values equal the original. Resource
@@ -68,7 +75,9 @@ python tests/level_map_import.py
 This copied level has a new content ID, a decoded local map and tune 9, while
 explicitly reusing level 2's original behavior and graphics. Its v9 timeline,
 formations, checkpoints and formation HP are independently owned, even where a
-value matches the source profile. No new source slot or
+value matches the source profile; its v10 ordinary waypoint defaults are also
+independently owned and can be edited without introducing a private path cursor.
+No new source slot or
 archive entry is registered. The loader validates unsupported sections against
 the selected compatibility profile and fails before gameplay when they differ.
 The loose test path repeats one level; ordered episodes remain a separate milestone.

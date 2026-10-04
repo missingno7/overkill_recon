@@ -1,8 +1,8 @@
 """Create/validate a loose level with a new identity and an original behavior profile.
 
 Runtime-owned sections include the decoded map, restart rules, music, timeline,
-formations, checkpoints and formation HP. Other sections must match the selected
-canonical definition; unsupported edits fail.
+formations, checkpoints, formation HP and ordinary waypoint routes. Other sections
+must match the selected canonical definition; unsupported edits fail.
 The source stays JSON/raw tiles, with no generated registration or DS slot.
 """
 import argparse
@@ -12,6 +12,7 @@ from pathlib import Path
 from common import ROOT, write_json
 from level_format import load, validate
 from level_maps import decode_original_map, original_map_dimensions, unsupported_original_map_tiles
+from level_waypoints import validate_authored_waypoints
 
 
 def validate_directory(directory, originals=None):
@@ -38,8 +39,8 @@ def validate_directory(directory, originals=None):
     if token_count(document) > 65536:
         raise ValueError('level JSON exceeds runtime token limit')
     validate(document)
-    if document['version'] not in (8, 9) or 'compatibility' not in document:
-        raise ValueError('loose content requires version 8 or 9 and an explicit original behavior profile')
+    if document['version'] not in (8, 9, 10) or 'compatibility' not in document:
+        raise ValueError('loose content requires version 8..10 and an explicit original behavior profile')
     index = document['compatibility']['original_level']
     original = load(Path(originals or ROOT / 'levels/original') / f'level{index}.lvl')
     supported = {'id', 'version', 'compatibility', 'resources', 'music', 'checkpoint_restart'}
@@ -59,6 +60,9 @@ def validate_directory(directory, originals=None):
         if 'formation_spawn_parameters' in document:
             raise ValueError('formation_spawn_parameters requires version 9')
         supported.add('formation_spawn_parameters')
+    if document['version'] == 10:
+        supported.add('paths')
+        validate_authored_waypoints(document, original)
     for name in (set(original) | set(document)) - supported:
         if original.get(name) != document.get(name):
             raise ValueError(f'{name}: independent runtime loading is not implemented yet')
@@ -90,7 +94,7 @@ def duplicate_original(index, directory, identity, music=None):
     if directory.exists() and any(directory.iterdir()):
         raise ValueError('output directory must be empty; existing level content is not overwritten')
     document = copy.deepcopy(load(ROOT / 'levels/original' / f'level{index}.lvl'))
-    document.update(version=9, id=identity, compatibility={'original_level': index})
+    document.update(version=10, id=identity, compatibility={'original_level': index})
     columns, rows = original_map_dimensions(index)
     document['resources']['map'] = {'path': 'map.bin', 'encoding': 'tile-grid',
                                   'columns': columns, 'rows': rows}

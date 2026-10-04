@@ -1,6 +1,7 @@
 /* Waypoint followers and formation entry, translated from the frozen oracle.
    Remaining callers are C: no ASM entry bridge is needed. Paths remain in the
-   original state segment; this region has no platform calls or private state.
+   original state segment for canonical play. Native authored routes keep their
+   ordinal in REC_PATH and supply immutable points; movement is shared.
 
    SEGMENT: CGAME
    OWNS: Type41FollowPathType41 Type43FollowPathType43 Type44FollowPathType44
@@ -11,6 +12,9 @@
 */
 #include "paths.h"
 #include "enemies.h"
+#ifdef OVERKILL_HOST
+#include "level_waypoints.h"
+#endif
 
 void steer_toward_target(Record *r);
 word steer_to_saved(Record *r);
@@ -21,15 +25,36 @@ word steer_to_saved(Record *r);
 void update_path_follower(Record *r)
 {
     word *point;
+#ifdef OVERKILL_HOST
+    const LevelWaypoint *owned;
+#endif
 
     for (;;) {
+#ifdef OVERKILL_HOST
+        owned = overkill_waypoint_current_point(r->path);
+        if (owned) {
+            SteerTargetY = owned->y + 0x20;
+            SteerTargetX = owned->x;
+        } else {
+#endif
         point = GAME_PTR(word, r->path);
         SteerTargetY = GAME_INDEX(word, point, 0) + 0x20;
         SteerTargetX = GAME_INDEX(word, point, 1);
+#ifdef OVERKILL_HOST
+        }
+#endif
         SteerSpeed = 1;
         if (LevelIndex == 0 || DemoActive == 1) SteerSpeed = 2;
         steer_toward_target(r);
         if (SteerArrived == 0) break;
+#ifdef OVERKILL_HOST
+        if (owned) {
+            /* Ordinary fly-off endpoints are offscreen. If one is reached from
+               unusual authored state, retain it instead of reading another route. */
+            if (owned->terminal) break;
+            r->path++;
+        } else
+#endif
         r->path = (word)(r->path + 4);
     }
 
@@ -59,7 +84,11 @@ void update_path_follower(Record *r)
    also set 20 hit points; the other starters inherit the record's hit points. */
 void start_path_follower(Record *r, word path)
 {
+#ifdef OVERKILL_HOST
+    r->path = overkill_waypoint_start(path);
+#else
     r->path = path;
+#endif
     if (r->type == 0x66 || r->type == 0x67) r->hit_points = 0x14;
     r->type = 0x12;
     update_path_follower(r);

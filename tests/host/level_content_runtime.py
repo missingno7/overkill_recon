@@ -328,6 +328,11 @@ def _custom_headless_case(work: Path) -> None:
         if event["formation"] == original_name:
             event["formation"] = "custom_opening_flight"
     document["timeline"][0]["x"] = 16
+    document["formations"]["custom_opening_flight"]["enemy"] = "path_follower_b"
+    document["paths"]["path_follower_b"] = {
+        "points": [{"x": 96, "y": 48}, {"x": 144, "y": 80}, {"x": 48, "y": 112}],
+        "end": {"kind": "fly_off", "x": 96},
+    }
     _rewrite(content, document)
     validate_directory(content)
     events = runtime._chooser_events(0)

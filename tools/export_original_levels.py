@@ -8,7 +8,8 @@ from extract import mz
 from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
-from level_paths import level_path_definitions
+from level_paths import level_path_definitions, source_paths
+from level_waypoints import ORDINARY_WAYPOINT_NAMES
 from level_map_recipes import original_map_spawns, original_map_spawn_parameters
 from level_departure import departure_definition
 from level_encounter import original_encounter
@@ -195,7 +196,8 @@ def exact_oracle(no_build=False):
 
 
 def export(directory=None, check=False, no_build=False):
-    generated = definitions(exact_oracle(no_build))
+    machine = exact_oracle(no_build)
+    generated = definitions(machine)
     for path, document in zip(original_paths(directory), generated):
         if check:
             if load(path) != document:
@@ -203,6 +205,16 @@ def export(directory=None, check=False, no_build=False):
         else:
             write_json(path, document)
         print(('PASS' if check else 'Exported') + ': ' + path.name)
+    shared = (Path(directory) / 'shared/waypoint-presets.json' if directory else
+              ROOT / 'levels/shared/waypoint-presets.json')
+    sources = source_paths(machine)
+    presets = {name: sources[name][2] for name in ORDINARY_WAYPOINT_NAMES}
+    if check:
+        if read_json(shared) != presets:
+            raise ValueError(f'{shared}: shared waypoint presets differ from the oracle')
+    else:
+        write_json(shared, presets)
+    print(('PASS' if check else 'Exported') + ': ' + shared.name)
 
 
 def main():

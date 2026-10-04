@@ -3,7 +3,7 @@
 Initial audit baseline: commit `9377201`, native SDL3 and shared DOS C. The inventory
 below identifies sources and semantic boundaries; the ASM/C source remains the
 authority for numeric values. Re-run `rg -n LevelIndex c host -g '*.c'` when extending
-this inventory. Version 9 supports only a partial loose runtime representation;
+this inventory. Version 10 supports only a partial loose runtime representation;
 complete independent levels and episodes are not claimed.
 
 ## Inventory
@@ -23,7 +23,7 @@ complete independent levels and episodes are not claimed.
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Canonical build bindings retain 52 referenced layouts and shared storage; loose v9 owns named formations and ordered members. `formation_spawn_parameters` exposes the two existing member HP choices; unused Formation48 remains in canonical DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained. Canonical timeline drops still share DS bindings; loose v9 event drops are owned per event |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py`. Procedures and their global DS path/resource tables still come from the selected behavior profile |
-| Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
+| Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | V10 owns the ten ordinary fly-off presets as flattened semantic points; existing type-12 movement/`REC_PATH` cursor retained. Sweep, encounter and boss routes remain canonical-profile constrained |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `life.c` | Extracted level-3 director's 24 ordered slot targets; live cursor/end and post-allocation read order retained |
@@ -144,14 +144,22 @@ performs the original six cursor resets, then sets the active profile cursor to 
 checkpoint restart restores the selected ordinal after the rewind. Version 8 loose
 content remains accepted with canonical timeline/checkpoint equality.
 
-`tools/level_paths.py` now derives route and leader payloads from source labels.
-The codecs preserve public playfield coordinates, distinct stream endings, shared
-route identities, leader end synchronization and lead-in adjacency. Six level
-fixtures contain their formation/director dependencies. All ten ordinary follower
-bindings, six leaders, sweep routes, encounter and boss routes are exercised against
-ASM. The demo's Type51 path is deliberately outside original level content; Type4A
-has no demonstrated original level reference yet and remains untouched in DS.
-Neither its existence nor a supported binding is evidence of level reachability.
+`tools/level_paths.py` derives route and leader payloads from source labels. The ten
+ordinary readers are type 10, 11, 41, 43, 44, 45, 4A, 51, 66 and 67; each starts
+the shared type-12 follower with one of `SteerPath10/11`, `Type41/43/44/45/4A/51Path`
+or `PathType66/67`. Version 10 supplies one flattened immutable point list and maps
+the existing `REC_PATH` start address to its ordinal. `levels/shared/waypoint-presets.json`
+holds all ten packed defaults, and both original-level export and native code generation
+compare it with the maintained oracle streams. An absent override binds that generated
+shared default, independent from live runtime DS. Canonical execution still uses the
+original live DS address and advances by four bytes per point.
+
+The other readers are not interchangeable: sweep routes have marker/jump and adjacency
+semantics, encounter/boss paths restart their own cursors, and leader scripts synchronize
+through end addresses and special follower markers. Their payloads remain canonical
+profile constraints. The demo Type51 route is one ordinary preset but is not demonstrated
+in original level play; Type4A has no demonstrated original level reference. Neither fact
+establishes further reachability.
 
 `tools/level_map_recipes.py` curates map recipe slices from the maintained cell
 handlers. It is consumed by
