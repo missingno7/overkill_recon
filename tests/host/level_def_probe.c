@@ -4,6 +4,9 @@
 #include "platform_services.h"
 #include <stdlib.h>
 
+/* This bounded oracle comparison selects no external content. */
+int overkill_level_content_copy_map(void) { return 0; }
+
 static void (*service)(word, HostRegisters *);
 
 void level_probe_bind(void (*callback)(word, HostRegisters *))

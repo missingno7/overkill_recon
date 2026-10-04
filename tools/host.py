@@ -57,6 +57,7 @@ def generate_state(out):
     from level_invaders import generate_invader_header
     from level_boss import generate_boss_header
     from level_policies import generate_level_policy_header
+    from level_maps import generate_map_limit_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -68,6 +69,7 @@ def generate_state(out):
     generate_invader_header(out, [load(path) for path in original_paths()], machine)
     generate_boss_header(out, [load(path) for path in original_paths()], machine)
     generate_level_policy_header(out, [load(path) for path in original_paths()], machine)
+    generate_map_limit_header(out)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')
@@ -242,6 +244,11 @@ def build(full=True):
             if source.stat().st_size != item['size'] or sha(source.read_bytes()) != item['sha256']:
                 raise ValueError('original asset mismatch: ' + item['path'])
             shutil.copyfile(source, assets / source.name)
+        from level_format import original_paths
+        levels = out / 'levels/original'
+        levels.mkdir(parents=True, exist_ok=True)
+        for path in original_paths():
+            shutil.copyfile(path, levels / path.name)
         (out / 'saves').mkdir(exist_ok=True)
         licenses = out / 'licenses'
         licenses.mkdir(exist_ok=True)

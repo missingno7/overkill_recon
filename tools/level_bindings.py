@@ -46,7 +46,10 @@ def bind_level_documents(machine, documents):
                 ('sprites', 'LevelBankFiles', level * 4),
                 ('blocks', 'LevelBankFiles', level * 4 + 2),
                 ('plaque', 'PlaqueFiles', level * 2)):
-            name = document['resources'][role].casefold()
+            resource = document['resources'][role]
+            if not isinstance(resource, str):
+                raise ValueError('local resources require loose content loading, not DS binding')
+            name = resource.casefold()
             if name not in filenames:
                 raise ValueError(f'level {level} {role}: asset has no original filename binding: {name}')
             struct.pack_into('<H', state, machine.offset(table) + displacement, filenames[name])

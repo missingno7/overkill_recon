@@ -18,6 +18,33 @@ now would lose observable mutations. Similarly, several path-like streams have
 different formats: waypoint paths, leader scripts, formation slots and invader
 slots must first retain their own semantics.
 
+## Content ownership inventory
+
+The boundary is between static choices and the existing procedures that consume
+them; it is not a conversion to a second game-state model.
+
+| Owner | Concepts | Current rule |
+|---|---|---|
+| Engine/runtime | Record pools and allocation, movement and combat procedures, RNG, scrolling, collision, rendering/audio services, encounter and script cursors, counters, mutable map cells and checkpoint state | Keep observable execution state in the original memory layout. Preserve procedure order, stale fields, timing and side effects. |
+| Shared game content | Common graphics/resources and common start, end, late-level and title music tracks; shared rules for intro, encounter release and mothership departure | Keep content shared when the original uses one identity or one policy across levels. A shared trigger does not make its selected level resource shared. |
+| Level-specific content | Map and banks, plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations, paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint selection/restoration and level theme | These choices travel with a level definition. Restart restoration uses `checkpoint_restart`, with `lookback_rows: 12` and ordered `tile_restorations: [{tile, replacement}]`. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
+| Legacy packaging/compatibility | SHADOW archive distribution, BIC/ENC encodings, original DS/CS tables, pointer slots, aliases, unchecked neighboring reads, marker framing, physical segment wrapping and read/write order | Canonical generated definitions retain live source bindings at each original use point. Authored definitions store their explicit values independently even when equal to canonical values; internal compatibility metadata identifies a live canonical binding without making it a public editing concept. |
+
+This inventory is a working ownership boundary, not a claim that every item is
+already loaded from an external file at runtime. Resource identities still need
+a broader audit, including the chooser's `choose.enc` six-slot boundary and the
+unchecked/seventh-level behavior. The current native adapter remains tied to the
+six original definitions.
+
+The first loose content object owns an immutable source map and restart/music
+policies, plus a content ID distinct from its temporary original behavior profile.
+Loading is transactional: a failed validation or asset read retains the active
+content. Map reload copies source tiles into the existing mutable map arena; it
+does not create a second gameplay map. Independent policies follow current content
+even if the compatibility index changes. All unextracted fields are checked against
+the profile's canonical fixture and rejected if edited. This restriction is an
+explicit migration boundary to remove one demonstrated concept at a time.
+
 ## Initial extraction
 
 The native `LevelDef` binds map, sprite bank, block bank, plaque and ordered tile
@@ -33,8 +60,10 @@ initial DS layout. Map recipes, encounter descriptors and authored departure com
 native level data. With all six originals this reproduces every initialization
 byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
-coordinator remain unchanged. Complete external gameplay definitions and runtime
-JSON loading are still pending.
+coordinator remain unchanged. Complete external gameplay definitions remain pending. A bounded runtime JSON loader
+now supports a copied level with a new content ID and independently owned map,
+checkpoint-restoration rules and music. Unextracted sections must match an explicit
+original behavior profile; unsupported edits fail before gameplay.
 
 Terrain has three observed properties: open, wall, and wall that passes player
 shots. All 256 entries start as wall; ordered overrides follow. Preserve duplicate
@@ -62,6 +91,12 @@ The previous C selection skipped intermediate writes; aliases of a threshold or
 following record into `CheckpointScriptCursor` expose the difference. Two small
 mutated-stream regressions preserve the demonstrated ASM order. Canonical restarts
 remain equivalent; the DOS implementation and load module remain unchanged.
+
+Checkpoint selection and map restoration are separate level choices. The next
+map-reset slice is expected to use `checkpoint_restart.lookback_rows` and ordered
+`tile_restorations`; it must preserve the preceding-map scan, first-match rule,
+replacement ordering and the exact twelve-row boundary. It must remain distinct
+from ordinary spawn mutations and preserve each level's restored cells.
 
 The six scripts contain 138 ordered events referencing 52 shared formations. An
 event names a countdown, formation, origin and group drop; a formation names an
@@ -291,11 +326,12 @@ progression features need evidence or an explicit editing requirement.
 Neither episode loading nor complete swaps are implemented yet. The current
 adapter requires six definitions, binds them by original slot and retains shared
 storage/capacity constraints. Definitions are consumed during the native build;
-they are not yet loaded from arbitrary files when the executable starts.
+complete independent definitions are not yet loaded. The loose-content test path
+loads map, restart and music at startup without adding a seventh original slot.
 
 Remaining work toward this endpoint:
 
-1. Independent event drops, remaining formation/enemy parameters, reset rules
+1. Independent event drops, remaining formation/enemy parameters
    and the remaining level-dependent gameplay and presentation parameters.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.

@@ -21,6 +21,7 @@ from level_format import load, original_paths, validate
 from level_map_recipes import original_map_spawns, map_recipe_bindings, generate_map_recipe_header
 from level_bindings import bind_level_documents
 from world import K
+from level_maps import unsupported_original_map_tiles
 from level_groups import original_map_group_drops, map_group_drop_overrides
 import importlib.util
 
@@ -415,8 +416,7 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older, older_fo
     stale = rng.randbytes(K.POOL_A_COUNT * K.RECORD_SIZE)
     pool = h.offset('PoolA')
     cursor = pool + (K.POOL_A_COUNT - 1) * K.RECORD_SIZE
-    forbidden = {0: {0xFA, 0xFB}, 1: set(), 2: set(), 3: {0xEA, 0xEB},
-                 4: {0xE1, 0xE2}, 5: {0xF0, 0xF1}}
+    forbidden = {level: unsupported_original_map_tiles(level) for level in range(6)}
     count = 0
 
     def write_map(segment, off, data):

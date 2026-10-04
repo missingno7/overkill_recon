@@ -44,6 +44,7 @@ extern void WaitVerticalRetrace(void);
 extern void MenuRequestMusic(void);
 #else
 #include "platform_services.h"
+#include "level_content.h"
 void reset_pool_a_and_upgrades(void);
 word update_all_records(void);
 void tick_refuel(void);
@@ -71,6 +72,9 @@ void run_game_session(word phase, word bp)
             NewGameClearedWord = 0;
             GameOverRequest = 0;
             for (i = 0; i < 4; i++) ScoreBcd[i] = 0;
+#ifdef OVERKILL_HOST
+            if (!overkill_level_content_id())
+#endif
             run_choose_screen(&registers);
             screen_animation_stretch_hud_panel(&registers);
             reset_pool_a_and_upgrades();
@@ -80,7 +84,11 @@ void run_game_session(word phase, word bp)
             phase = SESSION_ADVANCE_LEVEL;
             break;
         case SESSION_COMPLETE_LEVEL:
-            if (LevelIndex == 0) {
+            if (LevelIndex == 0
+#ifdef OVERKILL_HOST
+                && !overkill_level_content_id()
+#endif
+            ) {
                 show_win_screen_and_wait_primary();
                 dos_service(ResetPageAndClearScreen, &registers);
                 system_redraw_status_panel(&registers);
@@ -88,8 +96,17 @@ void run_game_session(word phase, word bp)
             phase = SESSION_ADVANCE_LEVEL;
             break;
         case SESSION_ADVANCE_LEVEL:
-            LevelIndex++;
-            if (LevelIndex >= LEVEL_COUNT) LevelIndex = 0;
+#ifdef OVERKILL_HOST
+            if (overkill_level_content_id()) {
+                /* Single-content test launch repeats this content. Episodes will
+                   own progression after the remaining selections are extracted. */
+                LevelIndex = overkill_level_content_behavior_profile();
+            } else
+#endif
+            {
+                LevelIndex++;
+                if (LevelIndex >= LEVEL_COUNT) LevelIndex = 0;
+            }
             if (SfxEnabled != 0) SfxRequest = 4;
             dos_service(ResetEgaPages, &registers);
             dos_service(ClearScreen104x200, &registers);

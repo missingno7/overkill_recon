@@ -14,6 +14,7 @@
 #include "memory.h"
 #include "platform_services.h"
 #include "level_def.h"
+#include "level_content.h"
 #include "level_departure.h"
 #endif
 
@@ -167,6 +168,11 @@ void load_level_map(DosRegisters *registers)
 #endif
     FileBufferSegment = LevelMapSegment;
     FileBufferOffset = 0;
+#ifdef OVERKILL_HOST
+    if (overkill_level_content_copy_map()) {
+        FileStatus = FILE_STATUS_OK;
+    } else
+#endif
     for (;;) {
         load_resource_file(registers);
         if (FileStatus == FILE_STATUS_OK) break;

@@ -7,6 +7,7 @@
 #include "render.h"
 #include "sound.h"
 #include "memory.h"
+#include "level_content.h"
 #include "resource_services.h"
 #include "file_services.h"
 #include "platform_services.h"
@@ -206,6 +207,7 @@ int main(int argc, char **argv)
 {
     const char *base, *input_path = NULL, *trace_path = NULL;
     const char *asset_override = NULL, *save_override = NULL;
+    const char *level_directory = NULL;
     char asset_path[2048], save_path[2048];
     volatile word adapter = VIDEO_TANDY;
     volatile byte sound = SOUND_SELECT_ADLIB;
@@ -222,6 +224,7 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "--input-script") && i + 1 < argc) input_path = argv[++i];
         else if (!strcmp(argv[i], "--trace") && i + 1 < argc) trace_path = argv[++i];
         else if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) screenshot_path = argv[++i];
+        else if (!strcmp(argv[i], "--level") && i + 1 < argc) level_directory = argv[++i];
         else if (!strcmp(argv[i], "--assets") && i + 1 < argc) asset_override = argv[++i];
         else if (!strcmp(argv[i], "--saves") && i + 1 < argc) save_override = argv[++i];
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
@@ -241,7 +244,7 @@ int main(int argc, char **argv)
         } else {
             fprintf(stderr, "Usage: %s [--video tandy|cga|ega] [--sound adlib|roland|off]\n"
                     "  [--headless --milliseconds N --input-script FILE --trace FILE]\n"
-                    "  [--assets DIRECTORY --saves DIRECTORY --screenshot FILE.bmp]\n", argv[0]);
+                    "  [--assets DIRECTORY --saves DIRECTORY --level DIRECTORY --screenshot FILE.bmp]\n", argv[0]);
             return 2;
         }
     }
@@ -254,6 +257,14 @@ int main(int argc, char **argv)
     if (!base || !read_image(base)) { fprintf(stderr, "Cannot read source-built HOST_IMAGE.BIN\n"); return 1; }
     if (!overkill_bind_level_map(overkill_segment_address(LevelMapSegment, 0), 0x10000))
         return 1;
+    if (level_directory) {
+        char originals[2048], error[256];
+        if (snprintf(originals, sizeof originals, "%slevels/original", base) >= (int)sizeof originals ||
+            !overkill_level_content_load(level_directory, originals, error, sizeof error)) {
+            fprintf(stderr, "Cannot load level: %s\n", error);
+            return 2;
+        }
+    }
     if (snprintf(asset_path, sizeof asset_path, "%sassets", base) >= (int)sizeof asset_path ||
         snprintf(save_path, sizeof save_path, "%ssaves", base) >= (int)sizeof save_path) return 1;
     if (!overkill_resource_mount_drive('C', asset_override ? asset_override : asset_path) ||
@@ -315,6 +326,7 @@ int main(int argc, char **argv)
         launcher_after_prologue(HOST_LOAD_SEGMENT - 0x10, &registers);
     }
     if (trace) {
+        if (overkill_level_content_id()) fprintf(trace, "content,%s\n", overkill_level_content_id());
         fprintf(trace, "settings,%04X,%02X,%04X,%04X\n",
                 VideoAdapter, SoundModuleSelect, InputDeviceMode, SoundOption);
         fprintf(trace, "state,%04X,%04X,%04X,%04X,%04X,%04X,%04X,%04X\n",
@@ -339,6 +351,7 @@ int main(int argc, char **argv)
     overkill_video_services_shutdown();
     overkill_sdl_video_close();
     actual_sdl_gamepad_close();
+    overkill_level_content_unload();
     free(script);
     free(arena);
     SDL_Quit();

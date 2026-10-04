@@ -1,6 +1,88 @@
 # Overkill level format: current structured bindings
 
-Version 6 has two partial profiles. `level-bindings` describes resources, tile
+## Checkpoint restoration and music (version 7)
+
+```json
+"checkpoint_restart": {
+  "lookback_rows": 12,
+  "tile_restorations": [{"tile": 201, "replacement": 40}]
+},
+"music": {"level": 9}
+```
+
+Restart scans backwards from the selected checkpoint, excluding the checkpoint
+cell itself, over `lookback_rows * 13` cells. Offsets wrap as words. Rules are
+ordered: the first matching tile wins, and unmatched cells survive. Zero rows or
+an empty rule list deliberately restores nothing. Duplicate tile rules remain
+meaningful. Both tile fields are bytes; the row window cannot exceed 65,535 bytes.
+This runs after map reload and before backward scrolling. Checkpoint `resume_event`
+and `script_clock` retain their existing independent meanings; restoration does
+not advance the event cursor or spawn objects itself.
+
+Level music is a tune index 1..10, supported by both original sound modules.
+It is selected on ordinary life starts and early encounter-completion restoration.
+Exact start/end positions and the late-level threshold select shared tracks using
+the original timing policy; those triggers are not configurable per-level fields.
+
+The exporter adds `"compatibility": {"live_original": true}` inside each policy
+for canonical definitions. This importer-generated marker retains the original
+live DS music byte or DS-to-CS reset-list lookup, including unchecked indexing and
+read order. A live marker must match the original policy exactly. Omit the marker
+for authored content: explicit values are independently owned even when identical
+to an original list or tune. No shared source table is overwritten.
+
+## Loose content test path (version 8)
+
+A directory contains `level.json` (a full copied definition) and a decoded map:
+
+```json
+"id": "copied-planet",
+"compatibility": {"original_level": 2},
+"resources": {
+  "map": {"path": "map.bin", "encoding": "tile-grid", "columns": 13, "rows": 288},
+  "sprites": "G2.BIC",
+  "blocks": "LEV2BLX.BIC",
+  "plaque": "plaq1.enc"
+}
+```
+
+Map bytes are the row-major terrain/spawn grid, not BIC data. Local references
+use relative `.bin` paths with named components; parent traversal, drive letters
+and absolute paths are rejected. The current scrolling model still requires
+13 columns and 288 rows. Start clearing and departure-row installation remain
+the original runtime initialization rules. The editable map stores the decoded
+source bytes before those mutations. Reloading restores those bytes before the
+checkpoint policy runs.
+
+IDs are limited to 127 ASCII characters and map paths to 1,023. Runtime JSON
+input is bounded to 1 MiB, 64 nesting levels and 65,536 tokens; the directory
+validator enforces the same limits and rejects duplicate keys. Cells in the
+known two-word overreads beyond original spawn-dispatch tables are rejected in
+authored maps and restoration outputs. They have no demonstrated action and are
+absent from all six decoded original grids. Canonical legacy handling is unchanged.
+
+```powershell
+python tools/level_content.py duplicate 2 levels/my-planet --id my-planet --music 9
+python tools/level_content.py validate levels/my-planet
+build/host/OVERKILL_SDL3.exe --level levels/my-planet
+```
+
+The same executable parses JSON and loads the local map directly. No source
+registration, rebuild, archive insertion or additional original DS slot is needed.
+The `original_level` compatibility profile explicitly selects remaining original
+enemy/gameplay assumptions and unextracted content. The loader compares every
+unsupported section with the installed canonical fixture and rejects edits or
+unknown fields; it never silently substitutes original data for a changed field.
+Graphics references must still match that profile. Map, music and restart rules
+are independently editable. Single-level test launches bypass the six-slot chooser
+and repeat their content on completion; they do not implement episode progression.
+
+`levels/examples/copied-planet` is a generated seventh identity using level 2's
+behavior/graphics and tune 9. `tools/level_maps.py` imports all six historical BIC
+maps; tests compare the resulting bytes against the existing packed decoder.
+The archive is a legacy distribution source, not the custom map namespace.
+
+Version 8 retains two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
 mothership departure data, encounter descriptors, marching-formation timing and
 segmented-boss member data;
@@ -8,11 +90,14 @@ the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
 playable level yet. Independent map/event storage and enemy/member parameters
 await extraction.
-Versions 1, 2, 3, 4 and 5 remain accepted with their original map-recipe scopes. Version 2
+Versions 1 through 7 remain accepted with their original map-recipe scopes. Version 2
 adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
 Version 4 adds side gates, runner/cruiser placement and retained-slot large initialization.
 Version 5 completes the original spawn actions with live sprite/random parameters and pickups.
 Version 6 adds complete map drop cycles and explicit semantic recipe drops.
+Version 7 adds checkpoint map-restoration rules and level music.
+Version 8 adds level-local decoded map references and an explicit original behavior
+profile for transitional loose content loading.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
 Omitting map recipes still retains originals under every version.
 

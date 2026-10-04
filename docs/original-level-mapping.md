@@ -30,8 +30,8 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route, health, sprites, initial positions and placement offsets extracted; unique construction/damage/destruction remain procedural |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Extracted four semantic kinds, phase thresholds, explicit burster health/sprite/X, faller policies and director damage eligibility; existing procedures retained |
 | Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
-| Map reset actions | Pure dispatch data + procedural mutations | `MapResetLists` in DATA and `MapResetList*` in code; restart scan | Pending; cleared/restored cells may differ from normal spawning |
-| Music | Resource metadata + timeline policy | `LevelMusicTable`; `life.c`, `frame.c` | Pending; low-byte index, start/end/late-level overrides remain |
+| Map reset actions | Level-specific restoration data + legacy scan policy | `MapResetLists` in DATA and `MapResetList*` in code; restart scan in `frame.c` | Extracted: `checkpoint_restart` with `lookback_rows: 12` and ordered `{tile, replacement}` restorations; preserve first match, scan/mutation order and level-specific rows |
+| Music | Level resource metadata + shared trigger policy | `LevelMusicTable`; `life.c`, `frame.c`, `session.c` | Extracted `music.level`; six module tune indices are `8, 1, 3, 7, 9, 10`. Exact start/end overrides and delayed late-level restore remain shared engine policy |
 | Palette/HUD level identity | Resource metadata / presentation | `display.c`, CS `LevelCgaPaletteCases`, `DacColor6*`, `LevelDigitChars`, native presentation dispatch | Pending; adapter-specific choice, original digit and chooser order retained |
 | Difficulty | Shared runtime setting + behavior parameters | `DifficultySetting`, child throttle, damage/fuel/fire gates | Remains engine policy; not automatically a per-level override section |
 | Mutable execution state | Runtime state | Pools A/B, allocation cursors, RNG, scripts, scroll, groups, encounters, checkpoint state | Always in existing memory model; never copied into definitions |
@@ -84,19 +84,33 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
 | `spawn.c` | Event HP initialization; type21's unusual initial leader-script pointer; shared event-drop binding (map helpers remain comparison references) |
 | `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
-| `frame.c` | March initial step/edges/drop/member defaults; music selection; ordered checkpoint map-reset rules |
-| `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
+| `frame.c` | March initial step/edges/drop/member defaults (checkpoint restoration and music are extracted) |
+| `display.c`, native presentation | Palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
 
-The next small extraction is the ordered checkpoint map-reset rules in
-`MapResetLists`: `reset_map_before_view` scans the preceding 0x9C map bytes
-backward and replaces the first matching tile in that level's replacement stream.
-These are pure level data, but they must remain distinct from spawn mutations;
-hatch restoration differs between levels. Tests must compare the entire map and
-both sides of the lookback boundary. Per-level music is another resource choice,
-read at life start and again at encounter release. Both should travel with level
-identity when episode order changes. Enemy/path differences above still require
-individual evidence and equivalence checks before becoming parameter data.
+The checkpoint-restart data is `checkpoint_restart:{lookback_rows:12,
+tile_restorations:[{tile,replacement}]}`. The original scan walks the preceding
+0x9C map bytes backward and replaces the first matching tile in that level's
+ordered replacement stream. Restoration is distinct from spawn mutation; hatch
+restoration differs between levels. Tests compare the entire map, each restoration tile and both
+sides of the lookback boundary, plus live DS pointer and CS entry changes.
+
+Music ownership has two layers. `LevelMusicTable` supplies the level's sound-module
+tune index. At life start, exact `MAP_START_POS` and `MAP_END_POS` use shared tunes
+4 and 5; otherwise the unchecked low byte of `LevelIndex` selects the table entry.
+The row-entry path also requests shared tune 5 when `LevelScriptClock` decrements
+to 4. After an encounter, only the transition of `EncounterEndDelay` from one to
+zero with no live encounter requests music: it selects the level tune below the
+unsigned `MAP_MUSIC_CHANGE_POS` threshold and shared tune 6 at or beyond it. These
+request points and their ordering remain procedural. The ASM reads the table tune
+before applying the late-level override. Version 7 exposes `music:{level:8}` (an original module index); canonical fixtures retain
+live DS table reads while authored values remain independent even when equal.
+
+Both restart rules and level music should travel with level identity when episode
+order changes. Resource identity is not fully audited yet: in particular the
+chooser's `choose.enc` six-slot boundary and unchecked/seventh-level behavior
+remain unresolved. Enemy/path differences above still require individual evidence
+and equivalence checks before becoming parameter data.
 
 Resources and terrain now enter native initialization through `level_bindings.py`.
 Canonical import is byte-identical to the original DS image. Public terrain values

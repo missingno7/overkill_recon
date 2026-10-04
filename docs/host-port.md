@@ -34,6 +34,34 @@ per-level data. Unique construction/combat/destruction procedures retain their
 allocation and stale-pointer semantics; `tests/host/boss_data.py` compares them
 against bounded ASM calls and separately authored definitions.
 
+The current content boundary distinguishes engine/runtime state and procedures,
+shared game content, level-specific choices and legacy storage compatibility; see
+`engine-model.md`. Level music, checkpoint map restoration and decoded maps can now be independently
+loaded from a loose level directory with `--level`. Other sections must still match
+an explicit original behavior profile; complete custom levels and episodes are pending. Music selection has
+shared start/end/late-level triggers around a per-level tune; checkpoint restoration
+uses an ordered 12-row backward scan and level-specific tile replacements. Canonical
+definitions must keep the original live DS/CS bindings, while authored values must
+remain independent. Full resource identity work, including the chooser's
+`choose.enc` six-slot boundary and seventh-level behavior, is still open. The
+six-definition native adapter and build-time fixture binding do not yet provide
+complete custom-level or episode loading.
+
+An executable test package is available at `levels/examples/copied-planet`:
+
+```powershell
+build/host/OVERKILL_SDL3.exe --level levels/examples/copied-planet
+python tests/host/level_content_runtime.py
+python tests/host/level_policies.py --no-build
+python tests/level_map_import.py
+```
+
+This copied level has a new content ID, a decoded local map and tune 9, while
+explicitly reusing level 2's original behavior and graphics. No new source slot or
+archive entry is registered. The loader validates unsupported sections against
+the selected compatibility profile and fails before gameplay when they differ.
+The loose test path repeats one level; ordered episodes remain a separate milestone.
+
 ```powershell
 python tools/host.py
 .\build\host\OVERKILL_SDL3.exe

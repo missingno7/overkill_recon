@@ -38,19 +38,36 @@ def validate(document):
                                        'map_group_drops', 'checkpoint_restart', 'music') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
+    if 'compatibility' in document:
+        fields.add('compatibility')
+        compatibility = document['compatibility']
+        if (document.get('version') != 8 or profile != 'level-bindings' or
+                not isinstance(compatibility, dict) or set(compatibility) != {'original_level'} or
+                type(compatibility['original_level']) is not int or
+                not 0 <= compatibility['original_level'] < 6):
+            raise ValueError('loose content requires an explicit original_level behavior profile (0..5)')
     if set(document) != fields:
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise ValueError('unsupported level version')
-    if not isinstance(document['id'], str) or not re.fullmatch(
+    if not isinstance(document['id'], str) or len(document['id']) > 127 or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):
         raise ValueError('id must be a lowercase semantic identifier')
     resources = document['resources']
     if not isinstance(resources, dict) or set(resources) != set(RESOURCE_ROLES):
         raise ValueError('resources must specify map, sprites, blocks and plaque')
     for role, name in resources.items():
+        if role == 'map' and isinstance(name, dict):
+            if (document['version'] != 8 or set(name) != {'path', 'encoding', 'columns', 'rows'} or
+                    name['encoding'] != 'tile-grid' or type(name['columns']) is not int or
+                    name['columns'] != 13 or type(name['rows']) is not int or name['rows'] != 288):
+                raise ValueError('local map requires version 8 and a 13 by 288 tile-grid')
+            if (not isinstance(name['path'], str) or len(name['path']) > 1023 or not re.fullmatch(
+                    r'[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\.bin', name['path'])):
+                raise ValueError('local map path must be a safe relative .bin path')
+            continue
         extension = '(?:enc|ENC)' if role == 'plaque' else '(?:bic|BIC)'
         if not isinstance(name, str) or not re.fullmatch(
                 r'[a-zA-Z0-9_-]+\.' + extension, name):
