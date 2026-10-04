@@ -753,6 +753,50 @@
   "map_spawns": [
     {
       "compatibility": {
+        "offset_before_fields": true,
+        "save_spawn_x": true
+      },
+      "direction": "right",
+      "enemy": "wait_then_run_right",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "position_offset": {
+        "dx": -12
+      },
+      "spawn": "enemy",
+      "spawn_region": "at_or_left_of_center",
+      "sprite": 332,
+      "tile": 188
+    },
+    {
+      "compatibility": {
+        "offset_before_fields": true,
+        "save_spawn_x": true
+      },
+      "direction": "left",
+      "enemy": "wait_then_run_left",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "position_offset": {
+        "dx": 12
+      },
+      "spawn": "enemy",
+      "spawn_region": "right_of_center",
+      "sprite": 335,
+      "tile": 187
+    },
+    {
+      "compatibility": {
         "map_group": "allocate_only"
       },
       "enemy": "wait_then_fire_burst",
@@ -947,6 +991,28 @@
       ],
       "spawn": "enemy",
       "tile": 235
+    },
+    {
+      "compatibility": {
+        "map_group": "join_before_fields"
+      },
+      "direction": "down_right",
+      "enemy": "wait_then_cruise_firing",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "placement": {
+        "distance": 16,
+        "kind": "outward_from_center",
+        "right_direction": "down_left"
+      },
+      "spawn": "enemy",
+      "sprite": 310,
+      "tile": 236
     },
     {
       "compatibility": {
@@ -1996,5 +2062,5 @@
       "y": 0
     }
   ],
-  "version": 3
+  "version": 4
 }

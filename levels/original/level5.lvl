@@ -483,6 +483,73 @@
       "tile": 211
     },
     {
+      "compatibility": {
+        "preserve_slot_index": true
+      },
+      "direction": "up",
+      "enemy": "retained_cell_enemy_hatch",
+      "map_writes": [],
+      "spawn": "large_enemy",
+      "sprite": 28,
+      "tile": 48
+    },
+    {
+      "direction": "up",
+      "enemy": "lurk_until_aligned",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 342,
+      "tile": 186
+    },
+    {
+      "direction": "right",
+      "enemy": "lurk_until_aligned",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 343,
+      "tile": 187
+    },
+    {
+      "direction": "down",
+      "enemy": "lurk_until_aligned",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 344,
+      "tile": 188
+    },
+    {
+      "direction": "left",
+      "enemy": "lurk_until_aligned",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 345,
+      "tile": 182
+    },
+    {
       "enemy": "climbing_walker_b",
       "map_writes": [
         {
@@ -1200,5 +1267,5 @@
       "y": 0
     }
   ],
-  "version": 3
+  "version": 4
 }

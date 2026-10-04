@@ -1020,6 +1020,17 @@
       },
       "spawn": "enemy",
       "tile": 90
+    },
+    {
+      "compatibility": {
+        "preserve_slot_index": true
+      },
+      "direction": "up",
+      "enemy": "retained_cell_enemy_hatch",
+      "map_writes": [],
+      "spawn": "large_enemy",
+      "sprite": 28,
+      "tile": 48
     }
   ],
   "marching_formation": {
@@ -1998,5 +2009,5 @@
       "y": 0
     }
   ],
-  "version": 3
+  "version": 4
 }

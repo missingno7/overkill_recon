@@ -22,8 +22,14 @@ enum MapRecipeFields {
     MAP_RECIPE_LEFT_SPRITE = 8,
     MAP_RECIPE_OFFSET_X = 16,
     MAP_RECIPE_OFFSET_Y = 32,
-    MAP_RECIPE_DIRECTION_FIRST = 64
+    MAP_RECIPE_DIRECTION_FIRST = 64,
+    MAP_RECIPE_OFFSET_FIRST = 128,
+    MAP_RECIPE_SAVE_X = 256,
+    MAP_RECIPE_PRESERVE_SLOT = 512,
+    MAP_RECIPE_OUTWARD = 1024
 };
+
+enum MapSpawnRegion { MAP_REGION_ANY = 0, MAP_REGION_AT_OR_LEFT = 1, MAP_REGION_RIGHT = 2 };
 
 typedef struct MapCellWrite {
     word displacement;
@@ -35,13 +41,16 @@ typedef struct MapSpawnRecipe {
     byte spawn;
     byte map_group;
     word enemy_type;
-    byte fields;
+    word fields;
     word sprite;
     word direction;
     word left_sprite;
     word left_direction;
     word offset_x;
     word offset_y;
+    byte spawn_region;
+    word outward_distance;
+    word outward_direction;
     word map_write_count;
     const MapCellWrite *map_writes;
 } MapSpawnRecipe;

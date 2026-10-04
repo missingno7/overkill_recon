@@ -209,8 +209,10 @@ Record *spawn_map_group_enemy(Record *here, word off)
     return join_map_group(r);
 }
 
-/* A large (size class 2) KIND_ENEMY with 10 hit points at (MapCellX, 0), no group. */
-void init_map_large_enemy(Record *r)
+#ifdef OVERKILL_HOST
+/* The retained-cell hatch omits the last slot write. Skip it directly so stale
+   group fields and aliases keep the original read/write order. */
+void init_map_large_enemy_fields(Record *r, word reset_slot)
 {
     r->kind = KIND_ENEMY;
     r->x = MapCellX;
@@ -220,7 +222,26 @@ void init_map_large_enemy(Record *r)
     r->size_class = 2;
     r->flash_timer = 0;
     r->hit_points = 0x0A;
+    if (reset_slot) r->slot_index = 0xFFFF;
+}
+#endif
+
+/* A large (size class 2) KIND_ENEMY with 10 hit points at (MapCellX, 0), no group. */
+void init_map_large_enemy(Record *r)
+{
+#ifdef OVERKILL_HOST
+    init_map_large_enemy_fields(r, 1);
+#else
+    r->kind = KIND_ENEMY;
+    r->x = MapCellX;
+    r->status = 1;
+    r->draw_pass = 0;
+    r->y = 0;
+    r->size_class = 2;
+    r->flash_timer = 0;
+    r->hit_points = 0x0A;
     r->slot_index = 0xFFFF;
+#endif
 }
 
 /* Type, sprite and direction of a new map enemy, if there is one. */
@@ -320,6 +341,9 @@ void spawn_cell_hatch2a(void)
     Record *r = find_free_record_pool_a();
 
     if (r == NO_RECORD) return;
+#ifdef OVERKILL_HOST
+    init_map_large_enemy_fields(r, 0);
+#else
     r->kind = KIND_ENEMY;
     r->x = MapCellX;
     r->status = 1;
@@ -328,6 +352,7 @@ void spawn_cell_hatch2a(void)
     r->size_class = 2;
     r->flash_timer = 0;
     r->hit_points = 0x0A;
+#endif
     set_type_sprite_dir(r, 0x2A, 0x1C, DIR_UP);
 }
 

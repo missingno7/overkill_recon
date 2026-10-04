@@ -40,6 +40,8 @@ ARCHETYPES = {
     'crawl_turn_diagonal_down': 0x5F, 'scroll_to_y80_then_crawl': 0x6A,
     'launch_aimed_enemy': 0x86, 'animated_fire_burst_a': 0x87,
     'wait_then_fire_burst': 0x88, 'animated_fire_burst_c': 0x8F,
+    'retained_cell_enemy_hatch': 0x2A, 'wait_then_cruise_firing': 0x6F,
+    'wait_then_run_right': 0x73, 'wait_then_run_left': 0x74, 'lurk_until_aligned': 0x84,
 }
 SIZES = {'8x8': 0, '16x16': 1, '32x32': 2}
 LAYERS = {'under_terrain': 0, 'over_terrain': 1}

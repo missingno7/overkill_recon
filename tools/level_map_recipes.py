@@ -13,6 +13,7 @@ DIRECTIONS = {'up': K.DIR_UP, 'up_right': K.DIR_UP_RIGHT,
               'down': K.DIR_DOWN, 'down_left': K.DIR_DOWN_LEFT,
               'left': K.DIR_LEFT, 'up_left': K.DIR_UP_LEFT}
 SPAWNS = {'enemy': 0, 'large_enemy': 1, 'none': 2}
+SPAWN_REGIONS = {'at_or_left_of_center': 1, 'right_of_center': 2}
 MAP_GROUPS = {'allocate_only': 1, 'join_before_fields': 2, 'join_after_fields': 3}
 # Version 1's explicit recipe lists replaced only this original migration scope.
 # Retain its meaning when version 2 expands coverage to grouped-range cells.
@@ -28,11 +29,16 @@ V2_MAP_SCOPE = {
         *range(0xD8, 0xDD), *range(0xDE, 0xE1)},
     5: {0xD2, 0xD3, *range(0xD7, 0xDC), *range(0xE0, 0xEB), *range(0xEC, 0xF0)},
 }
+V3_MAP_SCOPE = {level: V2_MAP_SCOPE.get(level, set()) | tiles for level, tiles in {
+    0: {0xE1, 0xE2, 0xE5, 0xE6, 0xF0, 0xF1, 0xF4}, 1: set(),
+    2: {0xC4, 0x5A}, 3: {0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD6, 0xD8},
+    4: {0xD4, 0xD7}, 5: {0xDE, 0xDF},
+}.items()}
 
 
-def original_map_spawns(level, version=3):
-    if version in (1, 2):
-        scope = (V1_MAP_SCOPE if version == 1 else V2_MAP_SCOPE).get(level, set())
+def original_map_spawns(level, version=4):
+    if version in (1, 2, 3):
+        scope = {1: V1_MAP_SCOPE, 2: V2_MAP_SCOPE, 3: V3_MAP_SCOPE}[version].get(level, set())
         return [recipe for recipe in original_map_spawns(level)
                 if recipe['tile'] in scope]
     def recipe(tile, enemy=None, *, clear=False, sprite=None, direction=None, large=False,
@@ -68,7 +74,19 @@ def original_map_spawns(level, version=3):
     clear_square = [{'dx': 0, 'dy': 0, 'tile': 1}, {'dx': 1, 'dy': 0, 'tile': 1},
                     {'dx': 0, 'dy': 1, 'tile': 1}, {'dx': 1, 'dy': 1, 'tile': 1}]
     if level == 0:
+        runner_right = recipe(0xBC, 'wait_then_run_right', clear=True, sprite=0x14C, direction='right')
+        runner_left = recipe(0xBB, 'wait_then_run_left', clear=True, sprite=0x14F, direction='left')
+        for runner, side, dx in ((runner_right, 'at_or_left_of_center', -12),
+                                 (runner_left, 'right_of_center', 12)):
+            runner['spawn_region'] = side
+            runner['position_offset'] = {'dx': dx}
+            runner['compatibility'] = {'offset_before_fields': True, 'save_spawn_x': True}
+        cruiser = grouped(0xEC, 'wait_then_cruise_firing', clear=True, sprite=0x136,
+                          direction='down_right', join=True)
+        cruiser['placement'] = {'kind': 'outward_from_center', 'distance': 16,
+                               'right_direction': 'down_left'}
         return [
+            runner_right, runner_left,
             centered(0xE1, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
             centered(0xE2, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
             grouped(0xE4, 'low_row_jitterer', clear=True),
@@ -79,6 +97,7 @@ def original_map_spawns(level, version=3):
             grouped(0xE9, 'descender_to_x112', clear=True),
             grouped(0xEA, 'staircase_crawler', clear=True, direction='down', join=True),
             grouped(0xEB, 'hover_fire_plunge_c', clear=True, direction='down', join=True),
+            cruiser,
             grouped(0xED, 'climbing_walker_c', clear=True, join=True),
             grouped(0xEE, 'climbing_walker_d', clear=True, join=True),
             grouped(0xEF, 'patrol_shoot_down_c', clear=True, direction='down', join=True),
@@ -96,6 +115,8 @@ def original_map_spawns(level, version=3):
     hatch = recipe(0xC9, 'enemy_hatch', sprite=0x1C, direction='up', large=True,
         writes=[{'dx': 0, 'dy': 1, 'tile': 0x26}, {'dx': 1, 'dy': 1, 'tile': 0x27},
                 {'dx': 0, 'dy': 0, 'tile': 0x28}, {'dx': 1, 'dy': 0, 'tile': 0x29}])
+    retained_hatch = recipe(0x30, 'retained_cell_enemy_hatch', sprite=0x1C, direction='up', large=True)
+    retained_hatch['compatibility'] = {'preserve_slot_index': True}
     if level == 1:
         return [recipe(4, 'climbing_walker_a', clear=True),
                 recipe(7, 'climbing_walker_b', clear=True),
@@ -106,7 +127,7 @@ def original_map_spawns(level, version=3):
         plunger = recipe(0x5A, 'plunge_at_player_column', clear=True)
         plunger['position_offset'] = {'dy': -6}
         return [centered(0xC4, 'animated_fire_burst_c', 0xBF, 'left', 0xC2, 'right', group=False),
-                plunger]
+                plunger, retained_hatch]
     if level == 4:
         return [left, right, hatch,
             grouped(0xCE, 'climbing_walker_b', clear=True),
@@ -127,7 +148,11 @@ def original_map_spawns(level, version=3):
         ]
     if level == 5:
         left['tile'], right['tile'] = 0xD3, 0xD2
-        return [right, left,
+        return [right, left, retained_hatch,
+            recipe(0xBA, 'lurk_until_aligned', clear=True, sprite=0x156, direction='up'),
+            recipe(0xBB, 'lurk_until_aligned', clear=True, sprite=0x157, direction='right'),
+            recipe(0xBC, 'lurk_until_aligned', clear=True, sprite=0x158, direction='down'),
+            recipe(0xB6, 'lurk_until_aligned', clear=True, sprite=0x159, direction='left'),
             recipe(0xD7, 'climbing_walker_b', clear=True),
             recipe(0xD8, 'climbing_walker_a', clear=True),
             grouped(0xD9, 'descend_aimed_fire', large=True, direction='down', writes=clear_square, after=True),
@@ -193,7 +218,8 @@ def validate_map_spawns(document):
         required = {'tile', 'spawn', 'map_writes'}
         if isinstance(recipe, dict) and recipe.get('spawn') != 'none':
             required.add('enemy')
-        optional = {'compatibility'} | ({'sprite', 'direction', 'facing', 'position_offset'}
+        optional = {'compatibility'} | ({'sprite', 'direction', 'facing', 'position_offset',
+                                         'spawn_region', 'placement'}
                                         if 'enemy' in required else set())
         if not isinstance(recipe, dict) or not required <= set(recipe) or set(recipe) - required - optional:
             raise ValueError('map recipe must specify tile, spawn, ordered map_writes and enemy when spawning')
@@ -206,7 +232,8 @@ def validate_map_spawns(document):
         if 'compatibility' in recipe:
             compatibility = recipe['compatibility']
             if not isinstance(compatibility, dict) or not compatibility or set(compatibility) - {
-                    'map_group', 'direction_before_type'}:
+                    'map_group', 'direction_before_type', 'offset_before_fields',
+                    'save_spawn_x', 'preserve_slot_index'}:
                 raise ValueError('unsupported map recipe group compatibility')
             if 'map_group' in compatibility and (not isinstance(compatibility['map_group'], str) or
                     compatibility['map_group'] not in MAP_GROUPS):
@@ -214,6 +241,20 @@ def validate_map_spawns(document):
             if 'direction_before_type' in compatibility and (document['version'] < 3 or
                     compatibility['direction_before_type'] is not True or 'facing' not in recipe):
                 raise ValueError('direction_before_type requires version-3 center facing')
+            for field in ('offset_before_fields', 'save_spawn_x', 'preserve_slot_index'):
+                if field in compatibility and (document['version'] < 4 or compatibility[field] is not True):
+                    raise ValueError(field + ' requires version 4 and true')
+            if compatibility.get('offset_before_fields') and 'position_offset' not in recipe:
+                raise ValueError('offset_before_fields requires a pixel offset')
+            if compatibility.get('save_spawn_x') and (not compatibility.get('offset_before_fields') or
+                    not isinstance(recipe.get('position_offset'), dict) or
+                    'dx' not in recipe['position_offset'] or recipe['spawn'] != 'enemy'):
+                raise ValueError('save_spawn_x requires an ordinary enemy with an early X offset')
+            if compatibility.get('preserve_slot_index') and recipe['spawn'] != 'large_enemy':
+                raise ValueError('preserve_slot_index requires large-enemy initialization')
+            if compatibility.get('preserve_slot_index') and compatibility.get('map_group') in (
+                    'join_before_fields', 'join_after_fields'):
+                raise ValueError('a preserved slot index cannot also join a map group')
             if recipe['spawn'] == 'none' and compatibility.get('map_group') != 'allocate_only':
                 raise ValueError('non-spawning map recipes cannot join a group')
         for field, choices in (('spawn', SPAWNS), ('enemy', ARCHETYPES), ('direction', DIRECTIONS)):
@@ -240,6 +281,20 @@ def validate_map_spawns(document):
             if document['version'] < 3 or not isinstance(offset, dict) or not offset or set(offset) - {'dx', 'dy'} or any(
                     type(value) is not int or not -32768 <= value <= 32767 for value in offset.values()):
                 raise ValueError('position_offset requires version 3 and signed pixel dx/dy')
+        if 'spawn_region' in recipe and (document['version'] < 4 or
+                not isinstance(recipe['spawn_region'], str) or recipe['spawn_region'] not in SPAWN_REGIONS):
+            raise ValueError('spawn_region requires version 4 and a supported map side')
+        if 'placement' in recipe:
+            placement = recipe['placement']
+            if document['version'] < 4 or not isinstance(placement, dict) or set(placement) != {
+                    'kind', 'distance', 'right_direction'} or placement['kind'] != 'outward_from_center':
+                raise ValueError('placement requires version-4 outward_from_center parameters')
+            if 'direction' not in recipe or 'facing' in recipe or 'position_offset' in recipe:
+                raise ValueError('outward placement requires a default direction and no other placement')
+            if type(placement['distance']) is not int or not 0 <= placement['distance'] <= 32767:
+                raise ValueError('outward distance must be a nonnegative signed pixel word')
+            if not isinstance(placement['right_direction'], str) or placement['right_direction'] not in DIRECTIONS:
+                raise ValueError('unknown outward placement direction')
         writes = recipe['map_writes']
         if not isinstance(writes, list) or len(writes) > 65535:
             raise ValueError('map_writes must be an ordered list')
@@ -295,11 +350,20 @@ def generate_map_recipe_header(out, documents):
                 flags |= (16 if 'dx' in offset else 0) | (32 if 'dy' in offset else 0)
                 if recipe.get('compatibility', {}).get('direction_before_type'):
                     flags |= 64
+                for field, bit in (('offset_before_fields', 128), ('save_spawn_x', 256),
+                                   ('preserve_slot_index', 512)):
+                    if recipe.get('compatibility', {}).get(field):
+                        flags |= bit
+                placement = recipe.get('placement', {})
+                if placement:
+                    flags |= 1024
                 values = [recipe['tile'], SPAWNS[recipe['spawn']], group, ARCHETYPES.get(recipe.get('enemy'), 0),
                           flags, right.get('sprite', recipe.get('sprite', 0)),
                           DIRECTIONS.get(right.get('direction', recipe.get('direction')), 0),
                           left.get('sprite', 0), DIRECTIONS.get(left.get('direction'), 0),
                           offset.get('dx', 0) & 65535, offset.get('dy', 0) & 65535,
+                          SPAWN_REGIONS.get(recipe.get('spawn_region'), 0), placement.get('distance', 0),
+                          DIRECTIONS.get(placement.get('right_direction'), 0),
                           len(recipe['map_writes']), writes]
                 rows.append('    {' + ', '.join(map(str, values)) + '},')
             rows.append('};')

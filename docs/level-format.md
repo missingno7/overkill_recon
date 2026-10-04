@@ -1,6 +1,6 @@
 # Overkill level format: current structured bindings
 
-Version 3 has two partial profiles. `level-bindings` describes resources, tile
+Version 4 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
 mothership departure data, encounter descriptors, marching-formation timing and
 segmented-boss member data;
@@ -8,8 +8,9 @@ the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
 playable level yet. Independent map storage, remaining spawn recipes and enemy/member parameters
 await extraction.
-Versions 1 and 2 remain accepted with their original map-recipe scopes. Version 2
+Versions 1, 2 and 3 remain accepted with their original map-recipe scopes. Version 2
 adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
+Version 4 adds side gates, runner/cruiser placement and retained-slot large initialization.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
 Omitting map recipes still retains originals under either version.
 
@@ -233,10 +234,10 @@ fixtures; their supported codecs do not assert original level reachability.
 ## Map spawn recipes
 
 `map_spawns` is an optional list of unique tile-triggered recipes. It currently
-represents all defined original level-1/level-3 actions, center-facing choices across
-levels 0/2/3/4/5, the level-2 plunger offset, and fixed-field, clear-only and group-hole
-cases in levels 0/4/5. Conditional-sprite, RNG-dependent, gated runners/cruiser,
-pickup and retained-cell stale-group hatch cases retain their
+represents all defined original level-1/level-2/level-3 actions, center-facing choices,
+gated runners and cruiser placement, retained-cell hatches and directional lurkers,
+plus fixed-field, clear-only and group-hole cases in levels 0/4/5.
+Eight conditional-sprite, RNG-dependent and fuel-pickup cases retain their
 existing handlers during migration. An empty list in a partially converted level
 does not disable its unconverted spawns. Native binding rejects recipes outside
 that level's converted scope; level 1 supports all byte-valued triggers.
@@ -317,14 +318,64 @@ It is a demonstrated spawn-placement rule, not a reusable enemy movement family.
 Optional version-3 `position_offset` is a nonempty object with signed pixel `dx`
 and/or `dy`. It adds X then Y after type/sprite/direction and facing, before any
 `join_after_fields` membership, using word wrapping. It does not update saved
-coordinates. The original level-2 plunger uses `{"dy": -6}` after setting its type;
-the gated runners' saved-X copies and the cruiser's shifted-X comparison are
-different operations and remain procedural pending their own extraction.
+coordinates by default. The original level-2 plunger uses `{"dy": -6}` after
+setting its type. Version-4 runner compatibility moves this stage earlier and
+copies shifted X, as described below.
 
 The importer-generated `compatibility.direction_before_type: true` retains the
 sprite-less crawler's direction-before-type writes. It requires version-3 facing
 and can accompany group preparation. This is an internal historical ordering
 property; ordinary authored facing definitions use the shared field order above.
+
+### Side gates, runner placement and retained-cell hatches
+
+Version-4 `spawn_region` accepts `at_or_left_of_center` or `right_of_center`.
+It tests the live map-column X as an unsigned word before group preparation,
+map writes or allocation. Equality belongs to `at_or_left_of_center`; a rejected
+recipe changes nothing. This is distinct from `facing`, which selects fields using
+the initialized record X after map writes and allocation.
+
+The two level-0 runners use signed `position_offset.dx` values -12/+12 and the
+importer-generated compatibility flags `offset_before_fields: true` and
+`save_spawn_x: true`. The first applies the offset after initialization/group join
+but before behavior fields. The second copies shifted X into the legacy saved-X
+field at that point; saved Y remains inherited from the caller. `save_spawn_x`
+requires an ordinary enemy, an early offset and an explicit `dx`. Both flags are
+version-4 properties with only `true` accepted. A map clear alias can change the
+later spawn X without changing the side which already admitted the runner.
+
+The cruiser uses the distinct placement rule:
+
+```json
+{
+  "placement": {
+    "kind": "outward_from_center",
+    "distance": 16,
+    "right_direction": "down_left"
+  }
+}
+```
+
+It requires a top-level default direction (`down_right` in the original), and
+excludes `facing` and `position_offset`. Distance is an integer 0..32767 pixels.
+After behavior fields, subtract distance from record X with word wrapping. Compare
+that shifted X unsigned to 96: at or above center, write `right_direction`, then
+add twice the distance with word wrapping. Saved coordinates stay unchanged.
+This preserves the original boundary at input X=112 and its unusual wrap at X=0;
+comparing the original coordinate or using signed arithmetic would change it.
+The cruiser joins its group before these fields/position changes.
+
+The retained-cell hatch uses `spawn: "large_enemy"`, empty `map_writes` and
+`compatibility.preserve_slot_index: true`. Unlike ordinary large initialization,
+it skips the final write of FFFF to the group-slot field. It neither restores a
+previously overwritten value nor copies a record: the original field remains
+stale throughout. Kind is written before reading live `MapCellX`; saved positions
+and other unspecified fields remain stale. The flag requires version 4 and large
+initialization. Both original levels 2 and 5 have this recipe, with no group setup.
+Joining a group would overwrite the retained slot and is rejected with this flag;
+preparation without joining remains allowed.
+The four level-5 lurkers need only the existing ordinary initializer and fixed
+sprite/direction fields; their directions select their later alignment behaviors.
 
 ### Original group compatibility
 
@@ -371,8 +422,8 @@ slice; removing an entry disables that trigger rather than falling back to its o
 switch case. Coverage is internal migration metadata, not a permanent original-game
 path. The exporter derives this small slice from curated equivalents of maintained
 C handlers; canonical execution is independently checked against ASM. Full map drop
-rules, RNG-dependent selection, gated/conditional positional changes, pickup and
-stale-group hatch initialization remain pending.
+rules, live level-dependent sprite selection, RNG-dependent grouping and fuel
+pickup continuation remain pending.
 
 ## Mothership departure
 
@@ -708,8 +759,13 @@ Center-facing comparisons exercise unsigned equality/neighbor/high-word boundari
 stale sprites, full pools, caller aliases and a map clear changing X from the right
 to the left side. Authored choices and signed offsets use explicitly checked oracle
 output words while every other DS/physical byte, saved coordinate and RNG state
-must agree. Version-1/2 coverage remains fixed; older empty lists do not intercept
-new version-3 triggers. Mixed rows exercise all six handlers.
+must agree. Version-1/2/3 coverage remains fixed; older empty lists do not intercept
+later triggers. Runner comparisons include wrong-side no-mutation checks, pre-clear
+selection with post-clear X aliases, saved-X copies and wrap. Cruiser tests exercise
+the shifted equality boundary, group exhaustion and authored distance changes.
+Hatch tests check retained slot values and an allocation whose kind write aliases
+the subsequent MapCellX read. Authored changes remain local to their level.
+Mixed rows exercise all six handlers.
 The departure suite compares terminal map writes, animated-part allocation and
 autopilot/refill transitions for all six originals against ASM. An alternate build
 of the production coordinators proves that authored departure components reach

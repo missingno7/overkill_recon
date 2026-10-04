@@ -17,7 +17,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Last five rows extracted into departure data; first two forced rows/placement positions remain shared rules |
 | Opening ambush | Shared encounter behavior + per-level leader/event/path data | First `LevelScript0..5` event at clock 272, `Formation39..44`, `start_leader_script`, `type13_formation_leader` | Opening events/formations/routes extracted; shared scroll-hold, release delay and early-stage weapon/pod/render policies remain implicit |
 | Mothership departure | Shared sequence data + procedural state machine | `LevelEndMapRows`, `Type53SpawnTable`, `AutopilotWaypointA/B`, `scroll_forward_and_check_level_end`, `run_level_end_sequence` | Five rows, four animated parts and both waypoints extracted with independent authored data; trigger/extra-record/refill/music rules remain; distinct from combat bosses |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases in levels 1/3, center-facing choices in 0/2/3/4/5, level-2 plunger offset and fixed/grouped cases extracted; gated/conditional/RNG/pickup/stale-group hatch cases pending |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases in levels 1/2/3, runners/cruiser, retained-slot hatches, lurkers, center-facing and fixed/grouped cases extracted; eight conditional-sprite/RNG/fuel cases pending |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted; map preparation/membership phases represented as compatibility data; complete map drop rules pending |
@@ -123,7 +123,7 @@ Neither its existence nor a supported binding is evidence of level reachability.
 handlers. It is consumed by
 export, validation and native table generation. The generic evaluator applies
 ordered relative writes, then reuses ordinary/large map initialization and existing
-behavior presets. Original level-1 and all defined level-3 cases are data-driven; the level-4/5
+behavior presets. All defined original level-1/level-2/level-3 cases are data-driven; the level-4/5
 turret and hatch entries share the same model. Fixed-field and clear-only cases
 across 0/3/4/5 now use it too. Native retained C switches and ASM remain independent
 comparison references.
@@ -135,10 +135,11 @@ afterward. The real level-3 hole retains its allocation attempt without touching
 map, pool or group bytes. Level-5 walker cells retain their early nongroup return.
 The shared live drop cycle remains authoritative, including aliases with timeline
 events and map writes that alter the drop word after preparation. RNG-dependent
-jitter grouping, gated/conditional positional changes and stale-group hatches remain open.
+jitter grouping, live crawler sprite choices and fuel continuation remain open.
 Grouped coverage arrived in version 2; center-facing and pixel-offset coverage uses
-version 3. Both older map scopes remain consumed compatibility bindings, tested
-with older empty lists; neither is silently widened.
+version 3; runner/cruiser, retained-slot hatch and lurker coverage uses version 4.
+All older map scopes remain consumed compatibility bindings, tested
+with older empty lists; none is silently widened.
 
 The center-facing data corresponds to inline ASM spawn cases and the shared C
 `face_centre` helper, plus the sprite-less `SpawnCellCrawler5F`. These recipes read
@@ -148,6 +149,20 @@ and leaves sprite untouched. `SpawnCellPlunger2E` sets type then subtracts six f
 without changing saved Y. Full-memory tests cover center neighbors/high words,
 map-clear aliases crossing sides, authored field/offset values and every defined
 level-3 case; the latter no longer needs procedural selection in the native path.
+
+`SpawnCellRunnerRight73/Left74`, `SpawnCellCruiser6F`, `SpawnCellHatch2A` and the
+four lurker cases now use the same evaluator. Runner gates read map-column X before
+clear/allocation; early offsets then copy shifted X to saved X before behavior
+fields. Cruiser joining precedes fields and subtract/test/add placement. Hatch2A
+shares the large initializer's ordered writes while omitting its final slot reset;
+no save-and-restore workaround is used. Allocation aliases that write kind into
+`MapCellX` demonstrate why that X cannot be cached before initialization.
+Tests compare all slot values, pool/group exhaustion, unsigned boundaries/wrap,
+wrong-side no-mutation and authored gate/distance/slot/sprite changes.
+
+The remaining map cells are level 0 E3/F9, level 4 D2/D3/DD and level 5 DC/DD/EB.
+Their live level selection, RNG consumption and pickup continuation still require
+their own extraction; canonical tables do not silently substitute ordinary recipes.
 
 Direct tests cover every safe map byte in all six levels, pool exhaustion, stale
 fields, caller/allocated-record aliases, wrapped offsets, physical DS aliases and

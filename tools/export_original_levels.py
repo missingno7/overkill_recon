@@ -43,7 +43,7 @@ def definitions(machine):
         if encounter['kind'] == 'invader_formation':
             encounter['slots'] = original_invader_slots(machine)
         document = {
-            'format': 'overkill-level', 'version': 3,
+            'format': 'overkill-level', 'version': 4,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
             'terrain': terrain_definition(machine, level),
