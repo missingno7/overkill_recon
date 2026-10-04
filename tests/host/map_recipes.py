@@ -63,6 +63,7 @@ def import_cases(h, documents):
                       4: [0xAC, 0xB1, 0xC9], 5: [0xD2, 0xD3]}
     for level, document in enumerate(version_one):
         document['version'] = 1
+        document.pop('map_spawn_parameters', None)
         document['map_spawns'] = original_map_spawns(level, 1)
         if [recipe['tile'] for recipe in document['map_spawns']] != expected_tiles.get(level, []):
             raise AssertionError('version-1 recipe order/identities changed')
@@ -77,10 +78,12 @@ def import_cases(h, documents):
                  4: {0xD4, 0xD7}, 5: {0xDE, 0xDF}}
     for level, document in enumerate(version_two):
         document['version'] = 2
+        document.pop('map_spawn_parameters', None)
         document['map_spawns'] = original_map_spawns(level, 2)
         validate(document)
     for level, document in enumerate(version_three):
         document['version'] = 3
+        document.pop('map_spawn_parameters', None)
         document['map_spawns'] = original_map_spawns(level, 3)
         validate(document)
     for level, ((old_scope, recipes), (scope, _)) in enumerate(zip(
@@ -89,9 +92,22 @@ def import_cases(h, documents):
             raise AssertionError('version-2 recipe identities/coverage changed')
     latest_tiles = {0: {0xBB, 0xBC, 0xEC}, 2: {0x30}, 5: {0x30, 0xBA, 0xBB, 0xBC, 0xB6}}
     for level, ((old_scope, recipes), (scope, _)) in enumerate(zip(
-            map_recipe_bindings(version_three), map_recipe_bindings(documents))):
+            map_recipe_bindings(version_three), map_recipe_bindings([
+                {**document, 'version': 4, 'map_spawns': original_map_spawns(level, 4)}
+                for level, document in enumerate(version_three)]))):
         if old_scope != scope - latest_tiles.get(level, set()) or len(recipes) != (22, 7, 2, 28, 19, 24)[level]:
             raise AssertionError('version-3 recipe identities/coverage changed')
+    version_four = copy.deepcopy(documents)
+    for level, document in enumerate(version_four):
+        document['version'] = 4
+        document.pop('map_spawn_parameters', None)
+        document['map_spawns'] = original_map_spawns(level, 4)
+        validate(document)
+    new_tiles = {0: {0xE3, 0xF9}, 4: {0xD2, 0xD3, 0xDD}, 5: {0xDC, 0xDD, 0xEB}}
+    for level, ((old_scope, recipes), (scope, _)) in enumerate(zip(
+            map_recipe_bindings(version_four), map_recipe_bindings(documents))):
+        if old_scope != scope - new_tiles.get(level, set()) or len(recipes) != (25, 7, 3, 28, 19, 29)[level]:
+            raise AssertionError('version-4 recipe identities/coverage changed')
     bad = []
     for field, value in (('tile', True), ('tile', 256), ('spawn', 'boss'),
             ('enemy', '0x24'), ('sprite', True), ('sprite', 65536),
@@ -173,6 +189,9 @@ def import_cases(h, documents):
     edited[1]['map_spawns'][0]['compatibility'] = {'map_group': 'allocate_only'}
     bad.append((edited, None))
     for edited, diagnostic in bad:
+        for document in edited:
+            if document['version'] < 5:
+                document.pop('map_spawn_parameters', None)
         try:
             if diagnostic is None:
                 validate(edited[1])
@@ -183,14 +202,49 @@ def import_cases(h, documents):
                 raise
         else:
             raise AssertionError('accepted invalid map recipe')
+    parameter_bad = [None, {}, {'upward_crawler_sprite_offset': True, 'jitter_shooter_group_test': None},
+                     {'upward_crawler_sprite_offset': 32768, 'jitter_shooter_group_test': None}]
+    for test in ({}, {'mask': True, 'equals': 1}, {'mask': 65536, 'equals': 0},
+                 {'mask': 1, 'equals': 2}, {'mask': 15, 'equals': -1}):
+        parameter_bad.append({'upward_crawler_sprite_offset': 8, 'jitter_shooter_group_test': test})
+    for parameters in parameter_bad:
+        document = copy.deepcopy(documents[1])
+        document['map_spawn_parameters'] = parameters
+        try:
+            validate(document)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('accepted invalid map spawn parameters')
+    for spawn, fields in (('enemy', {'compatibility': {'live_crawler_sprite_offset': True}}),
+                         ('enemy', {'compatibility': {'live_jitter_group_test': True}}),
+                         ('enemy', {'compatibility': {'pickup_sprite_cursor': True}}),
+                         ('pickup', {'pickup': 'unknown'}),
+                         ('pickup', {'pickup': 'fuel', 'direction': 'up'}),
+                         ('pickup', {'pickup': 'fuel', 'compatibility': {'map_group': 'join_before_fields'}}),
+                         ('enemy', {'compatibility': {'live_jitter_group_test': False, 'map_group': 'allocate_only'}})):
+        document = copy.deepcopy(documents[1])
+        recipe = {'tile': 4, 'spawn': spawn, 'map_writes': []}
+        if spawn == 'enemy':
+            recipe['enemy'] = 'jitter_shooter'
+        recipe.update(fields)
+        document['map_spawns'] = [recipe]
+        try:
+            validate(document)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('accepted invalid version-5 recipe')
     # This alternative converts tile 4 to a known retained-cell volley turret,
     # disables tile 7, and gives the right turret a custom bank index/direction.
     edited = copy.deepcopy(documents)
     for level in (1, 4, 5):
         edited[level]['version'] = 1
+        edited[level].pop('map_spawn_parameters', None)
         edited[level]['map_spawns'] = original_map_spawns(level, 1)
     # Older explicit empty lists leave the version-3 center/plunger slice procedural.
     edited[2]['version'], edited[2]['map_spawns'] = 2, []
+    edited[2].pop('map_spawn_parameters', None)
     turret = copy.deepcopy(edited[1]['map_spawns'][4])
     turret['tile'] = 4
     edited[1]['map_spawns'][0] = turret
@@ -217,6 +271,7 @@ def import_cases(h, documents):
     # A version-1 level keeps the original narrower scope. Its explicit list
     # must not disable newly converted version-2 cells when the game is rebuilt.
     edited[0]['version'] = 1
+    edited[0].pop('map_spawn_parameters', None)
     edited[0]['map_spawns'] = original_map_spawns(0, 1)
     coverage, _ = map_recipe_bindings(edited)[0]
     if coverage:
@@ -250,10 +305,20 @@ def import_cases(h, documents):
     for document in version_three:
         document['map_spawns'] = []
     older = compile_table(ROOT / 'build/host-map-v3', version_three)
-    return len(bad) + 7, alternate, placement, older
+    for document in version_four:
+        document['map_spawns'] = []
+    older_four = compile_table(ROOT / 'build/host-map-v4', version_four)
+    authored = copy.deepcopy(documents)
+    authored[4]['map_spawn_parameters']['upward_crawler_sprite_offset'] = -5
+    authored[5]['map_spawn_parameters']['jitter_shooter_group_test'] = {'mask': 1, 'equals': 0}
+    pickup = next(recipe for recipe in authored[0]['map_spawns'] if recipe['spawn'] == 'pickup')
+    pickup['pickup'] = 'energy'
+    del pickup['compatibility']['pickup_sprite_cursor']
+    dynamic = compile_table(ROOT / 'build/host-map-dynamic', authored)
+    return len(bad) + 8 + len(parameter_bad) + 7, alternate, placement, older, older_four, dynamic
 
 
-def execution_cases(h, arena, checkpoints, alternate, placement, older):
+def execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic):
     lib = h.lib
     lib.level_map_cell.argtypes = (ctypes.c_void_p, ctypes.c_uint16, ctypes.c_uint16)
     lib.level_map_cell.restype = ctypes.c_uint16
@@ -285,7 +350,7 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
                 ctypes.memmove(arena.base + address, bytes([value]), 1)
 
     def setup(level, cell, off, x, free, alias, map_alias=False, drop=None, groups='free',
-              slot=None, allocated=None):
+              slot=None, allocated=None, live_level=None, random_index=None):
         h.reset()
         h.m.u.mem_write(0, bytes(memory))
         h.m.set_state(h.baseline)
@@ -324,6 +389,10 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
             h.write_symbol('PoolACursor', struct.pack('<H', allocated))
         if slot is not None:
             h.write((cursor if allocated is None else allocated) + K.REC_SLOT_INDEX, struct.pack('<H', slot))
+        if live_level is not None:
+            h.write_symbol('LevelIndex', struct.pack('<H', live_level))
+        if random_index is not None:
+            h.write_symbol('RandomWordCursor', struct.pack('<H', h.offset('CreditRandomWords') + random_index * 2))
         return here, segment
 
     def snapshot():
@@ -337,11 +406,14 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
 
     def run(level, cell, off=1300, x=96, free=3, alias=False, map_alias=False,
             edited=False, oracle_cell=None, drop=None, groups='free', expected_fields=(),
-            slot=None, allocated=None):
+            slot=None, allocated=None, live_level=None, random_index=None, oracle_words=(),
+            expected_continuation=None):
         nonlocal count
-        here, segment = setup(level, cell, off, x, free, alias, map_alias, drop, groups, slot, allocated)
+        here, segment = setup(level, cell, off, x, free, alias, map_alias, drop, groups, slot, allocated,
+                              live_level, random_index)
         label = (f'level {level} cell {cell:02X} off {off:04X} x {x} free {free} '
-                 f'alias {alias}/{map_alias} drop {drop} groups {groups} allocated {allocated} slot {slot}')
+                 f'alias {alias}/{map_alias} drop {drop} groups {groups} allocated {allocated} slot {slot} '
+                 f'live level {live_level} RNG {random_index}')
         if edited:
             continuation = ctypes.c_uint16(0xBEEF)
             evaluator = alternate if edited is True else edited
@@ -363,12 +435,17 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
             if struct.unpack('<H', h.m.read(at, 2))[0] != old:
                 raise AssertionError(label + ': unexpected oracle ' + field)
             h.m.write(at, struct.pack('<H', new))
+        for at, old, new in oracle_words:
+            if struct.unpack('<H', h.m.read(at, 2))[0] != old:
+                raise AssertionError(label + ': unexpected original word at ' + hex(at))
+            h.m.write(at, struct.pack('<H', new))
         compare(label, native_memory)
-        if result != registers['SI']:
+        if result != (registers['SI'] if expected_continuation is None else expected_continuation):
             raise AssertionError(label + ': scan continuation offset changed')
         if not edited:
             # A second independent native execution retains the old C switches.
-            setup(level, cell, off, x, free, alias, map_alias, drop, groups, slot, allocated)
+            setup(level, cell, off, x, free, alias, map_alias, drop, groups, slot, allocated,
+                  live_level, random_index)
             old_result = getattr(lib, f'level{level}_map_cell')(ctypes.c_void_p(h.state_addr + here), off, cell)
             _, legacy_memory = snapshot()
             checkpoints._compare_arena(native_memory, legacy_memory,
@@ -407,6 +484,35 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
                             run(level, recipe['tile'], drop=drop, groups=groups, free=free)
     for off in range(1280, 1344):
         run(3, 0xE1, off=off, groups='mixed')
+    for level, cell in ((0, 0xE3), (4, 0xDD), (5, 0xEB)):
+        for live_level in (0, 4, 5, 6, 65535):
+            for random_index in range(16):
+                for free in (0, 1):
+                    for groups in ('free', 'full', 'mixed'):
+                        run(level, cell, free=free, groups=groups, drop=4,
+                            live_level=live_level, random_index=random_index)
+        for off_symbol in ('LevelIndex', 'RandomWordCursor', 'GroupDropKind'):
+            for random_index in range(16):
+                run(level, cell, off=h.offset(off_symbol), map_alias=True, live_level=5,
+                    random_index=random_index, drop=4, groups='mixed')
+    for level, cell in ((4, 0xD2), (4, 0xD3), (5, 0xDC), (5, 0xDD)):
+        for live_level in (0, 4, 5, 6, 65535):
+            for free in (0, 1):
+                run(level, cell, live_level=live_level, free=free)
+                run(level, cell, off=h.offset('LevelIndex'), map_alias=True,
+                    live_level=live_level, free=free)
+        for field in (K.REC_KIND, K.REC_TYPE, K.REC_SPRITE, K.REC_DIRECTION):
+            run(level, cell, allocated=h.offset('LevelIndex') - field, free=0, live_level=4)
+    for off in (0, 1300, 65535):
+        for free in (0, 1):
+            state = run(0, 0xF9, off=off, free=free, drop=4)
+            if free and struct.unpack_from('<H', state, cursor + K.REC_SPRITE)[0] != 0x4A:
+                raise AssertionError('fuel pickup initialization did not select its sprite')
+    for off in (h.offset('DropKind'), cursor + K.REC_ITEM_INDEX, cursor + K.REC_FLASH_TIMER):
+        for free in (0, 1):
+            run(0, 0xF9, off=off, map_alias=True, free=free, drop=4)
+    for field in (K.REC_ITEM_INDEX, K.REC_KIND, K.REC_FLASH_TIMER):
+        run(0, 0xF9, allocated=h.offset('DropKind') + 1 - field, free=0, drop=4)
     for cell in (0xBB, 0xBC):
         for x in (0, 8, 95, 96, 97, 65528, 65535):
             for free in (0, 1):
@@ -483,6 +589,38 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
     if older.overkill_spawn_map_recipe(ctypes.c_void_p(h.state_addr + here), 1300,
             0x03CE, ctypes.byref(result)) != 1 or result.value != 1300 or snapshot() != before:
         raise AssertionError('version-3 empty list stopped disabling its covered cells')
+    for level, cells in ((0, (0xE3, 0xF9)), (4, (0xD2, 0xD3, 0xDD)), (5, (0xDC, 0xDD, 0xEB))):
+        for cell in cells:
+            here, _ = setup(level, cell, 1300, 96, 1, False)
+            before, result = snapshot(), ctypes.c_uint16(0xBEEF)
+            if older_four.overkill_spawn_map_recipe(ctypes.c_void_p(h.state_addr + here), 1300,
+                    level << 8 | cell, ctypes.byref(result)) != 0 or result.value != 0xBEEF or snapshot() != before:
+                raise AssertionError('version-4 empty list intercepted a version-5 cell')
+    here, _ = setup(4, 0xCE, 1300, 96, 1, False, drop=4)
+    before, result = snapshot(), ctypes.c_uint16(0xBEEF)
+    if older_four.overkill_spawn_map_recipe(ctypes.c_void_p(h.state_addr + here), 1300,
+            0x04CE, ctypes.byref(result)) != 1 or result.value != 1300 or snapshot() != before:
+        raise AssertionError('version-4 empty list stopped disabling its covered cells')
+    # Level parameters are read from the live identity at the original phase.
+    run(4, 0xD2, free=1, edited=dynamic, expected_fields=(('sprite', 0x172, 0x16D),))
+    run(5, 0xDC, free=1, live_level=4, edited=dynamic, expected_fields=(('sprite', 0x172, 0x16D),))
+    run(5, 0xDC, free=1, edited=dynamic)
+    run(4, 0xD2, free=0, edited=dynamic)
+    for random_index in range(16):
+        next_index = (random_index + 1) % 16
+        value = struct.unpack_from('<H', h.baseline, h.offset('CreditRandomWords') + next_index * 2)[0]
+        old_join, new_join = value & 15 == 15, value & 1 == 0
+        fields, words = (), ()
+        if old_join != new_join:
+            fields = (('slot_index', 0 if old_join else 65535, 0 if new_join else 65535),)
+            words = ((h.offset('GroupTable'), 0x0401 if old_join else 0xA500,
+                      0x0401 if new_join else 0xA500),)
+        run(5, 0xEB, free=1, drop=4, random_index=random_index, edited=dynamic,
+            expected_fields=fields, oracle_words=words)
+        run(5, 0xEB, free=0, drop=4, random_index=random_index, edited=dynamic)
+    run(0, 0xF9, free=1, edited=dynamic, expected_fields=(('item_index', 4, 2), ('sprite', 0x4A, 0x48)),
+        oracle_words=((h.offset('DropKind'), 4, 2),), expected_continuation=1300)
+    run(0, 0xF9, free=0, edited=dynamic)
     # Authored runner offsets and admission gates change only the expected words.
     run(0, 0xBC, x=96, free=1, edited=placement,
         expected_fields=(('x', 84, 76), ('saved_x', 84, 76)))
@@ -540,12 +678,12 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
     if ctypes.string_at(arena.base + map_base + 1300, 1) != bytes([61]):
         raise AssertionError('authored repeated map writes did not retain source order')
     # Row-level integration observes incoming-cell mutations and allocation order.
-    for level, cells in ((0, [0xBC, 0xBB, 0xEC, 0xE5, 0xE8, 0xF7, 0xF8]),
+    for level, cells in ((0, [0xF9, 0xBC, 0xBB, 0xE3, 0xEC, 0xE5, 0xE8, 0xF7, 0xF8]),
                          (1, [4, 7, 0x6C, 0x6D, 0xAC, 0xB1, 0xC9]),
                          (2, [0xC4, 0x5A, 0xC4, 0x30, 0x5A]),
                          (3, [0xCE, 0xD0, 0xD2, 0xD6, 0xDF, 0xE1, 0xD8]),
-                         (4, [0xAC, 0xB1, 0xC9, 0xD4, 0xD7, 0xDF]),
-                         (5, [0x30, 0xBA, 0xBB, 0xBC, 0xB6, 0xD9, 0xDE, 0xE1])):
+                         (4, [0xAC, 0xB1, 0xC9, 0xD2, 0xD3, 0xDD, 0xD4, 0xD7, 0xDF]),
+                         (5, [0x30, 0xDC, 0xDD, 0xEB, 0xBA, 0xBB, 0xBC, 0xB6, 0xD9, 0xDE, 0xE1])):
         for free in (0, 2, K.POOL_A_COUNT):
             here, segment = setup(level, 1, 1300, 96, free, False)
             row = bytes((cells * 13)[:13])
@@ -555,7 +693,7 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older):
             h.m.call('SpawnFromMapRow', {'SI': 1300, 'BP': here, 'ES': segment})
             compare(f'level {level} recipe row free {free}', native_memory)
             count += 1
-    return count, 27
+    return count, 65
 
 
 def main():
@@ -569,10 +707,10 @@ def main():
     checkpoints = module('map_recipes_checkpoints', ROOT / 'tests/host/checkpoints.py')
     h = harness.HostHarness()
     documents = [load(path) for path in original_paths()]
-    imported, alternate, placement, older = import_cases(h, documents)
+    imported, alternate, placement, older, older_four, dynamic = import_cases(h, documents)
     checkpoints._bind_native(h.lib)
     arena = checkpoints.Arena(h)
-    executed, authored = execution_cases(h, arena, checkpoints, alternate, placement, older)
+    executed, authored = execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic)
     print(f'PASS map recipes: {imported} import/validator checks, {executed} native/oracle '
           f'cases (direct cells also compare retained C), {authored} authored-data checks')
 

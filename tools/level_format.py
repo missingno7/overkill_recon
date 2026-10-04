@@ -32,14 +32,14 @@ def validate(document):
         if 'timeline' in document or 'formations' in document:
             fields.update(('timeline', 'formations'))
         fields.update(name for name in ('paths', 'leader_paths', 'map_spawns', 'departure', 'encounter',
-                                       'marching_formation', 'boss') if name in document)
+                                       'marching_formation', 'boss', 'map_spawn_parameters') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):

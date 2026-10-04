@@ -982,6 +982,10 @@
       ]
     }
   },
+  "map_spawn_parameters": {
+    "jitter_shooter_group_test": null,
+    "upward_crawler_sprite_offset": 8
+  },
   "map_spawns": [
     {
       "enemy": "animated_fire_burst_c",
@@ -2009,5 +2013,5 @@
       "y": 0
     }
   ],
-  "version": 4
+  "version": 5
 }

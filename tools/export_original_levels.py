@@ -9,7 +9,7 @@ from world import K
 from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
 from level_paths import level_path_definitions
-from level_map_recipes import original_map_spawns
+from level_map_recipes import original_map_spawns, original_map_spawn_parameters
 from level_departure import departure_definition
 from level_encounter import original_encounter
 from level_invaders import original_invader_slots, original_marching_formation
@@ -43,7 +43,7 @@ def definitions(machine):
         if encounter['kind'] == 'invader_formation':
             encounter['slots'] = original_invader_slots(machine)
         document = {
-            'format': 'overkill-level', 'version': 4,
+            'format': 'overkill-level', 'version': 5,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
             'terrain': terrain_definition(machine, level),
@@ -51,6 +51,7 @@ def definitions(machine):
             'formations': formations, 'timeline': timeline,
             'paths': paths, 'leader_paths': leaders,
             'map_spawns': original_map_spawns(level),
+            'map_spawn_parameters': original_map_spawn_parameters(level),
             'departure': departure_definition(machine),
             'encounter': encounter,
             'marching_formation': original_marching_formation(level),

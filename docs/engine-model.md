@@ -150,10 +150,9 @@ destroyed part has zero HP; parts exploded through its release keep initialized 
 because later smart-bomb visits skip explosion types. These rules explain why a
 clean-looking construction rollback would change observable behavior.
 
-Map recipes cover all defined level-1/level-2/level-3 actions, center-facing choices,
-gated runners/cruiser placement, retained-slot hatches and directional lurkers,
-plus fixed-field/clear-only choices across levels 0/4/5. A recipe names the existing enemy behavior,
-ordinary, large or no record allocation, ordered relative map-cell writes, and optional sprite
+Map recipes now cover every defined original action in all six levels, including
+conditional crawler sprites, random jitter-shooter membership and the fuel pickup. A recipe names the existing enemy behavior,
+ordinary, large, pickup or no record allocation, ordered relative map-cell writes, and optional sprite
 and direction. No general instruction interpreter is needed. The native build
 compiles these `.lvl` definitions into immutable per-level recipe tables; shared
 runtime state remains in DS. The generic evaluator uses the existing initializers.
@@ -166,11 +165,9 @@ their source order and word offset wrapping. Physical map/DS aliases are resolve
 by the existing native memory layer, including high offsets in the ordinary map segment.
 
 An internal migration mask distinguishes converted cells from pending procedures.
-All defined cases in levels 1/2/3 now dispatch through the generic evaluator; converted cases in
-other levels use it before their original handlers. Removing a covered recipe disables it;
-omitting the section keeps the originals. Conditional sprites, RNG-dependent grouping
-and fuel scan-cursor behavior remain procedural. Retained C
-switches are temporary comparison references, and DOS dispatch is unchanged.
+All defined cases in all six levels now dispatch through the generic evaluator. Removing a covered recipe disables it;
+omitting the section keeps the originals. Older definitions retain their narrower
+conversion scopes. Retained C switches are temporary comparison references, and DOS dispatch is unchanged.
 
 Group preparation is separate from membership. Importer-generated compatibility
 data retains allocation-only cases, normal joining before field overrides and large
@@ -193,15 +190,23 @@ changes direction and adds twice that distance; saved positions stay unchanged.
 The hatch's retained group slot is a separate initialization policy: skip that
 field write, while preserving the same ordered large-record initializer.
 
-Canonical fixtures now use version 4 for the expanded map recipe scope. Version-1/2/3
+Two narrow level parameters describe upward-crawler sprite offsets and the jitter
+shooter's masked random-word test. Importer compatibility requests live level
+selection at the original phase: after initial crawler fields, or before jitter
+map writes/allocation. A disabled test consumes no RNG; an enabled test consumes
+one word even when the pool is full. These are proven data choices, not a generic
+behavior or scripting abstraction. Pickup recipes reuse the original initializer;
+the fuel compatibility rule returns the resulting sprite as the scan continuation.
+Normal authored pickups keep the map offset.
+
+Canonical fixtures now use version 5 for the expanded map recipe scope. Version-1/2/3/4
 definitions retain their earlier scopes, so an older explicit empty/partial list
 does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. Eight remaining original map cases: conditional crawler sprites,
-   RNG-dependent grouping and exceptional fuel scan-cursor
-   results. Compare every conversion against the original handler before dispatch.
+1. Complete map group/drop rules: the live shared masked-offset cycle and its
+   aliases with event drops still use the original DS table.
 2. Remaining formation/enemy parameters and level-specific defaults,
    parameters, retaining unique procedural implementations initially.
 

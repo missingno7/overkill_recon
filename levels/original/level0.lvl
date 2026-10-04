@@ -750,6 +750,10 @@
       ]
     }
   },
+  "map_spawn_parameters": {
+    "jitter_shooter_group_test": null,
+    "upward_crawler_sprite_offset": 8
+  },
   "map_spawns": [
     {
       "compatibility": {
@@ -846,6 +850,22 @@
       ],
       "spawn": "enemy",
       "tile": 226
+    },
+    {
+      "compatibility": {
+        "live_jitter_group_test": true,
+        "map_group": "allocate_only"
+      },
+      "enemy": "jitter_shooter",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 227
     },
     {
       "compatibility": {
@@ -1259,6 +1279,22 @@
       "spawn": "large_enemy",
       "sprite": 36,
       "tile": 248
+    },
+    {
+      "compatibility": {
+        "map_group": "allocate_only",
+        "pickup_sprite_cursor": true
+      },
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "pickup": "fuel",
+      "spawn": "pickup",
+      "tile": 249
     }
   ],
   "marching_formation": {
@@ -2062,5 +2098,5 @@
       "y": 0
     }
   ],
-  "version": 4
+  "version": 5
 }

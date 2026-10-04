@@ -42,6 +42,7 @@ ARCHETYPES = {
     'wait_then_fire_burst': 0x88, 'animated_fire_burst_c': 0x8F,
     'retained_cell_enemy_hatch': 0x2A, 'wait_then_cruise_firing': 0x6F,
     'wait_then_run_right': 0x73, 'wait_then_run_left': 0x74, 'lurk_until_aligned': 0x84,
+    'jitter_shooter': 0x68,
 }
 SIZES = {'8x8': 0, '16x16': 1, '32x32': 2}
 LAYERS = {'under_terrain': 0, 'over_terrain': 1}

@@ -1,16 +1,17 @@
 # Overkill level format: current structured bindings
 
-Version 4 has two partial profiles. `level-bindings` describes resources, tile
+Version 5 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
 mothership departure data, encounter descriptors, marching-formation timing and
 segmented-boss member data;
 the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
-playable level yet. Independent map storage, remaining spawn recipes and enemy/member parameters
+playable level yet. Independent map storage, complete map drop rules and enemy/member parameters
 await extraction.
-Versions 1, 2 and 3 remain accepted with their original map-recipe scopes. Version 2
+Versions 1, 2, 3 and 4 remain accepted with their original map-recipe scopes. Version 2
 adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
 Version 4 adds side gates, runner/cruiser placement and retained-slot large initialization.
+Version 5 completes the original spawn actions with live sprite/random parameters and pickups.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
 Omitting map recipes still retains originals under either version.
 
@@ -234,11 +235,8 @@ fixtures; their supported codecs do not assert original level reachability.
 ## Map spawn recipes
 
 `map_spawns` is an optional list of unique tile-triggered recipes. It currently
-represents all defined original level-1/level-2/level-3 actions, center-facing choices,
-gated runners and cruiser placement, retained-cell hatches and directional lurkers,
-plus fixed-field, clear-only and group-hole cases in levels 0/4/5.
-Eight conditional-sprite, RNG-dependent and fuel-pickup cases retain their
-existing handlers during migration. An empty list in a partially converted level
+represents all defined original actions in all six levels, including live crawler
+sprites, jitter membership and the fuel pickup. An empty list in a partially converted level
 does not disable its unconverted spawns. Native binding rejects recipes outside
 that level's converted scope; level 1 supports all byte-valued triggers.
 
@@ -377,6 +375,59 @@ preparation without joining remains allowed.
 The four level-5 lurkers need only the existing ordinary initializer and fixed
 sprite/direction fields; their directions select their later alignment behaviors.
 
+### Live map parameters and pickups
+
+Version-5 `map_spawn_parameters` specifies both fields:
+
+```json
+{
+  "map_spawn_parameters": {
+    "upward_crawler_sprite_offset": 8,
+    "jitter_shooter_group_test": {"mask": 15, "equals": 15}
+  }
+}
+```
+
+The sprite offset is a signed word, added with word wrapping to the recipe's
+initial sprite. Original level 4 uses zero; the other five use eight. The random
+test is either `null` (consume no word, never join) or unsigned word `mask` and
+`equals` values; equals must fit the mask. Only original level 5 enables it.
+It tests the next word of the existing fixed cycle, rather than an independent
+random stream or an approximate probability. Omitting the section retains the
+original parameters for the binding slot during migration.
+
+Importer-generated `compatibility.live_crawler_sprite_offset: true` requires an
+ordinary enemy with a fixed sprite. After its initial fields, read the live level
+parameter and, if nonzero, overwrite sprite with initial sprite plus offset. The
+original upward crawlers also use `direction_before_type: true`; version 5 permits
+that order for fixed directions as well as facing. Do not cache level identity
+before map writes or initialization: those writes can alias `LevelIndex`.
+
+`compatibility.live_jitter_group_test: true` requires an ordinary enemy with
+`map_group: "allocate_only"`. After group preparation, read the live level test;
+if enabled, consume exactly one random word before map writes/allocation, including
+full pools. A match joins the prepared group after ordinary initialization and
+before field overrides. A miss leaves the prepared slot unused. The three jitter
+recipes in levels 0/4/5 all use this rule, although only level 5 normally draws.
+Out-of-range live identities retain the original comparison results: offset eight
+and no random test. This is an internal DS-alias boundary, not episode progression.
+
+A pickup recipe uses `spawn: "pickup"`, a semantic `pickup` name from the drop
+kinds (`none`, `upgrade`, `energy`, `smart_bomb`, `fuel`), and ordered `map_writes`.
+It has no enemy, sprite or direction overrides. After ordinary map-enemy allocation
+and initialization, set `DropKind`, then reuse `InitPickupRecord`'s exact writes.
+Enemy initialization intentionally leaves its HP/saved position and stale direction
+in place; pickup initialization changes only its own fields. A full pool still
+performs map writes/preparation, but leaves `DropKind` and continuation unchanged.
+
+Original level 0 F9 uses `pickup: "fuel"`, allocation-only group preparation and
+`compatibility.pickup_sprite_cursor: true`. On success return the initializer's
+sprite (originally 74) as the row scanner's continuation offset; its next cell is
+75 while the map-column X advances normally. Ordinary authored pickups omit this
+compatibility flag and retain the incoming map offset. The initializer reads
+`DropKind` once after its first six writes, preserving aliases between globals
+and the item-index field; native tests explicitly cover this read boundary.
+
 ### Original group compatibility
 
 Original grouped ranges prepare a group slot even for cells that produce no
@@ -420,10 +471,9 @@ native handling and are not exported as playable recipes.
 Omitting `map_spawns` keeps original recipes. An explicit list replaces the covered
 slice; removing an entry disables that trigger rather than falling back to its old
 switch case. Coverage is internal migration metadata, not a permanent original-game
-path. The exporter derives this small slice from curated equivalents of maintained
+path. The exporter derives the original actions from curated equivalents of maintained
 C handlers; canonical execution is independently checked against ASM. Full map drop
-rules, live level-dependent sprite selection, RNG-dependent grouping and fuel
-pickup continuation remain pending.
+rules still use the shared original DS table and remain pending.
 
 ## Mothership departure
 
@@ -759,13 +809,16 @@ Center-facing comparisons exercise unsigned equality/neighbor/high-word boundari
 stale sprites, full pools, caller aliases and a map clear changing X from the right
 to the left side. Authored choices and signed offsets use explicitly checked oracle
 output words while every other DS/physical byte, saved coordinate and RNG state
-must agree. Version-1/2/3 coverage remains fixed; older empty lists do not intercept
+must agree. Version-1/2/3/4 coverage remains fixed; older empty lists do not intercept
 later triggers. Runner comparisons include wrong-side no-mutation checks, pre-clear
 selection with post-clear X aliases, saved-X copies and wrap. Cruiser tests exercise
 the shifted equality boundary, group exhaustion and authored distance changes.
 Hatch tests check retained slot values and an allocation whose kind write aliases
 the subsequent MapCellX read. Authored changes remain local to their level.
-Mixed rows exercise all six handlers.
+All 16 RNG positions, dispatch/live-level permutations, map clears into level/RNG
+globals, post-initialization level aliases and authored sprite/test/pickup changes
+are compared against ASM. Mixed rows exercise all six handlers, including the
+fuel scan jump.
 The departure suite compares terminal map writes, animated-part allocation and
 autopilot/refill transitions for all six originals against ASM. An alternate build
 of the production coordinators proves that authored departure components reach

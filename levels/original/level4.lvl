@@ -542,6 +542,10 @@
       ]
     }
   },
+  "map_spawn_parameters": {
+    "jitter_shooter_group_test": null,
+    "upward_crawler_sprite_offset": 0
+  },
   "map_spawns": [
     {
       "direction": "left",
@@ -651,6 +655,44 @@
       "spawn": "enemy",
       "sprite": 155,
       "tile": 209
+    },
+    {
+      "compatibility": {
+        "direction_before_type": true,
+        "live_crawler_sprite_offset": true,
+        "map_group": "allocate_only"
+      },
+      "direction": "up_right",
+      "enemy": "scroll_to_y176_then_crawl",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 370,
+      "tile": 210
+    },
+    {
+      "compatibility": {
+        "direction_before_type": true,
+        "live_crawler_sprite_offset": true,
+        "map_group": "allocate_only"
+      },
+      "direction": "up_left",
+      "enemy": "scroll_to_y176_then_crawl",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "sprite": 371,
+      "tile": 211
     },
     {
       "compatibility": {
@@ -812,6 +854,22 @@
       ],
       "spawn": "enemy",
       "tile": 220
+    },
+    {
+      "compatibility": {
+        "live_jitter_group_test": true,
+        "map_group": "allocate_only"
+      },
+      "enemy": "jitter_shooter",
+      "map_writes": [
+        {
+          "dx": 0,
+          "dy": 0,
+          "tile": 1
+        }
+      ],
+      "spawn": "enemy",
+      "tile": 221
     },
     {
       "compatibility": {
@@ -1192,5 +1250,5 @@
       "y": 0
     }
   ],
-  "version": 4
+  "version": 5
 }

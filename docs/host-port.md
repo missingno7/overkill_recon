@@ -19,12 +19,14 @@ against ASM with pool/group exhaustion and edited definition cases.
 `python tests/host/path_data.py --no-build` compares original waypoint/leader streams,
 arrivals/endings, allocation failures and edited route/slot definitions against ASM.
 Map recipe slices compile from `.lvl` definitions into native immutable tables:
-all defined level-1/level-2/level-3 actions, center-facing choices, runner/cruiser
-placement, retained-slot hatches and directional lurkers now use one evaluator.
-Version-1/2/3 definitions retain their original conversion scopes. Group compatibility retains preparation and
+all defined original actions across the six levels now use one evaluator, including
+live crawler sprite offsets, jitter group tests and fuel scan continuation.
+Version-1/2/3/4 definitions retain their original conversion scopes. Group compatibility retains preparation and
 membership order while sharing the original live drop table.
 `python tests/host/map_recipes.py --no-build` checks all safe cells, converted-action
-boundaries, row integration and authored edits; remaining recipes retain their handlers.
+boundaries, row integration and authored edits. Retained C handlers remain comparison
+references and older-version fallbacks. Native pickup initialization also preserves
+the proven single DropKind read; combat tests cover unaligned global/record aliases.
 Segmented-boss health, sprites, spawn positions and placement offsets now come from
 per-level data. Unique construction/combat/destruction procedures retain their
 allocation and stale-pointer semantics; `tests/host/boss_data.py` compares them

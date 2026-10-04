@@ -1,18 +1,18 @@
 """Map recipe slices, curated from the maintained map-cell handlers.
 
-Fixed-field/center-facing cases, offsets and group preparation/join phases are converted.
+Original spawn actions use ordered initialization, mutation and group phases.
 Coverage is migration metadata: unconverted cells keep their proven procedures.
 The generated native table is consumed by host/map_recipes.c, never by DOS C.
 """
 import copy
-from level_presets import ARCHETYPES
+from level_presets import ARCHETYPES, DROPS
 from world import K
 
 DIRECTIONS = {'up': K.DIR_UP, 'up_right': K.DIR_UP_RIGHT,
               'right': K.DIR_RIGHT, 'down_right': K.DIR_DOWN_RIGHT,
               'down': K.DIR_DOWN, 'down_left': K.DIR_DOWN_LEFT,
               'left': K.DIR_LEFT, 'up_left': K.DIR_UP_LEFT}
-SPAWNS = {'enemy': 0, 'large_enemy': 1, 'none': 2}
+SPAWNS = {'enemy': 0, 'large_enemy': 1, 'none': 2, 'pickup': 3}
 SPAWN_REGIONS = {'at_or_left_of_center': 1, 'right_of_center': 2}
 MAP_GROUPS = {'allocate_only': 1, 'join_before_fields': 2, 'join_after_fields': 3}
 # Version 1's explicit recipe lists replaced only this original migration scope.
@@ -36,9 +36,21 @@ V3_MAP_SCOPE = {level: V2_MAP_SCOPE.get(level, set()) | tiles for level, tiles i
 }.items()}
 
 
-def original_map_spawns(level, version=4):
-    if version in (1, 2, 3):
-        scope = {1: V1_MAP_SCOPE, 2: V2_MAP_SCOPE, 3: V3_MAP_SCOPE}[version].get(level, set())
+V4_MAP_SCOPE = {level: V3_MAP_SCOPE[level] | tiles for level, tiles in {
+    0: {0xBB, 0xBC, 0xEC}, 1: set(), 2: {0x30}, 3: set(), 4: set(),
+    5: {0x30, 0xBA, 0xBB, 0xBC, 0xB6},
+}.items()}
+
+
+def original_map_spawn_parameters(level):
+    return {'upward_crawler_sprite_offset': 0 if level == 4 else 8,
+            'jitter_shooter_group_test': {'mask': 15, 'equals': 15} if level == 5 else None}
+
+
+def original_map_spawns(level, version=5):
+    if version in (1, 2, 3, 4):
+        scope = {1: V1_MAP_SCOPE, 2: V2_MAP_SCOPE, 3: V3_MAP_SCOPE,
+                 4: V4_MAP_SCOPE}[version].get(level, set())
         return [recipe for recipe in original_map_spawns(level)
                 if recipe['tile'] in scope]
     def recipe(tile, enemy=None, *, clear=False, sprite=None, direction=None, large=False,
@@ -73,6 +85,14 @@ def original_map_spawns(level, version=4):
         return result
     clear_square = [{'dx': 0, 'dy': 0, 'tile': 1}, {'dx': 1, 'dy': 0, 'tile': 1},
                     {'dx': 0, 'dy': 1, 'tile': 1}, {'dx': 1, 'dy': 1, 'tile': 1}]
+    jitter = grouped(0xE3, 'jitter_shooter', clear=True)
+    jitter['compatibility']['live_jitter_group_test'] = True
+    crawler_right = grouped(0xD2, 'scroll_to_y176_then_crawl', clear=True,
+                            sprite=0x172, direction='up_right')
+    crawler_left = grouped(0xD3, 'scroll_to_y176_then_crawl', clear=True,
+                           sprite=0x173, direction='up_left')
+    for crawler in (crawler_right, crawler_left):
+        crawler['compatibility'].update(direction_before_type=True, live_crawler_sprite_offset=True)
     if level == 0:
         runner_right = recipe(0xBC, 'wait_then_run_right', clear=True, sprite=0x14C, direction='right')
         runner_left = recipe(0xBB, 'wait_then_run_left', clear=True, sprite=0x14F, direction='left')
@@ -89,6 +109,7 @@ def original_map_spawns(level, version=4):
             runner_right, runner_left,
             centered(0xE1, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
             centered(0xE2, 'wait_then_fire_burst', 0xFD, 'left', 0xFA, 'right'),
+            jitter,
             grouped(0xE4, 'low_row_jitterer', clear=True),
             centered(0xE5, 'scroll_to_y80_then_crawl', 0x11E, 'down_left', 0x11D, 'down_right'),
             centered(0xE6, 'scroll_to_y80_then_crawl', 0x11E, 'down_left', 0x11D, 'down_right'),
@@ -109,6 +130,9 @@ def original_map_spawns(level, version=4):
             grouped(0xF7, 'aimed_descender', large=True, direction='down', writes=clear_square),
             grouped(0xF8, 'spread_shot_descender', large=True, sprite=0x24,
                     direction='down', writes=clear_square, after=True),
+            {'tile': 0xF9, 'spawn': 'pickup', 'pickup': 'fuel',
+             'map_writes': [{'dx': 0, 'dy': 0, 'tile': 1}],
+             'compatibility': {'map_group': 'allocate_only', 'pickup_sprite_cursor': True}},
         ]
     left = recipe(0xAC, 'volley_turret_left', sprite=0x89, direction='left')
     right = recipe(0xB1, 'volley_turret_right', sprite=0x8C, direction='right')
@@ -129,11 +153,13 @@ def original_map_spawns(level, version=4):
         return [centered(0xC4, 'animated_fire_burst_c', 0xBF, 'left', 0xC2, 'right', group=False),
                 plunger, retained_hatch]
     if level == 4:
+        jitter['tile'] = 0xDD
         return [left, right, hatch,
             grouped(0xCE, 'climbing_walker_b', clear=True),
             grouped(0xCF, 'climbing_walker_a', clear=True),
             grouped(0xD0, 'delayed_crawler_right', clear=True, sprite=0x99, direction='right'),
             grouped(0xD1, 'delayed_crawler_left', clear=True, sprite=0x9B, direction='left'),
+            crawler_right, crawler_left,
             centered(0xD4, 'crawl_turn_diagonal_down', None, 'left', None, 'right', direction_first=True),
             grouped(0xD5, 'patrol_shoot_down_c', clear=True, direction='down', join=True),
             grouped(0xD6, 'fast_fall_4_flicker', clear=True),
@@ -142,11 +168,13 @@ def original_map_spawns(level, version=4):
             grouped(0xD9, 'fast_drop_8', clear=True, sprite=0x77, direction='down', join=True),
             grouped(0xDA, 'wall_bounce_descender', clear=True, direction='down_right'),
             grouped(0xDB, 'wall_bounce_descender', clear=True, direction='down_left'),
-            grouped(0xDC, 'side_turret', clear=True), grouped(0xDE, 'low_row_jitterer', clear=True),
+            grouped(0xDC, 'side_turret', clear=True), jitter, grouped(0xDE, 'low_row_jitterer', clear=True),
             grouped(0xDF, 'descend_burst', clear=True, join=True),
             grouped(0xE0, 'crawler_turn_left', clear=True, sprite=0x27, direction='down', join=True),
         ]
     if level == 5:
+        jitter['tile'] = 0xEB
+        crawler_right['tile'], crawler_left['tile'] = 0xDC, 0xDD
         left['tile'], right['tile'] = 0xD3, 0xD2
         return [right, left, retained_hatch,
             recipe(0xBA, 'lurk_until_aligned', clear=True, sprite=0x156, direction='up'),
@@ -158,6 +186,7 @@ def original_map_spawns(level, version=4):
             grouped(0xD9, 'descend_aimed_fire', large=True, direction='down', writes=clear_square, after=True),
             grouped(0xDA, 'row_firer', clear=True, sprite=0x15A, direction='right'),
             grouped(0xDB, 'row_firer', clear=True, sprite=0x15B, direction='left'),
+            crawler_right, crawler_left,
             centered(0xDE, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
             centered(0xDF, 'animated_fire_burst_a', 0xE0, 'left', 0xDD, 'right'),
             grouped(0xE0, 'fast_drop_8', clear=True, sprite=0x77, direction='down', join=True),
@@ -170,6 +199,7 @@ def original_map_spawns(level, version=4):
             grouped(0xE8, 'patrol_shoot_down_b', clear=True, join=True),
             grouped(0xE9, 'patrol_shoot_down_a', clear=True, direction='left', join=True),
             grouped(0xEA, 'descend_burst', clear=True, join=True),
+            jitter,
             grouped(0xEC, 'fast_fall_4_flicker', clear=True),
             grouped(0xED, 'vertical_bouncer_shooter', clear=True, join=True),
             grouped(0xEE, 'hover_fire_plunge_a', clear=True, direction='up', join=True),
@@ -208,6 +238,19 @@ def original_map_spawns(level, version=4):
 
 
 def validate_map_spawns(document):
+    if 'map_spawn_parameters' in document:
+        parameters = document['map_spawn_parameters']
+        if document['version'] < 5 or not isinstance(parameters, dict) or set(parameters) != {
+                'upward_crawler_sprite_offset', 'jitter_shooter_group_test'}:
+            raise ValueError('map_spawn_parameters requires version 5 and both supported parameters')
+        offset = parameters['upward_crawler_sprite_offset']
+        if type(offset) is not int or not -32768 <= offset <= 32767:
+            raise ValueError('upward crawler sprite offset must be a signed word')
+        test = parameters['jitter_shooter_group_test']
+        if test is not None and (not isinstance(test, dict) or set(test) != {'mask', 'equals'} or
+                any(type(test[field]) is not int or not 0 <= test[field] <= 65535 for field in test) or
+                test['equals'] & ~test['mask']):
+            raise ValueError('jitter group test must be null or a word mask and reachable equals value')
     if 'map_spawns' not in document:
         return
     recipes = document['map_spawns']
@@ -216,7 +259,9 @@ def validate_map_spawns(document):
     tiles = set()
     for recipe in recipes:
         required = {'tile', 'spawn', 'map_writes'}
-        if isinstance(recipe, dict) and recipe.get('spawn') != 'none':
+        if isinstance(recipe, dict) and recipe.get('spawn') == 'pickup':
+            required.add('pickup')
+        elif isinstance(recipe, dict) and recipe.get('spawn') != 'none':
             required.add('enemy')
         optional = {'compatibility'} | ({'sprite', 'direction', 'facing', 'position_offset',
                                          'spawn_region', 'placement'}
@@ -233,14 +278,27 @@ def validate_map_spawns(document):
             compatibility = recipe['compatibility']
             if not isinstance(compatibility, dict) or not compatibility or set(compatibility) - {
                     'map_group', 'direction_before_type', 'offset_before_fields',
-                    'save_spawn_x', 'preserve_slot_index'}:
+                    'save_spawn_x', 'preserve_slot_index', 'live_crawler_sprite_offset',
+                    'live_jitter_group_test', 'pickup_sprite_cursor'}:
                 raise ValueError('unsupported map recipe group compatibility')
             if 'map_group' in compatibility and (not isinstance(compatibility['map_group'], str) or
                     compatibility['map_group'] not in MAP_GROUPS):
                 raise ValueError('unsupported map recipe group compatibility')
             if 'direction_before_type' in compatibility and (document['version'] < 3 or
-                    compatibility['direction_before_type'] is not True or 'facing' not in recipe):
-                raise ValueError('direction_before_type requires version-3 center facing')
+                    compatibility['direction_before_type'] is not True or
+                    not ('facing' in recipe or document['version'] >= 5 and 'direction' in recipe)):
+                raise ValueError('direction_before_type requires center facing or version-5 fixed direction')
+            for field in ('live_crawler_sprite_offset', 'live_jitter_group_test', 'pickup_sprite_cursor'):
+                if field in compatibility and (document['version'] < 5 or compatibility[field] is not True):
+                    raise ValueError(field + ' requires version 5 and true')
+            if compatibility.get('live_crawler_sprite_offset') and (
+                    recipe['spawn'] != 'enemy' or 'sprite' not in recipe or 'facing' in recipe):
+                raise ValueError('live crawler sprite offset requires an ordinary enemy with a fixed sprite')
+            if compatibility.get('live_jitter_group_test') and (
+                    recipe['spawn'] != 'enemy' or compatibility.get('map_group') != 'allocate_only'):
+                raise ValueError('live jitter group test requires ordinary initialization and group preparation')
+            if compatibility.get('pickup_sprite_cursor') and recipe['spawn'] != 'pickup':
+                raise ValueError('pickup_sprite_cursor requires pickup initialization')
             for field in ('offset_before_fields', 'save_spawn_x', 'preserve_slot_index'):
                 if field in compatibility and (document['version'] < 4 or compatibility[field] is not True):
                     raise ValueError(field + ' requires version 4 and true')
@@ -257,7 +315,13 @@ def validate_map_spawns(document):
                 raise ValueError('a preserved slot index cannot also join a map group')
             if recipe['spawn'] == 'none' and compatibility.get('map_group') != 'allocate_only':
                 raise ValueError('non-spawning map recipes cannot join a group')
-        for field, choices in (('spawn', SPAWNS), ('enemy', ARCHETYPES), ('direction', DIRECTIONS)):
+        if recipe['spawn'] == 'pickup':
+            if document['version'] < 5:
+                raise ValueError('pickup map recipes require version 5')
+            if recipe.get('compatibility', {}).get('map_group') not in (None, 'allocate_only') or set(
+                    recipe.get('compatibility', {})) - {'map_group', 'pickup_sprite_cursor'}:
+                raise ValueError('pickup initialization cannot use enemy field or membership compatibility')
+        for field, choices in (('spawn', SPAWNS), ('enemy', ARCHETYPES), ('direction', DIRECTIONS), ('pickup', DROPS)):
             if field in recipe and (not isinstance(recipe[field], str) or recipe[field] not in choices):
                 raise ValueError('unknown map recipe ' + field)
         if 'sprite' in recipe and (type(recipe['sprite']) is not int or not 0 <= recipe['sprite'] <= 65535):
@@ -351,7 +415,8 @@ def generate_map_recipe_header(out, documents):
                 if recipe.get('compatibility', {}).get('direction_before_type'):
                     flags |= 64
                 for field, bit in (('offset_before_fields', 128), ('save_spawn_x', 256),
-                                   ('preserve_slot_index', 512)):
+                                   ('preserve_slot_index', 512), ('live_crawler_sprite_offset', 2048),
+                                   ('live_jitter_group_test', 4096), ('pickup_sprite_cursor', 8192)):
                     if recipe.get('compatibility', {}).get(field):
                         flags |= bit
                 placement = recipe.get('placement', {})
@@ -364,6 +429,7 @@ def generate_map_recipe_header(out, documents):
                           offset.get('dx', 0) & 65535, offset.get('dy', 0) & 65535,
                           SPAWN_REGIONS.get(recipe.get('spawn_region'), 0), placement.get('distance', 0),
                           DIRECTIONS.get(placement.get('right_direction'), 0),
+                          DROPS.get(recipe.get('pickup'), 0),
                           len(recipe['map_writes']), writes]
                 rows.append('    {' + ', '.join(map(str, values)) + '},')
             rows.append('};')
@@ -373,5 +439,11 @@ def generate_map_recipe_header(out, documents):
         pointer = f'map_recipes_{level}' if recipes else 'NULL'
         rows.append('    {' + pointer + ', ' + str(len(recipes)) + ', {' +
                     ', '.join(map(str, mask)) + '}},')
+    rows.extend(('};', 'static const MapSpawnParameters map_spawn_parameters[6] = {'))
+    for level, document in enumerate(documents):
+        values = document.get('map_spawn_parameters', original_map_spawn_parameters(level))
+        test = values['jitter_shooter_group_test']
+        rows.append('    {' + ', '.join(map(str, (values['upward_crawler_sprite_offset'] & 65535,
+            int(test is not None), test['mask'] if test else 0, test['equals'] if test else 0))) + '},')
     rows.extend(('};', '#endif', ''))
     (out / 'MAP_RECIPES_GEN.H').write_text('\n'.join(rows))

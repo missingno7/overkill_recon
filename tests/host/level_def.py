@@ -71,7 +71,7 @@ def fixtures(machine):
     if actual != expected:
         raise AssertionError('canonical resource fixtures differ from the exact oracle')
     bad = []
-    for key, value in (('version', True), ('version', 5), ('profile', 'complete'),
+    for key, value in (('version', True), ('version', 6), ('profile', 'complete'),
                        ('id', '0x34'), ('objects', [])):
         document = copy.deepcopy(actual[0])
         document[key] = value
@@ -137,6 +137,7 @@ def import_checks(machine):
         del document['paths']
         del document['leader_paths']
         del document['map_spawns']
+        del document['map_spawn_parameters']
         del document['departure']
         del document['encounter']
         del document['marching_formation']

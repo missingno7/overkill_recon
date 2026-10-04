@@ -5,7 +5,8 @@
 enum MapSpawnInitializer {
     MAP_SPAWN_ENEMY = 0,
     MAP_SPAWN_LARGE_ENEMY = 1,
-    MAP_SPAWN_NONE = 2
+    MAP_SPAWN_NONE = 2,
+    MAP_SPAWN_PICKUP = 3
 };
 
 enum MapGroupPhase {
@@ -26,7 +27,10 @@ enum MapRecipeFields {
     MAP_RECIPE_OFFSET_FIRST = 128,
     MAP_RECIPE_SAVE_X = 256,
     MAP_RECIPE_PRESERVE_SLOT = 512,
-    MAP_RECIPE_OUTWARD = 1024
+    MAP_RECIPE_OUTWARD = 1024,
+    MAP_RECIPE_LIVE_CRAWLER_SPRITE = 2048,
+    MAP_RECIPE_LIVE_JITTER_GROUP = 4096,
+    MAP_RECIPE_PICKUP_CURSOR = 8192
 };
 
 enum MapSpawnRegion { MAP_REGION_ANY = 0, MAP_REGION_AT_OR_LEFT = 1, MAP_REGION_RIGHT = 2 };
@@ -51,6 +55,7 @@ typedef struct MapSpawnRecipe {
     byte spawn_region;
     word outward_distance;
     word outward_direction;
+    word pickup_kind;
     word map_write_count;
     const MapCellWrite *map_writes;
 } MapSpawnRecipe;
@@ -61,7 +66,14 @@ typedef struct MapRecipeLevel {
     byte coverage[32];
 } MapRecipeLevel;
 
+typedef struct MapSpawnParameters {
+    word upward_crawler_sprite_offset;
+    word jitter_group_enabled;
+    word jitter_group_mask;
+    word jitter_group_equals;
+} MapSpawnParameters;
+
 /* Returns whether this cell belongs to the converted slice. The continuation
-   offset remains explicit because later fuel recipes must retain its legacy result. */
+   offset remains explicit because the fuel pickup retains its legacy result. */
 int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *continuation);
 #endif
