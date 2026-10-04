@@ -13,6 +13,7 @@ from level_encounter import validate_encounter
 from level_invaders import validate_marching_formation
 from level_boss import validate_boss
 from level_groups import validate_map_group_drops
+from level_policies import validate_level_policies
 import argparse
 from pathlib import Path
 import re
@@ -34,14 +35,14 @@ def validate(document):
             fields.update(('timeline', 'formations'))
         fields.update(name for name in ('paths', 'leader_paths', 'map_spawns', 'departure', 'encounter',
                                        'marching_formation', 'boss', 'map_spawn_parameters',
-                                       'map_group_drops') if name in document)
+                                       'map_group_drops', 'checkpoint_restart', 'music') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if set(document) != fields:
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):
@@ -140,6 +141,7 @@ def validate(document):
     validate_path_sections(document)
     validate_map_spawns(document)
     validate_map_group_drops(document)
+    validate_level_policies(document)
     validate_departure(document)
     validate_encounter(document)
     validate_marching_formation(document)

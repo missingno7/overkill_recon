@@ -4,6 +4,9 @@
 */
 #include "life.h"
 #include "sound.h"
+#ifdef OVERKILL_HOST
+#include "../host/level_policies.h"
+#endif
 
 #ifndef OVERKILL_HOST
 extern volatile word __far SaveBufferCursor;
@@ -92,7 +95,11 @@ word request_life_start_music(word es)
     word tune;
     if (MapScrollPos == MAP_START_POS) tune = MUSIC_LEVEL_START;
     else if (MapScrollPos == MAP_END_POS) tune = MUSIC_LEVEL_END;
+#ifdef OVERKILL_HOST
+    else tune = overkill_level_music(LevelIndex);
+#else
     else tune = LevelMusicTable[(byte)LevelIndex];
+#endif
 #ifdef OVERKILL_HOST
     sound_request_module_music(tune);
     return es;

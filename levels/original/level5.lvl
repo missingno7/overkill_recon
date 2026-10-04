@@ -1,4 +1,112 @@
 {
+  "checkpoint_restart": {
+    "compatibility": {
+      "live_original": true
+    },
+    "lookback_rows": 12,
+    "tile_restorations": [
+      {
+        "replacement": 1,
+        "tile": 215
+      },
+      {
+        "replacement": 1,
+        "tile": 216
+      },
+      {
+        "replacement": 1,
+        "tile": 217
+      },
+      {
+        "replacement": 1,
+        "tile": 218
+      },
+      {
+        "replacement": 1,
+        "tile": 219
+      },
+      {
+        "replacement": 1,
+        "tile": 220
+      },
+      {
+        "replacement": 1,
+        "tile": 221
+      },
+      {
+        "replacement": 1,
+        "tile": 222
+      },
+      {
+        "replacement": 1,
+        "tile": 223
+      },
+      {
+        "replacement": 1,
+        "tile": 224
+      },
+      {
+        "replacement": 1,
+        "tile": 225
+      },
+      {
+        "replacement": 1,
+        "tile": 226
+      },
+      {
+        "replacement": 1,
+        "tile": 227
+      },
+      {
+        "replacement": 1,
+        "tile": 228
+      },
+      {
+        "replacement": 1,
+        "tile": 229
+      },
+      {
+        "replacement": 1,
+        "tile": 230
+      },
+      {
+        "replacement": 1,
+        "tile": 231
+      },
+      {
+        "replacement": 1,
+        "tile": 232
+      },
+      {
+        "replacement": 1,
+        "tile": 233
+      },
+      {
+        "replacement": 1,
+        "tile": 234
+      },
+      {
+        "replacement": 1,
+        "tile": 235
+      },
+      {
+        "replacement": 1,
+        "tile": 236
+      },
+      {
+        "replacement": 1,
+        "tile": 237
+      },
+      {
+        "replacement": 1,
+        "tile": 238
+      },
+      {
+        "replacement": 1,
+        "tile": 239
+      }
+    ]
+  },
   "checkpoints": [
     {
       "map_row": 12,
@@ -1102,6 +1210,12 @@
       }
     ]
   },
+  "music": {
+    "compatibility": {
+      "live_original": true
+    },
+    "level": 10
+  },
   "paths": {},
   "profile": "level-bindings",
   "resources": {
@@ -1397,5 +1511,5 @@
       "y": 0
     }
   ],
-  "version": 6
+  "version": 7
 }

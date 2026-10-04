@@ -56,6 +56,7 @@ def generate_state(out):
     from level_encounter import generate_encounter_header
     from level_invaders import generate_invader_header
     from level_boss import generate_boss_header
+    from level_policies import generate_level_policy_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -66,6 +67,7 @@ def generate_state(out):
     generate_encounter_header(out, [load(path) for path in original_paths()])
     generate_invader_header(out, [load(path) for path in original_paths()], machine)
     generate_boss_header(out, [load(path) for path in original_paths()], machine)
+    generate_level_policy_header(out, [load(path) for path in original_paths()], machine)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')

@@ -1,4 +1,20 @@
 {
+  "checkpoint_restart": {
+    "compatibility": {
+      "live_original": true
+    },
+    "lookback_rows": 12,
+    "tile_restorations": [
+      {
+        "replacement": 1,
+        "tile": 196
+      },
+      {
+        "replacement": 1,
+        "tile": 90
+      }
+    ]
+  },
   "checkpoints": [
     {
       "map_row": 12,
@@ -1149,6 +1165,12 @@
       }
     ]
   },
+  "music": {
+    "compatibility": {
+      "live_original": true
+    },
+    "level": 3
+  },
   "paths": {
     "path_follower_c": {
       "end": {
@@ -2082,5 +2104,5 @@
       "y": 0
     }
   ],
-  "version": 6
+  "version": 7
 }

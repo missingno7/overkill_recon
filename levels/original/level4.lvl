@@ -1,4 +1,92 @@
 {
+  "checkpoint_restart": {
+    "compatibility": {
+      "live_original": true
+    },
+    "lookback_rows": 12,
+    "tile_restorations": [
+      {
+        "replacement": 40,
+        "tile": 201
+      },
+      {
+        "replacement": 1,
+        "tile": 206
+      },
+      {
+        "replacement": 1,
+        "tile": 207
+      },
+      {
+        "replacement": 1,
+        "tile": 208
+      },
+      {
+        "replacement": 1,
+        "tile": 209
+      },
+      {
+        "replacement": 1,
+        "tile": 210
+      },
+      {
+        "replacement": 1,
+        "tile": 211
+      },
+      {
+        "replacement": 1,
+        "tile": 212
+      },
+      {
+        "replacement": 1,
+        "tile": 213
+      },
+      {
+        "replacement": 1,
+        "tile": 214
+      },
+      {
+        "replacement": 1,
+        "tile": 215
+      },
+      {
+        "replacement": 1,
+        "tile": 216
+      },
+      {
+        "replacement": 1,
+        "tile": 217
+      },
+      {
+        "replacement": 1,
+        "tile": 218
+      },
+      {
+        "replacement": 1,
+        "tile": 219
+      },
+      {
+        "replacement": 1,
+        "tile": 220
+      },
+      {
+        "replacement": 1,
+        "tile": 221
+      },
+      {
+        "replacement": 1,
+        "tile": 222
+      },
+      {
+        "replacement": 1,
+        "tile": 223
+      },
+      {
+        "replacement": 1,
+        "tile": 224
+      }
+    ]
+  },
   "checkpoints": [
     {
       "map_row": 12,
@@ -1031,6 +1119,12 @@
       }
     ]
   },
+  "music": {
+    "compatibility": {
+      "live_original": true
+    },
+    "level": 9
+  },
   "paths": {
     "encounter_leader": {
       "end": {
@@ -1319,5 +1413,5 @@
       "y": 0
     }
   ],
-  "version": 6
+  "version": 7
 }

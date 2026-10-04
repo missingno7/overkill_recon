@@ -41,6 +41,7 @@
 
 #ifdef OVERKILL_HOST
 #include "level_def.h"
+#include "level_policies.h"
 #include "level_departure.h"
 #include "level_invaders.h"
 #include "level_boss.h"
@@ -482,7 +483,13 @@ void tick_fuel_drain(void)
 void tick_frame_timers(void)
 {
     if (EncounterLiveCount == 0 && EncounterEndDelay != 0 && --EncounterEndDelay == 0)
-        frame_request_music(MapScrollPos < MAP_MUSIC_CHANGE_POS ? LevelMusicTable[(byte)LevelIndex] : MUSIC_LATE_LEVEL);
+        frame_request_music(MapScrollPos < MAP_MUSIC_CHANGE_POS ?
+#ifdef OVERKILL_HOST
+            overkill_level_music(LevelIndex)
+#else
+            LevelMusicTable[(byte)LevelIndex]
+#endif
+            : MUSIC_LATE_LEVEL);
     if (FrameCount8 == 7) {
         if (SwayDirX == 0xFFFF) {
             if (--SwayPhase == 0) {
@@ -713,6 +720,13 @@ void scroll_map_to_level_start(Record *here)
    other). */
 void reset_map_before_view(void)
 {
+#ifdef OVERKILL_HOST
+    const LevelCheckpointRestart *restart = overkill_level_checkpoint_restart(LevelIndex);
+    if (restart) {
+        overkill_restore_checkpoint_tiles(restart);
+        return;
+    }
+#endif
     word off = MapScrollPos, n = 0x9C;
     word entry_offset;
 

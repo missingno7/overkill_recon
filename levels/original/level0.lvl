@@ -49,6 +49,114 @@
       }
     }
   },
+  "checkpoint_restart": {
+    "compatibility": {
+      "live_original": true
+    },
+    "lookback_rows": 12,
+    "tile_restorations": [
+      {
+        "replacement": 1,
+        "tile": 225
+      },
+      {
+        "replacement": 1,
+        "tile": 226
+      },
+      {
+        "replacement": 1,
+        "tile": 227
+      },
+      {
+        "replacement": 1,
+        "tile": 228
+      },
+      {
+        "replacement": 1,
+        "tile": 229
+      },
+      {
+        "replacement": 1,
+        "tile": 230
+      },
+      {
+        "replacement": 1,
+        "tile": 231
+      },
+      {
+        "replacement": 1,
+        "tile": 232
+      },
+      {
+        "replacement": 1,
+        "tile": 233
+      },
+      {
+        "replacement": 1,
+        "tile": 234
+      },
+      {
+        "replacement": 1,
+        "tile": 235
+      },
+      {
+        "replacement": 1,
+        "tile": 236
+      },
+      {
+        "replacement": 1,
+        "tile": 237
+      },
+      {
+        "replacement": 1,
+        "tile": 238
+      },
+      {
+        "replacement": 1,
+        "tile": 239
+      },
+      {
+        "replacement": 1,
+        "tile": 240
+      },
+      {
+        "replacement": 1,
+        "tile": 241
+      },
+      {
+        "replacement": 1,
+        "tile": 242
+      },
+      {
+        "replacement": 1,
+        "tile": 243
+      },
+      {
+        "replacement": 1,
+        "tile": 244
+      },
+      {
+        "replacement": 1,
+        "tile": 245
+      },
+      {
+        "replacement": 1,
+        "tile": 246
+      },
+      {
+        "replacement": 1,
+        "tile": 247
+      },
+      {
+        "replacement": 1,
+        "tile": 248
+      },
+      {
+        "replacement": 1,
+        "tile": 249
+      }
+    ]
+  },
   "checkpoints": [
     {
       "map_row": 12,
@@ -1409,6 +1517,12 @@
       }
     ]
   },
+  "music": {
+    "compatibility": {
+      "live_original": true
+    },
+    "level": 8
+  },
   "paths": {
     "boss_anchor": {
       "end": {
@@ -2167,5 +2281,5 @@
       "y": 0
     }
   ],
-  "version": 6
+  "version": 7
 }

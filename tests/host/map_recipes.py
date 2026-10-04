@@ -824,6 +824,11 @@ def main():
     checkpoints = module('map_recipes_checkpoints', ROOT / 'tests/host/checkpoints.py')
     h = harness.HostHarness()
     documents = [load(path) for path in original_paths()]
+    # This suite constructs version-1..6 recipe documents. Later policy sections
+    # have their own validation/equivalence suite and are absent in these fixtures.
+    for document in documents:
+        document.pop('checkpoint_restart', None)
+        document.pop('music', None)
     imported, alternate, placement, older, older_four, dynamic, groups = import_cases(h, documents)
     checkpoints._bind_native(h.lib)
     arena = checkpoints.Arena(h)

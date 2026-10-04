@@ -15,6 +15,7 @@ from level_encounter import original_encounter
 from level_invaders import original_invader_slots, original_marching_formation
 from level_boss import original_boss
 from level_groups import original_map_group_drops
+from level_policies import original_checkpoint_restart, original_music
 import argparse
 from pathlib import Path
 import struct
@@ -44,11 +45,13 @@ def definitions(machine):
         if encounter['kind'] == 'invader_formation':
             encounter['slots'] = original_invader_slots(machine)
         document = {
-            'format': 'overkill-level', 'version': 6,
+            'format': 'overkill-level', 'version': 7,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
             'terrain': terrain_definition(machine, level),
             'checkpoints': checkpoint_definitions(machine, level),
+            'checkpoint_restart': original_checkpoint_restart(machine, level),
+            'music': original_music(machine, level),
             'formations': formations, 'timeline': timeline,
             'paths': paths, 'leader_paths': leaders,
             'map_spawns': original_map_spawns(level),
