@@ -1,6 +1,7 @@
 #include "level_content.h"
 #include "content_json.h"
 #include "level_policies.h"
+#include "level_timeline_data.h"
 #include "game.h"
 #include "memory.h"
 #include <stdio.h>
@@ -16,6 +17,7 @@ typedef struct LevelContent {
     int live_music, live_restart;
     LevelCheckpointRestart restart;
     LevelTileRestoration *rules;
+    LevelTimeline *timeline;
 } LevelContent;
 
 static LevelContent current;
@@ -52,6 +54,8 @@ static int safe_name(const char *name, int path)
 void overkill_level_content_unload(void)
 {
     if (current.id[0]) overkill_level_policy_bind_current(NULL, NULL);
+    overkill_level_timeline_bind_current(NULL);
+    overkill_level_timeline_free(current.timeline);
     free(current.map);
     free(current.rules);
     memset(&current, 0, sizeof current);
@@ -77,7 +81,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     JsonDocument doc = {0}, original = {0};
     LevelContent next = {0};
     char path[2048], map_path[1024], field_error[160];
-    long value, rows, columns;
+    long value, rows, columns, version;
     int compatibility, resources, map, music, restart;
     int ok = 0;
     size_t i;
@@ -92,7 +96,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     if (!directory || !original_directory) goto done;
     if (snprintf(path, sizeof path, "%s/level.json", directory) >= (int)sizeof path) goto done;
     if (!content_json_load(path, &doc, error, error_size)) goto done;
-    if (!integer(&doc, 0, "version", 8, &value) || value != 8 ||
+    if (!integer(&doc, 0, "version", 9, &version) || (version != 8 && version != 9) ||
         !content_json_string(&doc, content_json_member(&doc, 0, "id"), next.id, sizeof next.id) ||
         !safe_name(next.id, 0)) goto done;
     compatibility = content_json_member(&doc, 0, "compatibility");
@@ -105,10 +109,13 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     reason = "unsupported independent content field (must match original behavior profile)";
     /* Compare every section we cannot yet load independently. Missing, changed
        and unknown fields all fail; a compatibility profile cannot hide edits. */
-    if (content_json_size(&doc, 0) != content_json_size(&original, 0) + 1) goto done;
+    if (content_json_size(&doc, 0) != content_json_size(&original, 0) + (version == 9 ? 1 : 0)) goto done;
+    if (version == 8 && content_json_member(&doc, 0, "formation_spawn_parameters") >= 0) goto done;
     for (i = 0; i < sizeof unchanged / sizeof unchanged[0]; i++) {
         int a = content_json_member(&doc, 0, unchanged[i]);
         int b = content_json_member(&original, 0, unchanged[i]);
+        if (version == 9 && (!strcmp(unchanged[i], "timeline") ||
+            !strcmp(unchanged[i], "formations") || !strcmp(unchanged[i], "checkpoints"))) continue;
         if (a < 0 && b < 0) continue;
         if (!content_json_equal(&doc, a, &original, b)) {
             snprintf(field_error, sizeof field_error, "%s: independent runtime loading is not implemented yet", unchanged[i]);
@@ -181,16 +188,20 @@ int overkill_level_content_load(const char *directory, const char *original_dire
             }
         }
     }
+    if (version == 9 && !overkill_level_timeline_parse(&doc, &original, next.behavior_profile,
+                                                      &next.timeline, error, error_size)) goto done;
     overkill_level_content_unload();
     current = next;
     overkill_level_policy_bind_current(
         current.live_restart ? NULL : &current.restart, current.live_music ? NULL : &current.music);
+    overkill_level_timeline_bind_current(current.timeline);
     memset(&next, 0, sizeof next);
     ok = 1;
 done:
     if (file) fclose(file);
     free(next.map);
     free(next.rules);
+    overkill_level_timeline_free(next.timeline);
     content_json_free(&doc);
     content_json_free(&original);
     if (!ok && error && error_size && !error[0]) snprintf(error, error_size, "%s", reason);

@@ -14,6 +14,7 @@ from level_invaders import validate_marching_formation
 from level_boss import validate_boss
 from level_groups import validate_map_group_drops
 from level_policies import validate_level_policies
+from level_timeline import validate_formation_spawn_parameters
 import argparse
 from pathlib import Path
 import re
@@ -35,13 +36,13 @@ def validate(document):
             fields.update(('timeline', 'formations'))
         fields.update(name for name in ('paths', 'leader_paths', 'map_spawns', 'departure', 'encounter',
                                        'marching_formation', 'boss', 'map_spawn_parameters',
-                                       'map_group_drops', 'checkpoint_restart', 'music') if name in document)
+                                       'map_group_drops', 'checkpoint_restart', 'music', 'formation_spawn_parameters') if name in document)
     elif profile != 'resource-bindings':
         raise ValueError('only resource-bindings and level-bindings profiles are implemented')
     if 'compatibility' in document:
         fields.add('compatibility')
         compatibility = document['compatibility']
-        if (document.get('version') != 8 or profile != 'level-bindings' or
+        if (document.get('version') not in (8, 9) or profile != 'level-bindings' or
                 not isinstance(compatibility, dict) or set(compatibility) != {'original_level'} or
                 type(compatibility['original_level']) is not int or
                 not 0 <= compatibility['original_level'] < 6):
@@ -50,7 +51,7 @@ def validate(document):
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8, 9):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or len(document['id']) > 127 or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):
@@ -60,10 +61,10 @@ def validate(document):
         raise ValueError('resources must specify map, sprites, blocks and plaque')
     for role, name in resources.items():
         if role == 'map' and isinstance(name, dict):
-            if (document['version'] != 8 or set(name) != {'path', 'encoding', 'columns', 'rows'} or
+            if (document['version'] not in (8, 9) or set(name) != {'path', 'encoding', 'columns', 'rows'} or
                     name['encoding'] != 'tile-grid' or type(name['columns']) is not int or
                     name['columns'] != 13 or type(name['rows']) is not int or name['rows'] != 288):
-                raise ValueError('local map requires version 8 and a 13 by 288 tile-grid')
+                raise ValueError('local map requires version 8 or 9 and a 13 by 288 tile-grid')
             if (not isinstance(name['path'], str) or len(name['path']) > 1023 or not re.fullmatch(
                     r'[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\.bin', name['path'])):
                 raise ValueError('local map path must be a safe relative .bin path')
@@ -90,8 +91,9 @@ def validate(document):
                 raise ValueError('unknown tile attribute')
     if 'checkpoints' in document:
         checkpoints = document['checkpoints']
-        if not isinstance(checkpoints, list) or len(checkpoints) != 4:
-            raise ValueError('the original binding requires four checkpoints')
+        count = len(checkpoints) if isinstance(checkpoints, list) else 0
+        if not (count == 4 if document['version'] < 9 else 1 <= count <= 65535):
+            raise ValueError('checkpoints require four entries before version 9, or a nonempty list in version 9')
         previous_row = -1
         for checkpoint in checkpoints:
             if not isinstance(checkpoint, dict) or set(checkpoint) != {
@@ -109,7 +111,7 @@ def validate(document):
         if not isinstance(formations, dict):
             raise ValueError('formations must be a named object')
         for name, formation in formations.items():
-            if not isinstance(name, str) or not re.fullmatch(r'[a-z][a-z0-9_]*', name):
+            if not isinstance(name, str) or len(name) > 127 or not re.fullmatch(r'[a-z][a-z0-9_]*', name):
                 raise ValueError('formation names must be semantic identifiers')
             if not isinstance(formation, dict) or set(formation) != {'enemy', 'size', 'layer', 'members'}:
                 raise ValueError('formation must specify enemy, size, layer and members')
@@ -159,6 +161,7 @@ def validate(document):
     validate_map_spawns(document)
     validate_map_group_drops(document)
     validate_level_policies(document)
+    validate_formation_spawn_parameters(document)
     validate_departure(document)
     validate_encounter(document)
     validate_marching_formation(document)

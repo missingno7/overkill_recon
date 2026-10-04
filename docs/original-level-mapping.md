@@ -3,7 +3,8 @@
 Initial audit baseline: commit `9377201`, native SDL3 and shared DOS C. The inventory
 below identifies sources and semantic boundaries; the ASM/C source remains the
 authority for numeric values. Re-run `rg -n LevelIndex c host -g '*.c'` when extending
-this inventory. No complete external gameplay representation is claimed yet.
+this inventory. Version 9 supports only a partial loose runtime representation;
+complete independent levels and episodes are not claimed.
 
 ## Inventory
 
@@ -17,11 +18,11 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Last five rows extracted into departure data; first two forced rows/placement positions remain shared rules |
 | Opening ambush | Shared encounter behavior + per-level leader/event/path data | First `LevelScript0..5` event at clock 272, `Formation39..44`, `start_leader_script`, `type13_formation_leader` | Opening events/formations/routes extracted; shared scroll-hold, release delay and early-stage weapon/pod/render policies remain implicit |
 | Mothership departure | Shared sequence data + procedural state machine | `LevelEndMapRows`, `Type53SpawnTable`, `AutopilotWaypointA/B`, `scroll_forward_and_check_level_end`, `run_level_end_sequence` | Five rows, four animated parts and both waypoints extracted with independent authored data; trigger/extra-record/refill/music rules remain; distinct from combat bosses |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases across all six levels extracted, including live sprite/random parameters and fuel continuation; map drop cycle and explicit drops extracted; independent event storage still pending |
-| Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
-| Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
-| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained; event drops still share original DS bindings |
-| Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py` |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | Canonical recipes cover all defined cases, including sprite/random parameters and fuel continuation. Loose maps use the selected profile's recipes; editing the recipe set/parameters remains an equality boundary |
+| Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Canonical bindings retain live byte-offset cursors and event/drop reads. Loose v9 owns immutable ordered events and stores the next event ordinal in `LevelScriptCursors[behavior_profile]`; equality triggers, marker effects and consume-before-allocation remain |
+| Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Canonical build bindings retain 52 referenced layouts and shared storage; loose v9 owns named formations and ordered members. `formation_spawn_parameters` exposes the two existing member HP choices; unused Formation48 remains in canonical DS |
+| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained. Canonical timeline drops still share DS bindings; loose v9 event drops are owned per event |
+| Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py`. Procedures and their global DS path/resource tables still come from the selected behavior profile |
 | Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
 | Leader-child slots | Pure layout + runtime cursor | `FormationSlots`, `FormationSlotCursor`; leader children/type20 | Extracted ordered slots; allocation failure still advances cursor |
@@ -29,7 +30,7 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Opening march timing | Pure parameter tiers + shared latch behavior | `UpdateAllRecords`, `StepMarchFireDelay`, type80; `frame.c`, `reset_march_state` in `spawn.c` | Extracted enabled flag and separate step/fire delay tiers; initial state, edges/drop distance and member behavior remain procedural defaults; distinct from invader slots |
 | Boss | Pure geometry/path + unique behavior | `BossPartOffsets`, `BossPath`, boss globals; segmented boss routines | Anchor route, health, sprites, initial positions and placement offsets extracted; unique construction/damage/destruction remain procedural |
 | Encounter selection | Unique behavior selection + parameters | `type21_encounter_director`; level 0 boss, 3 invaders, 4 leader path, others fallers/burster | Extracted four semantic kinds, phase thresholds, explicit burster health/sprite/X, faller policies and director damage eligibility; existing procedures retained |
-| Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Extracted to map rows, clocks and next-event indices; native LevelDef selects live bindings with ASM read/write ordering |
+| Checkpoints | Pure data + legacy selection/overread | `LevelCheckpointPtrs`, `LevelCheckpoints*`, `CheckpointCursorPtrs`; `frame.c` restart | Canonical four-row bindings retain live provisional cursor writes and the ignored fourth-word read. Loose v9 owns 1..65535 semantic rows `{map_row, script_clock, resume_event}` and restores an ordinal without that read |
 | Map reset actions | Level-specific restoration data + legacy scan policy | `MapResetLists` in DATA and `MapResetList*` in code; restart scan in `frame.c` | Extracted: `checkpoint_restart` with `lookback_rows: 12` and ordered `{tile, replacement}` restorations; preserve first match, scan/mutation order and level-specific rows |
 | Music | Level resource metadata + shared trigger policy | `LevelMusicTable`; `life.c`, `frame.c`, `session.c` | Extracted `music.level`; six module tune indices are `8, 1, 3, 7, 9, 10`. Exact start/end overrides and delayed late-level restore remain shared engine policy |
 | Palette/HUD level identity | Resource metadata / presentation | `display.c`, CS `LevelCgaPaletteCases`, `DacColor6*`, `LevelDigitChars`, native presentation dispatch | Pending; adapter-specific choice, original digit and chooser order retained |
@@ -72,7 +73,10 @@ Important boundary cases to encode in future comparisons:
   resumes from it, rather than simply advancing one cell.
 - Event cursors advance before spawning members; allocation failure truncates a
   formation. A zero member count retains the original 16-bit LOOP behavior.
-- Map loads reset all six script cursors, including during checkpoint restart.
+- Map loads reset all six canonical script cursor words, including during checkpoint
+  restart; an active loose v9 timeline sets only its behavior-profile slot to ordinal
+  zero after those six legacy writes. The map rewind may consume that stream; restart
+  restores the selected checkpoint ordinal at the original final cursor-write point.
 
 ## Remaining level selections in gameplay
 
@@ -82,7 +86,7 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 |---|---|
 | `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset |
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
-| `spawn.c` | Event HP initialization; type21's unusual initial leader-script pointer; shared event-drop binding (map helpers remain comparison references) |
+| `spawn.c` | Other formation-member initialization fields; type21's unusual initial leader-script pointer; canonical shared event-drop binding (map helpers remain comparison references) |
 | `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
 | `frame.c` | March initial step/edges/drop/member defaults (checkpoint restoration and music are extracted) |
 | `display.c`, native presentation | Palette and displayed digit selections |
@@ -127,12 +131,18 @@ The native selection retains provisional cursor writes before threshold reads;
 direct comparisons cover the two alias cases the previous C selection omitted.
 Level 2's final clock/event mismatch and level 5's repeated resume event are retained.
 
-Timeline and formation payloads now enter that initialization too. Preset identities
-are in `tools/level_presets.py`, directly consumed by export, validation and binding;
-the enemy dispatcher remains authoritative for behavior. The layout adapter retains
-shared formation identities and trigger-indexed group drops, rejects conflicting
-definitions and preserves ignored trailing bytes. Checkpoint indices follow edited
-event framing rather than retaining stale source byte offsets.
+Canonical timeline and formation payloads enter build-time initialization through
+that adapter. Preset identities are in `tools/level_presets.py`, directly consumed
+by export, validation and binding; the enemy dispatcher remains authoritative for
+behavior. The canonical layout adapter retains shared formation identities and
+trigger-indexed group drops, rejects conflicting definitions and preserves ignored
+trailing bytes. Loose version 9 runtime content instead owns immutable timelines,
+formations, checkpoints and formation spawn HP; its existing DS cursor word stores
+the next ordinal. Authored checkpoint rows select by the following map row with an
+unsigned threshold and have no neighboring fourth-word read. Map reload first
+performs the original six cursor resets, then sets the active profile cursor to zero;
+checkpoint restart restores the selected ordinal after the rewind. Version 8 loose
+content remains accepted with canonical timeline/checkpoint equality.
 
 `tools/level_paths.py` now derives route and leader payloads from source labels.
 The codecs preserve public playfield coordinates, distinct stream endings, shared
@@ -157,8 +167,9 @@ phases. Allocation-only applies to both ungrouped enemies within admitted ranges
 and no-record cells; ordinary members join before field overrides, large members
 afterward. The real level-3 hole retains its allocation attempt without touching
 map, pool or group bytes. Level-5 walker cells retain their early nongroup return.
-The shared live drop cycle remains authoritative, including aliases with timeline
-events and map writes that alter the drop word after preparation. Live crawler
+The shared live drop cycle remains authoritative for map recipes and canonical
+timeline bindings, including aliases with map writes that alter the drop word after
+preparation. Loose v9 timeline events own their drop values. Live crawler
 sprite choices, jitter grouping and fuel continuation are now represented.
 Grouped coverage arrived in version 2; center-facing and pixel-offset coverage uses
 version 3; runner/cruiser, retained-slot hatch and lurker coverage uses version 4;
@@ -173,8 +184,8 @@ map level only; explicit recipe drops supersede the cycle before allocation.
 The allocator and joiner remain the original procedures. A zero drop retains the
 old slot index; a full-table scan sets it to 16 (the earlier C comment was stale).
 Every selector, membership phase, exhausted pool/table and late drop alias is
-compared against ASM. Existing timeline shared-drop conflict checks still pass;
-map drop edits do not alter that table or any initial DS byte.
+compared against ASM. Canonical timeline drop bindings preserve shared-table
+conflicts; loose v9 event drops are separate from map drop edits and DS storage.
 
 The center-facing data corresponds to inline ASM spawn cases and the shared C
 `face_centre` helper, plus the sprite-less `SpawnCellCrawler5F`. These recipes read

@@ -1,5 +1,6 @@
 #include "level_def.h"
 #include "game.h"
+#include "level_timeline.h"
 
 void overkill_level_def(uint16_t level_index, LevelDef *definition)
 {
@@ -45,9 +46,10 @@ void overkill_initialize_tile_attributes(uint16_t patch_binding)
 
 void overkill_select_checkpoint(uint16_t binding, LevelCheckpoint *selection)
 {
-    word cursor = *GAME_PTR(word, binding);
-    word n, threshold;
+    word cursor, n, threshold;
 
+    if (overkill_level_timeline_select_checkpoint(selection)) return;
+    cursor = *GAME_PTR(word, binding);
     for (n = 0; n < 4; n++) {
         selection->map_position = *GAME_PTR(word, cursor);
         cursor = (word)(cursor + 2);

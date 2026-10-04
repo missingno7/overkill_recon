@@ -42,6 +42,7 @@
 #ifdef OVERKILL_HOST
 #include "level_def.h"
 #include "level_policies.h"
+#include "level_timeline.h"
 #include "level_departure.h"
 #include "level_invaders.h"
 #include "level_boss.h"
@@ -791,6 +792,9 @@ void restart_at_checkpoint(Record *here)
         scroll_backward_one_line(here);
     } while (MapScrollPos > position || ScrollSubRow != 0);
     LevelScriptClock = clock;
+#ifdef OVERKILL_HOST
+    if (!overkill_level_timeline_restore_checkpoint())
+#endif
     FRAME_DS_WORD(FRAME_STATE_WORD(CheckpointCursorPtrs, (word)(LevelIndex << 1))) =
         CheckpointScriptCursor;
 }

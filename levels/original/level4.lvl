@@ -231,6 +231,13 @@
     "kind": "leader_path"
   },
   "format": "overkill-level",
+  "formation_spawn_parameters": {
+    "compatibility": {
+      "live_original": true
+    },
+    "other_member_hit_points": 12,
+    "tile_member_hit_points": 5
+  },
   "formations": {
     "encounter_director_single_1": {
       "enemy": "encounter_director",
@@ -1413,5 +1420,5 @@
       "y": 0
     }
   ],
-  "version": 7
+  "version": 9
 }

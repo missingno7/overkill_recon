@@ -108,6 +108,8 @@ def bind_level_documents(machine, documents):
         if len(payload) > capacity:
             raise ValueError(f'level {level}: timeline exceeds original storage capacity')
         state[start:start + len(payload)] = payload
+        if 'checkpoints' in document and len(document['checkpoints']) != 4:
+            raise ValueError('the original DS binding requires four checkpoints')
         if 'checkpoints' in document or 'timeline' in document:
             slot = machine.offset('LevelCheckpointPtrs') + level * 2
             cursor = struct.unpack_from('<H', original, slot)[0]

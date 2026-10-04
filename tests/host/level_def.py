@@ -60,7 +60,7 @@ def probe():
     command += ['-static-libgcc'] if os.name == 'nt' else ['-fPIC']
     command += ['-I' + str(ROOT / p) for p in ('build/host', 'c', 'host')]
     command += [str(ROOT / p) for p in ('tests/host/level_def_probe.c',
-                                       'c/levels.c', 'host/level_def.c', 'host/level_departure.c', 'host/memory.c')]
+                                       'c/levels.c', 'host/level_def.c', 'host/level_departure.c', 'host/level_timeline.c', 'host/memory.c')]
     subprocess.run(command + ['-o', str(library)], check=True)
     return library
 
@@ -71,7 +71,7 @@ def fixtures(machine):
     if actual != expected:
         raise AssertionError('canonical resource fixtures differ from the exact oracle')
     bad = []
-    for key, value in (('version', True), ('version', 9), ('profile', 'complete'),
+    for key, value in (('version', True), ('version', 10), ('profile', 'complete'),
                        ('id', '0x34'), ('objects', [])):
         document = copy.deepcopy(actual[0])
         document[key] = value
@@ -88,7 +88,7 @@ def fixtures(machine):
         document = copy.deepcopy(actual[0])
         document['checkpoints'][0][field] = value
         bad.append(document)
-    for value in ([], {}, actual[0]['checkpoints'][:3]):
+    for value in ([], {}):
         document = copy.deepcopy(actual[0])
         document['checkpoints'] = value
         bad.append(document)
@@ -141,6 +141,7 @@ def import_checks(machine):
         del document['map_group_drops']
         del document['checkpoint_restart']
         del document['music']
+        del document['formation_spawn_parameters']
         del document['departure']
         del document['encounter']
         del document['marching_formation']

@@ -166,6 +166,10 @@
     "kind": "fallers_then_burster"
   },
   "format": "overkill-level",
+  "formation_spawn_parameters": {
+    "other_member_hit_points": 12,
+    "tile_member_hit_points": 3
+  },
   "formations": {
     "animated_descender_column_3": {
       "enemy": "animated_descender",
@@ -2106,5 +2110,5 @@
       "y": 0
     }
   ],
-  "version": 8
+  "version": 9
 }

@@ -829,6 +829,7 @@ def main():
     for document in documents:
         document.pop('checkpoint_restart', None)
         document.pop('music', None)
+        document.pop('formation_spawn_parameters', None)
     imported, alternate, placement, older, older_four, dynamic, groups = import_cases(h, documents)
     checkpoints._bind_native(h.lib)
     arena = checkpoints.Arena(h)

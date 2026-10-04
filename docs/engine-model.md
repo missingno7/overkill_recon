@@ -25,32 +25,39 @@ them; it is not a conversion to a second game-state model.
 
 | Owner | Concepts | Current rule |
 |---|---|---|
-| Engine/runtime | Record pools and allocation, movement and combat procedures, RNG, scrolling, collision, rendering/audio services, encounter and script cursors, counters, mutable map cells and checkpoint state | Keep observable execution state in the original memory layout. Preserve procedure order, stale fields, timing and side effects. |
+| Engine/runtime | Record pools and allocation, movement and combat procedures, RNG, scrolling, collision, rendering/audio services, encounter and script cursors, counters, mutable map cells and checkpoint state | Keep observable execution state in the original memory layout. Authored timeline event ordinals occupy the existing `LevelScriptCursors[behavior_profile]` DS word; canonical timelines keep their original byte offsets there. Preserve procedure order, stale fields, timing and side effects. |
 | Shared game content | Common graphics/resources and common start, end, late-level and title music tracks; shared rules for intro, encounter release and mothership departure | Keep content shared when the original uses one identity or one policy across levels. A shared trigger does not make its selected level resource shared. |
-| Level-specific content | Map and banks, plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations, paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint selection/restoration and level theme | These choices travel with a level definition. Restart restoration uses `checkpoint_restart`, with `lookback_rows: 12` and ordered `tile_restorations: [{tile, replacement}]`. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
+| Level-specific content | Map, banks and plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations and their spawn HP, semantic checkpoints, paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint restoration and level theme | These choices travel with a level definition only where runtime loading supports them. Version 9 loose content owns its map, timeline, formations, arbitrary semantic checkpoint list, formation member HP, checkpoint restoration and music. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
 | Legacy packaging/compatibility | SHADOW archive distribution, BIC/ENC encodings, original DS/CS tables, pointer slots, aliases, unchecked neighboring reads, marker framing, physical segment wrapping and read/write order | Canonical generated definitions retain live source bindings at each original use point. Authored definitions store their explicit values independently even when equal to canonical values; internal compatibility metadata identifies a live canonical binding without making it a public editing concept. |
 
 This inventory is a working ownership boundary, not a claim that every item is
-already loaded from an external file at runtime. Resource identities still need
-a broader audit, including the chooser's `choose.enc` six-slot boundary and the
-unchecked/seventh-level behavior. The current native adapter remains tied to the
-six original definitions.
+already independently loaded from an external file at runtime. Loose content still
+selects one of six original behavior profiles. Resource identities need a broader
+audit, including the chooser's `choose.enc` six-slot boundary and unchecked
+seventh-level behavior. Episode progression and fully independent bank, path,
+spawn-recipe and encounter data remain pending.
 
-The first loose content object owns an immutable source map and restart/music
-policies, plus a content ID distinct from its temporary original behavior profile.
-Loading is transactional: a failed validation or asset read retains the active
-content. Map reload copies source tiles into the existing mutable map arena; it
-does not create a second gameplay map. Independent policies follow current content
-even if the compatibility index changes. All unextracted fields are checked against
-the profile's canonical fixture and rejected if edited. This restriction is an
-explicit migration boundary to remove one demonstrated concept at a time.
+The version 9 loose content object owns an immutable source map, timeline, named
+formations, checkpoint rows, formation spawn HP, restart/music policies and a
+content ID distinct from its original behavior profile. Version 8 remains accepted
+for its earlier map/restart/music slice. Loading is transactional: a failed
+validation or asset read retains the active content. Map reload copies source tiles
+into the existing mutable map arena; it does not create a second gameplay map.
+Timeline events and formations are read from immutable owned descriptors while
+the event ordinal stays in the profile's existing DS cursor word. All other
+unextracted fields are checked against the profile's canonical fixture and rejected
+if edited. This remains a narrow migration boundary, not a fully independent level
+runtime.
 
 ## Initial extraction
 
-The native `LevelDef` binds map, sprite bank, block bank, plaque and ordered tile
-attribute patches, checkpoints and timeline cursors. References point at original DS pointer-table slots, not cached
-targets. Reading each slot at the original use point preserves mutations and loader
-callback ordering. No gameplay state is shadowed. Out-of-range word indices retain
+The native `LevelDef` binds canonical map, sprite bank, block bank, plaque, ordered
+tile-attribute patches, checkpoints and timeline cursor slots. Canonical references
+point at original DS pointer-table slots, not cached targets. Reading each slot at
+the original use point preserves mutations and loader callback ordering. For
+authored version 9 timelines, immutable event/formation descriptors replace the
+source stream, but the existing profile cursor word stores the next event ordinal;
+there is no parallel runtime cursor. Out-of-range canonical word indices retain
 the original, independently wrapped table arithmetic.
 
 Canonical `.lvl` fixtures are generated from a freshly built exact oracle. The
@@ -60,10 +67,13 @@ initial DS layout. Map recipes, encounter descriptors and authored departure com
 native level data. With all six originals this reproduces every initialization
 byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
-coordinator remain unchanged. Complete external gameplay definitions remain pending. A bounded runtime JSON loader
-now supports a copied level with a new content ID and independently owned map,
-checkpoint-restoration rules and music. Unextracted sections must match an explicit
-original behavior profile; unsupported edits fail before gameplay.
+coordinator remain unchanged. The version 9 runtime JSON loader supports copied
+content with a new ID and independent map, timeline, formations, checkpoint rows,
+formation-member HP, checkpoint-restoration rules and music. Sprite/block/plaque
+resources, terrain patches, paths, map-spawn recipes and parameters, group tables,
+departure, encounter, marching formation and boss sections must still match the
+explicit original behavior profile; unsupported edits fail before gameplay.
+Episode progression and fully independent resource selection remain pending.
 
 Terrain has three observed properties: open, wall, and wall that passes player
 shots. All 256 entries start as wall; ordered overrides follow. Preserve duplicate
@@ -92,26 +102,40 @@ following record into `CheckpointScriptCursor` expose the difference. Two small
 mutated-stream regressions preserve the demonstrated ASM order. Canonical restarts
 remain equivalent; the DOS implementation and load module remain unchanged.
 
-Checkpoint selection and map restoration are separate level choices. The next
-map-reset slice is expected to use `checkpoint_restart.lookback_rows` and ordered
-`tile_restorations`; it must preserve the preceding-map scan, first-match rule,
-replacement ordering and the exact twelve-row boundary. It must remain distinct
-from ordinary spawn mutations and preserve each level's restored cells.
+Checkpoint selection and map restoration are separate level choices. Canonical
+checkpoint selection retains the live four-record DS walk, provisional cursor
+writes, unsigned thresholds and ignored fourth-word overread. Authored version 9
+checkpoints are semantic `{map_row, script_clock, resume_event}` rows; selection
+uses the following row as the unsigned threshold and makes the final row
+unconditional, with no legacy overread. Restart captures the selected resume
+ordinal in `CheckpointScriptCursor`, performs the ordinary map reload and rewind,
+then restores that ordinal into the existing profile cursor at the original final
+write point. The level-specific `checkpoint_restart` policy independently restores
+the preceding map window with ordered first-match rules.
 
-The six scripts contain 138 ordered events referencing 52 shared formations. An
-event names a countdown, formation, origin and group drop; a formation names an
-existing behavior preset, size/layer and ordered offsets. The unused Formation48
-is retained in initial DS, outside exported level content. The native spawner reads
-its live timeline cursor through LevelDef and keeps its established initializer.
-Equal-clock events execute in order; cursor advance precedes allocation, so pool
-exhaustion consumes events. Event-marker compatibility preserves variable framing.
-Rebinding a changed marker resolves checkpoint indices to their new byte cursors.
+The six canonical scripts contain 138 ordered events referencing 52 used
+formations. Canonical execution keeps its live DS byte-offset cursor, variable
+marker framing, shared formation/drop bindings and source order. Version 9 authored
+content instead resolves an ordinal in its immutable event list and named formation
+descriptors; the DS ordinal advances before member allocation, so pool exhaustion
+still consumes the event. Every map load first performs the original six cursor
+initializations; an owned timeline then sets only its behavior-profile slot to zero.
+A resume ordinal equal to event count is the terminal boundary. Formation spawn HP
+is also data in version 9; canonical
+`live_original` parameters preserve the original level-dependent tile-member value
+and fixed other-member value. Enemy movement, initialization order, group allocation,
+and REC_TYPE behavior remain in their existing procedures. The unused Formation48
+remains untouched in the canonical DS image.
 
 Semantic presets expose handler identities without REC_TYPE numbers. Their registry
 is a binding, not a behavior-family abstraction. Path movement, leader spawning,
-spawn-time HP/record setup and encounter logic still use the original procedures.
-The temporary layout adapter preserves shared formations and the group-drop table
-also used by map cells; conflicting edits fail instead of silently choosing one.
+record initialization and encounter logic still use the original procedures. The
+selected behavior profile also supplies the global DS path tables those procedures
+may read; a preset name does not make those path payloads independently editable. The
+build-time canonical binder preserves shared formation and group-drop storage.
+Authored version 9 timelines own their event drops and formations independently;
+map-spawn recipes and map-group-drop compatibility still follow their separate
+profile/equality boundaries.
 
 Paths expose ordered playfield positions, with distinct endings inferred from the
 readers: fly off toward a far target, restart, jump, or continue into an adjacent
@@ -216,8 +240,10 @@ bindings and physical aliases. Explicit recipe `group.drop` takes priority befor
 allocation. Normal authored enemies join before field overrides, large enemies
 afterward; compatibility phases preserve original nonmembers and exceptions.
 Zero drop leaves the slot index stale; a full 16-slot scan leaves it at 16.
-Timeline drops still bind shared original DS cells, so conflicting event edits
-remain rejected until event storage is isolated. No new table mirrors runtime DS.
+Timeline drops still bind shared original DS cells in the build-time canonical
+binder, so conflicting canonical fixture edits remain rejected there. Loose
+version 9 events carry their own drop values; map-group-drop policy remains
+separately profile-bound. No new table mirrors runtime DS.
 Center-facing definitions write right-side defaults, then test live initialized
 X as unsigned against the playfield center; equality selects the left-side fields.
 The same policy explains launchers, burst firers and several crawlers without
@@ -246,14 +272,17 @@ does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. Independent event-drop storage: timeline bindings still share the original
-   masked-offset table and reject conflicting event drops across levels.
-2. Remaining formation/enemy parameters and level-specific defaults,
-   parameters, retaining unique procedural implementations initially.
+1. The loose version 9 loader still requires graphics banks/plaque, terrain
+   attributes, paths and leader paths, map-spawn recipes/parameters, map-group-drop
+   policy, departure, encounter, marching formation and boss data to match an
+   original behavior profile.
+2. Palette/HUD identity, level resource selection, chooser/progression behavior,
+   unchecked seventh-level reads and remaining enemy parameters still need evidence
+   and equivalence coverage.
 
-Only after those boundaries pass should the native game load full external levels
-by default. Binding fixtures version the implemented slice; future sections must
-be justified by all six originals before joining the public format.
+Loose v9 is a narrow runtime slice, not a fully independent level or episode format.
+Continue extracting one boundary at a time, retaining unique procedures and the
+canonical live-data path for comparison.
 
 ## Level identity and episode progression
 
@@ -331,13 +360,13 @@ loads map, restart and music at startup without adding a seventh original slot.
 
 Remaining work toward this endpoint:
 
-1. Independent event drops, remaining formation/enemy parameters
-   and the remaining level-dependent gameplay and presentation parameters.
+1. Remaining independent resource and gameplay sections, profile-equality
+   boundaries and level-dependent presentation data.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.
-3. Replace the fixed original-storage adapter with validated runtime loading of
-   complete level and episode files, including custom resource references. Shared
-   original data must not make an edit to one custom level alter another.
+3. Extend validated runtime loading from the v9 subset to complete level and
+   episode files, including custom resource references. Shared original data must
+   not make an edit to one custom level alter another.
 4. Add permutation regressions: with identical initial gameplay state, inputs and
    RNG, a level in different episode positions must retain its gameplay behavior,
    resources and restart behavior. Episode progression follows the authored order.

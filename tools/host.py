@@ -58,6 +58,7 @@ def generate_state(out):
     from level_boss import generate_boss_header
     from level_policies import generate_level_policy_header
     from level_maps import generate_map_limit_header
+    from level_timeline import generate_timeline_parameter_header, generate_level_preset_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -70,6 +71,8 @@ def generate_state(out):
     generate_boss_header(out, [load(path) for path in original_paths()], machine)
     generate_level_policy_header(out, [load(path) for path in original_paths()], machine)
     generate_map_limit_header(out)
+    generate_timeline_parameter_header(out, [load(path) for path in original_paths()], machine)
+    generate_level_preset_header(out)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')

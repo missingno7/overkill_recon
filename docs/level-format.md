@@ -31,7 +31,7 @@ read order. A live marker must match the original policy exactly. Omit the marke
 for authored content: explicit values are independently owned even when identical
 to an original list or tune. No shared source table is overwritten.
 
-## Loose content test path (version 8)
+## Loose content test path (versions 8 and 9)
 
 A directory contains `level.json` (a full copied definition) and a decoded map:
 
@@ -77,19 +77,26 @@ Graphics references must still match that profile. Map, music and restart rules
 are independently editable. Single-level test launches bypass the six-slot chooser
 and repeat their content on completion; they do not implement episode progression.
 
+That paragraph describes the version 8 runtime slice. Version 9 additionally owns
+its timeline, named formations, semantic checkpoint rows and formation spawn HP.
+The loader still requires sprite, block and plaque resources, terrain attributes,
+paths, map-spawn recipes and parameters, map group drops, departure, encounter,
+marching formation and boss definitions to match the selected profile. Map bytes are
+independent only within the modeled tile-dispatch boundary; maps or restoration
+rules that contain an unmodeled dispatch cell are rejected. Neither version supplies
+independent graphics banks, the remaining gameplay sections, or episode progression.
+
 `levels/examples/copied-planet` is a generated seventh identity using level 2's
 behavior/graphics and tune 9. `tools/level_maps.py` imports all six historical BIC
 maps; tests compare the resulting bytes against the existing packed decoder.
 The archive is a legacy distribution source, not the custom map namespace.
 
-Version 8 retains two partial profiles. `level-bindings` describes resources, tile
-attributes and optional checkpoints, timelines, formations, paths, map recipes and
-mothership departure data, encounter descriptors, marching-formation timing and
-segmented-boss member data;
-the earlier `resource-bindings` profile remains accepted and retains original
-terrain/checkpoints. Neither describes a complete
-playable level yet. Independent map/event storage and enemy/member parameters
-await extraction.
+Version 8 retains two partial build-time profiles. `level-bindings` describes
+resources, tile attributes and optional checkpoints, timelines, formations, paths,
+map recipes and mothership departure data, encounter descriptors,
+marching-formation timing and segmented-boss member data; the earlier
+`resource-bindings` profile remains accepted and retains original terrain and
+checkpoints. Neither is a complete playable level.
 Versions 1 through 7 remain accepted with their original map-recipe scopes. Version 2
 adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
 Version 4 adds side gates, runner/cruiser placement and retained-slot large initialization.
@@ -97,7 +104,11 @@ Version 5 completes the original spawn actions with live sprite/random parameter
 Version 6 adds complete map drop cycles and explicit semantic recipe drops.
 Version 7 adds checkpoint map-restoration rules and level music.
 Version 8 adds level-local decoded map references and an explicit original behavior
-profile for transitional loose content loading.
+profile for transitional loose content loading. Version 9 adds independently owned
+runtime timelines/formations, semantic checkpoint rows with event ordinals, and
+formation spawn hit-point parameters. Version 8 loose content remains accepted with
+its earlier equality boundaries. Neither loose profile supplies independent graphics
+banks, path/spawn/encounter sections or episode progression.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
 Omitting map recipes still retains originals under every version.
 
@@ -167,33 +178,40 @@ can change later reads. Arbitrary raw values are not public property names.
 Each canonical definition has four ordered checkpoints. `map_row` names a row of
 the 13-cell map, starting at zero; the adapter converts it to `MapScrollPos` bytes.
 `script_clock` is the unsigned 16-bit countdown restored after scrolling back.
-`resume_event` is a zero-based index of the next timeline event, not a byte offset.
-The terminating event boundary is also a valid resume point. Import rejects indices
-outside the existing script. Optional marker words make event byte lengths variable;
-the adapter discovers boundaries from the source-built scripts rather than guessing
-an eight-byte stride. When a timeline edit changes framing, checkpoint indices
-resolve to the new event boundaries automatically.
+For build-time/canonical bindings, `resume_event` is converted to the legacy byte
+cursor of the next event. Its terminating boundary is also valid. Optional marker
+words make event byte lengths variable; the exporter discovers boundaries from
+source-built scripts rather than guessing an eight-byte stride.
 
-The current binding requires four strictly increasing rows whose byte positions
-fit a word; clock and event indices also fit unsigned words. This validates binding
-structure, not arbitrary edited restart/encounter behavior. Clocks remain explicit
-and independent of resume events. In particular, level 2's last checkpoint restores
-clock 77 and resumes at event 42, whose trigger is 80. Equality-only script triggering
-retains that original mismatch. Level 5's last two checkpoints resume at the same
-event 7. Neither case is normalized.
+Version 8 loose definitions retain four strictly increasing checkpoints. Version 9
+requires one or more strictly increasing rows and permits `resume_event` from zero
+through `timeline.length`, inclusive. The current runtime scroll model accepts rows
+12..286; clocks and ordinals are unsigned words. Authored selection compares
+`MapScrollPos` unsigned against the following row; equality advances, and the final
+row is unconditional. The authored selector does not perform the legacy fourth-row
+read. Clocks remain explicit and independent of resume events. In particular,
+canonical level 2's last checkpoint restores clock 77 and resumes at event 42, whose
+trigger is 80. Equality-only triggering retains that mismatch. Level 5's last two
+checkpoints resume at the same event 7.
 
-Selection uses an unsigned comparison against the following checkpoint's row;
-equality advances to the following checkpoint. The final checkpoint is unconditional.
-The legacy reader writes each candidate's script cursor before reading its threshold,
-and always reads four words. Its final record stores only three words: the fourth
-read reaches neighboring data, and its result is ignored. The adapter preserves
-those neighboring bytes; the native reader preserves the write/read order, including
-live alias effects. These are internal compatibility semantics, not public fields.
+Canonical selection remains a live DS operation: it writes each candidate's byte
+cursor before the threshold read and reads four words. The final record stores only
+three words, so that fourth read reaches neighboring data; its result is ignored.
+The adapter preserves those neighboring bytes and the native reader preserves
+write/read order and live alias effects. These are internal compatibility semantics,
+not public fields. Loose version 9 instead stores the selected `resume_event` ordinal
+in `CheckpointScriptCursor`; restart restores it to the profile's existing DS cursor
+word after map reload and backward scrolling.
 
 ## Timelines and formations
 
-`timeline` and `formations` are optional together; omitting both retains original
-definitions. A timeline is an ordered list of events; formations are a named object.
+`timeline` and `formations` are optional together in build-time `level-bindings`.
+Loose version 9 requires both and owns them independently. A timeline is an ordered
+list of events; formations are a named object.
+Loose v9 always parses these arrays as owned content, including when their values
+match the six-level fixtures; equality does not re-enable canonical live storage.
+Only explicit `live_original` markers on music, checkpoint restoration and
+formation spawn parameters select those specific legacy policies.
 This excerpt shows one original event and its formation (the complete level has
 more events):
 
@@ -220,14 +238,15 @@ more events):
 ```
 
 Clock values are unsigned words below 65535, in non-increasing order. Origins and
-member offsets are signed words; runtime addition wraps as before. Members are
-ordered, with X then Y. Presets are semantic names mapped to the existing REC_TYPE
+member offsets are signed words; runtime addition wraps as before. Member list
+order is preserved; each entry exposes `dx` and `dy`, while the existing initializer
+reads and writes Y before X. Presets are semantic names mapped to the existing REC_TYPE
 dispatcher in `tools/level_presets.py`; they do not replace or merge behaviors.
 Letter suffixes distinguish existing behavior/path presets. Sizes are `8x8`,
 `16x16` or `32x32`; layers are `under_terrain`
 or `over_terrain`. Group drops are `none`, `upgrade`, `energy`, `smart_bomb` or `fuel`.
 Member lists are nonempty: the original zero-count LOOP bug remains supported in
-live compatibility streams, but is not a normal empty formation in public JSON.
+canonical live streams, but is not a normal empty formation in public JSON.
 
 An importer-generated `"compatibility": {"clear_event_marker": true}` on an event
 retains its optional marker word. That word clears an otherwise-unused runtime
@@ -235,22 +254,32 @@ byte; it also changes event length and checkpoint cursor identities. It is not a
 new gameplay action or scripting language.
 
 Every consecutive event whose clock equals the current countdown executes in
-source order. A missed trigger is not caught up. Each event advances its cursor
-before allocation. A full pool consumes events without retry; partial formations
-retain the members that fit. Drop `none` skips group allocation, and unavailable
-groups retain the original ungrouped/stale-index behavior. Initialization, column
-snapping, saved coordinates, hit points, leader setup and RNG use remain procedural
-in the existing spawner. They are deliberately not configurable fields yet.
+source order. A missed trigger is not caught up. Canonical events advance the live
+byte cursor; authored events advance the ordinal in `LevelScriptCursors[profile]`.
+Both advance before member allocation. A full pool consumes events without retry;
+partial formations retain the members that fit. Drop `none` skips group allocation,
+and unavailable groups retain the original ungrouped/stale-index behavior.
+Initialization, column snapping, saved coordinates, leader setup and RNG use remain
+procedural in the existing spawner.
 
-The adapter currently binds semantic formation names to original shared storage;
-names are generated from the preset and observed member layout. An edit can change
-that definition while retaining its binding name. Longer formations/timelines,
-unknown binding names and inconsistent edits to shared formations fail explicitly.
-Unused Formation48 is not exported as level content and remains untouched in DS.
-Event drops still bind to the shared legacy drop table, also used by map spawning;
-inconsistent drops for an aliased table cell fail. A consistent change affects all
-uses of that cell, including map drops. These restrictions belong to the temporary
-native layout adapter, not the future level/editor model.
+Version 9 `formation_spawn_parameters` specifies unsigned-word
+`tile_member_hit_points` and `other_member_hit_points`. `tile_member_hit_points`
+applies to the original 16x16 size class, regardless of draw layer; the other value
+applies to the remaining size classes. They select two existing member HP values,
+not new initializer or enemy behavior. Canonical files carry
+`"compatibility": {"live_original": true}` and keep the original lookup. Loose
+authored values are independent. Enemy presets still invoke existing procedures and
+may read the profile's original global path tables; those paths and other
+behavior-specific resource tables are not independently editable yet.
+
+The build-time canonical adapter still binds semantic formation names and event
+records to original storage, preserving shared identities and ignored trailing
+bytes. The loose version 9 runtime parser instead owns immutable event, formation,
+member and checkpoint arrays; mutable execution state remains in DS. Authored event
+drops are independent. Canonical event drops retain their original masked-index DS
+table reads, including aliases with map-drop bindings. Unused Formation48 remains
+untouched in the canonical DS image. These are temporary compatibility paths, not
+two public formats.
 
 ## Paths and leader paths
 
@@ -860,14 +889,17 @@ Map recipes have no original DS table: the native build generates immutable C da
 from their JSON, consumed by `host/map_recipes.c`. The same evaluator handles edited
 recipes without rewriting enemy behavior or introducing copied runtime records.
 
-This is build-time structured loading. Runtime JSON loading and arbitrary custom
-asset/storage allocation remain pending. The adapter derives capacities and shared
-storage from the exact oracle; it rejects unbound filenames, oversized streams and
-conflicting definitions for a shared stream (original levels 1 and 4). Shortened
+Canonical original files are still bound at build time. Loose version 8/9 runtime
+JSON loading is available for the explicitly supported independent sections; it
+does not allocate arbitrary graphics banks or make the remaining source tables
+independent. The canonical adapter derives capacities and shared storage from the
+exact oracle; it rejects unbound filenames, oversized streams and conflicting
+definitions for shared streams (including original levels 1 and 4). Shortened
 streams retain ignored trailing bytes. These limits belong to the current legacy
 layout adapter, not the eventual editor model. `level_bindings.py --levels DIRECTORY`
-checks alternate definitions against them. Public JSON exposes no REC_TYPE or DS
-addresses or host pointers; game records remain in the existing runtime state.
+checks build-time definitions against them. Public JSON exposes no REC_TYPE, DS
+addresses or host pointers; game records and authored event ordinals remain in the
+existing runtime state.
 
 ## Behavioral invariants of the binding
 
@@ -896,6 +928,8 @@ python tests/host/level_def.py --no-build
 python tests/host/terrain.py --no-build
 python tests/host/checkpoints.py --no-build
 python tests/host/timeline.py --no-build
+python tests/host/timeline_content.py
+python tests/host/level_content_runtime.py
 python tests/host/path_data.py --no-build
 python tests/host/map_recipes.py --no-build
 python tests/host/departure.py --no-build
@@ -917,11 +951,17 @@ substitutions match at the native and ASM boundaries; they do not establish deco
 pixel parity. Existing graphics/native suites remain responsible for that.
 The checkpoint suite compares full physical memory after restart for all original
 entries, wrapped level aliases and a structured checkpoint edit, including restored
-clocks/cursors, map reload/reset and scroll-to-row behavior.
+clocks/cursors, map reload/reset and scroll-to-row behavior. The loose-content
+runtime suite validates transactional v8/v9 loading, independent timeline/formation
+data and checkpoint ordinals, and rejection at the remaining profile-equality
+boundaries.
 The timeline suite exercises all 138 original events and 52 referenced formations
 with free, partial and full pools. It compares complete DS/physical memory, group
 state, saved/stale record fields and cursor order, and tests edited definitions,
 marker-driven checkpoint relocation, equality boundaries and zero-count streams.
+The v9 timeline-content suite compares owned event ordinals and restart behavior
+against an equivalent serialized legacy stream; it normalizes only the two DS
+cursor-token words that intentionally hold ordinals instead of byte offsets.
 The path-data suite compares every original waypoint and leader step, arrivals,
 endings and full/partial allocation outcomes. Full physical memory comparisons
 include CS encounter cursors, RNG and stale record fields. Edited shared routes,

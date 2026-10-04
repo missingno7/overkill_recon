@@ -52,6 +52,10 @@ class CheckpointRestart(ctypes.Structure):
     ]
 
 
+class CheckpointSelection(ctypes.Structure):
+    _fields_ = [("map_position", ctypes.c_uint16), ("script_clock", ctypes.c_uint16)]
+
+
 def _bind_content_api(harness: HostHarness):
     lib = harness.lib
     lib.overkill_level_content_load.argtypes = (
@@ -120,7 +124,24 @@ def _invalid_fixtures(root: Path) -> list[tuple[str, Path]]:
     add("wrong-map-size", lambda _d: None,
         map_bytes=(root / "wrong-map-source.bin").read_bytes() + b"\0")
     add("unknown-field", lambda d: d.update(unrecognized_option=True))
-    add("changed-timeline", lambda d: d["timeline"][0].update(x=d["timeline"][0]["x"] + 1))
+    add("unknown-formation", lambda d: d["timeline"][0].update(formation="undefined_formation"))
+    add("event-order", lambda d: d["timeline"][1].update(clock=273))
+    add("event-marker", lambda d: d["timeline"][0].update(
+        compatibility={"clear_event_marker": 1}))
+    add("event-drop", lambda d: d["timeline"][0].update(group={"drop": "missing"}))
+    add("formation-offset", lambda d: d["formations"][d["timeline"][0]["formation"]][
+        "members"][0].update(dx=32768))
+    add("empty-formation", lambda d: d["formations"][d["timeline"][0]["formation"]].update(
+        members=[]))
+    add("checkpoint-resume", lambda d: d["checkpoints"][0].update(
+        resume_event=len(d["timeline"]) + 1))
+    add("checkpoint-window", lambda d: d["checkpoints"][0].update(map_row=11))
+    add("checkpoint-order", lambda d: d["checkpoints"][1].update(
+        map_row=d["checkpoints"][0]["map_row"]))
+    add("formation-hp", lambda d: d["formation_spawn_parameters"].update(
+        tile_member_hit_points=True))
+    add("changed-live-hp", lambda d: d["formation_spawn_parameters"].update(
+        compatibility={"live_original": True}, tile_member_hit_points=99))
     add("changed-graphics", lambda d: d["resources"].update(sprites="G0.BIC"))
     add("missing-section", lambda d: d.pop("encounter"))
     add("escaped-map-path", lambda d: d["resources"]["map"].update(path="../outside.bin"))
@@ -173,6 +194,10 @@ def _python_and_native_loader_checks(work: Path) -> int:
         document = duplicate_original(2, owned_dir, "independent_moon", music=9)
         document["checkpoint_restart"] = {"lookback_rows": 1, "tile_restorations": [
             {"tile": 76, "replacement": 91}, {"tile": 76, "replacement": 92}]}
+        document["checkpoints"] = [
+            {"map_row": row, "script_clock": 500 - index, "resume_event": index}
+            for index, row in enumerate((12, 48, 96, 144, 200))
+        ]
         _rewrite(owned_dir, document)
         original_map = bytearray((owned_dir / "map.bin").read_bytes())
         original_map[0] ^= 0x5A
@@ -198,6 +223,25 @@ def _python_and_native_loader_checks(work: Path) -> int:
         if not harness.lib.overkill_level_content_copy_map() or _map_bytes(map_memory) != bytes(original_map):
             raise AssertionError("authored map cells did not reach the native runtime copy")
         checks += 1
+
+        # Five authored checkpoints have semantic thresholds and event ordinals,
+        # independent of the four-entry original table and live LevelIndex.
+        harness.lib.overkill_select_checkpoint.argtypes = (
+            ctypes.c_uint16, ctypes.POINTER(CheckpointSelection),
+        )
+        harness.lib.overkill_select_checkpoint.restype = None
+        for position, expected in ((0, 0), (48 * 13 - 1, 0), (48 * 13, 1),
+                                   (144 * 13 - 1, 2), (200 * 13, 4), (65535, 4)):
+            harness.write_symbol("MapScrollPos", position.to_bytes(2, "little"))
+            selection = CheckpointSelection()
+            harness.lib.overkill_select_checkpoint(0xFFFF, ctypes.byref(selection))
+            checkpoint = document["checkpoints"][expected]
+            if (selection.map_position != checkpoint["map_row"] * 13 or
+                    selection.script_clock != checkpoint["script_clock"] or
+                    harness.state_storage.snapshot()[harness.offset("CheckpointScriptCursor"):
+                        harness.offset("CheckpointScriptCursor") + 2] != expected.to_bytes(2, "little")):
+                raise AssertionError("authored checkpoint selection used legacy table state")
+            checks += 1
 
         # Apply the loaded semantic restart policy through the actual frame leaf,
         # including ordered duplicate rules and both excluded window boundaries.
@@ -277,7 +321,15 @@ def _custom_headless_case(work: Path) -> None:
     if not runtime.ASSETS.is_dir():
         raise FileNotFoundError(f"packaged host assets are missing: {runtime.ASSETS}")
     content = work / "headless-content"
-    duplicate_original(2, content, "headless_custom_planet", music=9)
+    document = duplicate_original(2, content, "headless_custom_planet", music=9)
+    original_name = document["timeline"][0]["formation"]
+    document["formations"]["custom_opening_flight"] = document["formations"].pop(original_name)
+    for event in document["timeline"]:
+        if event["formation"] == original_name:
+            event["formation"] = "custom_opening_flight"
+    document["timeline"][0]["x"] = 16
+    _rewrite(content, document)
+    validate_directory(content)
     events = runtime._chooser_events(0)
     case = work / "headless-run"
     case.mkdir()

@@ -1,7 +1,8 @@
 """Create/validate a loose level with a new identity and an original behavior profile.
 
-This first runtime slice owns its decoded map, restart rules and music. Other
-sections must match the selected canonical definition; unsupported edits fail.
+Runtime-owned sections include the decoded map, restart rules, music, timeline,
+formations, checkpoints and formation HP. Other sections must match the selected
+canonical definition; unsupported edits fail.
 The source stays JSON/raw tiles, with no generated registration or DS slot.
 """
 import argparse
@@ -37,11 +38,27 @@ def validate_directory(directory, originals=None):
     if token_count(document) > 65536:
         raise ValueError('level JSON exceeds runtime token limit')
     validate(document)
-    if document['version'] != 8 or 'compatibility' not in document:
-        raise ValueError('loose content requires version 8 and an explicit original behavior profile')
+    if document['version'] not in (8, 9) or 'compatibility' not in document:
+        raise ValueError('loose content requires version 8 or 9 and an explicit original behavior profile')
     index = document['compatibility']['original_level']
     original = load(Path(originals or ROOT / 'levels/original') / f'level{index}.lvl')
     supported = {'id', 'version', 'compatibility', 'resources', 'music', 'checkpoint_restart'}
+    if document['version'] >= 9:
+        supported.update(('timeline', 'formations', 'checkpoints', 'formation_spawn_parameters'))
+        for name in ('timeline', 'formations', 'checkpoints', 'formation_spawn_parameters'):
+            if name not in document:
+                raise ValueError('version 9 loose content requires ' + name)
+        if len(document['timeline']) > 65535 or len(document['formations']) > 65535:
+            raise ValueError('timeline/formations exceed word-sized content bounds')
+        if any(not 12 <= checkpoint['map_row'] < 287 for checkpoint in document['checkpoints']):
+            raise ValueError('authored checkpoint rows must be 12..286 in this scroll model')
+        parameters = document['formation_spawn_parameters']
+        if 'compatibility' in parameters and parameters != original['formation_spawn_parameters']:
+            raise ValueError('formation_spawn_parameters: changed live-original policy')
+    else:
+        if 'formation_spawn_parameters' in document:
+            raise ValueError('formation_spawn_parameters requires version 9')
+        supported.add('formation_spawn_parameters')
     for name in (set(original) | set(document)) - supported:
         if original.get(name) != document.get(name):
             raise ValueError(f'{name}: independent runtime loading is not implemented yet')
@@ -73,12 +90,13 @@ def duplicate_original(index, directory, identity, music=None):
     if directory.exists() and any(directory.iterdir()):
         raise ValueError('output directory must be empty; existing level content is not overwritten')
     document = copy.deepcopy(load(ROOT / 'levels/original' / f'level{index}.lvl'))
-    document.update(version=8, id=identity, compatibility={'original_level': index})
+    document.update(version=9, id=identity, compatibility={'original_level': index})
     columns, rows = original_map_dimensions(index)
     document['resources']['map'] = {'path': 'map.bin', 'encoding': 'tile-grid',
                                   'columns': columns, 'rows': rows}
     document['checkpoint_restart'].pop('compatibility')
     document['music'].pop('compatibility')
+    document['formation_spawn_parameters'].pop('compatibility')
     if music is not None:
         document['music']['level'] = music
     validate(document)

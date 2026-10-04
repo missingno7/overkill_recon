@@ -15,6 +15,7 @@
 #include "platform_services.h"
 #include "level_def.h"
 #include "level_content.h"
+#include "level_timeline.h"
 #include "level_departure.h"
 #endif
 
@@ -159,6 +160,7 @@ void load_level_map(DosRegisters *registers)
     LevelScriptCursors[5] = GAME_OFFSET(LevelScript5);
 
 #ifdef OVERKILL_HOST
+    overkill_level_timeline_reset();
     overkill_level_def(LevelIndex, &definition);
     FileNamePtr = overkill_level_resource_name(definition.map);
 #else

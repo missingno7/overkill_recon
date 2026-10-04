@@ -46,6 +46,7 @@
 #ifdef OVERKILL_HOST
 #include "memory.h"
 #include "level_def.h"
+#include "level_timeline.h"
 #include "map_recipes.h"
 #endif
 
@@ -759,20 +760,61 @@ void run_level_script_events(void)
     word cursor_offset, event_offset, formation_offset, member_offset;
     word count, slot;
     Record *r;
+#ifdef OVERKILL_HOST
+    const LevelTimeline *timeline;
+    const LevelTimelineEvent *event;
+    word member_index;
+#endif
 
     for (;;) {
 #ifdef OVERKILL_HOST
-        LevelDef definition;
-        overkill_level_def(LevelIndex, &definition);
-        cursor_offset = *GAME_PTR(word, definition.timeline_cursor);
-#else
+        timeline = overkill_level_timeline_current();
+        event = 0;
+        member_index = 0;
+        event_offset = 0;
+        member_offset = 0;
+        if (timeline) {
+            word ordinal;
+            cursor_offset = overkill_level_timeline_cursor(timeline);
+            ordinal = *GAME_PTR(word, cursor_offset);
+            if (ordinal >= timeline->event_count) {
+                EventTrigger = 0xFFFF;
+                return;
+            }
+            event = &timeline->events[ordinal];
+            EventTrigger = event->clock;
+        } else {
+            LevelDef definition;
+            overkill_level_def(LevelIndex, &definition);
+            cursor_offset = *GAME_PTR(word, definition.timeline_cursor);
+#endif
+#ifndef OVERKILL_HOST
         cursor_offset = *GAME_PTR(word, (word)(GAME_OFFSET(LevelScriptCursorPtrs) +
                                                 (word)(LevelIndex * 2)));
 #endif
         event_offset = *GAME_PTR(word, cursor_offset);
         EventTrigger = *GAME_PTR(word, event_offset);
         event_offset = (word)(event_offset + 2);
+#ifdef OVERKILL_HOST
+        }
+#endif
         if (EventTrigger == 0xFFFF || EventTrigger != LevelScriptClock) return;
+#ifdef OVERKILL_HOST
+        if (event) {
+            EventMarkerFlag = 1;
+            if (!event->marker) EventMarkerFlag = 0;
+            EventX = event->x;
+            EventY = event->y;
+            GroupDropKind = event->drop;
+            /* Consume the ordinal before header writes or allocation, as with
+               the original byte cursor. An exhausted pool still loses the event. */
+            (*GAME_PTR(word, cursor_offset))++;
+            FormationSizeClass = event->formation->size;
+            FormationDrawPass = event->formation->layer;
+            FormationType = event->formation->behavior;
+            count = event->formation->count;
+        } else {
+#endif
         EventMarkerFlag = 1;
         formation_offset = *GAME_PTR(word, event_offset);
         event_offset = (word)(event_offset + 2);
@@ -792,6 +834,9 @@ void run_level_script_events(void)
         FormationType = *GAME_PTR(word, (word)(formation_offset + 4));
         count = *GAME_PTR(word, (word)(formation_offset + 6));
         member_offset = (word)(formation_offset + 8);
+#ifdef OVERKILL_HOST
+        }
+#endif
         alloc_group_slot();
         /* The count is a `loop` counter: 0 means 65536 members (until pool A is full). */
         do {
@@ -807,8 +852,17 @@ void run_level_script_events(void)
             r->status = 1;
             r->draw_pass = FormationDrawPass;
             r->sprite = 0;
+#ifdef OVERKILL_HOST
+            if (event) {
+                r->y = (word)(event->formation->members[member_index].dy + EventY);
+                r->x = (word)(event->formation->members[member_index].dx + EventX);
+            } else {
+#endif
             r->y = (word)(*GAME_PTR(word, (word)(member_offset + 2)) + EventY);
             r->x = (word)(*GAME_PTR(word, member_offset) + EventX);
+#ifdef OVERKILL_HOST
+            }
+#endif
             r->saved_x = r->x;
             r->saved_y = 0;
             r->direction = DIR_DOWN;
@@ -816,18 +870,31 @@ void run_level_script_events(void)
             r->kind = KIND_ENEMY;
             r->type = FormationType;
             if (r->draw_pass != 1 && r->size_class == 1) snap_to_clear_column(r);
+#ifdef OVERKILL_HOST
+            r->hit_points = overkill_formation_tile_hit_points(LevelIndex);
+            if (r->size_class != 1) r->hit_points = overkill_formation_other_hit_points(LevelIndex);
+#else
             r->hit_points = LevelIndex + 1;
             if (r->size_class != 1) r->hit_points = 0x0C;
+#endif
             r->flash_timer = 0;
             /* Type 21h starts its leader script with LevelIndex + 1 as the script pointer:
                the oracle's AX still holds it (type 21h follows Type21Path instead). */
+#ifdef OVERKILL_HOST
+            if (r->type == 0x21) start_leader_script(r, overkill_timeline_director_cursor(LevelIndex + 1));
+#else
             if (r->type == 0x21) start_leader_script(r, LevelIndex + 1);
+#endif
             if (r->type == 0x13) start_leader_script(r, GAME_OFFSET(LeaderScript13));
             if (r->type == 0x15) start_leader_script(r, GAME_OFFSET(LeaderScript15));
             if (r->type == 0x1C) start_leader_script(r, GAME_OFFSET(LeaderScript1C));
             if (r->type == 0x1F) start_leader_script(r, GAME_OFFSET(LeaderScript1F));
             if (r->type == 0x7D) start_leader_script(r, GAME_OFFSET(LeaderScript7D));
             if (r->type == 0x7E) start_leader_script(r, GAME_OFFSET(LeaderScript7E));
+#ifdef OVERKILL_HOST
+            if (event) member_index++;
+            else
+#endif
             member_offset = (word)(member_offset + 4);
         } while (--count != 0);
     }

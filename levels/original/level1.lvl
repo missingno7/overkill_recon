@@ -170,6 +170,13 @@
     "kind": "fallers_then_burster"
   },
   "format": "overkill-level",
+  "formation_spawn_parameters": {
+    "compatibility": {
+      "live_original": true
+    },
+    "other_member_hit_points": 12,
+    "tile_member_hit_points": 2
+  },
   "formations": {
     "animated_shooter_single_1": {
       "enemy": "animated_shooter",
@@ -1368,5 +1375,5 @@
       "y": 0
     }
   ],
-  "version": 7
+  "version": 9
 }
