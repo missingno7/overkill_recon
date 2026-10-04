@@ -117,8 +117,8 @@ Record *spawn_enemy_here(Record *here)
 /* ---- group slots ---------------------------------------------------------------------- */
 
 /* With a GroupDropKind: GroupSlotPtr/GroupSlotIndex = the first GroupTable entry with no
-   live members; otherwise, or when all 16 are taken, GroupSlotPtr = FFFFh (the index is
-   then stale). */
+   live members; otherwise GroupSlotPtr = FFFFh. A zero drop leaves the index stale;
+   scanning all 16 occupied entries leaves the index at 16. */
 void alloc_group_slot(void)
 {
     byte *entry;

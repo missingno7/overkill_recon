@@ -174,9 +174,15 @@ data retains allocation-only cases, normal joining before field overrides and la
 joining afterward. Preparation precedes map writes, even for the real no-spawn hole
 and clear-only cells; failed record allocation still leaves its global effects.
 Joining uses the live globals at that phase, including mutations through DS/map
-aliases. The current drop source remains the shared legacy offset cycle, also used
-by timeline events. Complete map drop-rule extraction remains pending rather than
-inventing a separate per-enemy drop that cannot represent the original.
+aliases. All six fixtures export the original 64-entry map drop cycle with semantic
+names. A changed cycle becomes independent immutable map data for that level;
+an identical cycle retains live shared DS reads, including mutations from event
+bindings and physical aliases. Explicit recipe `group.drop` takes priority before
+allocation. Normal authored enemies join before field overrides, large enemies
+afterward; compatibility phases preserve original nonmembers and exceptions.
+Zero drop leaves the slot index stale; a full 16-slot scan leaves it at 16.
+Timeline drops still bind shared original DS cells, so conflicting event edits
+remain rejected until event storage is isolated. No new table mirrors runtime DS.
 Center-facing definitions write right-side defaults, then test live initialized
 X as unsigned against the playfield center; equality selects the left-side fields.
 The same policy explains launchers, burst firers and several crawlers without
@@ -199,14 +205,14 @@ behavior or scripting abstraction. Pickup recipes reuse the original initializer
 the fuel compatibility rule returns the resulting sprite as the scan continuation.
 Normal authored pickups keep the map offset.
 
-Canonical fixtures now use version 5 for the expanded map recipe scope. Version-1/2/3/4
+Canonical fixtures now use version 6 for map drop data and explicit recipe drops. Version-1/2/3/4
 definitions retain their earlier scopes, so an older explicit empty/partial list
 does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. Complete map group/drop rules: the live shared masked-offset cycle and its
-   aliases with event drops still use the original DS table.
+1. Independent event-drop storage: timeline bindings still share the original
+   masked-offset table and reject conflicting event drops across levels.
 2. Remaining formation/enemy parameters and level-specific defaults,
    parameters, retaining unique procedural implementations initially.
 
@@ -289,7 +295,7 @@ they are not yet loaded from arbitrary files when the executable starts.
 
 Remaining work toward this endpoint:
 
-1. Complete map recipes and drop rules, remaining formation/enemy parameters, reset rules
+1. Independent event drops, remaining formation/enemy parameters, reset rules
    and the remaining level-dependent gameplay and presentation parameters.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.

@@ -22,7 +22,9 @@ Map recipe slices compile from `.lvl` definitions into native immutable tables:
 all defined original actions across the six levels now use one evaluator, including
 live crawler sprite offsets, jitter group tests and fuel scan continuation.
 Version-1/2/3/4 definitions retain their original conversion scopes. Group compatibility retains preparation and
-membership order while sharing the original live drop table.
+membership order. Full semantic map drop cycles and explicit recipe drops now
+compile as level data; canonical cycles retain the original live table and aliases.
+Authored map cycles are independent of other levels and timeline DS bindings.
 `python tests/host/map_recipes.py --no-build` checks all safe cells, converted-action
 boundaries, row integration and authored edits. Retained C handlers remain comparison
 references and older-version fallbacks. Native pickup initialization also preserves

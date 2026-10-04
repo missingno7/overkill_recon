@@ -21,6 +21,7 @@ from level_format import load, original_paths, validate
 from level_map_recipes import original_map_spawns, map_recipe_bindings, generate_map_recipe_header
 from level_bindings import bind_level_documents
 from world import K
+from level_groups import original_map_group_drops, map_group_drop_overrides
 import importlib.util
 
 
@@ -53,6 +54,10 @@ def compile_table(out, documents):
 def import_cases(h, documents):
     if bind_level_documents(h.m, documents) != h.baseline:
         raise AssertionError('map recipe import changes original DS')
+    original_cycle = original_map_group_drops(h.m)
+    if any(document['map_group_drops'] != original_cycle for document in documents) or any(
+            override is not None for override in map_group_drop_overrides(documents, h.m)):
+        raise AssertionError('canonical map drops no longer bind the original live table')
     old = copy.deepcopy(documents)
     for document in old:
         del document['map_spawns']
@@ -64,6 +69,7 @@ def import_cases(h, documents):
     for level, document in enumerate(version_one):
         document['version'] = 1
         document.pop('map_spawn_parameters', None)
+        document.pop('map_group_drops', None)
         document['map_spawns'] = original_map_spawns(level, 1)
         if [recipe['tile'] for recipe in document['map_spawns']] != expected_tiles.get(level, []):
             raise AssertionError('version-1 recipe order/identities changed')
@@ -79,11 +85,13 @@ def import_cases(h, documents):
     for level, document in enumerate(version_two):
         document['version'] = 2
         document.pop('map_spawn_parameters', None)
+        document.pop('map_group_drops', None)
         document['map_spawns'] = original_map_spawns(level, 2)
         validate(document)
     for level, document in enumerate(version_three):
         document['version'] = 3
         document.pop('map_spawn_parameters', None)
+        document.pop('map_group_drops', None)
         document['map_spawns'] = original_map_spawns(level, 3)
         validate(document)
     for level, ((old_scope, recipes), (scope, _)) in enumerate(zip(
@@ -101,6 +109,7 @@ def import_cases(h, documents):
     for level, document in enumerate(version_four):
         document['version'] = 4
         document.pop('map_spawn_parameters', None)
+        document.pop('map_group_drops', None)
         document['map_spawns'] = original_map_spawns(level, 4)
         validate(document)
     new_tiles = {0: {0xE3, 0xF9}, 4: {0xD2, 0xD3, 0xDD}, 5: {0xDC, 0xDD, 0xEB}}
@@ -190,6 +199,8 @@ def import_cases(h, documents):
     bad.append((edited, None))
     for edited, diagnostic in bad:
         for document in edited:
+            if document['version'] < 6:
+                document.pop('map_group_drops', None)
             if document['version'] < 5:
                 document.pop('map_spawn_parameters', None)
         try:
@@ -241,10 +252,12 @@ def import_cases(h, documents):
     for level in (1, 4, 5):
         edited[level]['version'] = 1
         edited[level].pop('map_spawn_parameters', None)
+        edited[level].pop('map_group_drops', None)
         edited[level]['map_spawns'] = original_map_spawns(level, 1)
     # Older explicit empty lists leave the version-3 center/plunger slice procedural.
     edited[2]['version'], edited[2]['map_spawns'] = 2, []
     edited[2].pop('map_spawn_parameters', None)
+    edited[2].pop('map_group_drops', None)
     turret = copy.deepcopy(edited[1]['map_spawns'][4])
     turret['tile'] = 4
     edited[1]['map_spawns'][0] = turret
@@ -272,6 +285,7 @@ def import_cases(h, documents):
     # must not disable newly converted version-2 cells when the game is rebuilt.
     edited[0]['version'] = 1
     edited[0].pop('map_spawn_parameters', None)
+    edited[0].pop('map_group_drops', None)
     edited[0]['map_spawns'] = original_map_spawns(0, 1)
     coverage, _ = map_recipe_bindings(edited)[0]
     if coverage:
@@ -315,10 +329,76 @@ def import_cases(h, documents):
     pickup['pickup'] = 'energy'
     del pickup['compatibility']['pickup_sprite_cursor']
     dynamic = compile_table(ROOT / 'build/host-map-dynamic', authored)
-    return len(bad) + 8 + len(parameter_bad) + 7, alternate, placement, older, older_four, dynamic
+    group_bad = [None, {}, {'kind': 'random', 'drops': original_cycle['drops']},
+                 {'kind': 'legacy_offset_cycle', 'drops': original_cycle['drops'][:-1]},
+                 {'kind': 'legacy_offset_cycle', 'drops': original_cycle['drops'] + ['none']},
+                 {'kind': 'legacy_offset_cycle', 'drops': [0] * 64},
+                 {'kind': 'legacy_offset_cycle', 'drops': ['missing'] * 64}]
+    for definition in group_bad:
+        document = copy.deepcopy(documents[1])
+        document['map_group_drops'] = definition
+        try:
+            validate(document)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('accepted invalid map group cycle')
+    for group in (None, {}, {'drop': 2}, {'drop': 'unknown'}, {'drop': 'energy', 'index': 0}):
+        document = copy.deepcopy(documents[1])
+        document['map_spawns'][0]['group'] = group
+        try:
+            validate(document)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('accepted invalid explicit map group drop')
+    extra_bad = []
+    document = copy.deepcopy(documents[1])
+    document['version'] = 5
+    extra_bad.append(document)
+    document = copy.deepcopy(documents[1])
+    document['version'] = 5
+    del document['map_group_drops']
+    document['map_spawns'][0]['group'] = {'drop': 'energy'}
+    extra_bad.append(document)
+    for spawn in ('none', 'pickup'):
+        document = copy.deepcopy(documents[1])
+        recipe = {'tile': 4, 'spawn': spawn, 'map_writes': [], 'group': {'drop': 'energy'}}
+        if spawn == 'pickup':
+            recipe['pickup'] = 'fuel'
+        document['map_spawns'] = [recipe]
+        extra_bad.append(document)
+    document = copy.deepcopy(documents[2])
+    next(recipe for recipe in document['map_spawns'] if recipe['tile'] == 0x30)['group'] = {'drop': 'energy'}
+    extra_bad.append(document)
+    for document in extra_bad:
+        try:
+            validate(document)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('accepted unsupported version/group initialization')
+    grouped = copy.deepcopy(documents)
+    grouped[3]['map_group_drops']['drops'] = ['fuel'] * 64
+    for recipe in grouped[3]['map_spawns']:
+        if recipe['tile'] == 0xE1:
+            recipe['group'] = {'drop': 'energy'}
+        if recipe['tile'] == 0xD5:
+            recipe['group'] = {'drop': 'none'}
+    grouped[1]['map_spawns'][0].update(enemy='vertical_bouncer_shooter', group={'drop': 'energy'})
+    hatch = next(recipe for recipe in grouped[1]['map_spawns'] if recipe['tile'] == 0xC9)
+    hatch.update(enemy='descend_aimed_fire', direction='down', group={'drop': 'energy'},
+                 map_writes=[{'dx': dx, 'dy': dy, 'tile': 1} for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1))])
+    del hatch['sprite']
+    for document in grouped:
+        validate(document)
+    if bind_level_documents(h.m, grouped) != h.baseline:
+        raise AssertionError('authored map drops or recipes modified shared event/DS content')
+    groups = compile_table(ROOT / 'build/host-map-groups', grouped)
+    return len(bad) + 8 + len(parameter_bad) + 7 + len(group_bad) + 6 + len(extra_bad), alternate, placement, older, older_four, dynamic, groups
 
 
-def execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic):
+def execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic, authored_groups):
     lib = h.lib
     lib.level_map_cell.argtypes = (ctypes.c_void_p, ctypes.c_uint16, ctypes.c_uint16)
     lib.level_map_cell.restype = ctypes.c_uint16
@@ -407,7 +487,7 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older, older_fo
     def run(level, cell, off=1300, x=96, free=3, alias=False, map_alias=False,
             edited=False, oracle_cell=None, drop=None, groups='free', expected_fields=(),
             slot=None, allocated=None, live_level=None, random_index=None, oracle_words=(),
-            expected_continuation=None):
+            expected_continuation=None, oracle_drop=None, oracle_level=None):
         nonlocal count
         here, segment = setup(level, cell, off, x, free, alias, map_alias, drop, groups, slot, allocated,
                               live_level, random_index)
@@ -425,8 +505,18 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older, older_fo
         else:
             result = lib.level_map_cell(ctypes.c_void_p(h.state_addr + here), off, level << 8 | cell)
         native_state, native_memory = snapshot()
-        registers = h.m.call(f'Level{level}MapCell', {'AX': cell if oracle_cell is None else oracle_cell,
+        # Authored drop data changes this one read. Feed the same value to the
+        # original allocator/spawn, then restore only the untouched input byte.
+        drop_at = h.offset('GroupDropKinds') + (off & 63)
+        original_drop = h.m.read(drop_at, 1)
+        if oracle_drop is not None:
+            h.m.write(drop_at, bytes([oracle_drop]))
+        registers = h.m.call(f'Level{level if oracle_level is None else oracle_level}MapCell', {'AX': cell if oracle_cell is None else oracle_cell,
             'SI': off, 'BP': here, 'ES': segment})
+        if oracle_drop is not None:
+            if h.m.read(drop_at, 1) != bytes([oracle_drop]):
+                raise AssertionError('authored comparison source was mutated by the oracle')
+            h.m.write(drop_at, original_drop)
         # Authored parameters change only declared record outputs. Assert the
         # original words before editing the expectation; every other byte,
         # including saved coordinates, allocation, map and RNG, must still agree.
@@ -693,7 +783,34 @@ def execution_cases(h, arena, checkpoints, alternate, placement, older, older_fo
             h.m.call('SpawnFromMapRow', {'SI': 1300, 'BP': here, 'ES': segment})
             compare(f'level {level} recipe row free {free}', native_memory)
             count += 1
-    return count, 65
+    group_checks = 0
+    for cell in (0xDF, 0xDE, 0xE4, 0xE1, 0xD5):
+        selected = 2 if cell == 0xE1 else 0 if cell == 0xD5 else 4
+        for drop in (0, 2, 255):
+            for groups in ('free', 'full', 'mixed'):
+                for free in (0, 1):
+                    state = run(3, cell, free=free, groups=groups, drop=drop,
+                                edited=authored_groups, oracle_drop=selected)
+                    if selected == 0 and struct.unpack_from('<H', state, h.offset('GroupSlotIndex'))[0] != 0xBEEF:
+                        raise AssertionError('zero drop did not retain the stale slot index')
+                    if selected and groups == 'full' and struct.unpack_from('<H', state, h.offset('GroupSlotIndex'))[0] != 16:
+                        raise AssertionError('full group scan did not leave index 16')
+                    group_checks += 1
+    for off in range(1280, 1344):
+        run(3, 0xE4, off=off, drop=0, edited=authored_groups, oracle_drop=4)
+        group_checks += 1
+    for free in (0, 1):
+        run(3, 0xE4, off=h.offset('GroupDropKind'), map_alias=True, drop=0,
+            groups='mixed', free=free, edited=authored_groups, oracle_drop=4)
+        for cell, selected in ((0xE1, 2), (0xD5, 0)):
+            run(3, cell, off=h.offset('GroupDropKind'), map_alias=True, drop=4,
+                groups='mixed', free=free, edited=authored_groups, oracle_drop=selected)
+            group_checks += 1
+        run(0, 0xE8, drop=2, free=free, edited=authored_groups)
+        run(1, 4, free=free, drop=0, edited=authored_groups, oracle_drop=2, oracle_level=3, oracle_cell=0xE1)
+        run(1, 0xC9, free=free, drop=0, edited=authored_groups, oracle_drop=2, oracle_level=5, oracle_cell=0xD9)
+        group_checks += 4
+    return count, 65 + group_checks
 
 
 def main():
@@ -707,10 +824,10 @@ def main():
     checkpoints = module('map_recipes_checkpoints', ROOT / 'tests/host/checkpoints.py')
     h = harness.HostHarness()
     documents = [load(path) for path in original_paths()]
-    imported, alternate, placement, older, older_four, dynamic = import_cases(h, documents)
+    imported, alternate, placement, older, older_four, dynamic, groups = import_cases(h, documents)
     checkpoints._bind_native(h.lib)
     arena = checkpoints.Arena(h)
-    executed, authored = execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic)
+    executed, authored = execution_cases(h, arena, checkpoints, alternate, placement, older, older_four, dynamic, groups)
     print(f'PASS map recipes: {imported} import/validator checks, {executed} native/oracle '
           f'cases (direct cells also compare retained C), {authored} authored-data checks')
 

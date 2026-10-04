@@ -14,6 +14,7 @@ from level_departure import departure_definition
 from level_encounter import original_encounter
 from level_invaders import original_invader_slots, original_marching_formation
 from level_boss import original_boss
+from level_groups import original_map_group_drops
 import argparse
 from pathlib import Path
 import struct
@@ -43,7 +44,7 @@ def definitions(machine):
         if encounter['kind'] == 'invader_formation':
             encounter['slots'] = original_invader_slots(machine)
         document = {
-            'format': 'overkill-level', 'version': 5,
+            'format': 'overkill-level', 'version': 6,
             'profile': 'level-bindings', 'id': f'original-level-{level}',
             'resources': resource_bindings(machine, level),
             'terrain': terrain_definition(machine, level),
@@ -52,6 +53,7 @@ def definitions(machine):
             'paths': paths, 'leader_paths': leaders,
             'map_spawns': original_map_spawns(level),
             'map_spawn_parameters': original_map_spawn_parameters(level),
+            'map_group_drops': original_map_group_drops(machine),
             'departure': departure_definition(machine),
             'encounter': encounter,
             'marching_formation': original_marching_formation(level),

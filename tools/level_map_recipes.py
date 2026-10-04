@@ -7,6 +7,7 @@ The generated native table is consumed by host/map_recipes.c, never by DOS C.
 import copy
 from level_presets import ARCHETYPES, DROPS
 from world import K
+from level_groups import map_group_drop_overrides
 
 DIRECTIONS = {'up': K.DIR_UP, 'up_right': K.DIR_UP_RIGHT,
               'right': K.DIR_RIGHT, 'down_right': K.DIR_DOWN_RIGHT,
@@ -263,7 +264,7 @@ def validate_map_spawns(document):
             required.add('pickup')
         elif isinstance(recipe, dict) and recipe.get('spawn') != 'none':
             required.add('enemy')
-        optional = {'compatibility'} | ({'sprite', 'direction', 'facing', 'position_offset',
+        optional = {'compatibility', 'group'} | ({'sprite', 'direction', 'facing', 'position_offset',
                                          'spawn_region', 'placement'}
                                         if 'enemy' in required else set())
         if not isinstance(recipe, dict) or not required <= set(recipe) or set(recipe) - required - optional:
@@ -274,6 +275,11 @@ def validate_map_spawns(document):
         tiles.add(tile)
         if document['version'] == 1 and ('compatibility' in recipe or recipe['spawn'] == 'none'):
             raise ValueError('group/no-spawn map recipes require level version 2')
+        if 'group' in recipe:
+            group = recipe['group']
+            if document['version'] < 6 or recipe['spawn'] not in ('enemy', 'large_enemy') or not isinstance(
+                    group, dict) or set(group) != {'drop'} or not isinstance(group['drop'], str) or group['drop'] not in DROPS:
+                raise ValueError('map recipe group requires version 6, an enemy and a semantic drop')
         if 'compatibility' in recipe:
             compatibility = recipe['compatibility']
             if not isinstance(compatibility, dict) or not compatibility or set(compatibility) - {
@@ -310,8 +316,9 @@ def validate_map_spawns(document):
                 raise ValueError('save_spawn_x requires an ordinary enemy with an early X offset')
             if compatibility.get('preserve_slot_index') and recipe['spawn'] != 'large_enemy':
                 raise ValueError('preserve_slot_index requires large-enemy initialization')
-            if compatibility.get('preserve_slot_index') and compatibility.get('map_group') in (
-                    'join_before_fields', 'join_after_fields'):
+            if compatibility.get('preserve_slot_index') and (compatibility.get('map_group') in (
+                    'join_before_fields', 'join_after_fields') or
+                    'group' in recipe and compatibility.get('map_group') != 'allocate_only'):
                 raise ValueError('a preserved slot index cannot also join a map group')
             if recipe['spawn'] == 'none' and compatibility.get('map_group') != 'allocate_only':
                 raise ValueError('non-spawning map recipes cannot join a group')
@@ -387,11 +394,12 @@ def map_recipe_bindings(documents):
     return result
 
 
-def generate_map_recipe_header(out, documents):
+def generate_map_recipe_header(out, documents, machine=None):
     """Compile validated JSON into immutable native definitions, separate from DS."""
     rows = ['/* Generated from structured level definitions; native-only data. */',
             '#ifndef MAP_RECIPES_GEN_H', '#define MAP_RECIPES_GEN_H']
     bindings = map_recipe_bindings(documents)
+    drop_overrides = map_group_drop_overrides(documents, machine)
     for level, (_, recipes) in enumerate(bindings):
         for index, recipe in enumerate(recipes):
             if recipe['map_writes']:
@@ -405,7 +413,11 @@ def generate_map_recipe_header(out, documents):
             for index, recipe in enumerate(recipes):
                 writes = f'map_writes_{level}_{index}' if recipe['map_writes'] else 'NULL'
                 flags = (1 if 'sprite' in recipe else 0) | (2 if 'direction' in recipe else 0)
-                group = MAP_GROUPS.get(recipe.get('compatibility', {}).get('map_group'), 0)
+                default_group = ('join_after_fields' if recipe['spawn'] == 'large_enemy' else
+                                 'join_before_fields') if 'group' in recipe else None
+                group = MAP_GROUPS.get(recipe.get('compatibility', {}).get('map_group', default_group), 0)
+                if 'group' in recipe:
+                    flags |= 16384
                 right, left = {}, {}
                 if 'facing' in recipe:
                     right, left = recipe['facing']['right'], recipe['facing']['at_or_left']
@@ -430,14 +442,19 @@ def generate_map_recipe_header(out, documents):
                           SPAWN_REGIONS.get(recipe.get('spawn_region'), 0), placement.get('distance', 0),
                           DIRECTIONS.get(placement.get('right_direction'), 0),
                           DROPS.get(recipe.get('pickup'), 0),
+                          DROPS.get(recipe.get('group', {}).get('drop'), 0),
                           len(recipe['map_writes']), writes]
                 rows.append('    {' + ', '.join(map(str, values)) + '},')
             rows.append('};')
+        if drop_overrides[level] is not None:
+            rows.append(f'static const byte map_group_drops_{level}[64] = {{' +
+                        ', '.join(map(str, drop_overrides[level])) + '};')
     rows.append('static const MapRecipeLevel map_recipe_levels[6] = {')
     for level, (coverage, recipes) in enumerate(bindings):
         mask = [sum(1 << (tile % 8) for tile in coverage if tile // 8 == byte) for byte in range(32)]
         pointer = f'map_recipes_{level}' if recipes else 'NULL'
-        rows.append('    {' + pointer + ', ' + str(len(recipes)) + ', {' +
+        drop_pointer = f'map_group_drops_{level}' if drop_overrides[level] is not None else 'NULL'
+        rows.append('    {' + pointer + ', ' + str(len(recipes)) + ', ' + drop_pointer + ', {' +
                     ', '.join(map(str, mask)) + '}},')
     rows.extend(('};', 'static const MapSpawnParameters map_spawn_parameters[6] = {'))
     for level, document in enumerate(documents):

@@ -17,10 +17,10 @@ this inventory. No complete external gameplay representation is claimed yet.
 | Fixed start/end map rows | Pure shared data / mutation rule | `LevelEndMapRows`, `initialize_level_byte_attributes` | Last five rows extracted into departure data; first two forced rows/placement positions remain shared rules |
 | Opening ambush | Shared encounter behavior + per-level leader/event/path data | First `LevelScript0..5` event at clock 272, `Formation39..44`, `start_leader_script`, `type13_formation_leader` | Opening events/formations/routes extracted; shared scroll-hold, release delay and early-stage weapon/pod/render policies remain implicit |
 | Mothership departure | Shared sequence data + procedural state machine | `LevelEndMapRows`, `Type53SpawnTable`, `AutopilotWaypointA/B`, `scroll_forward_and_check_level_end`, `run_level_end_sequence` | Five rows, four animated parts and both waypoints extracted with independent authored data; trigger/extra-record/refill/music rules remain; distinct from combat bosses |
-| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases across all six levels extracted, including live sprite/random parameters and fuel continuation; shared map drop cycle still pending |
+| Map spawning | Pure recipe choices + parameterized behavior + quirks | `LevelMapCellHandlers`; six handlers and common helpers in `spawn.c` | All defined cases across all six levels extracted, including live sprite/random parameters and fuel continuation; map drop cycle and explicit drops extracted; independent event storage still pending |
 | Event timeline | Pure data / legacy timing | `LevelScript0..5`; `run_level_script_events` | Extracted: 138 ordered events; LevelDef binds live cursor slots; equality triggers and marker framing retained |
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Extracted: 52 referenced layouts with semantic presets, size/layer and ordered offsets; unused Formation48 retained in DS |
-| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Event drops extracted; map preparation/membership phases represented as compatibility data; complete map drop rules pending |
+| Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained; event drops still share original DS bindings |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py` |
 | Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | Extracted used routes as playfield points with explicit fly-off/jump/continue endings; existing readers retained |
 | Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript*`, `Type21Path`; leader starters in `spawn.c`, handlers in `enemies.c` | Extracted targets/follower positions and encounter restart route; reader-specific marker semantics retained |
@@ -82,11 +82,21 @@ Keep these grouped unresolved items visible until a targeted extraction closes t
 |---|---|
 | `enemies.c` | Volley/descender/turret sprite bases; hatch child behavior; type34 early-Y fire gates; level5 jitter motion/cadence; selected path/steering rules; shooter exceptions; fall speed; child hit points; slot-hopper speed; jitter-shooter preset |
 | `paths.c` | Level/demo steering speed; path exit behavior at the final spawn row; sprite banks including level5 fall-through |
-| `spawn.c` | Map recipes; crawler sprite override; jitter group RNG; event HP initialization; type21's unusual initial leader-script pointer |
+| `spawn.c` | Event HP initialization; type21's unusual initial leader-script pointer; shared event-drop binding (map helpers remain comparison references) |
 | `combat.c`, `shots.c` | Descendant extra Y step; level0 projectile speed |
-| `frame.c` | March initial step/edges/drop/member defaults; music selection; checkpoint/reset table bindings |
+| `frame.c` | March initial step/edges/drop/member defaults; music selection; ordered checkpoint map-reset rules |
 | `life.c`, `display.c`, native presentation | Music number, palette and displayed digit selections |
 | `session.c`, `presentation.c` | Chooser mapping, six-level progression, completion screen policy; these may be campaign rules rather than level definitions |
+
+The next small extraction is the ordered checkpoint map-reset rules in
+`MapResetLists`: `reset_map_before_view` scans the preceding 0x9C map bytes
+backward and replaces the first matching tile in that level's replacement stream.
+These are pure level data, but they must remain distinct from spawn mutations;
+hatch restoration differs between levels. Tests must compare the entire map and
+both sides of the lookback boundary. Per-level music is another resource choice,
+read at life start and again at encounter release. Both should travel with level
+identity when episode order changes. Enemy/path differences above still require
+individual evidence and equivalence checks before becoming parameter data.
 
 Resources and terrain now enter native initialization through `level_bindings.py`.
 Canonical import is byte-identical to the original DS image. Public terrain values
@@ -141,6 +151,16 @@ version 3; runner/cruiser, retained-slot hatch and lurker coverage uses version 
 live sprite/random choices and pickup initialization/continuation use version 5.
 All older map scopes remain consumed compatibility bindings, tested
 with older empty lists; none is silently widened.
+
+`tools/level_groups.py` extracts the entire 64-byte `GroupDropKinds` table from
+the oracle, validates semantic map drop cycles and selects immutable overrides.
+All six original definitions retain live DS reads. Authored cycles belong to the
+map level only; explicit recipe drops supersede the cycle before allocation.
+The allocator and joiner remain the original procedures. A zero drop retains the
+old slot index; a full-table scan sets it to 16 (the earlier C comment was stale).
+Every selector, membership phase, exhausted pool/table and late drop alias is
+compared against ASM. Existing timeline shared-drop conflict checks still pass;
+map drop edits do not alter that table or any initial DS byte.
 
 The center-facing data corresponds to inline ASM spawn cases and the shared C
 `face_centre` helper, plus the sprite-less `SpawnCellCrawler5F`. These recipes read

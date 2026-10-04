@@ -30,7 +30,8 @@ enum MapRecipeFields {
     MAP_RECIPE_OUTWARD = 1024,
     MAP_RECIPE_LIVE_CRAWLER_SPRITE = 2048,
     MAP_RECIPE_LIVE_JITTER_GROUP = 4096,
-    MAP_RECIPE_PICKUP_CURSOR = 8192
+    MAP_RECIPE_PICKUP_CURSOR = 8192,
+    MAP_RECIPE_EXPLICIT_DROP = 16384
 };
 
 enum MapSpawnRegion { MAP_REGION_ANY = 0, MAP_REGION_AT_OR_LEFT = 1, MAP_REGION_RIGHT = 2 };
@@ -56,6 +57,7 @@ typedef struct MapSpawnRecipe {
     word outward_distance;
     word outward_direction;
     word pickup_kind;
+    word group_drop_kind;
     word map_write_count;
     const MapCellWrite *map_writes;
 } MapSpawnRecipe;
@@ -63,6 +65,7 @@ typedef struct MapSpawnRecipe {
 typedef struct MapRecipeLevel {
     const MapSpawnRecipe *recipes;
     word count;
+    const byte *drop_cycle;
     byte coverage[32];
 } MapRecipeLevel;
 

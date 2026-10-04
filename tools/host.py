@@ -61,7 +61,7 @@ def generate_state(out):
     if machine.state() != original_state:
         raise ValueError('level binding requires the canonical native DS initialization')
     (out / 'STATE.BIN').write_bytes(load_original_bindings(machine))
-    generate_map_recipe_header(out, [load(path) for path in original_paths()])
+    generate_map_recipe_header(out, [load(path) for path in original_paths()], machine)
     generate_departure_header(out, [load(path) for path in original_paths()], machine)
     generate_encounter_header(out, [load(path) for path in original_paths()])
     generate_invader_header(out, [load(path) for path in original_paths()], machine)

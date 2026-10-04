@@ -9,6 +9,7 @@ Record *spawn_map_enemy_keep_cell(Record *here);
 Record *find_free_record_pool_a(void);
 void init_map_large_enemy_fields(Record *r, word reset_slot);
 void start_map_cell_group(word off);
+void alloc_group_slot(void);
 Record *join_map_group(Record *r);
 
 static void offset_map_spawn(Record *r, const MapSpawnRecipe *recipe)
@@ -48,7 +49,19 @@ int overkill_spawn_map_recipe(Record *here, word off, word level_cell, word *con
         if (recipe->spawn_region == MAP_REGION_RIGHT && MapCellX <= PLAYFIELD_CENTER_X) return 1;
         /* Original grouped ranges prepare a slot even for nonmember enemies,
            clear-only cells and holes. Drop lookup/allocation precedes map writes. */
-        if (recipe->map_group != MAP_GROUP_NONE) start_map_cell_group(off);
+        if (recipe->map_group != MAP_GROUP_NONE) {
+            /* Original cycles retain live DS aliases; authored cycles and explicit
+               drops are level content. All sources prepare at this same phase. */
+            if (recipe->fields & MAP_RECIPE_EXPLICIT_DROP) {
+                GroupDropKind = recipe->group_drop_kind;
+                alloc_group_slot();
+            } else if (definition->drop_cycle) {
+                GroupDropKind = definition->drop_cycle[off & 0x3F];
+                alloc_group_slot();
+            } else {
+                start_map_cell_group(off);
+            }
+        }
         group_phase = recipe->map_group;
         if (recipe->fields & MAP_RECIPE_LIVE_JITTER_GROUP) {
             const MapSpawnParameters *parameters = live_spawn_parameters();

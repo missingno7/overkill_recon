@@ -1,19 +1,20 @@
 # Overkill level format: current structured bindings
 
-Version 5 has two partial profiles. `level-bindings` describes resources, tile
+Version 6 has two partial profiles. `level-bindings` describes resources, tile
 attributes and optional checkpoints, timelines, formations, paths, map recipes and
 mothership departure data, encounter descriptors, marching-formation timing and
 segmented-boss member data;
 the earlier `resource-bindings` profile remains accepted and retains original
 terrain/checkpoints. Neither describes a complete
-playable level yet. Independent map storage, complete map drop rules and enemy/member parameters
+playable level yet. Independent map/event storage and enemy/member parameters
 await extraction.
-Versions 1, 2, 3 and 4 remain accepted with their original map-recipe scopes. Version 2
+Versions 1, 2, 3, 4 and 5 remain accepted with their original map-recipe scopes. Version 2
 adds grouped/no-spawn recipes; version 3 adds center-facing choices and pixel offsets.
 Version 4 adds side gates, runner/cruiser placement and retained-slot large initialization.
 Version 5 completes the original spawn actions with live sprite/random parameters and pickups.
+Version 6 adds complete map drop cycles and explicit semantic recipe drops.
 Each version boundary keeps an older explicit recipe list from silently disabling newly converted cells.
-Omitting map recipes still retains originals under either version.
+Omitting map recipes still retains originals under every version.
 
 An earlier partial `level-bindings` definition remains valid (the patch list below
 is abbreviated). Canonical files also contain the timeline/formation sections
@@ -442,12 +443,12 @@ Grouped compatibility and `spawn: "none"` require version 2 or later. Version 1 
 level 1's complete basic recipe model and the original shared turret/hatch scope
 in levels 4/5; all its other cells continue through their established handlers.
 
-Preparation reads the live `GroupDropKinds[map_offset & 63]` and calls the existing
-allocator before map writes. This temporary adapter retains the shared original
-drop table and its aliases with timeline drops; it does not expose the masked index
-as a normal editing property. Extracting complete map drop rules is still pending.
-Without a drop or available slot, the existing globals retain their original stale
-or exhausted values. Record exhaustion prevents joining, but still consumes map
+Preparation selects the effective drop and calls the existing allocator before
+map writes. Canonical cycles retain the live `GroupDropKinds[map_offset & 63]`
+lookup and its aliases with timeline drops. Authored cycles and explicit recipe
+drops use their own immutable data at the same phase. A zero drop stores FFFF in
+the group pointer and leaves the index stale. A full scan of occupied slots stores
+FFFF in the pointer and leaves the index at 16. Record exhaustion prevents joining, but still consumes map
 writes and preparation. Allocation-only recipes do not claim or rewrite group bytes.
 Joining reads live group/drop globals after initialization and map mutation; a DS
 alias can change them, so the evaluator must not cache them during preparation.
@@ -472,8 +473,51 @@ Omitting `map_spawns` keeps original recipes. An explicit list replaces the cove
 slice; removing an entry disables that trigger rather than falling back to its old
 switch case. Coverage is internal migration metadata, not a permanent original-game
 path. The exporter derives the original actions from curated equivalents of maintained
-C handlers; canonical execution is independently checked against ASM. Full map drop
-rules still use the shared original DS table and remain pending.
+C handlers; canonical execution is independently checked against ASM. Timeline
+drops still use shared DS bindings and reject conflicting edits; their isolation
+remains pending.
+
+### Map drop sources
+
+Version-6 `map_group_drops` is an optional object with `kind: "legacy_offset_cycle"`
+and `drops`: exactly 64 semantic names from `none`, `upgrade`, `energy`,
+`smart_bomb`, `fuel`. The exporter reads every byte of `GroupDropKinds` from the
+exact source-built oracle; it does not infer unused entries from event clocks.
+All six canonical cycles are identical. This is importer compatibility data for
+the original map's offset-dependent rules, not a drop-index editing API.
+
+The native build compares a definition with the original canonical cycle. An
+identical or omitted cycle reads live original DS storage at runtime. A changed
+cycle compiles all 64 entries into immutable data belonging only to that level;
+runtime changes to the legacy table cannot alter it. Neither choice copies or
+synchronizes mutable group state. Timeline event bindings remain separate and
+unchanged in this migration step; custom map cycles do not patch their DS table.
+
+An enemy recipe may specify a direct drop without legacy indexing:
+
+```json
+{
+  "tile": 4,
+  "spawn": "enemy",
+  "enemy": "vertical_bouncer_shooter",
+  "map_writes": [{"dx": 0, "dy": 0, "tile": 1}],
+  "group": {"drop": "energy"}
+}
+```
+
+`group` has only `drop`, and requires version 6 and an ordinary or large enemy.
+An explicit drop supersedes either cycle before allocation, so `none` suppresses
+allocation and a nonzero kind permits it even when the cycle value is zero.
+Without a compatibility phase, ordinary enemies join before field overrides and
+large enemies after them. Existing `compatibility.map_group` overrides that phase,
+including allocation-only cases. A retained slot cannot also implicitly join.
+Joining continues to read the live DS drop word, not the immutable selected value:
+a map clear or record write between allocation and join may change that word.
+
+Tests compare all 64 selectors, zero/raw/live legacy values, full/partial group
+slots, record exhaustion, explicit-drop priority in both directions, ordinary and
+large default joining, allocation-only holes and post-allocation aliases. The
+changed cycle/recipes leave the initial DS image and other levels unchanged.
 
 ## Mothership departure
 
