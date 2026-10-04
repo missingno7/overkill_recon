@@ -236,7 +236,8 @@ int overkill_level_waypoints_parse(const JsonDocument *document,
         set_error(error, error_size, "paths must be an object and leader_paths must match the canonical definition");
         return 0;
     }
-    if (!validate_special_paths(document, original, paths, original_paths, error, error_size)) return 0;
+    if (version < 12 && !validate_special_paths(document, original, paths, original_paths,
+                                               error, error_size)) return 0;
 
     /* Only the ten ordinary route presets and the four canonical special streams
        have established readers. Reject new identifiers rather than guessing. */

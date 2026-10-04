@@ -43,7 +43,7 @@ def validate(document):
     if 'compatibility' in document:
         fields.add('compatibility')
         compatibility = document['compatibility']
-        if (document.get('version') not in (8, 9, 10, 11) or profile != 'level-bindings' or
+        if (document.get('version') not in (8, 9, 10, 11, 12) or profile != 'level-bindings' or
                 not isinstance(compatibility, dict) or set(compatibility) != {'original_level'} or
                 type(compatibility['original_level']) is not int or
                 not 0 <= compatibility['original_level'] < 6):
@@ -52,7 +52,7 @@ def validate(document):
         raise ValueError('expected exactly: ' + ', '.join(sorted(fields)))
     if document['format'] != 'overkill-level':
         raise ValueError('format must be overkill-level')
-    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11):
+    if type(document['version']) is not int or document['version'] not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12):
         raise ValueError('unsupported level version')
     if not isinstance(document['id'], str) or len(document['id']) > 127 or not re.fullmatch(
             r'[a-z][a-z0-9_-]*', document['id']):
@@ -62,10 +62,10 @@ def validate(document):
         raise ValueError('resources must specify map, sprites, blocks and plaque')
     for role, name in resources.items():
         if role == 'map' and isinstance(name, dict):
-            if (document['version'] not in (8, 9, 10, 11) or set(name) != {'path', 'encoding', 'columns', 'rows'} or
+            if (document['version'] not in (8, 9, 10, 11, 12) or set(name) != {'path', 'encoding', 'columns', 'rows'} or
                     name['encoding'] != 'tile-grid' or type(name['columns']) is not int or
                     name['columns'] != 13 or type(name['rows']) is not int or name['rows'] != 288):
-                raise ValueError('local map requires version 8..11 and a 13 by 288 tile-grid')
+                raise ValueError('local map requires version 8..12 and a 13 by 288 tile-grid')
             if (not isinstance(name['path'], str) or len(name['path']) > 1023 or not re.fullmatch(
                     r'[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*\.bin', name['path'])):
                 raise ValueError('local map path must be a safe relative .bin path')

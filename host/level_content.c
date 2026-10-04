@@ -4,6 +4,7 @@
 #include "level_timeline_data.h"
 #include "level_waypoints.h"
 #include "level_leaders.h"
+#include "level_special_paths.h"
 #include "game.h"
 #include "memory.h"
 #include <stdio.h>
@@ -22,6 +23,7 @@ typedef struct LevelContent {
     LevelTimeline *timeline;
     LevelWaypoints *waypoints;
     LevelLeaderPaths *leaders;
+    LevelSpecialPaths *special_paths;
 } LevelContent;
 
 static LevelContent current;
@@ -61,6 +63,8 @@ void overkill_level_content_unload(void)
     overkill_level_timeline_bind_current(NULL);
     overkill_level_waypoints_bind_current(NULL);
     overkill_level_leaders_bind_current(NULL);
+    overkill_level_special_paths_bind_current(NULL);
+    overkill_level_special_paths_free(current.special_paths);
     overkill_level_leaders_free(current.leaders);
     overkill_level_waypoints_free(current.waypoints);
     overkill_level_timeline_free(current.timeline);
@@ -104,7 +108,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     if (!directory || !original_directory) goto done;
     if (snprintf(path, sizeof path, "%s/level.json", directory) >= (int)sizeof path) goto done;
     if (!content_json_load(path, &doc, error, error_size)) goto done;
-    if (!integer(&doc, 0, "version", 11, &version) || (version < 8) ||
+    if (!integer(&doc, 0, "version", 12, &version) || (version < 8) ||
         !content_json_string(&doc, content_json_member(&doc, 0, "id"), next.id, sizeof next.id) ||
         !safe_name(next.id, 0)) goto done;
     compatibility = content_json_member(&doc, 0, "compatibility");
@@ -208,6 +212,8 @@ int overkill_level_content_load(const char *directory, const char *original_dire
                                                        &next.waypoints, error, error_size)) goto done;
     if (version >= 11 && !overkill_level_leaders_parse(&doc, &original,
                                                      &next.leaders, error, error_size)) goto done;
+    if (version >= 12 && !overkill_level_special_paths_parse(&doc, &original,
+                    &next.special_paths, error, error_size)) goto done;
     overkill_level_content_unload();
     current = next;
     overkill_level_policy_bind_current(
@@ -215,6 +221,7 @@ int overkill_level_content_load(const char *directory, const char *original_dire
     overkill_level_timeline_bind_current(current.timeline);
     overkill_level_waypoints_bind_current(current.waypoints);
     overkill_level_leaders_bind_current(current.leaders);
+    overkill_level_special_paths_bind_current(current.special_paths);
     memset(&next, 0, sizeof next);
     ok = 1;
 done:
@@ -224,6 +231,7 @@ done:
     overkill_level_timeline_free(next.timeline);
     overkill_level_waypoints_free(next.waypoints);
     overkill_level_leaders_free(next.leaders);
+    overkill_level_special_paths_free(next.special_paths);
     content_json_free(&doc);
     content_json_free(&original);
     if (!ok && error && error_size && !error[0]) snprintf(error, error_size, "%s", reason);

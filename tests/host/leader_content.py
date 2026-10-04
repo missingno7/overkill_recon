@@ -19,10 +19,19 @@ HOST_TESTS = ROOT / "tests/host"
 sys.path.insert(0, str(TOOLS))
 
 from common import write_json  # noqa: E402
-from level_content import duplicate_original, validate_directory  # noqa: E402
+from level_content import duplicate_original as _duplicate_latest, validate_directory  # noqa: E402
 from level_format import load, original_paths  # noqa: E402
 from level_paths import LEADER_BINDINGS, source_leaders  # noqa: E402
 from world import K  # noqa: E402
+
+
+def duplicate_original(profile, directory, identity, music=None):
+    """Keep this suite pinned to v11 leader-provider semantics."""
+    document = _duplicate_latest(profile, directory, identity, music)
+    document['version'] = 11
+    write_json(Path(directory) / 'level.json', document)
+    validate_directory(directory)
+    return document
 
 
 class _LeaderStep(ctypes.Structure):

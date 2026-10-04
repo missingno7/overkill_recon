@@ -21,12 +21,21 @@ sys.path.insert(0, str(TOOLS))
 
 from common import write_json  # noqa: E402
 from export_original_levels import script_event_boundaries  # noqa: E402,F401
-from level_content import duplicate_original, validate_directory  # noqa: E402
+from level_content import duplicate_original as _duplicate_latest, validate_directory  # noqa: E402
 from level_format import load, original_paths  # noqa: E402
 from level_paths import PATH_BINDINGS, source_paths  # noqa: E402
 from level_presets import ARCHETYPES  # noqa: E402
 from level_waypoints import ORDINARY_WAYPOINT_NAMES  # noqa: E402
 from world import K  # noqa: E402
+
+
+def duplicate_original(profile, directory, identity, music=None):
+    """Keep this suite pinned to v10 ordinary-route semantics."""
+    document = _duplicate_latest(profile, directory, identity, music)
+    document['version'] = 10
+    write_json(Path(directory) / 'level.json', document)
+    validate_directory(directory)
+    return document
 
 
 class _Waypoint(ctypes.Structure):

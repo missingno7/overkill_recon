@@ -129,7 +129,7 @@ def validate_point(value):
         raise ValueError('path points must specify signed playfield x and y')
 
 
-def validate_end(end, paths, leader=False):
+def validate_end(end, paths, leader=False, available_paths=None):
     if not isinstance(end, dict):
         raise ValueError('path ending must be an object')
     kind = end.get('kind')
@@ -139,7 +139,8 @@ def validate_end(end, paths, leader=False):
     elif not leader and kind == 'restart' and set(end) == {'kind'}:
         pass
     elif not leader and kind in ('jump', 'continue') and set(end) == {'kind', 'path'}:
-        if not isinstance(end['path'], str) or end['path'] not in paths:
+        known_paths = paths if available_paths is None else available_paths
+        if not isinstance(end['path'], str) or end['path'] not in known_paths:
             raise ValueError('path ending references an undefined path')
     else:
         raise ValueError('unsupported path ending')
@@ -152,13 +153,19 @@ def validate_path_sections(document):
         if not isinstance(section, dict) or any(not isinstance(name, str) or not re.fullmatch(
                 r'[a-z][a-z0-9_]*', name) for name in section):
             raise ValueError('path sections must be named objects')
+    available_paths = set(paths)
+    if document.get('version', 0) >= 12:
+        # v12 path references can resolve to a borrowed original special
+        # preset even when that path is omitted from the owned section.
+        from level_special_paths import SPECIAL_PATH_NAMES
+        available_paths.update(SPECIAL_PATH_NAMES)
     for definition in paths.values():
         if not isinstance(definition, dict) or set(definition) != {'points', 'end'} or not isinstance(
                 definition['points'], list) or not definition['points']:
             raise ValueError('path must specify nonempty points and end')
         for value in definition['points']:
             validate_point(value)
-        validate_end(definition['end'], paths)
+        validate_end(definition['end'], paths, available_paths=available_paths)
     for name, definition in leaders.items():
         fields = {'steps', 'end'} | ({'slots'} if name == 'slot_hopper_leader' else set())
         if name not in LEADER_BINDINGS or not isinstance(definition, dict) or set(definition) != fields:

@@ -5,6 +5,7 @@ import re
 
 from common import ROOT, read_json
 from level_paths import PATH_BINDINGS, source_paths, validate_point
+from level_special_paths import SPECIAL_PATH_NAMES, validate_authored_special_paths
 from world import K
 
 
@@ -89,15 +90,17 @@ def validate_authored_waypoints(document, original, default_counts=None):
         raise ValueError('version 10 paths and original paths must be named objects')
 
     ordinary = set(ORDINARY_WAYPOINT_NAMES)
-    special = set(original_paths) - ordinary
+    version = document['version']
+    special = set(SPECIAL_PATH_NAMES) if version >= 12 else set(original_paths) - ordinary
     if any(not isinstance(name, str) or not re.fullmatch(r'[a-z][a-z0-9_]*', name)
            for name in paths):
         raise ValueError('path names must be semantic identifiers')
     if any(name not in ordinary and name not in special for name in paths):
         raise ValueError('authored paths contain an unknown path name')
-    missing_special = special - set(paths)
-    if missing_special:
-        raise ValueError('original special paths must be retained: ' + ', '.join(sorted(missing_special)))
+    if version < 12:
+        missing_special = special - set(paths)
+        if missing_special:
+            raise ValueError('original special paths must be retained: ' + ', '.join(sorted(missing_special)))
 
     owned_counts = {}
     for name in ordinary.intersection(paths):
@@ -115,9 +118,12 @@ def validate_authored_waypoints(document, original, default_counts=None):
             raise ValueError(name + ': owned ordinary paths must end with signed-x fly_off')
         owned_counts[name] = len(definition['points']) + 1
 
-    for name in special:
-        if paths[name] != original_paths[name]:
-            raise ValueError(name + ': original nonordinary path must remain unchanged')
+    if version < 12:
+        for name in special:
+            if paths[name] != original_paths[name]:
+                raise ValueError(name + ': original nonordinary path must remain unchanged')
+    else:
+        validate_authored_special_paths(document, original)
 
     counts = default_counts
     if counts is None:

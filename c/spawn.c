@@ -49,6 +49,7 @@
 #include "level_def.h"
 #include "level_timeline.h"
 #include "level_leaders.h"
+#include "level_special_paths.h"
 #include "map_recipes.h"
 #endif
 
@@ -701,7 +702,11 @@ void reset_march_state(void)
 
 void reset_type21_path(void)
 {
+#ifdef OVERKILL_HOST
+    Type21PathCursor = overkill_special_path_start(GAME_OFFSET(Type21Path));
+#else
     Type21PathCursor = GAME_OFFSET(Type21Path);
+#endif
 }
 
 /* A new formation leader with its leader script: resets the encounter and sway state; the
@@ -990,10 +995,18 @@ void type13_formation_leader(Record *r)
             f->saved_x = *GAME_PTR(word, (word)(point_offset + 2));
 #endif
             f->type = 0x16;
+#ifdef OVERKILL_HOST
+            f->path = overkill_special_path_start(GAME_OFFSET(SweepPath));
+#else
             f->path = GAME_OFFSET(SweepPath);
+#endif
             if (r->y != 0x40) {
                 f->type = 0x17;
+#ifdef OVERKILL_HOST
+                f->path = overkill_special_path_start(GAME_OFFSET(SweepPathLeadIn));
+#else
                 f->path = GAME_OFFSET(SweepPathLeadIn);
+#endif
             }
             f->entry_delay = 0x14;
             f->hit_points = 3;
@@ -1125,20 +1138,42 @@ void type13_formation_leader(Record *r)
 void type21_leader_path(Record *r)
 {
     word point_offset;
+#ifdef OVERKILL_HOST
+    const LevelSpecialPoint *owned;
+#endif
     Record *f;
 
     for (;;) {
         point_offset = Type21PathCursor;
+#ifdef OVERKILL_HOST
+        owned = overkill_special_path_point(point_offset);
+        if (owned) {
+            if (owned->control == LEVEL_PATH_INVALID) {
+                r->sprite = r->direction + 0x3B;
+                return;
+            }
+            if (owned->control == LEVEL_PATH_POINT) break;
+        } else
+#endif
         if (*GAME_PTR(word, point_offset) != 0xFFFF) break;
         reset_type21_path();
     }
+#ifdef OVERKILL_HOST
+    SteerTargetY = (word)((owned ? owned->y : *GAME_PTR(word, point_offset)) + 0x20);
+    SteerTargetX = owned ? owned->x : *GAME_PTR(word, (word)(point_offset + 2));
+#else
     SteerTargetY = (word)(*GAME_PTR(word, point_offset) + 0x20);
     SteerTargetX = *GAME_PTR(word, (word)(point_offset + 2));
+#endif
     SteerSpeed = 3;
     steer_toward_target(r);
     if (SteerArrived != 0) {
         r->hit_points = 2;
+#ifdef OVERKILL_HOST
+        Type21PathCursor = owned ? owned->next : (word)(Type21PathCursor + 4);
+#else
         Type21PathCursor += 4;
+#endif
         f = spawn_enemy_here(r);
         if (f != NO_RECORD) {
             f->saved_y = r->y;

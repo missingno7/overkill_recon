@@ -1,7 +1,8 @@
 """Create/validate a loose level with a new identity and an original behavior profile.
 
 Runtime-owned sections include the decoded map, restart rules, music, timeline,
-formations, checkpoints, formation HP and ordinary waypoint routes. Other sections
+formations, checkpoints, formation HP, ordinary waypoints, leader scripts/slots
+and special paths. Other sections
 must match the selected canonical definition; unsupported edits fail.
 The source stays JSON/raw tiles, with no generated registration or DS slot.
 """
@@ -39,8 +40,8 @@ def validate_directory(directory, originals=None):
     if token_count(document) > 65536:
         raise ValueError('level JSON exceeds runtime token limit')
     validate(document)
-    if document['version'] not in (8, 9, 10, 11) or 'compatibility' not in document:
-        raise ValueError('loose content requires version 8..11 and an explicit original behavior profile')
+    if document['version'] not in (8, 9, 10, 11, 12) or 'compatibility' not in document:
+        raise ValueError('loose content requires version 8..12 and an explicit original behavior profile')
     index = document['compatibility']['original_level']
     original = load(Path(originals or ROOT / 'levels/original') / f'level{index}.lvl')
     supported = {'id', 'version', 'compatibility', 'resources', 'music', 'checkpoint_restart'}
@@ -98,7 +99,7 @@ def duplicate_original(index, directory, identity, music=None):
     if directory.exists() and any(directory.iterdir()):
         raise ValueError('output directory must be empty; existing level content is not overwritten')
     document = copy.deepcopy(load(ROOT / 'levels/original' / f'level{index}.lvl'))
-    document.update(version=11, id=identity, compatibility={'original_level': index})
+    document.update(version=12, id=identity, compatibility={'original_level': index})
     columns, rows = original_map_dimensions(index)
     document['resources']['map'] = {'path': 'map.bin', 'encoding': 'tile-grid',
                                   'columns': columns, 'rows': rows}

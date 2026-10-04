@@ -1296,6 +1296,30 @@
           "y": 128
         }
       ]
+    },
+    "sweep_lead_in": {
+      "end": {
+        "kind": "continue",
+        "path": "sweep_loop"
+      },
+      "points": [
+        {
+          "x": 80,
+          "y": 64
+        },
+        {
+          "x": 192,
+          "y": 208
+        },
+        {
+          "x": 0,
+          "y": 208
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
     }
   },
   "profile": "level-bindings",
@@ -2110,5 +2134,5 @@
       "y": 0
     }
   ],
-  "version": 11
+  "version": 12
 }

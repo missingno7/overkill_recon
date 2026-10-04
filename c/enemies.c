@@ -67,6 +67,7 @@
 #include "level_invaders.h"
 #include "level_boss.h"
 #include "level_leaders.h"
+#include "level_special_paths.h"
 #endif
 
 /* c/movement.c */
@@ -1397,7 +1398,11 @@ void encounter_seg_boss_level(Record *r)
         SegBossX = 0;
         SegBossY = 0;
         SegBossActive = 1;
+#ifdef OVERKILL_HOST
+        SegBossPathCursor = overkill_special_path_start(GAME_OFFSET(BossPath));
+#else
         SegBossPathCursor = GAME_OFFSET(BossPath);
+#endif
         r->type = 0x78;
 #ifdef OVERKILL_HOST
         r->sprite = boss.parts[BOSS_CORE].sprite;
@@ -1730,12 +1735,27 @@ void type16_sweep_lead_in(Record *r)
 void type18_sweep_path_looper(Record *r)
 {
     word *path, bx;
+#ifdef OVERKILL_HOST
+    const LevelSpecialPoint *owned;
+#endif
 
     for (;;) {
         if ((RecordTickCounter & 0x3FF) == 0x0C) {
             spawn_aimed_shot(r);
             RecordTickCounter++;
         }
+#ifdef OVERKILL_HOST
+        owned = overkill_special_path_point(r->path);
+        if (owned) {
+            if (owned->control == LEVEL_PATH_INVALID) break;
+            if (owned->control == LEVEL_PATH_LINK) {
+                r->path = owned->next;
+                continue;
+            }
+            SteerTargetY = owned->y + 0x20;
+            SteerTargetX = owned->x;
+        } else {
+#endif
         path = GAME_PTR(word, r->path);
         if (GAME_INDEX(word, path, 0) == 0xFFFF) {
             r->path = GAME_INDEX(word, path, 1);
@@ -1743,11 +1763,18 @@ void type18_sweep_path_looper(Record *r)
         }
         SteerTargetY = GAME_INDEX(word, path, 0) + 0x20;
         SteerTargetX = GAME_INDEX(word, path, 1);
+#ifdef OVERKILL_HOST
+        }
+#endif
         SteerSpeed = 3;
         steer_toward_target(r);
         r->sprite = r->direction + 0x10D;
         if (SteerArrived == 0) break;
+#ifdef OVERKILL_HOST
+        r->path = owned ? owned->next : (word)(r->path + 4);
+#else
         r->path = (word)(r->path + 4);
+#endif
         bx = next_random_word() & 7;
         if (bx != 2) continue;
         bx = spawn_throttled_child(r, bx);

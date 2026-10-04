@@ -27,20 +27,20 @@ them; it is not a conversion to a second game-state model.
 |---|---|---|
 | Engine/runtime | Record pools and allocation, movement and combat procedures, RNG, scrolling, collision, rendering/audio services, encounter and script cursors, counters, mutable map cells and checkpoint state | Keep observable execution state in the original memory layout. Authored timeline event ordinals occupy the existing `LevelScriptCursors[behavior_profile]` DS word; canonical timelines keep their original byte offsets there. Preserve procedure order, stale fields, timing and side effects. |
 | Shared game content | Common graphics/resources and common start, end, late-level and title music tracks; shared rules for intro, encounter release and mothership departure | Keep content shared when the original uses one identity or one policy across levels. A shared trigger does not make its selected level resource shared. |
-| Level-specific content | Map, banks and plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations and their spawn HP, semantic checkpoints, paths and leader paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint restoration and level theme | These choices travel with a level definition only where runtime loading supports them. Version 10 loose content owns the ten ordinary fly-off waypoint routes; version 11 also owns six leader presets and the slot-hopper layout. Version 9 owns its map, timeline, formations, arbitrary semantic checkpoint list, formation member HP, checkpoint restoration and music. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
+| Level-specific content | Map, banks and plaque, level palette/digit choices (pending), tile properties, spawn recipes, timelines, formations and their spawn HP, semantic checkpoints, paths and leader paths, invader slots, encounter choice/parameters, boss setup, departure geometry, checkpoint restoration and level theme | These choices travel with a level definition only where runtime loading supports them. Version 10 owns the ten ordinary fly-off waypoint routes; version 11 adds six leader presets and slot-hopper layout; version 12 owns four fixed-topology special routes. Version 9 owns its map, timeline, formations, arbitrary semantic checkpoint list, formation member HP, checkpoint restoration and music. Level soundtrack selection uses `music: {level: 8}`; this example is a tune index, not a recovered track name. |
 | Legacy packaging/compatibility | SHADOW archive distribution, BIC/ENC encodings, original DS/CS tables, pointer slots, aliases, unchecked neighboring reads, marker framing, physical segment wrapping and read/write order | Canonical generated definitions retain live source bindings at each original use point. Authored definitions store their explicit values independently even when equal to canonical values; internal compatibility metadata identifies a live canonical binding without making it a public editing concept. |
 
 This inventory is a working ownership boundary, not a claim that every item is
 already independently loaded from an external file at runtime. Loose content still
 selects one of six original behavior profiles. Resource identities need a broader
 audit, including the chooser's `choose.enc` six-slot boundary and unchecked
-seventh-level behavior. Episode progression and fully independent bank, special
-path, spawn-recipe and encounter data remain pending.
+seventh-level behavior. Episode progression and fully independent bank,
+spawn-recipe and encounter data remain pending.
 
-The version 11 loose content object owns an immutable source map, timeline, named
+The version 12 loose content object owns an immutable source map, timeline, named
 formations, checkpoint rows, formation spawn HP, restart/music policies, ordinary
-fly-off routes, six leader paths and slot-hopper geometry, with a content ID distinct
-from its original behavior profile. Versions 8 through 10 remain accepted with their
+fly-off routes, six leader paths, slot-hopper geometry and four special paths, with a
+content ID distinct from its original behavior profile. Versions 8 through 11 remain accepted with their
 earlier content slices. Loading is transactional: a failed
 validation or asset read retains the active content. Map reload copies source tiles
 into the existing mutable map arena; it does not create a second gameplay map.
@@ -68,11 +68,11 @@ initial DS layout. Map recipes, encounter descriptors and authored departure com
 native level data. With all six originals this reproduces every initialization
 byte, including neighboring data. Native code
 uses those bindings through the same live state view. DOS initialization and its
-coordinator remain unchanged. The version 11 runtime JSON loader supports copied
+coordinator remain unchanged. The version 12 runtime JSON loader supports copied
 content with a new ID and independent map, timeline, formations, checkpoint rows,
 formation-member HP, checkpoint-restoration rules, music and ordinary fly-off
-waypoint and leader routes. Sprite/block/plaque resources, terrain patches, special
-paths, map-spawn recipes and parameters, group tables,
+waypoint, leader and special routes. Sprite/block/plaque resources, terrain patches,
+map-spawn recipes and parameters, group tables,
 departure, encounter, marching formation and boss sections must still match the
 explicit original behavior profile; unsupported edits fail before gameplay.
 Episode progression and fully independent resource selection remain pending.
@@ -132,10 +132,10 @@ remains untouched in the canonical DS image.
 Semantic presets expose handler identities without REC_TYPE numbers. Their registry
 is a binding, not a behavior-family abstraction. Path movement, leader spawning,
 record initialization and encounter logic still use the original procedures. Canonical
-execution reads the original live DS streams; authored v10/v11 content supplies owned
-ordinary waypoint and six leader stream descriptors to the same procedures. Special
-paths remain profile-bound. The build-time canonical binder preserves shared formation
-and group-drop storage.
+execution reads the original live DS streams; authored v10/v11/v12 content supplies owned
+ordinary waypoint and six leader stream descriptors, and v12 supplies four owned
+special-path descriptors, to the same procedures. The build-time canonical binder
+preserves shared formation and group-drop storage.
 Authored version 9 timelines own their event drops and formations independently;
 map-spawn recipes and map-group-drop compatibility still follow their separate
 profile/equality boundaries.
@@ -189,10 +189,32 @@ least two distinct positions so the skip-current loop can terminate. Leader step
 and slots remain bounded by word-sized flattened counts. These definitions parameterize
 the existing six behaviors; they do not create a generic leader interpreter.
 
+Version 12 also owns the four special routes as immutable point streams, using
+defaults from `levels/shared/special-path-presets.json`, generated and checked
+against the maintained ASM. Their names are `sweep_lead_in`, `sweep_loop`,
+`encounter_leader` and `boss_anchor`. Their end topology is fixed rather than an
+authored graph: the original four-point lead-in continues directly to the loop with no
+extra marker or iteration; the loop jumps to itself; encounter and boss routes
+restart. Flattened `next` links compile these fixed transitions internally. They
+are storage details, not public graph edges or a command language.
+
+The procedures and original cursors stay in place. Sweep type 18 uses each point's
+next ordinal in `REC_PATH`; on same-call arrival it advances before consuming RNG,
+and the stale BX write to DS:8 remains part of the shared procedure. Type 21 uses
+the existing CS `Type21PathCursor`, updates HP to 2 and advances before attempting
+child allocation. The segmented boss uses DS `SegBossPathCursor`; each inner pass
+writes the outer anchor coordinates and updates global X/Y before an arrival can
+repeat within the frame. No new runtime cursor is introduced. Explicit control nodes
+keep public Y=31 valid despite its encoded FFFF word. Authored streams are bounded
+and use explicit control nodes; canonical NULL-provider execution retains live unchecked
+reads and historical marker behavior.
+
 Canonical definitions include routes used by their formations and directors,
-including the boss anchor. Version 10 can edit the ten ordinary fly-off routes and
-version 11 can edit the six leader presets and slot-hopper geometry. Sweep lead-in/loop,
-encounter-leader route and boss anchor remain profile-bound to canonical data. The demo route and unreferenced Type4A route remain
+including the boss anchor. Version 10 can edit the ten ordinary fly-off routes,
+version 11 can edit the six leader presets and slot-hopper geometry, and version 12
+can edit four special routes. Their topology remains fixed by the original readers:
+the finite sweep lead-in continues directly into the sweep loop, the loop
+jumps to itself, and encounter-leader and boss-anchor routes restart. The demo route and unreferenced Type4A route remain
 in DS and are not evidence of additional level dependencies.
 The type-0x21 director is not one of the six leader presets: it follows the separate
 `encounter_leader` path. Authored v11 maps its otherwise unused `original_level + 1`
@@ -314,15 +336,15 @@ does not disable actions that were procedural when that definition was written.
 
 ## Next boundaries to prove
 
-1. The loose version 11 loader still requires graphics banks/plaque, terrain
-   attributes, special paths, map-spawn recipes/parameters, map-group-drop
+1. The loose version 12 loader still requires graphics banks/plaque, terrain
+   attributes, map-spawn recipes/parameters, map-group-drop
    policy, departure, encounter, marching formation and boss data to match an
    original behavior profile.
 2. Palette/HUD identity, level resource selection, chooser/progression behavior,
    unchecked seventh-level reads and remaining enemy parameters still need evidence
    and equivalence coverage.
 
-Loose v11 is a narrow runtime slice, not a fully independent level or episode format.
+Loose v12 is a narrow runtime slice, not a fully independent level or episode format.
 Continue extracting one boundary at a time, retaining unique procedures and the
 canonical live-data path for comparison.
 
@@ -394,11 +416,13 @@ represented through this same mechanism, preserving its observed chooser order,
 wraparound and completion behavior. Start with ordered references; additional
 progression features need evidence or an explicit editing requirement.
 
-Neither episode loading nor complete swaps are implemented yet. The current
-adapter requires six definitions, binds them by original slot and retains shared
-storage/capacity constraints. Definitions are consumed during the native build;
-complete independent definitions are not yet loaded. The loose-content test path
-loads map, restart, music, ordinary waypoints and leader paths at startup without adding a seventh original slot.
+Neither episode loading nor complete swaps are implemented yet. The canonical
+build adapter requires six original definitions, binds them by original slot and
+retains shared storage/capacity constraints. The loose-content test path loads its
+owned map, timeline, formations, checkpoints, restart/music policies, ordinary,
+leader and special paths at startup without adding a seventh original slot. Other
+gameplay sections and resource selection still use the explicitly selected original
+behavior profile.
 
 Remaining work toward this endpoint:
 
@@ -406,7 +430,7 @@ Remaining work toward this endpoint:
    boundaries and level-dependent presentation data.
 2. Separate level identity from episode position and introduce episode selection
    and progression without changing the DOS/oracle coordinator.
-3. Extend validated runtime loading from the v11 subset to complete level and
+3. Extend validated runtime loading from the v12 subset to complete level and
    episode files, including custom resource references. Shared original data must
    not make an edit to one custom level alter another.
 4. Add permutation regressions: with identical initial gameplay state, inputs and

@@ -3,7 +3,7 @@
 Initial audit baseline: commit `9377201`, native SDL3 and shared DOS C. The inventory
 below identifies sources and semantic boundaries; the ASM/C source remains the
 authority for numeric values. Re-run `rg -n LevelIndex c host -g '*.c'` when extending
-this inventory. Version 11 supports only a partial loose runtime representation;
+this inventory. Version 12 supports only a partial loose runtime representation;
 complete independent levels and episodes are not claimed.
 
 ## Inventory
@@ -23,8 +23,8 @@ complete independent levels and episodes are not claimed.
 | Formation members | Pure data / parameterized initialization | `Formation00..52`; script spawning in `spawn.c` | Canonical build bindings retain 52 referenced layouts and shared storage; loose v9 owns named formations and ordered members. `formation_spawn_parameters` exposes the two existing member HP choices; unused Formation48 remains in canonical DS |
 | Group/drop choice | Pure shared data + legacy indexing | `GroupDropKinds`; `start_map_cell_group`, script events, group slots | Full map cycles and explicit recipe drops extracted; live preparation/membership phases retained. Canonical timeline drops still share DS bindings; loose v9 event drops are owned per event |
 | Enemy archetype binding | Parameterized or unique behavior | `REC_TYPE`, `run_type_handler` in `enemies.c`; `RECORDS.INC` | Existing implementations retained; formation presets bind public names through `level_presets.py`. Procedures and their global DS path/resource tables still come from the selected behavior profile |
-| Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | V10 owns the ten ordinary fly-off presets as flattened semantic points; existing type-12 movement/`REC_PATH` cursor retained. Sweep, encounter and boss routes remain canonical-profile constrained |
-| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript13/15/1C/1F/7D/7E`, `LeaderScriptCursor`; `spawn.c`, `combat.c`, `frame.c`, `enemies.c` | Loose v11 owns six variable-length semantic presets and maps their ends into the existing global cursor. Canonical live DS streams/strides, type-specific spawn rules, leader-death writes and follower end gates remain unchanged; `Type21Path` is a separate profile-bound route |
+| Waypoint paths | Pure data with distinct behavior contracts | `SteerPath10/11`, `Type41/43/44/45/4A/51Path`, `PathType66/67`, `SweepPath*`; `paths.c`, `enemies.c` | V10 owns ten ordinary fly-off presets; v12 owns four special routes. Existing `REC_PATH`, Type21 and boss cursors and all movement procedures remain. The special route topology is fixed to its original continue/jump/restart contracts |
+| Leader paths/actions | Pure stream data + procedural behavior | `LeaderScript13/15/1C/1F/7D/7E`, `LeaderScriptCursor`; `spawn.c`, `combat.c`, `frame.c`, `enemies.c` | Loose v11 owns six variable-length semantic presets and maps their ends into the existing global cursor. Canonical live DS streams/strides, type-specific spawn rules, leader-death writes and follower end gates remain unchanged; the Type21 special route is separately owned in v12 |
 | Leader-child slots | Pure layout + runtime cursor | 20 `FormationSlots`, `FormationSlotCursor`; type 1F leader and type 20 children | Loose v11 owns slot-hopper geometry and uses the existing global cursor with a clean authored cycle. Canonical leader takes five without wrap; canonical children wrap. Authored list requires two distinct positions to keep skip-current hopping finite |
 | Invader layout | Pure layout + unique encounter behavior | `InvaderFormation`, invader cursors; `enemies.c`, `life.c` | Extracted level-3 director's 24 ordered slot targets; live cursor/end and post-allocation read order retained |
 | Opening march timing | Pure parameter tiers + shared latch behavior | `UpdateAllRecords`, `StepMarchFireDelay`, type80; `frame.c`, `reset_march_state` in `spawn.c` | Extracted enabled flag and separate step/fire delay tiers; initial state, edges/drop distance and member behavior remain procedural defaults; distinct from invader slots |
@@ -155,8 +155,24 @@ shared default, independent from live runtime DS. Canonical execution still uses
 original live DS address and advances by four bytes per point.
 
 The other path readers are not interchangeable: sweep routes have marker/jump and
-adjacency semantics, and encounter/boss paths restart their own cursors. They remain
-canonical profile constraints. Six v11 leader presets are `sway_leader` (0x13),
+adjacency semantics, and encounter/boss paths restart their own cursors. Version 12
+owns these four routes without changing their procedures. Their immutable shared
+defaults in `levels/shared/special-path-presets.json` are checked against the
+maintained ASM by export and native generation. Public names are `sweep_lead_in`,
+`sweep_loop`, `encounter_leader` and `boss_anchor`; the lead-in continues directly
+from its four source points into the loop, the loop jumps to itself, and the latter
+two restart. Flattened `next` links implement this fixed topology internally; they
+are not a public graph or scripting system. Explicit authored control nodes permit
+Y 31 while keeping route-end handling bounded.
+
+The existing cursors remain the runtime state: `REC_PATH` for type 18, CS
+`Type21PathCursor` for the encounter leader, and DS `SegBossPathCursor` for the boss.
+No shadow cursor is added. Type18 advances before its same-call arrival RNG test and
+retains the stale BX write to DS:8; Type21 sets HP to 2 and advances before attempting
+allocation; the boss writes the outer anchor and global XY before an arrival can
+repeat within a frame. These ordering quirks remain in the shared procedures.
+Canonical NULL-provider execution still reads live DS/CS data with unchecked legacy
+semantics. Six v11 leader presets are `sway_leader` (0x13),
 `sweep_leader` (0x15), `bob_chase_leader` (0x1C), `slot_hopper_leader` (0x1F),
 `sweeper_leader` (0x7D) and `march_leader` (0x7E). The type 0x13/0x1F streams contain
 target-only steps; 0x15/0x1C/0x7D/0x7E contain target/follower pairs. Shared immutable

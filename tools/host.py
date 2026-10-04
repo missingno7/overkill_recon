@@ -61,6 +61,7 @@ def generate_state(out):
     from level_timeline import generate_timeline_parameter_header, generate_level_preset_header
     from level_waypoints import generate_waypoint_preset_header
     from level_leaders import generate_leader_preset_header
+    from level_special_paths import generate_special_path_preset_header
     machine = Machine(exe)
     original_state = image[base:base + size].ljust(0x10000, b'\0')
     if machine.state() != original_state:
@@ -77,6 +78,7 @@ def generate_state(out):
     generate_level_preset_header(out)
     generate_waypoint_preset_header(out, machine)
     generate_leader_preset_header(out, machine)
+    generate_special_path_preset_header(out, machine)
     generate_addresses(out, exe)
     generate_driver_addresses(out, 'adlib')
     generate_driver_addresses(out, 'roland')

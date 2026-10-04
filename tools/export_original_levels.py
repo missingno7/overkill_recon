@@ -10,6 +10,7 @@ from level_format import load, original_paths, validate, TILE_ATTRIBUTES
 from level_presets import ARCHETYPES, SIZES, LAYERS, DROPS, formation_id
 from level_paths import level_path_definitions, source_paths, source_leaders
 from level_waypoints import ORDINARY_WAYPOINT_NAMES
+from level_special_paths import SPECIAL_PATH_NAMES
 from level_map_recipes import original_map_spawns, original_map_spawn_parameters
 from level_departure import departure_definition
 from level_encounter import original_encounter
@@ -225,6 +226,15 @@ def export(directory=None, check=False, no_build=False):
     else:
         write_json(shared_leaders, leader_presets)
     print(('PASS' if check else 'Exported') + ': ' + shared_leaders.name)
+    shared_special = (Path(directory) / 'shared/special-path-presets.json' if directory else
+                      ROOT / 'levels/shared/special-path-presets.json')
+    special_presets = {name: source_paths(machine)[name][2] for name in SPECIAL_PATH_NAMES}
+    if check:
+        if read_json(shared_special) != special_presets:
+            raise ValueError(f'{shared_special}: shared special-path presets differ from the oracle')
+    else:
+        write_json(shared_special, special_presets)
+    print(('PASS' if check else 'Exported') + ': ' + shared_special.name)
 
 
 def main():

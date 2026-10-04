@@ -47,6 +47,7 @@
 #include "level_invaders.h"
 #include "level_boss.h"
 #include "level_leaders.h"
+#include "level_special_paths.h"
 #undef tick_frame_timers
 #endif
 
@@ -218,24 +219,45 @@ void steer_seg_boss_along_path(void)
 {
     Record *anchor;
     word *point;
+#ifdef OVERKILL_HOST
+    const LevelSpecialPoint *owned;
+#endif
 
     for (;;) {
         anchor = GAME_PTR(Record, SegBossAnchor);
         anchor->x = SegBossX;
         anchor->y = SegBossY;
         for (;;) {
+#ifdef OVERKILL_HOST
+            owned = overkill_special_path_point(SegBossPathCursor);
+            if (owned) {
+                if (owned->control == LEVEL_PATH_INVALID) return;
+                if (owned->control == LEVEL_PATH_POINT) break;
+                SegBossPathCursor = owned->next;
+                continue;
+            }
+#endif
             point = GAME_PTR(word, SegBossPathCursor);
             if (point[0] != 0xFFFF) break;
             SegBossPathCursor = GAME_OFFSET(BossPath);
         }
+#ifdef OVERKILL_HOST
+        SteerTargetY = (owned ? owned->y : point[0]) + 0x20;
+        SteerTargetX = owned ? owned->x : point[1];
+#else
         SteerTargetY = point[0] + 0x20;
         SteerTargetX = point[1];
+#endif
         SteerSpeed = 2;
         steer_toward_target(anchor);
         SegBossX = anchor->x;
         SegBossY = anchor->y;
         if (SteerArrived == 0) return;
+#ifdef OVERKILL_HOST
+        SegBossPathCursor = owned ? owned->next : (word)(SegBossPathCursor + 4);
+#else
         SegBossPathCursor = (word)(SegBossPathCursor + 4);
+#endif
     }
 }
 

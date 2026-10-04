@@ -153,7 +153,7 @@ class LeaderSchemaTests(unittest.TestCase):
         for document in originals:
             validate(document)
         unsupported = copy.deepcopy(originals[0])
-        unsupported["version"] = 12
+        unsupported["version"] = 13
         with self.assertRaisesRegex(ValueError, "unsupported level version"):
             validate(unsupported)
 
